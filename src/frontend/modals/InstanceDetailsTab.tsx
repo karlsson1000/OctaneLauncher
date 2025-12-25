@@ -1,0 +1,669 @@
+import { useState, useEffect, useRef } from "react"
+import { Play, FolderOpen, Trash2, Package, Loader2, ExternalLink, Edit2, X, Check, ImagePlus, Camera } from "lucide-react"
+import { invoke } from "@tauri-apps/api/core"
+import { ConfirmModal, AlertModal } from "./ConfirmModal"
+import type { Instance } from "../../types"
+
+interface InstalledMod {
+  filename: string
+  size: number
+  name?: string
+  description?: string
+  icon_url?: string
+  downloads?: number
+  author?: string
+  disabled?: boolean
+}
+
+interface InstanceDetailsTabProps {
+  instance: Instance
+  isAuthenticated: boolean
+  isLaunching: boolean
+  onLaunch: () => void
+  onBack: () => void
+  onInstanceUpdated: () => void
+}
+
+export function InstanceDetailsTab({
+  instance,
+  isAuthenticated,
+  isLaunching,
+  onLaunch,
+  onBack,
+  onInstanceUpdated,
+}: InstanceDetailsTabProps) {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [installedMods, setInstalledMods] = useState<InstalledMod[]>([])
+  const [isLoadingMods, setIsLoadingMods] = useState(true)
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [newName, setNewName] = useState(instance.name)
+  const [renameError, setRenameError] = useState<string | null>(null)
+  const [instanceIcon, setInstanceIcon] = useState<string | null>(null)
+  const [isUploadingIcon, setIsUploadingIcon] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: "warning" | "danger" | "success" | "info"
+    onConfirm: () => void
+  } | null>(null)
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type: "warning" | "danger" | "success" | "info"
+  } | null>(null)
+
+  useEffect(() => {
+    loadInstalledMods()
+    loadInstanceIcon()
+  }, [instance.name])
+
+  const loadInstanceIcon = async () => {
+    try {
+      const icon = await invoke<string | null>("get_instance_icon", {
+        instanceName: instance.name
+      })
+      setInstanceIcon(icon)
+    } catch (error) {
+      console.error("Failed to load instance icon:", error)
+      setInstanceIcon(null)
+    }
+  }
+
+  const handleIconClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleIconChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setAlertModal({
+        isOpen: true,
+        title: "Invalid File",
+        message: "Please select an image file (PNG, JPEG, or WebP)",
+        type: "danger"
+      })
+      return
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setAlertModal({
+        isOpen: true,
+        title: "File Too Large",
+        message: "Image must be smaller than 5MB",
+        type: "danger"
+      })
+      return
+    }
+
+    setIsUploadingIcon(true)
+
+    try {
+      // Read file as base64
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(',')[1]
+        
+        try {
+          await invoke("set_instance_icon", {
+            instanceName: instance.name,
+            imageData: base64
+          })
+          
+          await loadInstanceIcon()
+          onInstanceUpdated()
+        } catch (error) {
+          console.error("Failed to set icon:", error)
+          setAlertModal({
+            isOpen: true,
+            title: "Error",
+            message: `Failed to set icon: ${error}`,
+            type: "danger"
+          })
+        } finally {
+          setIsUploadingIcon(false)
+        }
+      }
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error("Failed to read file:", error)
+      setIsUploadingIcon(false)
+    }
+
+    // Reset input
+    if (event.target) {
+      event.target.value = ''
+    }
+  }
+
+  const handleRemoveIcon = async () => {
+    try {
+      await invoke("remove_instance_icon", {
+        instanceName: instance.name
+      })
+      
+      setInstanceIcon(null)
+      onInstanceUpdated()
+    } catch (error) {
+      console.error("Failed to remove icon:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to remove icon: ${error}`,
+        type: "danger"
+      })
+    }
+  }
+
+  const loadInstalledMods = async () => {
+    setIsLoadingMods(true)
+    try {
+      const mods = await invoke<InstalledMod[]>("get_installed_mods", {
+        instanceName: instance.name
+      })
+      
+      const modsWithMetadata = await Promise.all(
+        mods.map(async (mod) => {
+          const isDisabled = mod.filename.endsWith('.disabled')
+          const actualFilename = isDisabled ? mod.filename.replace('.disabled', '') : mod.filename
+          
+          try {
+            let slug = actualFilename.replace(/\.jar$/i, '')
+            
+            slug = slug
+              .replace(/[-_](\d+\.)+\d+[-_+].*$/i, '')
+              .replace(/[-_](\d+\.)+\d+$/i, '')
+              .replace(/[-_]mc(\d+\.)+\d+$/i, '')
+              .replace(/[-_]forge$/i, '')
+              .replace(/[-_]fabric$/i, '')
+            
+            const facets = JSON.stringify([["project_type:mod"]])
+            const result = await invoke<any>("search_mods", {
+              query: slug,
+              facets,
+              index: "relevance",
+              offset: 0,
+              limit: 5,
+            })
+            
+            if (result.hits && result.hits.length > 0) {
+              const slugLower = slug.toLowerCase()
+              const bestMatch = result.hits.find((hit: any) => 
+                hit.slug.toLowerCase() === slugLower ||
+                hit.title.toLowerCase() === slugLower
+              ) || result.hits.find((hit: any) => 
+                hit.slug.toLowerCase().includes(slugLower) ||
+                slugLower.includes(hit.slug.toLowerCase())
+              ) || result.hits[0]
+              
+              return {
+                ...mod,
+                disabled: isDisabled,
+                name: bestMatch.title,
+                description: bestMatch.description,
+                icon_url: bestMatch.icon_url,
+                downloads: bestMatch.downloads,
+                author: bestMatch.author,
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to fetch metadata for ${mod.filename}:`, error)
+          }
+          return { ...mod, disabled: isDisabled }
+        })
+      )
+      
+      setInstalledMods(modsWithMetadata)
+    } catch (error) {
+      console.error("Failed to load installed mods:", error)
+      setInstalledMods([])
+    } finally {
+      setIsLoadingMods(false)
+    }
+  }
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes >= 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    }
+    if (bytes >= 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`
+    }
+    return `${bytes} B`
+  }
+
+  const getMinecraftVersion = (instance: Instance): string => {
+    if (instance.loader === "fabric") {
+      const parts = instance.version.split('-')
+      return parts[parts.length - 1]
+    }
+    return instance.version
+  }
+
+  const handleOpenFolder = async () => {
+    try {
+      await invoke("open_instance_folder", { instanceName: instance.name })
+    } catch (error) {
+      console.error("Failed to open folder:", error)
+    }
+  }
+
+  const handleDelete = async () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Instance",
+      message: `Are you sure you want to delete "${instance.name}"?\n\nThis action cannot be undone.`,
+      type: "danger",
+      onConfirm: async () => {
+        setIsDeleting(true)
+        setConfirmModal(null)
+        try {
+          await invoke("delete_instance", { instanceName: instance.name })
+          onBack()
+          onInstanceUpdated()
+        } catch (error) {
+          console.error("Failed to delete instance:", error)
+          setAlertModal({
+            isOpen: true,
+            title: "Error",
+            message: `Failed to delete instance: ${error}`,
+            type: "danger"
+          })
+        } finally {
+          setIsDeleting(false)
+        }
+      }
+    })
+  }
+
+  const handleDeleteMod = async (filename: string, modName?: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Mod",
+      message: `Are you sure you want to delete "${modName || filename}"?\n\nThis action cannot be undone.`,
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await invoke("delete_mod", {
+            instanceName: instance.name,
+            filename
+          })
+          await loadInstalledMods()
+          setConfirmModal(null)
+        } catch (error) {
+          console.error("Failed to delete mod:", error)
+          setConfirmModal(null)
+          setAlertModal({
+            isOpen: true,
+            title: "Error",
+            message: `Failed to delete mod: ${error}`,
+            type: "danger"
+          })
+        }
+      }
+    })
+  }
+
+  const handleToggleMod = async (mod: InstalledMod) => {
+    try {
+      await invoke("toggle_mod", {
+        instanceName: instance.name,
+        filename: mod.filename,
+        disable: !mod.disabled
+      })
+      await loadInstalledMods()
+    } catch (error) {
+      console.error("Failed to toggle mod:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to ${mod.disabled ? 'enable' : 'disable'} mod: ${error}`,
+        type: "danger"
+      })
+    }
+  }
+
+  const handleOpenModsFolder = async () => {
+    try {
+      await invoke("open_mods_folder", { instanceName: instance.name })
+    } catch (error) {
+      console.error("Failed to open mods folder:", error)
+    }
+  }
+
+  const startRename = () => {
+    setIsRenaming(true)
+    setNewName(instance.name)
+    setRenameError(null)
+  }
+
+  const cancelRename = () => {
+    setIsRenaming(false)
+    setNewName(instance.name)
+    setRenameError(null)
+  }
+
+  const handleRename = async () => {
+    const trimmedName = newName.trim()
+    
+    if (!trimmedName) {
+      setRenameError("Instance name cannot be empty")
+      return
+    }
+
+    if (trimmedName === instance.name) {
+      cancelRename()
+      return
+    }
+
+    try {
+      await invoke("rename_instance", {
+        oldName: instance.name,
+        newName: trimmedName
+      })
+      setIsRenaming(false)
+      setRenameError(null)
+      onInstanceUpdated()
+    } catch (error) {
+      setRenameError(error as string)
+    }
+  }
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleRename()
+    } else if (e.key === "Escape") {
+      cancelRename()
+    }
+  }
+
+  return (
+    <>
+      <div className="p-6 space-y-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header with Icon */}
+          <div className="flex items-start gap-4 mb-6">
+            {/* Instance Icon */}
+            <div className="relative group flex-shrink-0">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleIconChange}
+                className="hidden"
+              />
+              
+              {instanceIcon ? (
+                <div className="relative">
+                  <img
+                    src={instanceIcon}
+                    alt={instance.name}
+                    className="w-16 h-16 rounded-xl border-2 border-[#2a2a2a] object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-1">
+                    <button
+                      onClick={handleIconClick}
+                      disabled={isUploadingIcon}
+                      className="p-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-md transition-colors cursor-pointer"
+                      title="Change icon"
+                    >
+                      <Camera size={14} />
+                    </button>
+                    <button
+                      onClick={handleRemoveIcon}
+                      disabled={isUploadingIcon}
+                      className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors cursor-pointer"
+                      title="Remove icon"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={handleIconClick}
+                  disabled={isUploadingIcon}
+                  className="w-16 h-16 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-xl flex items-center justify-center transition-all group bg-transparent"
+                  title="Add icon"
+                >
+                  {isUploadingIcon ? (
+                    <Loader2 size={24} className="text-[#16a34a] animate-spin" />
+                  ) : (
+                    <ImagePlus size={24} className="text-[#4a4a4a] group-hover:text-[#16a34a] transition-colors" />
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* Instance Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    {isRenaming ? (
+                      <>
+                        <input
+                          type="text"
+                          value={newName}
+                          onChange={(e) => setNewName(e.target.value)}
+                          onKeyDown={handleRenameKeyDown}
+                          className="text-2xl font-semibold text-[#e8e8e8] tracking-tight bg-transparent border-none px-0 py-0 focus:outline-none w-48 mr-1"
+                          autoFocus
+                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={handleRename}
+                            className="p-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-md transition-colors cursor-pointer"
+                            title="Save"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            onClick={cancelRename}
+                            className="p-1.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-colors cursor-pointer"
+                            title="Cancel"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h1 className="text-2xl font-semibold text-[#e8e8e8] tracking-tight">{instance.name}</h1>
+                        <button
+                          onClick={startRename}
+                          className="p-1.5 hover:bg-[#1a1a1a] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-colors cursor-pointer"
+                          title="Rename instance"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {renameError && (
+                    <p className="text-sm text-red-400 mt-1">{renameError}</p>
+                  )}
+                  <p className="text-sm text-[#808080] mt-0.5">
+                    Minecraft {getMinecraftVersion(instance)}
+                    {" • "}
+                    {instance.loader === "fabric" ? (
+                      <span className="text-[#3b82f6]">Fabric Loader</span>
+                    ) : (
+                      <span className="text-[#16a34a]">Vanilla</span>
+                    )}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={onLaunch}
+                    disabled={isLaunching || !isAuthenticated || isRenaming}
+                    className="px-6 py-2.5 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all shadow-lg cursor-pointer"
+                  >
+                    {isLaunching ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Launching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play size={16} fill="currentColor" />
+                        <span>Play</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleOpenFolder}
+                    disabled={isRenaming}
+                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    <FolderOpen size={16} />
+                    <span>Open Folder</span>
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting || isRenaming}
+                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#808080] hover:text-red-400 hover:border-red-500/30 rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Deleting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={16} />
+                        <span>Delete</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-[#2a2a2a] my-6"></div>
+
+          {/* Mods Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-[#e8e8e8] tracking-tight">Installed Mods</h2>
+                <span className="px-2 py-0.5 bg-[#1a1a1a] border border-[#2a2a2a] text-[#808080] text-xs rounded">
+                  {installedMods.length} {installedMods.length === 1 ? 'mod' : 'mods'}
+                </span>
+              </div>
+              <button
+                onClick={handleOpenModsFolder}
+                className="flex items-center gap-1.5 text-sm text-[#808080] hover:text-[#e8e8e8] transition-colors cursor-pointer"
+              >
+                <ExternalLink size={14} />
+                <span>Open Mods Folder</span>
+              </button>
+            </div>
+            
+            {isLoadingMods ? (
+              <div className="text-center py-16">
+                <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
+              </div>
+            ) : installedMods.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Package size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
+                <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No mods installed</h3>
+                <p className="text-sm text-[#808080]">Browse the mods tab to add mods</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {installedMods.map((mod) => (
+                  <div
+                    key={mod.filename}
+                    className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] border rounded-xl p-4 transition-all ${
+                      mod.disabled ? 'border-[#2a2a2a] opacity-60' : 'border-[#2a2a2a]'
+                    }`}
+                  >
+                    <div className="flex gap-4">
+                      {mod.icon_url ? (
+                        <img 
+                          src={mod.icon_url} 
+                          alt={mod.name || mod.filename} 
+                          className={`w-16 h-16 rounded-lg flex-shrink-0 border border-[#2a2a2a] ${
+                            mod.disabled ? 'grayscale' : ''
+                          }`} 
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#16a34a]/20">
+                          <Package size={24} className="text-[#16a34a]/60" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0">
+                          <h3 className="font-semibold text-base text-[#e8e8e8] truncate">
+                            {mod.name || mod.filename}
+                          </h3>
+                          {mod.author && (
+                            <span className="text-xs text-[#808080] whitespace-nowrap">by {mod.author}</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-[#808080] truncate mb-1">{mod.filename}</p>
+                        <p className="text-xs text-[#4a4a4a]">{formatFileSize(mod.size)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleMod(mod)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                            mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
+                          }`}
+                          title={mod.disabled ? 'Enable mod' : 'Disable mod'}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              mod.disabled ? 'translate-x-1' : 'translate-x-6'
+                            }`}
+                          />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMod(mod.filename, mod.name)}
+                          className="p-2 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer"
+                          title="Delete mod"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {confirmModal && (
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          type={confirmModal.type}
+          confirmText={confirmModal.type === "danger" ? "Delete" : "Confirm"}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
+
+      {alertModal && (
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          title={alertModal.title}
+          message={alertModal.message}
+          type={alertModal.type}
+          onClose={() => setAlertModal(null)}
+        />
+      )}
+    </>
+  )
+}
