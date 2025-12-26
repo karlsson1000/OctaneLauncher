@@ -247,6 +247,7 @@ function App() {
     setIsLaunching(true)
     setConsoleLogs([])
     setActiveTab("console")
+    setShowInstanceDetails(false)
     try {
       await invoke<string>("launch_instance_with_active_account", {
         instanceName: selectedInstance.name,
