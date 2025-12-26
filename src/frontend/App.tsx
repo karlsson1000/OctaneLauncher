@@ -2,16 +2,14 @@ import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { LogOut, Settings, LogIn, Home, Package, Search, Terminal, Minus, Square, X, FileText, Server } from "lucide-react"
+import { LogOut, Settings, LogIn, Home, Package, Search, Terminal, Minus, Square, X, Server, Play, ChevronUp, ChevronDown } from "lucide-react"
 import { HomeTab } from "./tabs/HomeTab"
 import { InstancesTab } from "./tabs/InstancesTab"
 import { ModsTab } from "./tabs/ModsTab"
 import { ConsoleTab } from "./tabs/ConsoleTab"
 import { SettingsTab } from "./tabs/SettingsTab"
-import { TemplatesTab } from "./tabs/TemplatesTab"
 import { ServersTab } from "./tabs/ServersTab"
 import { CreateInstanceModal } from "./modals/CreateInstanceModal"
-import { CreateTemplateModal } from "./modals/CreateTemplateModal"
 import { CreationProgressToast } from "./modals/CreationProgressToast"
 import { InstanceDetailsTab } from "./modals/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
@@ -24,17 +22,15 @@ function App() {
   const [isLaunching, setIsLaunching] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false)
   const [versions, setVersions] = useState<string[]>([])
   const [instances, setInstances] = useState<Instance[]>([])
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null)
   const [launcherDirectory, setLauncherDirectory] = useState("")
   const [settings, setSettings] = useState<LauncherSettings | null>(null)
-  const [activeTab, setActiveTab] = useState<"home" | "instances" | "browse" | "console" | "settings" | "templates" | "servers">("home")
+  const [activeTab, setActiveTab] = useState<"home" | "instances" | "browse" | "console" | "settings" | "servers">("home")
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLog[]>([])
   const [showInstanceDetails, setShowInstanceDetails] = useState(false)
   const [creatingInstanceName, setCreatingInstanceName] = useState<string | null>(null)
-  const [templatesKey, setTemplatesKey] = useState(0)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
     title: string
@@ -48,8 +44,39 @@ function App() {
     message: string
     type: "warning" | "danger" | "success" | "info"
   } | null>(null)
+  const [instanceIcons, setInstanceIcons] = useState<Record<string, string | null>>({})
 
   const appWindow = getCurrentWindow()
+
+  // Get recently played instances (sorted by lastPlayed, limit to 3)
+  const recentInstances = [...instances]
+    .filter(inst => inst.last_played)
+    .sort((a, b) => {
+      const timeA = a.last_played ? new Date(a.last_played).getTime() : 0
+      const timeB = b.last_played ? new Date(b.last_played).getTime() : 0
+      return timeB - timeA
+    })
+    .slice(0, 3)
+
+  const getMinecraftVersion = (instance: Instance): string => {
+    if (instance.loader === "fabric") {
+      const parts = instance.version.split('-')
+      return parts[parts.length - 1]
+    }
+    return instance.version
+  }
+
+  const formatLastPlayed = (timestamp: string): string => {
+    const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    const days = Math.floor(hours / 24)
+
+    if (days > 0) return `${days}d ago`
+    if (hours > 0) return `${hours}h ago`
+    if (minutes > 0) return `${minutes}m ago`
+    return 'Just now'
+  }
 
   // Initialize app and handle splashscreen
   useEffect(() => {
@@ -74,6 +101,29 @@ function App() {
       unlisten.then((fn) => fn())
     }
   }, [isReady])
+
+  // Load icons for all instances
+  useEffect(() => {
+    const loadIcons = async () => {
+      const icons: Record<string, string | null> = {}
+      for (const instance of instances) {
+        try {
+          const icon = await invoke<string | null>("get_instance_icon", {
+            instanceName: instance.name
+          })
+          icons[instance.name] = icon
+        } catch (error) {
+          console.error(`Failed to load icon for ${instance.name}:`, error)
+          icons[instance.name] = null
+        }
+      }
+      setInstanceIcons(icons)
+    }
+
+    if (instances.length > 0) {
+      loadIcons()
+    }
+  }, [instances])
 
   const loadVersions = async () => {
     try {
@@ -184,18 +234,15 @@ function App() {
   }
 
   const handleDuplicateInstance = async (instance: Instance) => {
-    // Generate a new name for the duplicate
     let baseName = instance.name
     let counter = 1
     let newName = `${baseName} (Copy)`
     
-    // Keep incrementing until we find a unique name
     while (instances.some(i => i.name === newName)) {
       counter++
       newName = `${baseName} (Copy ${counter})`
     }
     
-    // Start showing the creation toast immediately
     setCreatingInstanceName(newName)
     
     try {
@@ -206,8 +253,6 @@ function App() {
       })
       
       await loadInstances()
-      
-      // Toast will auto-dismiss via progress events
     } catch (error) {
       console.error("Duplicate error:", error)
       setCreatingInstanceName(null)
@@ -259,73 +304,28 @@ function App() {
     setCreatingInstanceName(null)
   }
 
-  const handleApplyTemplate = async (templateId: string, instanceName: string) => {
+  const handleQuickLaunch = async (instance: Instance) => {
+    if (!authData) return
+    
+    setSelectedInstance(instance)
+    setIsLaunching(true)
+    setConsoleLogs([])
+    setActiveTab("console")
+    
     try {
-      const template = await invoke<any>("get_template", { templateId })
-      let confirmMessage = `Apply template "${template.name}" to "${instanceName}"?\n\nThis will:`
-      const changes = []
-      if (template.launcher_settings) {
-        changes.push(`- Update launcher settings (${template.launcher_settings.memory_mb}MB RAM)`)
-      }
-      if (template.minecraft_options) {
-        changes.push(`Apply game options (FOV, graphics, keybinds, etc.)`)
-      }
-      if (changes.length === 0) {
-        setAlertModal({
-          isOpen: true,
-          title: "No Settings",
-          message: "This template has no settings to apply",
-          type: "info"
-        })
-        return
-      }
-      confirmMessage += "\n" + changes.join("\n")
-      setConfirmModal({
-        isOpen: true,
-        title: "Apply Template",
-        message: confirmMessage,
-        type: "warning",
-        onConfirm: async () => {
-          try {
-            await invoke("apply_template_to_instance", {
-              templateId,
-              instanceName: instanceName,
-            })
-            let successMessage = "Template applied successfully!\n\n"
-            if (template.launcher_settings) {
-              successMessage += "✓ Launcher settings updated\n"
-            }
-            if (template.minecraft_options) {
-              successMessage += "✓ Game options applied\n"
-            }
-            setConfirmModal(null)
-            setAlertModal({
-              isOpen: true,
-              title: "Success",
-              message: successMessage,
-              type: "success"
-            })
-            await loadInstances()
-          } catch (error) {
-            console.error("Failed to apply template:", error)
-            setConfirmModal(null)
-            setAlertModal({
-              isOpen: true,
-              title: "Error",
-              message: `Failed to apply template: ${error}`,
-              type: "danger"
-            })
-          }
-        }
+      await invoke<string>("launch_instance", {
+        instanceName: instance.name,
+        username: authData.username,
+        uuid: authData.uuid,
+        accessToken: authData.access_token,
       })
+      await loadInstances()
+      setTimeout(() => {
+        setIsLaunching(false)
+      }, 2000)
     } catch (error) {
-      console.error("Failed to load template:", error)
-      setAlertModal({
-        isOpen: true,
-        title: "Error",
-        message: `Failed to load template: ${error}`,
-        type: "danger"
-      })
+      console.error("Launch error:", error)
+      setIsLaunching(false)
     }
   }
 
@@ -337,7 +337,7 @@ function App() {
         style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
         className="h-10 bg-[#1a1a1a] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b border-[#2a2a2a]"
       >
-        <div className="flex items-center gap-2 mr-24">
+        <div className="flex items-center gap-2 mr-23">
           <img src="/logo.png" alt="Atomic Launcher" className="h-5 w-5" />
           <span className="text-sm font-semibold text-[#e8e8e8]">Atomic Launcher</span>
         </div>
@@ -433,9 +433,9 @@ function App() {
       <div className="flex flex-1 overflow-hidden mt-10">
         {/* Sidebar */}
         <aside className="sidebar-bg w-58 bg-[#1a1a1a] border-r border-[#2a2a2a] flex flex-col">
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {/* Navigation */}
-            <nav className="flex-1 px-2 py-3 space-y-1">
+            <nav className="flex-shrink-0 px-2 py-3 space-y-1">
               <button
                 onClick={() => {
                   setActiveTab("home")
@@ -494,20 +494,6 @@ function App() {
               </button>
               <button
                 onClick={() => {
-                  setActiveTab("templates")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "templates"
-                    ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
-                    : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
-                }`}
-              >
-                <FileText size={19} strokeWidth={2} />
-                <span>Templates</span>
-              </button>
-              <button
-                onClick={() => {
                   setActiveTab("console")
                   setShowInstanceDetails(false)
                 }}
@@ -521,27 +507,100 @@ function App() {
                 <span>Console</span>
               </button>
             </nav>
+
+            {/* Recent Instances Section */}
+            {recentInstances.length > 0 && (
+              <div className="flex-1 overflow-y-auto px-1 pb-3">
+                <div className="px-1 py-2">
+                  <h3 className="text-xs font-semibold text-[#808080] uppercase tracking-wider mb-2 pl-2">
+                    Recently Played
+                  </h3>
+                  <div className="space-y-1.5">
+                    {recentInstances.map((instance) => {
+                      const icon = instanceIcons[instance.name]
+                      return (
+                        <div
+                          key={instance.name}
+                          onClick={() => {
+                            setSelectedInstance(instance)
+                            setActiveTab("instances")
+                            setShowInstanceDetails(true)
+                          }}
+                          className="group relative flex items-center gap-2.5 p-1 rounded-md cursor-pointer transition-all border border-transparent hover:bg-[#1f1f1f] hover:border-[#2a2a2a]"
+                        >
+                          {icon ? (
+                            <img
+                              src={icon}
+                              alt={instance.name}
+                              className="w-9 h-9 rounded-md object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#0d0d0d] rounded-md">
+                              <Package size={24} className="text-[#4a4a4a]" strokeWidth={1.5} />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-[#e8e8e8] truncate leading-tight">
+                              {instance.name}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-[#808080] leading-tight mt-0.5">
+                              <span className="truncate">{getMinecraftVersion(instance)}</span>
+                              <span>•</span>
+                              <span className="truncate">{formatLastPlayed(instance.last_played!)}</span>
+                            </div>
+                          </div>
+                          {isAuthenticated && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleQuickLaunch(instance)
+                              }}
+                              disabled={isLaunching}
+                              className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer ${
+                                isLaunching && selectedInstance?.name === instance.name
+                                  ? "bg-red-500/10 text-red-400"
+                                  : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
+                              } disabled:opacity-50`}
+                            >
+                              {isLaunching && selectedInstance?.name === instance.name ? (
+                                <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                              ) : (
+                                <Play size={14} fill="currentColor" strokeWidth={0} />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Bottom Section */}
-          <div className="p-2 space-y-1">
+          <div className="p-2 space-y-1 border-t border-[#2a2a2a]">
             {isAuthenticated && authData ? (
               <>
                 <div className="py-1 mb-0">
-                  <div className="flex items-center gap-2.5 p-2 rounded-lg bg-[#0d0d0d]/50 border border-[#2a2a2a]">
-                    <div className="relative">
-                      <img
-                        src={`https://cravatar.eu/avatar/${authData.username}/32`}
-                        alt={authData.username}
-                        className="w-8 h-8 rounded-md"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-[#808080]">Welcome back,</div>
-                      <div className="text-base font-medium text-[#e8e8e8] truncate">{authData.username}</div>
-                    </div>
+                <div className="flex items-center gap-2.5 p-2 cursor-pointer hover:bg-[#1f1f1f] rounded-md transition-colors">
+                  <div className="relative">
+                    <img
+                      src={`https://cravatar.eu/avatar/${authData.username}/32`}
+                      alt={authData.username}
+                      className="w-8 h-8 rounded-md"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs text-[#808080]">Welcome back,</div>
+                    <div className="text-base font-medium text-[#e8e8e8] truncate">{authData.username}</div>
+                  </div>
+                  <div className="flex flex-col text-[#808080]">
+                    <ChevronUp size={14} strokeWidth={2.5} />
+                    <ChevronDown size={14} strokeWidth={2.5} />
                   </div>
                 </div>
+              </div>
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-base font-medium text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f] transition-all cursor-pointer"
@@ -635,15 +694,6 @@ function App() {
                 <ServersTab />
               )}
 
-              {activeTab === "templates" && (
-                <TemplatesTab 
-                  key={templatesKey} 
-                  instances={instances} 
-                  onApplyTemplate={handleApplyTemplate}
-                  onCreateNew={() => setShowCreateTemplateModal(true)}
-                />
-              )}
-
               {activeTab === "console" && (
                 <ConsoleTab
                   consoleLogs={consoleLogs}
@@ -670,17 +720,6 @@ function App() {
           onClose={() => setShowCreateModal(false)}
           onSuccess={handleCreationComplete}
           onStartCreating={handleStartCreating}
-        />
-      )}
-
-      {showCreateTemplateModal && (
-        <CreateTemplateModal
-          instances={instances}
-          onClose={() => setShowCreateTemplateModal(false)}
-          onSuccess={() => {
-            setShowCreateTemplateModal(false)
-            setTemplatesKey(prev => prev + 1)
-          }}
         />
       )}
     </div>

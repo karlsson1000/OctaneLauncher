@@ -429,7 +429,7 @@ export function InstanceDetailsTab({
                 <button
                   onClick={handleIconClick}
                   disabled={isUploadingIcon}
-                  className="w-16 h-16 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-xl flex items-center justify-center transition-all group bg-transparent"
+                  className="w-16 h-16 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-xl flex items-center justify-center transition-all group bg-transparent cursor-pointer"
                   title="Add icon"
                 >
                   {isUploadingIcon ? (
