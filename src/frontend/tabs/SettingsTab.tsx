@@ -115,7 +115,7 @@ const getMemoryRecommendation = (mb: number) => {
 
           <div className="space-y-4">
             {/* Java Configuration */}
-            <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#2a2a2a]">
+            <div className="bg-[#1a1a1a] rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Coffee size={28} className="text-[#16a34a] flex-shrink-0" strokeWidth={1.5} />
                 <div>
@@ -129,7 +129,7 @@ const getMemoryRecommendation = (mb: number) => {
                   <label className="block text-sm font-medium text-[#e8e8e8] mb-2">Java Installation</label>
                   <div className="flex gap-2">
                     <select
-                      className="flex-1 bg-[#0d0d0d] border border-[#2a2a2a] rounded-lg px-3 py-2.5 pr-8 text-sm text-[#e8e8e8] focus:outline-none focus:border-[#16a34a] transition-colors cursor-pointer appearance-none bg-[length:16px] bg-[right_0.75rem_center] bg-no-repeat"
+                      className="flex-1 bg-[#0d0d0d] rounded-lg px-3 py-2.5 pr-8 text-sm text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#16a34a] transition-all cursor-pointer appearance-none bg-[length:16px] bg-[right_0.75rem_center] bg-no-repeat"
                       style={{
                         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`
                       }}
@@ -161,7 +161,7 @@ const getMemoryRecommendation = (mb: number) => {
                     <button
                       onClick={loadJavaInstallations}
                       disabled={isLoadingJava}
-                      className="px-4 py-2.5 bg-[#0d0d0d] hover:bg-[#0a0a0a] disabled:opacity-50 border border-[#2a2a2a] rounded-lg text-sm font-medium transition-all text-[#e8e8e8] whitespace-nowrap cursor-pointer"
+                      className="px-4 py-2.5 bg-[#0d0d0d] hover:bg-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-all text-[#e8e8e8] whitespace-nowrap cursor-pointer"
                     >
                       {isLoadingJava ? (
                         <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ const getMemoryRecommendation = (mb: number) => {
                     <label className="block text-sm font-medium text-[#e8e8e8] mb-2">Custom Java Path</label>
                     <input
                       type="text"
-                      className="w-full bg-[#0d0d0d] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] focus:outline-none focus:border-[#16a34a] transition-colors font-mono"
+                      className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#16a34a] transition-all font-mono"
                       placeholder="C:\Program Files\Java\jdk-21\bin\javaw.exe"
                       value={customPathValue}
                       onChange={(e) => setCustomPathValue(e.target.value)}
@@ -201,7 +201,7 @@ const getMemoryRecommendation = (mb: number) => {
             </div>
 
             {/* Memory Allocation */}
-            <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#2a2a2a]">
+            <div className="bg-[#1a1a1a] rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Cpu size={28} className="text-[#16a34a] flex-shrink-0" strokeWidth={1.5} />
                 <div>
@@ -244,7 +244,7 @@ const getMemoryRecommendation = (mb: number) => {
             </div>
 
             {/* Launcher Information */}
-            <div className="bg-[#1a1a1a] rounded-xl p-6 border border-[#2a2a2a]">
+            <div className="bg-[#1a1a1a] rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
                 <FolderOpen size={28} className="text-[#16a34a] flex-shrink-0" strokeWidth={1.5} />
                 <div>
@@ -253,7 +253,7 @@ const getMemoryRecommendation = (mb: number) => {
                 </div>
               </div>
 
-              <div className="bg-[#0d0d0d] border border-[#2a2a2a] rounded-lg p-3">
+              <div className="bg-[#0d0d0d] rounded-lg p-3">
                 <p className="text-sm text-[#e8e8e8] font-mono break-all">
                   {launcherDirectory || 'Loading...'}
                 </p>

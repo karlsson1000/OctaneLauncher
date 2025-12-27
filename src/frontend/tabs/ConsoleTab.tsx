@@ -93,7 +93,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
             <button
               onClick={handleUploadToMcLogs}
               disabled={consoleLogs.length === 0 || uploadState.loading}
-              className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               title="Upload logs to mclo.gs"
             >
               {uploadState.loading ? (
@@ -106,7 +106,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
             <button
               onClick={onClearConsole}
               disabled={consoleLogs.length === 0}
-              className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Trash2 size={16} strokeWidth={2} />
               <span>Clear</span>
@@ -116,10 +116,10 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
 
         {/* Upload Success/Error Notification */}
         {(uploadState.url || uploadState.error) && (
-          <div className={`mb-4 p-4 rounded-lg border ${
+          <div className={`mb-4 p-4 rounded-lg ${
             uploadState.url 
-              ? 'bg-[#1a1a1a] border-[#16a34a]/30' 
-              : 'bg-[#1a1a1a] border-red-500/30'
+              ? 'bg-[#1a1a1a] ring-1 ring-[#16a34a]/30' 
+              : 'bg-[#1a1a1a] ring-1 ring-red-500/30'
           } flex items-center justify-between`}>
             <div className="flex items-center gap-3 flex-1">
               {uploadState.url ? (
@@ -136,7 +136,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
                   </a>
                   <button
                     onClick={handleCopyUrl}
-                    className="text-xs px-2 py-1 bg-[#0d0d0d] hover:bg-[#16a34a]/20 border border-[#2a2a2a] hover:border-[#16a34a]/30 text-[#e8e8e8] rounded transition-colors cursor-pointer"
+                    className="text-xs px-2 py-1 bg-[#0d0d0d] hover:bg-[#16a34a]/20 text-[#e8e8e8] rounded transition-colors cursor-pointer"
                   >
                     Copy Link
                   </button>
@@ -157,7 +157,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
           </div>
         )}
 
-        <div className="bg-[#0d0d0d] border border-[#2a2a2a] rounded-xl overflow-hidden" style={{ height: 'calc(100vh - 240px)' }}>
+        <div className="bg-[#101010] rounded-xl overflow-hidden" style={{ height: 'calc(100vh - 240px)' }}>
           {consoleLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">

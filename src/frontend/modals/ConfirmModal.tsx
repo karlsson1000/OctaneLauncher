@@ -58,8 +58,8 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md border border-[#2a2a2a] shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-[#2a2a2a]">
+      <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md">
+        <div className="flex items-center justify-between p-5">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center">
               {getIcon()}
@@ -76,20 +76,20 @@ export function ConfirmModal({
           </button>
         </div>
 
-        <div className="p-5">
+        <div className="px-5 pb-5">
           <p className="text-sm text-[#e8e8e8] whitespace-pre-line leading-relaxed">{message}</p>
         </div>
 
-        <div className="flex gap-2 p-5 border-t border-[#2a2a2a]">
+        <div className="flex gap-2 p-5 pt-0">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2.5 bg-[#0d0d0d] hover:bg-[#0a0a0a] border border-[#2a2a2a] text-[#e8e8e8] rounded-lg font-medium text-sm transition-all cursor-pointer"
+            className="flex-1 px-4 py-2.5 bg-[#0d0d0d] hover:bg-[#0a0a0a] text-[#e8e8e8] rounded-lg font-medium text-sm transition-all cursor-pointer"
           >
             {cancelText}
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 px-4 py-2.5 text-white rounded-lg font-medium text-sm transition-all shadow-lg cursor-pointer ${getConfirmButtonStyle()}`}
+            className={`flex-1 px-4 py-2.5 text-white rounded-lg font-medium text-sm transition-all cursor-pointer ${getConfirmButtonStyle()}`}
           >
             {confirmText}
           </button>
@@ -135,8 +135,8 @@ export function AlertModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md border border-[#2a2a2a] shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-[#2a2a2a]">
+      <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between p-5">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center">
               {getIcon()}
@@ -153,14 +153,14 @@ export function AlertModal({
           </button>
         </div>
 
-        <div className="p-5">
+        <div className="px-5 pb-5">
           <p className="text-sm text-[#e8e8e8] whitespace-pre-line leading-relaxed">{message}</p>
         </div>
 
-        <div className="flex p-5 border-t border-[#2a2a2a]">
+        <div className="flex p-5 pt-0">
           <button
             onClick={onClose}
-            className={`flex-1 px-4 py-2.5 text-white rounded-lg font-medium text-sm transition-all shadow-lg cursor-pointer ${getConfirmButtonStyle()}`}
+            className={`flex-1 px-4 py-2.5 text-white rounded-lg font-medium text-sm transition-all cursor-pointer ${getConfirmButtonStyle()}`}
           >
             {confirmText}
           </button>

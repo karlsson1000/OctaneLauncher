@@ -209,9 +209,9 @@ export function ServersTab({}: ServersTabProps) {
 
   const getStatusBgColor = (status: string) => {
     switch (status) {
-      case "online": return "bg-[#16a34a]/10 border-[#16a34a]/20"
-      case "offline": return "bg-[#dc2626]/10 border-[#dc2626]/20"
-      default: return "bg-[#808080]/10 border-[#808080]/20"
+      case "online": return "bg-[#16a34a]/10"
+      case "offline": return "bg-[#dc2626]/10"
+      default: return "bg-[#808080]/10"
     }
   }
 
@@ -240,7 +240,7 @@ export function ServersTab({}: ServersTabProps) {
               placeholder="Search servers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:border-[#16a34a] transition-colors"
+              className="w-full bg-[#1a1a1a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#16a34a] transition-all"
             />
           </div>
         )}
@@ -259,7 +259,7 @@ export function ServersTab({}: ServersTabProps) {
             </button>
           </div>
         ) : filteredServers.length === 0 ? (
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-12 flex flex-col items-center justify-center">
+          <div className="bg-[#1a1a1a] rounded-xl p-12 flex flex-col items-center justify-center">
             <Search size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
             <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No servers found</h3>
             <p className="text-sm text-[#808080]">Try adjusting your search query</p>
@@ -276,8 +276,10 @@ export function ServersTab({}: ServersTabProps) {
                 <div
                   key={server.name}
                   onClick={() => setSelectedServer(server)}
-                  className={`bg-[#1a1a1a] border rounded-xl p-4 cursor-pointer transition-all hover:border-[#16a34a] ${
-                    selectedServer?.name === server.name ? "border-[#16a34a]" : "border-[#2a2a2a]"
+                  className={`bg-[#1a1a1a] rounded-xl p-4 cursor-pointer transition-all ${
+                    selectedServer?.name === server.name 
+                      ? "ring-2 ring-[#16a34a]" 
+                      : "hover:ring-2 hover:ring-[#16a34a]"
                   }`}
                 >
                   <div className="flex gap-3 mb-2">
@@ -285,10 +287,10 @@ export function ServersTab({}: ServersTabProps) {
                       <img 
                         src={server.favicon} 
                         alt={server.name} 
-                        className="w-16 h-16 rounded-lg border border-[#2a2a2a] object-cover"
+                        className="w-16 h-16 rounded-lg object-cover"
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center border border-[#16a34a]/20 flex-shrink-0">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
                         <Server size={28} className="text-[#16a34a]/60" strokeWidth={1.5} />
                       </div>
                     )}
@@ -302,7 +304,7 @@ export function ServersTab({}: ServersTabProps) {
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${getStatusBgColor(server.status)} ${getStatusColor(server.status)}`}>
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBgColor(server.status)} ${getStatusColor(server.status)}`}>
                           {server.status}
                         </span>
                         {server.version && (
@@ -319,7 +321,7 @@ export function ServersTab({}: ServersTabProps) {
                   )}
 
                   {server.status === "online" && server.players_online !== undefined && (
-                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#2a2a2a]">
+                    <div className="flex items-center justify-between mb-3 pb-3">
                       <span className="text-xs text-[#808080]">Players</span>
                       <span className="text-sm font-medium text-[#e8e8e8]">
                         {server.players_online.toLocaleString()} / {server.players_max?.toLocaleString()}

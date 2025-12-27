@@ -404,7 +404,7 @@ export function InstanceDetailsTab({
                   <img
                     src={instanceIcon}
                     alt={instance.name}
-                    className="w-16 h-16 rounded-xl border-2 border-[#2a2a2a] object-cover"
+                    className="w-16 h-16 rounded-xl object-cover"
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-1">
                     <button
@@ -466,7 +466,7 @@ export function InstanceDetailsTab({
                           </button>
                           <button
                             onClick={cancelRename}
-                            className="p-1.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-colors cursor-pointer"
+                            className="p-1.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-colors cursor-pointer"
                             title="Cancel"
                           >
                             <X size={16} />
@@ -520,7 +520,7 @@ export function InstanceDetailsTab({
                   <button
                     onClick={handleOpenFolder}
                     disabled={isRenaming}
-                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     <FolderOpen size={16} />
                     <span>Open Folder</span>
@@ -528,7 +528,7 @@ export function InstanceDetailsTab({
                   <button
                     onClick={handleDelete}
                     disabled={isDeleting || isRenaming}
-                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#808080] hover:text-red-400 hover:border-red-500/30 rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#808080] hover:text-red-400 rounded-lg font-medium text-sm flex items-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {isDeleting ? (
                       <>
@@ -554,7 +554,7 @@ export function InstanceDetailsTab({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-semibold text-[#e8e8e8] tracking-tight">Installed Mods</h2>
-                <span className="px-2 py-0.5 bg-[#1a1a1a] border border-[#2a2a2a] text-[#808080] text-xs rounded">
+                <span className="px-2 py-0.5 bg-[#1a1a1a] text-[#808080] text-xs rounded">
                   {installedMods.length} {installedMods.length === 1 ? 'mod' : 'mods'}
                 </span>
               </div>
@@ -582,8 +582,8 @@ export function InstanceDetailsTab({
                 {installedMods.map((mod) => (
                   <div
                     key={mod.filename}
-                    className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] border rounded-xl p-4 transition-all ${
-                      mod.disabled ? 'border-[#2a2a2a] opacity-60' : 'border-[#2a2a2a]'
+                    className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl p-4 transition-all ${
+                      mod.disabled ? 'opacity-60' : ''
                     }`}
                   >
                     <div className="flex gap-4">
@@ -591,12 +591,12 @@ export function InstanceDetailsTab({
                         <img 
                           src={mod.icon_url} 
                           alt={mod.name || mod.filename} 
-                          className={`w-16 h-16 rounded-lg flex-shrink-0 border border-[#2a2a2a] ${
+                          className={`w-16 h-16 rounded-lg flex-shrink-0 ${
                             mod.disabled ? 'grayscale' : ''
                           }`} 
                         />
                       ) : (
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#16a34a]/20">
+                        <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Package size={24} className="text-[#16a34a]/60" />
                         </div>
                       )}

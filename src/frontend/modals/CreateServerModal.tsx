@@ -126,8 +126,8 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md border border-[#2a2a2a] shadow-2xl">
-          <div className="flex items-center justify-between p-5 border-b border-[#2a2a2a]">
+        <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md shadow-2xl">
+          <div className="flex items-center justify-between p-5">
             <div className="flex items-center gap-3">
               <Server size={32} className="text-[#16a34a]" strokeWidth={1.5} />
               <div>
@@ -151,10 +151,10 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
                 value={serverName}
                 onChange={(e) => setServerName(e.target.value)}
                 placeholder="My Server"
-                className={`w-full bg-[#0d0d0d] border rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
+                className={`w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
                   serverExists && serverName.trim()
-                    ? 'border-red-500/50 focus:border-red-500'
-                    : 'border-[#2a2a2a] focus:border-[#16a34a]'
+                    ? 'ring-1 ring-red-500/50 focus:ring-red-500'
+                    : 'focus:ring-1 focus:ring-[#16a34a]'
                 }`}
                 disabled={isCreating}
               />
@@ -172,8 +172,8 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
                 type="text"
                 value={serverAddress}
                 onChange={(e) => setServerAddress(e.target.value)}
-                placeholder="play.example.com or mc.hypixel.net"
-                className="w-full bg-[#0d0d0d] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:border-[#16a34a] transition-colors"
+                placeholder="mc.hypixel.net"
+                className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors"
                 disabled={isCreating}
               />
               <p className="text-xs text-[#4a4a4a] mt-1.5">Enter the server IP or domain</p>
@@ -186,10 +186,10 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
                 value={serverPort}
                 onChange={(e) => setServerPort(e.target.value)}
                 placeholder="25565"
-                className={`w-full bg-[#0d0d0d] border rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
+                className={`w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
                   serverPort && !isValidPort
-                    ? 'border-red-500/50 focus:border-red-500'
-                    : 'border-[#2a2a2a] focus:border-[#16a34a]'
+                    ? 'ring-1 ring-red-500/50 focus:ring-red-500'
+                    : 'focus:ring-1 focus:ring-[#16a34a]'
                 }`}
                 disabled={isCreating}
               />
@@ -234,7 +234,7 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 p-5 border-t border-[#2a2a2a]">
+          <div className="flex items-center justify-end gap-2 p-5">
             <button
               onClick={onClose}
               disabled={isCreating}
