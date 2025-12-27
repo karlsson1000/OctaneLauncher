@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Search, Download, Loader2, Package, ChevronDown } from "lucide-react"
+import { Search, Download, Loader2, Package, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
 interface ModFile {
@@ -23,6 +23,8 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
   const [isLoadingVersions, setIsLoadingVersions] = useState(false)
   const [downloadingMods, setDownloadingMods] = useState<Set<string>>(new Set())
   const [installedModFiles, setInstalledModFiles] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(20)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [showInstanceSelector, setShowInstanceSelector] = useState(false)
   const instanceSelectorRef = useRef<HTMLDivElement>(null)
@@ -93,7 +95,8 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
       clearTimeout(searchTimeoutRef.current)
     }
     searchTimeoutRef.current = setTimeout(() => {
-      handleSearch()
+      setCurrentPage(1)
+      handleSearch(1)
     }, 500)
     return () => {
       if (searchTimeoutRef.current) {
@@ -127,7 +130,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
         facets,
         index: "downloads",
         offset: 0,
-        limit: 25,
+        limit: itemsPerPage,
       })
       setSearchResults(result)
     } catch (error) {
@@ -137,17 +140,18 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
     }
   }
 
-  const handleSearch = async () => {
+  const handleSearch = async (page: number = currentPage) => {
     const query = searchQuery.trim()
     setIsSearching(true)
     try {
       const facets = JSON.stringify([["project_type:mod"]])
+      const offset = (page - 1) * itemsPerPage
       const result = await invoke<ModrinthSearchResult>("search_mods", {
         query: query || "",
         facets,
         index: query ? "relevance" : "downloads",
-        offset: 0,
-        limit: 20,
+        offset,
+        limit: itemsPerPage,
       })
       setSearchResults(result)
       setSelectedMod(null)
@@ -156,6 +160,19 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
     } finally {
       setIsSearching(false)
     }
+  }
+
+  const handlePageChange = (newPage: number) => {
+    // Scroll the parent container to top
+    const container = document.querySelector('.p-6.space-y-4')
+    if (container) {
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    setCurrentPage(newPage)
+    // Delay search slightly to allow scroll to start
+    setTimeout(() => handleSearch(newPage), 100)
   }
 
   const getMinecraftVersion = (instance: Instance): string => {
@@ -227,6 +244,9 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
     return downloads.toString()
   }
 
+  const totalPages = searchResults ? Math.ceil(searchResults.total_hits / itemsPerPage) : 1
+  const showPagination = searchResults && searchResults.total_hits > itemsPerPage
+
   return (
     <div className="p-6 space-y-4">
       <div className="max-w-7xl mx-auto">
@@ -239,7 +259,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
             <div className="relative" ref={instanceSelectorRef}>
               <button
                 onClick={() => setShowInstanceSelector(!showInstanceSelector)}
-                className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] rounded-lg text-sm transition-colors cursor-pointer"
+                className="flex items-center gap-2 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-lg text-sm transition-colors cursor-pointer"
               >
                 {instanceIcons[selectedInstance.name] ? (
                   <img
@@ -263,7 +283,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
                 <ChevronDown size={16} className={`text-[#808080] ml-auto transition-transform ${showInstanceSelector ? 'rotate-180' : ''}`} strokeWidth={2} />
               </button>
               {showInstanceSelector && (
-                <div className="absolute top-full mt-1 right-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden z-10 min-w-[240px] max-h-[400px] overflow-y-auto">
+                <div className="absolute top-full mt-1 right-0 bg-[#1a1a1a] rounded-lg overflow-hidden z-10 min-w-[240px] max-h-[400px] overflow-y-auto">
                   {instances.filter(instance => instance.loader === "fabric").length === 0 ? (
                     <div className="px-3 py-4 text-center">
                       <p className="text-sm text-[#808080] mb-1">No Fabric instances</p>
@@ -323,7 +343,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
             placeholder="Search mods..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:border-[#16a34a] transition-colors"
+            className="w-full bg-[#1a1a1a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#16a34a] transition-all"
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -333,113 +353,209 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
         </div>
 
         {searchResults && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-3">
-              {searchResults.hits.map((mod) => (
-                <div
-                  key={mod.project_id}
-                  onClick={() => handleModSelect(mod)}
-                  className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] border rounded-xl p-4 cursor-pointer transition-all ${
-                    selectedMod?.project_id === mod.project_id ? "border-[#16a34a]" : "border-[#2a2a2a]"
-                  }`}
-                >
-                  <div className="flex gap-4">
-                    {mod.icon_url ? (
-                      <img src={mod.icon_url} alt={mod.title} className="w-16 h-16 rounded-lg flex-shrink-0 border border-[#2a2a2a]" />
-                    ) : (
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0 border border-[#16a34a]/20">
-                        <Package size={24} className="text-[#16a34a]/60" strokeWidth={1.5} />
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 space-y-3">
+                {searchResults.hits.map((mod) => (
+                  <div
+                    key={mod.project_id}
+                    onClick={() => handleModSelect(mod)}
+                    className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl p-4 cursor-pointer transition-all ${
+                      selectedMod?.project_id === mod.project_id ? "ring-2 ring-[#16a34a]" : ""
+                    }`}
+                  >
+                    <div className="flex gap-4">
+                      {mod.icon_url ? (
+                        <img src={mod.icon_url} alt={mod.title} className="w-16 h-16 rounded-lg flex-shrink-0" />
+                      ) : (
+                        <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Package size={24} className="text-[#16a34a]/60" strokeWidth={1.5} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-0">
+                          <h3 className="font-semibold text-base text-[#e8e8e8] truncate">{mod.title}</h3>
+                          <span className="text-xs text-[#808080] whitespace-nowrap">by {mod.author}</span>
+                        </div>
+                        <p className="text-sm text-[#808080] line-clamp-2 mb-2">{mod.description}</p>
+                        <div className="flex items-center gap-3 text-xs text-[#4a4a4a]">
+                          <span className="flex items-center gap-1">
+                            <Download size={12} />
+                            {formatDownloads(mod.downloads)}
+                          </span>
+                          <span>•</span>
+                          <span className="truncate">{mod.categories.slice(0, 2).join(', ')}</span>
+                        </div>
                       </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {selectedMod && (
+                <div className="bg-[#1a1a1a] rounded-xl p-5 sticky top-4 self-start">
+                  <div className="flex gap-3 mb-4">
+                    {selectedMod.icon_url && (
+                      <img src={selectedMod.icon_url} alt={selectedMod.title} className="w-16 h-16 rounded-lg" />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-0">
-                        <h3 className="font-semibold text-base text-[#e8e8e8] truncate">{mod.title}</h3>
-                        <span className="text-xs text-[#808080] whitespace-nowrap">by {mod.author}</span>
-                      </div>
-                      <p className="text-sm text-[#808080] line-clamp-2 mb-2">{mod.description}</p>
-                      <div className="flex items-center gap-3 text-xs text-[#4a4a4a]">
-                        <span className="flex items-center gap-1">
-                          <Download size={12} />
-                          {formatDownloads(mod.downloads)}
-                        </span>
-                        <span>•</span>
-                        <span className="truncate">{mod.categories.slice(0, 2).join(', ')}</span>
-                      </div>
+                      <h2 className="text-xl font-semibold text-[#e8e8e8] truncate">{selectedMod.title}</h2>
+                      <p className="text-sm text-[#808080]">by {selectedMod.author}</p>
                     </div>
                   </div>
+                  
+                  <p className="text-sm text-[#808080] mb-4 leading-relaxed">{selectedMod.description}</p>
+                  
+                  <div className="flex gap-4 mb-5 text-xs text-[#4a4a4a]">
+                    <span className="flex items-center gap-1">
+                      <Download size={12} />
+                      {formatDownloads(selectedMod.downloads)}
+                    </span>
+                    <span>{selectedMod.follows.toLocaleString()} followers</span>
+                  </div>
+
+                  <div className="border-t border-[#2a2a2a] pt-4">
+                    <h3 className="font-semibold text-sm text-[#e8e8e8] mb-3">Versions</h3>
+                    {isLoadingVersions ? (
+                      <div className="text-center py-6">
+                        <Loader2 size={20} className="animate-spin text-[#16a34a] mx-auto" />
+                      </div>
+                    ) : modVersions.length === 0 ? (
+                      <p className="text-sm text-[#4a4a4a] text-center py-3">No compatible versions</p>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {modVersions.map((version) => {
+                          const installed = isModInstalled(version)
+                          const downloading = downloadingMods.has(version.id)
+                          
+                          return (
+                            <div
+                              key={version.id}
+                              className="bg-[#0d0d0d] rounded-lg p-3 flex items-center justify-between gap-2"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-[#e8e8e8] truncate">{version.name}</div>
+                                <div className="text-xs text-[#4a4a4a] truncate mt-0.5">
+                                  {version.loaders.join(', ')} • {version.game_versions[0]}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => handleDownloadMod(version)}
+                                disabled={!selectedInstance || downloading || installed}
+                                className="px-3 py-2 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-xs font-medium whitespace-nowrap transition-all shadow-sm cursor-pointer"
+                              >
+                                {downloading ? (
+                                  <Loader2 size={14} className="animate-spin" />
+                                ) : installed ? (
+                                  "Installed"
+                                ) : (
+                                  "Install"
+                                )}
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
 
-            {selectedMod && (
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 sticky top-4 self-start">
-                <div className="flex gap-3 mb-4">
-                  {selectedMod.icon_url && (
-                    <img src={selectedMod.icon_url} alt={selectedMod.title} className="w-16 h-16 rounded-lg border border-[#2a2a2a]" />
+            {showPagination && (
+              <div className="flex items-center justify-center gap-2 mt-6 pb-4">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handlePageChange(currentPage - 1)
+                  }}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                >
+                  <ChevronLeft size={16} />
+                  Previous
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {currentPage > 2 && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          handlePageChange(1)
+                        }}
+                        className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                      >
+                        1
+                      </button>
+                      {currentPage > 3 && (
+                        <span className="px-2 text-[#4a4a4a]">...</span>
+                      )}
+                    </>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-semibold text-[#e8e8e8] truncate">{selectedMod.title}</h2>
-                    <p className="text-sm text-[#808080]">by {selectedMod.author}</p>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-[#808080] mb-4 leading-relaxed">{selectedMod.description}</p>
-                
-                <div className="flex gap-4 mb-5 text-xs text-[#4a4a4a]">
-                  <span className="flex items-center gap-1">
-                    <Download size={12} />
-                    {formatDownloads(selectedMod.downloads)}
-                  </span>
-                  <span>{selectedMod.follows.toLocaleString()} followers</span>
+
+                  {currentPage > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handlePageChange(currentPage - 1)
+                      }}
+                      className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                    >
+                      {currentPage - 1}
+                    </button>
+                  )}
+
+                  <button
+                    className="px-3 py-2 bg-[#16a34a] text-white rounded-lg text-sm font-medium"
+                  >
+                    {currentPage}
+                  </button>
+
+                  {currentPage < totalPages && (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handlePageChange(currentPage + 1)
+                      }}
+                      className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                    >
+                      {currentPage + 1}
+                    </button>
+                  )}
+
+                  {currentPage < totalPages - 1 && (
+                    <>
+                      {currentPage < totalPages - 2 && (
+                        <span className="px-2 text-[#4a4a4a]">...</span>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          handlePageChange(totalPages)
+                        }}
+                        className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
                 </div>
 
-                <div className="border-t border-[#2a2a2a] pt-4">
-                  <h3 className="font-semibold text-sm text-[#e8e8e8] mb-3">Versions</h3>
-                  {isLoadingVersions ? (
-                    <div className="text-center py-6">
-                      <Loader2 size={20} className="animate-spin text-[#16a34a] mx-auto" />
-                    </div>
-                  ) : modVersions.length === 0 ? (
-                    <p className="text-sm text-[#4a4a4a] text-center py-3">No compatible versions</p>
-                  ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {modVersions.map((version) => {
-                        const installed = isModInstalled(version)
-                        const downloading = downloadingMods.has(version.id)
-                        
-                        return (
-                          <div
-                            key={version.id}
-                            className="bg-[#0d0d0d] border border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between gap-2"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-[#e8e8e8] truncate">{version.name}</div>
-                              <div className="text-xs text-[#4a4a4a] truncate mt-0.5">
-                                {version.loaders.join(', ')} • {version.game_versions[0]}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => handleDownloadMod(version)}
-                              disabled={!selectedInstance || downloading || installed}
-                              className="px-3 py-2 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-xs font-medium whitespace-nowrap transition-all shadow-sm cursor-pointer"
-                            >
-                              {downloading ? (
-                                <Loader2 size={14} className="animate-spin" />
-                              ) : installed ? (
-                                "Installed"
-                              ) : (
-                                "Install"
-                              )}
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    handlePageChange(currentPage + 1)
+                  }}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                >
+                  Next
+                  <ChevronRight size={16} />
+                </button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>
