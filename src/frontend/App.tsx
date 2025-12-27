@@ -560,23 +560,23 @@ function App() {
 
             {/* Recent Instances Section */}
             {recentInstances.length > 0 && (
-              <div className="flex-1 overflow-y-auto px-1 pb-3">
-                <div className="px-1 py-2">
-                  <h3 className="text-xs font-semibold text-[#808080] uppercase tracking-wider mb-2 pl-2">
+              <div className="flex-1 overflow-y-auto px-2 pb-3">
+                <div className="py-2">
+                  <h3 className="text-xs font-semibold text-[#808080] uppercase tracking-wider mb-2 px-2">
                     Recently Played
                   </h3>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {recentInstances.map((instance) => {
                       const icon = instanceIcons[instance.name]
                       return (
-                        <div
+                        <button
                           key={instance.name}
                           onClick={() => {
                             setSelectedInstance(instance)
                             setActiveTab("instances")
                             setShowInstanceDetails(true)
                           }}
-                          className="group relative flex items-center gap-2.5 p-1 rounded-md cursor-pointer transition-all border border-transparent hover:bg-[#1f1f1f] hover:border-[#2a2a2a]"
+                          className="group w-full flex items-center gap-2 rounded-md cursor-pointer transition-all text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f] px-1.5 py-1.5"
                         >
                           {icon ? (
                             <img
@@ -589,7 +589,7 @@ function App() {
                               <Package size={24} className="text-[#4a4a4a]" strokeWidth={1.5} />
                             </div>
                           )}
-                          <div className="flex-1 min-w-0">
+                          <div className="flex-1 min-w-0 text-left">
                             <div className="text-sm font-medium text-[#e8e8e8] truncate leading-tight">
                               {instance.name}
                             </div>
@@ -606,20 +606,20 @@ function App() {
                                 handleQuickLaunch(instance)
                               }}
                               disabled={isLaunching}
-                              className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-md transition-all cursor-pointer ${
+                              className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer mr-1 ${
                                 isLaunching && selectedInstance?.name === instance.name
                                   ? "bg-red-500/10 text-red-400"
                                   : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                               } disabled:opacity-50`}
                             >
                               {isLaunching && selectedInstance?.name === instance.name ? (
-                                <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                                <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
                               ) : (
-                                <Play size={14} fill="currentColor" strokeWidth={0} />
+                                <Play size={16} fill="currentColor" strokeWidth={0} />
                               )}
                             </button>
                           )}
-                        </div>
+                        </button>
                       )
                     })}
                   </div>
