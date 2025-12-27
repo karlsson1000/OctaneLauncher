@@ -58,7 +58,6 @@ function App() {
 
   const appWindow = getCurrentWindow()
 
-  // Get recently played instances (sorted by lastPlayed, limit to 3)
   const recentInstances = [...instances]
     .filter(inst => inst.last_played)
     .sort((a, b) => {
@@ -102,7 +101,6 @@ function App() {
     return 'Just now'
   }
 
-  // Initialize app and handle splashscreen
   useEffect(() => {
     const initializeApp = async () => {
       setIsReady(true)
@@ -127,7 +125,6 @@ function App() {
     }
   }, [isReady])
 
-  // Load icons for all instances
   useEffect(() => {
     const loadIcons = async () => {
       const icons: Record<string, string | null> = {}
@@ -381,11 +378,10 @@ function App() {
 
   return (
     <div className={`flex flex-col h-screen bg-[#0d0d0d] text-[#e8e8e8] overflow-hidden font-sans ${!isReady ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'}`}>
-      {/* Custom Title Bar */}
       <div 
         data-tauri-drag-region
         style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
-        className="h-10 bg-[#1a1a1a] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b border-[#2a2a2a]"
+        className="h-10 bg-[#1a1a1a] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4"
       >
         <div className="flex items-center gap-2 mr-23">
           <img src="/logo.png" alt="Atomic Launcher" className="h-5 w-5" />
@@ -422,7 +418,6 @@ function App() {
           )}
         </div>
 
-        {/* Window Controls */}
         <div className="flex items-center ml-auto" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={() => appWindow.minimize()}
@@ -445,7 +440,6 @@ function App() {
         </div>
       </div>
 
-      {/* Creation Progress Toast */}
       {creatingInstanceName && (
         <CreationProgressToast
           instanceName={creatingInstanceName}
@@ -455,7 +449,6 @@ function App() {
         />
       )}
 
-      {/* Confirmation Modal */}
       {confirmModal && (
         <ConfirmModal
           isOpen={confirmModal.isOpen}
@@ -468,7 +461,6 @@ function App() {
         />
       )}
 
-      {/* Alert Modal */}
       {alertModal && (
         <AlertModal
           isOpen={alertModal.isOpen}
@@ -479,12 +471,9 @@ function App() {
         />
       )}
 
-      {/* Main Content Container */}
       <div className="flex flex-1 overflow-hidden mt-10">
-        {/* Sidebar */}
-        <aside className="sidebar-bg w-58 bg-[#1a1a1a] border-r border-[#2a2a2a] flex flex-col">
+        <aside className="sidebar-bg w-58 bg-[#1a1a1a] flex flex-col">
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Navigation */}
             <nav className="flex-shrink-0 px-2 py-3 space-y-1">
               <button
                 onClick={() => {
@@ -558,7 +547,6 @@ function App() {
               </button>
             </nav>
 
-            {/* Recent Instances Section */}
             {recentInstances.length > 0 && (
               <div className="flex-1 overflow-y-auto px-2 pb-3">
                 <div className="py-2">
@@ -628,11 +616,9 @@ function App() {
             )}
           </div>
 
-          {/* Bottom Section */}
-          <div className="p-2 space-y-1 border-t border-[#2a2a2a]">
+          <div className="p-2 space-y-1">
             {isAuthenticated && activeAccount ? (
               <>
-                {/* Account Dropdown Container */}
                 <div className="relative py-1 mb-0.5">
                   <button
                     onClick={() => setShowAccountDropdown(!showAccountDropdown)}
@@ -655,7 +641,6 @@ function App() {
                     </div>
                   </button>
 
-                  {/* Account Dropdown Menu */}
                   {showAccountDropdown && (
                     <>
                       <div 
@@ -663,9 +648,7 @@ function App() {
                         onClick={() => setShowAccountDropdown(false)}
                       />
                       
-                      {/* Dropdown */}
-                      <div className="absolute bottom-1 left-0 right-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg shadow-xl z-50 overflow-hidden">
-                        {/* Add Account Button */}
+                      <div className="absolute bottom-1 left-0 right-0 bg-[#1a1a1a] rounded-lg shadow-xl z-50 overflow-hidden">
                         <button
                           onClick={handleAddAccount}
                           disabled={isLoggingIn}
@@ -675,10 +658,9 @@ function App() {
                           <span>{isLoggingIn ? 'Authenticating...' : 'Add another account'}</span>
                         </button>
 
-                        {/* Other Accounts List */}
                         {accounts.filter(acc => !acc.is_active).length > 0 && (
                           <>
-                            <div className="border-t border-[#2a2a2a]" />
+                            <div className="h-px bg-[#2a2a2a] my-1" />
                             <div className="max-h-60 overflow-y-auto">
                               {accounts
                                 .filter(acc => !acc.is_active)
@@ -706,7 +688,6 @@ function App() {
                                       </div>
                                     </button>
                                     
-                                    {/* Remove Account Button */}
                                     <button
                                       onClick={() => handleRemoveAccount(account.uuid)}
                                       className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer"
@@ -718,9 +699,6 @@ function App() {
                             </div>
                           </>
                         )}
-
-                        {/* Divider */}
-                        <div className="border-t border-[#2a2a2a]" />
 
                         {/* Current Active Account */}
                         <div className="flex items-center gap-2.5 p-2 bg-[#2a2a2a] group">
