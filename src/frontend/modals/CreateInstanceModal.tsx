@@ -4,6 +4,14 @@ import { X, Loader2, Package, AlertCircle } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
 import type { FabricVersion, Instance } from "../../types"
 
+interface MinecraftVersion {
+  id: string
+  type: "release" | "snapshot" | "old_beta" | "old_alpha"
+  url: string
+  time: string
+  releaseTime: string
+}
+
 interface CreateInstanceModalProps {
   versions: string[]
   instances: Instance[]
@@ -27,10 +35,55 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     type: "warning" | "danger" | "success" | "info"
   } | null>(null)
 
+  // New state for version filtering
+  const [versionFilter, setVersionFilter] = useState<"release" | "snapshot">("release")
+  const [allVersions, setAllVersions] = useState<MinecraftVersion[]>([])
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false)
+
   // Check if instance name already exists
   const instanceExists = instances.some(
     instance => instance.name.toLowerCase() === newInstanceName.trim().toLowerCase()
   )
+
+  // Load versions with metadata on mount
+  useEffect(() => {
+    loadVersionsWithMetadata()
+  }, [])
+
+  const loadVersionsWithMetadata = async () => {
+    setIsLoadingVersions(true)
+    try {
+      const versionsData = await invoke<MinecraftVersion[]>("get_minecraft_versions_with_metadata")
+      setAllVersions(versionsData)
+      
+      // Set initial selected version to first release
+      const firstRelease = versionsData.find(v => v.type === "release")
+      if (firstRelease) {
+        setSelectedVersion(firstRelease.id)
+      }
+    } catch (error) {
+      console.error("Failed to load versions:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to load versions: ${error}`,
+        type: "danger"
+      })
+    } finally {
+      setIsLoadingVersions(false)
+    }
+  }
+
+  // Get filtered versions based on selected filter
+  const getFilteredVersions = () => {
+    if (versionFilter === "snapshot") {
+      return allVersions.filter(v => v.type === "snapshot")
+    }
+    // For releases, include both "release" and pre-release types (old_beta, old_alpha)
+    return allVersions.filter(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+  }
+
+  const filteredVersions = getFilteredVersions()
 
   useEffect(() => {
     if (loaderType === "fabric" && fabricVersions.length === 0) {
@@ -88,7 +141,38 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     isCreating || 
     !newInstanceName.trim() || 
     instanceExists ||
-    (loaderType === "fabric" && !selectedFabricVersion)
+    (loaderType === "fabric" && !selectedFabricVersion) ||
+    isLoadingVersions
+
+  const getVersionTypeColor = (type: string) => {
+    switch (type) {
+      case "release":
+        return "text-[#16a34a]"
+      case "snapshot":
+        return "text-[#eab308]"
+      case "old_beta":
+        return "text-[#3b82f6]"
+      case "old_alpha":
+        return "text-[#8b5cf6]"
+      default:
+        return "text-[#808080]"
+    }
+  }
+
+  const getVersionTypeBadge = (type: string) => {
+    switch (type) {
+      case "release":
+        return null // Don't show badge for releases
+      case "snapshot":
+        return "S"
+      case "old_beta":
+        return "β"
+      case "old_alpha":
+        return "α"
+      default:
+        return null
+    }
+  }
 
   return (
     <>
@@ -134,24 +218,67 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#808080] mb-2">Minecraft Version</label>
-              <div className="relative">
-                <select
-                  value={selectedVersion}
-                  onChange={(e) => setSelectedVersion(e.target.value)}
-                  className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors appearance-none"
-                  disabled={isCreating}
+              <label className="block text-xs font-medium text-[#808080] mb-2">Version Type</label>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVersionFilter("release")
+                    const firstRelease = allVersions.find(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+                    if (firstRelease) setSelectedVersion(firstRelease.id)
+                  }}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    versionFilter === "release"
+                      ? "bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
+                      : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
+                  }`}
                 >
-                  {versions.map((version) => (
-                    <option key={version} value={version}>Minecraft {version}</option>
-                  ))}
-                </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </div>
+                  Releases
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setVersionFilter("snapshot")
+                    const firstSnapshot = allVersions.find(v => v.type === "snapshot")
+                    if (firstSnapshot) setSelectedVersion(firstSnapshot.id)
+                  }}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                    versionFilter === "snapshot"
+                      ? "bg-[#eab308]/10 ring-2 ring-[#eab308] text-[#e8e8e8]"
+                      : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
+                  }`}
+                >
+                  Snapshots
+                </button>
               </div>
+
+              <label className="block text-xs font-medium text-[#808080] mb-2">Minecraft Version</label>
+              {isLoadingVersions ? (
+                <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded-lg">
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Loading versions...</span>
+                </div>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={selectedVersion}
+                    onChange={(e) => setSelectedVersion(e.target.value)}
+                    className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors appearance-none"
+                    disabled={isCreating}
+                  >
+                    {filteredVersions.map((version) => (
+                      <option key={version.id} value={version.id}>
+                        {version.id}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>

@@ -69,6 +69,7 @@ impl MinecraftInstaller {
         Ok(true) // File was downloaded
     }
 
+    /// Get all versions (releases, snapshots, and pre-releases)
     pub async fn get_versions(&self) -> Result<Vec<String>, DownloadError> {
         let response = self.http_client.get(VERSION_MANIFEST_URL).send().await?;
         let manifest: VersionManifest = response.json().await?;
@@ -76,8 +77,37 @@ impl MinecraftInstaller {
         let versions: Vec<String> = manifest
             .versions
             .iter()
-            .filter(|v| v.r#type == "release")
-            .take(30)
+            .take(500)
+            .map(|v| v.id.clone())
+            .collect();
+
+        Ok(versions)
+    }
+
+    /// Get versions with metadata (includes version type)
+    pub async fn get_versions_with_metadata(&self) -> Result<Vec<MinecraftVersion>, DownloadError> {
+        let response = self.http_client.get(VERSION_MANIFEST_URL).send().await?;
+        let manifest: VersionManifest = response.json().await?;
+
+        let versions: Vec<MinecraftVersion> = manifest
+            .versions
+            .into_iter()
+            .take(500)
+            .collect();
+
+        Ok(versions)
+    }
+
+    /// Get versions by type (release, snapshot, old_beta, old_alpha)
+    pub async fn get_versions_by_type(&self, version_type: &str) -> Result<Vec<String>, DownloadError> {
+        let response = self.http_client.get(VERSION_MANIFEST_URL).send().await?;
+        let manifest: VersionManifest = response.json().await?;
+
+        let versions: Vec<String> = manifest
+            .versions
+            .iter()
+            .filter(|v| v.r#type == version_type)
+            .take(500) // Get 500 of the specified type
             .map(|v| v.id.clone())
             .collect();
 
@@ -99,7 +129,7 @@ impl MinecraftInstaller {
             .find(|v| v.id == version_id)
             .ok_or_else(|| format!("Version {} not found", version_id))?;
 
-        println!("✓ Found version info");
+        println!("✓ Found version info (type: {})", version_info.r#type);
 
         let version_details: VersionDetails = self
             .http_client

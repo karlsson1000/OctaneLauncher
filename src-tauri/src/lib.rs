@@ -44,6 +44,8 @@ pub fn run() {
             
             // Minecraft versions
             get_minecraft_versions,
+            get_minecraft_versions_with_metadata,
+            get_minecraft_versions_by_type,
             install_minecraft,
             check_version_installed,
             
