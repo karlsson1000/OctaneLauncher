@@ -1218,6 +1218,7 @@ pub async fn install_modpack(
     modpack_slug: String,
     instance_name: String,
     version_id: String,
+    preferred_game_version: Option<String>,
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     // Validate inputs
@@ -1229,6 +1230,13 @@ pub async fn install_modpack(
     
     if !version_id.chars().all(|c| c.is_alphanumeric() || c == '-') {
         return Err("Invalid version ID format".to_string());
+    }
+    
+    // Validate preferred_game_version if provided
+    if let Some(ref version) = preferred_game_version {
+        if !version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
+            return Err("Invalid preferred game version format".to_string());
+        }
     }
     
     println!("Installing modpack: {}", modpack_slug);
@@ -1252,9 +1260,22 @@ pub async fn install_modpack(
         .find(|v| v.id == version_id)
         .ok_or_else(|| "Version not found".to_string())?;
     
-    // Get the game version from the modpack
-    let game_version = version.game_versions.first()
-        .ok_or_else(|| "No game version found".to_string())?;
+    // Get the game version from the modpack - prefer the filtered version if available
+    let game_version = if let Some(ref preferred) = preferred_game_version {
+        // Check if the preferred version is in the supported versions
+        if version.game_versions.contains(preferred) {
+            preferred.clone()
+        } else {
+            // Fall back to first version if preferred not found
+            version.game_versions.first()
+                .ok_or_else(|| "No game version found".to_string())?
+                .clone()
+        }
+    } else {
+        version.game_versions.first()
+            .ok_or_else(|| "No game version found".to_string())?
+            .clone()
+    };
     
     // Determine the loader (fabric, forge, etc.)
     let loader = version.loaders.first()
@@ -1274,7 +1295,7 @@ pub async fn install_modpack(
     let meta_dir = get_meta_dir();
     let installer = MinecraftInstaller::new(meta_dir.clone());
     installer
-        .install_version(game_version)
+        .install_version(&game_version)
         .await
         .map_err(|e| format!("Failed to install Minecraft: {}", e))?;
     
@@ -1301,7 +1322,7 @@ pub async fn install_modpack(
             .ok_or_else(|| "No Fabric versions found".to_string())?;
         
         fabric_installer
-            .install_fabric(game_version, &fabric_version.version)
+            .install_fabric(&game_version, &fabric_version.version)
             .await
             .map_err(|e| format!("Failed to install Fabric: {}", e))?
     } else {
@@ -1570,6 +1591,56 @@ pub async fn get_modpack_manifest(
             "primary": f.primary
         })).collect::<Vec<_>>()
     }))
+}
+
+#[tauri::command]
+pub async fn get_modpack_game_versions() -> Result<Vec<String>, String> {
+    let client = ModrinthClient::new();
+    
+    // Fetch popular modpacks
+    let facets = serde_json::json!([["project_type:modpack"]]).to_string();
+    let result = client
+        .search_projects("", Some(&facets), Some("downloads"), Some(0), Some(100))
+        .await
+        .map_err(|e| format!("Failed to fetch modpacks: {}", e))?;
+    
+    // Collect all unique game versions from project details
+    let mut versions: std::collections::HashSet<String> = std::collections::HashSet::new();
+    
+    for hit in result.hits.iter().take(20) { // Limit to first 20 for performance
+        // Get full project details which includes game_versions
+        if let Ok(details) = client.get_project(&hit.slug).await {
+            for version in details.game_versions {
+                // Only include versions that look like Minecraft versions (e.g., "1.20.1")
+                if version.chars().next().map_or(false, |c| c.is_numeric()) {
+                    versions.insert(version);
+                }
+            }
+        }
+    }
+    
+    // Convert to sorted vector
+    let mut version_list: Vec<String> = versions.into_iter().collect();
+    
+    // Sort versions (newest first)
+    version_list.sort_by(|a, b| {
+        let a_parts: Vec<&str> = a.split('.').collect();
+        let b_parts: Vec<&str> = b.split('.').collect();
+        
+        for i in 0..a_parts.len().max(b_parts.len()) {
+            let a_num = a_parts.get(i).and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
+            let b_num = b_parts.get(i).and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
+            
+            match b_num.cmp(&a_num) {
+                std::cmp::Ordering::Equal => continue,
+                other => return other,
+            }
+        }
+        
+        std::cmp::Ordering::Equal
+    });
+    
+    Ok(version_list)
 }
 
 // ===== SERVER MANAGEMENT COMMANDS =====
@@ -1933,6 +2004,24 @@ pub async fn get_mod_details(id_or_slug: String) -> Result<ModrinthProjectDetail
 }
 
 #[tauri::command]
+pub async fn get_project_details(id_or_slug: String) -> Result<ModrinthProjectDetails, String> {
+    // Validate id/slug format
+    if !id_or_slug.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
+        return Err("Invalid project ID or slug format".to_string());
+    }
+    
+    if id_or_slug.len() > 100 {
+        return Err("Project ID or slug too long".to_string());
+    }
+    
+    let client = ModrinthClient::new();
+    client
+        .get_project(&id_or_slug)
+        .await
+        .map_err(|e| format!("Failed to get project details: {}", e))
+}
+
+#[tauri::command]
 pub async fn get_mod_versions(
     id_or_slug: String,
     loaders: Option<Vec<String>>,
@@ -2241,4 +2330,191 @@ pub async fn detect_java_installations() -> Result<Vec<String>, String> {
     java_paths.dedup();
     
     Ok(java_paths)
+}
+
+// ===== SKINS COMMANDS =====
+
+const MINECRAFT_SKIN_URL: &str = "https://api.minecraftservices.com/minecraft/profile/skins";
+const MINECRAFT_SKIN_RESET_URL: &str = "https://api.minecraftservices.com/minecraft/profile/skins/active";
+const MINECRAFT_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft/profile";
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct SkinUploadResponse {
+    pub success: bool,
+    pub message: String,
+}
+
+#[derive(serde::Deserialize, Debug)]
+struct ProfileResponse {
+    id: String,
+    name: String,
+    skins: Vec<SkinInfo>,
+    capes: Option<Vec<CapeInfo>>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+struct SkinInfo {
+    id: String,
+    state: String,
+    url: String,
+    variant: String,
+    alias: Option<String>,
+}
+
+#[derive(serde::Deserialize, Debug)]
+struct CapeInfo {
+    id: String,
+    state: String,
+    url: String,
+    alias: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct CurrentSkin {
+    pub url: String,
+    pub variant: String,
+}
+
+/// Upload a skin to Minecraft
+#[tauri::command]
+pub async fn upload_skin(
+    skin_data: String,
+    variant: String, // classic or slim
+) -> Result<String, String> {
+
+    if variant != "classic" && variant != "slim" {
+        return Err("Invalid skin variant. Must be 'classic' or 'slim'".to_string());
+    }
+    
+    // Get active account
+    let active_account = AccountManager::get_active_account()
+        .map_err(|e| format!("Failed to get active account: {}", e))?
+        .ok_or_else(|| "No active account. Please sign in first.".to_string())?;
+    
+    // Decode base64 image
+    let image_bytes = general_purpose::STANDARD
+        .decode(&skin_data)
+        .map_err(|e| format!("Invalid base64 image data: {}", e))?;
+    
+    // Validate image size (max 1MB for skins)
+    if image_bytes.len() > 1024 * 1024 {
+        return Err("Skin image too large (max 1MB)".to_string());
+    }
+    
+    // Validate it's a valid PNG
+    let format = image::guess_format(&image_bytes)
+        .map_err(|e| format!("Invalid image format: {}", e))?;
+    
+    if format != image::ImageFormat::Png {
+        return Err("Skin must be a PNG image".to_string());
+    }
+    
+    // Load and validate dimensions
+    let img = image::load_from_memory(&image_bytes)
+        .map_err(|e| format!("Failed to load image: {}", e))?;
+    
+    let (width, height) = (img.width(), img.height());
+    if !((width == 64 && height == 64) || (width == 64 && height == 32)) {
+        return Err(format!("Invalid skin dimensions ({}x{}). Must be 64x64 or 64x32", width, height));
+    }
+    
+    // Create HTTP client
+    let client = reqwest::Client::new();
+    
+    // Create multipart form
+    let part = reqwest::multipart::Part::bytes(image_bytes)
+        .file_name("skin.png")
+        .mime_str("image/png")
+        .map_err(|e| format!("Failed to create form part: {}", e))?;
+    
+    let form = reqwest::multipart::Form::new()
+        .part("file", part)
+        .text("variant", variant);
+    
+    // Upload skin
+    let response = client
+        .post(MINECRAFT_SKIN_URL)
+        .bearer_auth(&active_account.access_token)
+        .multipart(form)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to upload skin: {}", e))?;
+    
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(format!("Skin upload failed ({}): {}", status, error_text));
+    }
+    
+    Ok("Skin uploaded successfully".to_string())
+}
+
+/// Reset skin to default (Steve/Alex)
+#[tauri::command]
+pub async fn reset_skin() -> Result<String, String> {
+    // Get active account
+    let active_account = AccountManager::get_active_account()
+        .map_err(|e| format!("Failed to get active account: {}", e))?
+        .ok_or_else(|| "No active account. Please sign in first.".to_string())?;
+    
+    // Create HTTP client
+    let client = reqwest::Client::new();
+    
+    // Delete active skin (resets to default Steve/Alex based on UUID)
+    let response = client
+        .delete(MINECRAFT_SKIN_RESET_URL)
+        .bearer_auth(&active_account.access_token)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to reset skin: {}", e))?;
+    
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(format!("Skin reset failed ({}): {}", status, error_text));
+    }
+    
+    Ok("Skin reset to default successfully".to_string())
+}
+
+/// Get current skin URL and variant from Minecraft profile
+#[tauri::command]
+pub async fn get_current_skin() -> Result<Option<CurrentSkin>, String> {
+    // Get active account
+    let active_account = AccountManager::get_active_account()
+        .map_err(|e| format!("Failed to get active account: {}", e))?
+        .ok_or_else(|| "No active account. Please sign in first.".to_string())?;
+    
+    // Create HTTP client
+    let client = reqwest::Client::new();
+    
+    // Get profile information which includes skin data
+    let response = client
+        .get(MINECRAFT_PROFILE_URL)
+        .bearer_auth(&active_account.access_token)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch profile: {}", e))?;
+    
+    if !response.status().is_success() {
+        let status = response.status();
+        let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+        return Err(format!("Failed to get profile ({}): {}", status, error_text));
+    }
+    
+    let profile: ProfileResponse = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse profile response: {}", e))?;
+    
+    // Find the active skin
+    if let Some(active_skin) = profile.skins.iter().find(|s| s.state == "ACTIVE") {
+        Ok(Some(CurrentSkin {
+            url: active_skin.url.clone(),
+            variant: active_skin.variant.to_lowercase(),
+        }))
+    } else {
+        // No active skin found, return None (will show default)
+        Ok(None)
+    }
 }

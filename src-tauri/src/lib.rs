@@ -37,6 +37,11 @@ pub fn run() {
             remove_account,
             launch_instance_with_active_account,
             
+            // Skin Management
+            upload_skin,
+            reset_skin,
+            get_current_skin,
+            
             // Minecraft versions
             get_minecraft_versions,
             install_minecraft,
@@ -70,6 +75,7 @@ pub fn run() {
             get_mod_details,
             get_mod_versions,
             download_mod,
+            get_project_details,
             
             // Settings
             get_settings,
@@ -88,6 +94,7 @@ pub fn run() {
             get_modpack_versions,
             install_modpack,
             get_modpack_manifest,
+            get_modpack_game_versions,
 
             // Servers
             get_servers,
