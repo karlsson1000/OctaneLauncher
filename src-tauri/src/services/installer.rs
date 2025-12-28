@@ -5,8 +5,7 @@ use std::{fs, path::PathBuf, sync::Arc, time::Duration};
 use tokio::sync::Semaphore;
 
 const VERSION_MANIFEST_URL: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
-const MAX_CONCURRENT_DOWNLOADS: usize = 16;
-const CHUNK_SIZE: usize = 50;
+const MAX_CONCURRENT_DOWNLOADS: usize = 32;
 
 type DownloadError = Box<dyn std::error::Error + Send + Sync>;
 
@@ -19,8 +18,11 @@ impl MinecraftInstaller {
     pub fn new(launcher_dir: PathBuf) -> Self {
         let http_client = reqwest::Client::builder()
             .timeout(Duration::from_secs(300))
-            .pool_max_idle_per_host(MAX_CONCURRENT_DOWNLOADS)
+            .pool_max_idle_per_host(MAX_CONCURRENT_DOWNLOADS * 2)
+            .pool_idle_timeout(Duration::from_secs(90))
             .tcp_keepalive(Duration::from_secs(60))
+            .http2_keep_alive_interval(Duration::from_secs(30))
+            .http2_keep_alive_timeout(Duration::from_secs(10))
             .build()
             .unwrap();
 
@@ -46,23 +48,36 @@ impl MinecraftInstaller {
         Ok(())
     }
 
+    /// Fast existence check
+    fn file_needs_download(path: &PathBuf, expected_sha1: Option<&str>) -> bool {
+        if !path.exists() {
+            return true;
+        }
+
+        // If no SHA1 provided, assume file is good if it exists
+        let Some(expected_sha1) = expected_sha1 else {
+            return false;
+        };
+
+        // Only validate SHA1 if we really need to
+        if let Ok(contents) = fs::read(path) {
+            let mut hasher = Sha1::new();
+            hasher.update(&contents);
+            let hash = format!("{:x}", hasher.finalize());
+            hash != expected_sha1
+        } else {
+            true
+        }
+    }
+
     async fn download_file_with_sha1(
         &self,
         url: &str,
         path: &PathBuf,
         expected_sha1: &str,
     ) -> Result<bool, DownloadError> {
-        // Check if file exists and has correct hash
-        if path.exists() {
-            if let Ok(contents) = fs::read(path) {
-                let mut hasher = Sha1::new();
-                hasher.update(&contents);
-                let hash = format!("{:x}", hasher.finalize());
-
-                if hash == expected_sha1 {
-                    return Ok(false); // File already exists, no download needed
-                }
-            }
+        if !Self::file_needs_download(path, Some(expected_sha1)) {
+            return Ok(false); // File already exists with correct hash
         }
 
         self.download_file(url, path).await?;
@@ -107,7 +122,7 @@ impl MinecraftInstaller {
             .versions
             .iter()
             .filter(|v| v.r#type == version_type)
-            .take(500) // Get 500 of the specified type
+            .take(500)
             .map(|v| v.id.clone())
             .collect();
 
@@ -175,8 +190,7 @@ impl MinecraftInstaller {
         let mut regular_count = 0;
         
         for library in &version_details.libraries {
-            // Check if this is a native library by parsing the name
-            // Format: group:artifact:version:natives-platform
+            // Check if this is a native library
             let is_native = library.name.contains(":natives-");
             
             if is_native {
@@ -204,7 +218,6 @@ impl MinecraftInstaller {
                             
                             if should_include {
                                 native_count += 1;
-                                println!("  ✓ Queuing native for {}: {} → {}", current_os, library.name, artifact.path);
                                 library_tasks.push((
                                     artifact.url.clone(),
                                     libraries_dir.join(&artifact.path),
@@ -282,7 +295,7 @@ impl MinecraftInstaller {
             asset_tasks.push((asset_url, asset_path, asset.hash));
         }
 
-        let downloaded_assets = self.download_parallel_chunked(asset_tasks, CHUNK_SIZE).await?;
+        let downloaded_assets = self.download_parallel_fast(asset_tasks).await?;
         println!("✓ Downloaded {} assets ({} skipped)", downloaded_assets, total_assets - downloaded_assets);
 
         println!("=== Installation Complete ===");
@@ -318,6 +331,63 @@ impl MinecraftInstaller {
             handles.push(handle);
         }
 
+        for handle in handles {
+            handle.await??;
+        }
+
+        Ok(downloaded_count.load(std::sync::atomic::Ordering::Relaxed))
+    }
+
+    async fn download_parallel_fast(
+        &self,
+        tasks: Vec<(String, PathBuf, String)>,
+    ) -> Result<usize, DownloadError> {
+        let total = tasks.len();
+        let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_DOWNLOADS));
+        let client = Arc::new(self.http_client.clone());
+        let downloaded_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let progress_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        
+        println!("Starting download of {} assets...", total);
+        
+        // Spawn all tasks at once without chunking
+        let mut handles = Vec::new();
+        
+        for (url, path, sha1) in tasks {
+            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let client = client.clone();
+            let url = url.clone();
+            let path = path.clone();
+            let sha1 = sha1.clone();
+            let downloaded_count = downloaded_count.clone();
+            let progress_count = progress_count.clone();
+            let total_copy = total;
+
+            let handle = tokio::spawn(async move {
+                let result = Self::download_with_client_fast(&client, &url, &path, &sha1).await;
+                drop(permit);
+                
+                if let Ok(downloaded) = result {
+                    if downloaded {
+                        downloaded_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    }
+                    
+                    // Update progress every 100 files
+                    let completed = progress_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                    if completed % 100 == 0 || completed == total_copy {
+                        let dl_count = downloaded_count.load(std::sync::atomic::Ordering::Relaxed);
+                        println!("  Progress: {}/{} assets (downloaded: {}, skipped: {})", 
+                                 completed, total_copy, dl_count, completed - dl_count);
+                    }
+                }
+                
+                result
+            });
+
+            handles.push(handle);
+        }
+
+        // Wait for all downloads to complete
         for handle in handles {
             handle.await??;
         }
@@ -361,6 +431,7 @@ impl MinecraftInstaller {
         Ok(downloaded_count.load(std::sync::atomic::Ordering::Relaxed))
     }
 
+    #[allow(dead_code)]
     async fn download_parallel_chunked(
         &self,
         tasks: Vec<(String, PathBuf, String)>,
@@ -420,20 +491,12 @@ impl MinecraftInstaller {
         expected_sha1: &str,
         label: &str,
     ) -> Result<bool, DownloadError> {
-        // Check if file exists and has correct hash
-        if path.exists() {
-            if let Ok(contents) = fs::read(path) {
-                let mut hasher = Sha1::new();
-                hasher.update(&contents);
-                let hash = format!("{:x}", hasher.finalize());
-
-                if hash == expected_sha1 {
-                    if label.starts_with("NATIVE:") {
-                        println!("  ✓ {} already exists", label);
-                    }
-                    return Ok(false);
-                }
+        // Fast check without SHA1 validation
+        if !Self::file_needs_download(path, Some(expected_sha1)) {
+            if label.starts_with("NATIVE:") {
+                println!("  ✓ {} already exists", label);
             }
+            return Ok(false);
         }
 
         // Create parent directories
@@ -457,6 +520,36 @@ impl MinecraftInstaller {
         if label.starts_with("NATIVE:") {
             println!("  ✓ Downloaded: {}", label);
         }
+
+        Ok(true)
+    }
+
+    /// NEW: Optimized download without excessive logging
+    async fn download_with_client_fast(
+        client: &reqwest::Client,
+        url: &str,
+        path: &PathBuf,
+        expected_sha1: &str,
+    ) -> Result<bool, DownloadError> {
+        // Fast existence check
+        if !Self::file_needs_download(path, Some(expected_sha1)) {
+            return Ok(false);
+        }
+
+        // Create parent directories
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        // Download file
+        let response = client.get(url).send().await?;
+        
+        if !response.status().is_success() {
+            return Err(format!("HTTP {}", response.status()).into());
+        }
+        
+        let bytes = response.bytes().await?;
+        fs::write(path, bytes)?;
 
         Ok(true)
     }
