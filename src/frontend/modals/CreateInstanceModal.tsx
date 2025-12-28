@@ -35,10 +35,11 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     type: "warning" | "danger" | "success" | "info"
   } | null>(null)
 
-  // New state for version filtering
+  // Version filtering state
   const [versionFilter, setVersionFilter] = useState<"release" | "snapshot">("release")
   const [allVersions, setAllVersions] = useState<MinecraftVersion[]>([])
   const [isLoadingVersions, setIsLoadingVersions] = useState(false)
+  const [fabricSupportedVersions, setFabricSupportedVersions] = useState<string[]>([])
 
   // Check if instance name already exists
   const instanceExists = instances.some(
@@ -48,6 +49,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   // Load versions with metadata on mount
   useEffect(() => {
     loadVersionsWithMetadata()
+    loadFabricSupportedVersions()
   }, [])
 
   const loadVersionsWithMetadata = async () => {
@@ -74,22 +76,61 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     }
   }
 
-  // Get filtered versions based on selected filter
-  const getFilteredVersions = () => {
-    if (versionFilter === "snapshot") {
-      return allVersions.filter(v => v.type === "snapshot")
+  const loadFabricSupportedVersions = async () => {
+    try {
+      const supported = await invoke<string[]>("get_supported_game_versions")
+      setFabricSupportedVersions(supported)
+    } catch (error) {
+      console.error("Failed to load Fabric supported versions:", error)
     }
-    // For releases, include both "release" and pre-release types (old_beta, old_alpha)
-    return allVersions.filter(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+  }
+
+  // Get filtered versions based on selected filter and loader type
+  const getFilteredVersions = () => {
+    let filtered: MinecraftVersion[]
+    
+    if (versionFilter === "snapshot") {
+      filtered = allVersions.filter(v => v.type === "snapshot")
+    } else {
+      filtered = allVersions.filter(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+    }
+
+    // If Fabric is selected, only show Fabric-supported versions from the release filter
+    if (loaderType === "fabric" && versionFilter === "release") {
+      filtered = filtered.filter(v => fabricSupportedVersions.includes(v.id))
+    }
+
+    return filtered
   }
 
   const filteredVersions = getFilteredVersions()
 
+  // Update selected version when switching loader types
   useEffect(() => {
-    if (loaderType === "fabric" && fabricVersions.length === 0) {
-      loadFabricVersions()
+    if (loaderType === "fabric") {
+      // Force to release filter when Fabric is selected
+      if (versionFilter === "snapshot") {
+        setVersionFilter("release")
+      }
+      
+      // Check if current version supports Fabric
+      if (versionFilter === "release" && !fabricSupportedVersions.includes(selectedVersion)) {
+        // Switch to first supported version
+        const firstSupported = allVersions.find(v => 
+          (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") && 
+          fabricSupportedVersions.includes(v.id)
+        )
+        if (firstSupported) {
+          setSelectedVersion(firstSupported.id)
+        }
+      }
+      
+      // Load Fabric versions if not loaded
+      if (fabricVersions.length === 0) {
+        loadFabricVersions()
+      }
     }
-  }, [loaderType])
+  }, [loaderType, fabricSupportedVersions, allVersions, versionFilter])
 
   const loadFabricVersions = async () => {
     setIsLoadingFabric(true)
@@ -104,6 +145,12 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       }
     } catch (error) {
       console.error("Failed to load Fabric versions:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to load Fabric versions: ${error}`,
+        type: "danger"
+      })
     } finally {
       setIsLoadingFabric(false)
     }
@@ -114,7 +161,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
     setIsCreating(true)
     onStartCreating(newInstanceName)
-    onClose() // Close modal immediately
+    onClose()
     
     try {
       await invoke<string>("create_instance", {
@@ -142,7 +189,8 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     !newInstanceName.trim() || 
     instanceExists ||
     (loaderType === "fabric" && !selectedFabricVersion) ||
-    isLoadingVersions
+    isLoadingVersions ||
+    filteredVersions.length === 0
 
   return (
     <>
@@ -194,7 +242,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   type="button"
                   onClick={() => {
                     setVersionFilter("release")
-                    const firstRelease = allVersions.find(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+                    const firstRelease = filteredVersions.find(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
                     if (firstRelease) setSelectedVersion(firstRelease.id)
                   }}
                   className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
@@ -208,25 +256,34 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 <button
                   type="button"
                   onClick={() => {
+                    if (loaderType === "fabric") return
                     setVersionFilter("snapshot")
-                    const firstSnapshot = allVersions.find(v => v.type === "snapshot")
+                    const firstSnapshot = filteredVersions.find(v => v.type === "snapshot")
                     if (firstSnapshot) setSelectedVersion(firstSnapshot.id)
                   }}
+                  disabled={loaderType === "fabric"}
                   className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                     versionFilter === "snapshot"
                       ? "bg-[#eab308]/10 ring-2 ring-[#eab308] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
-                  }`}
+                  } ${loaderType === "fabric" ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   Snapshots
                 </button>
               </div>
 
-              <label className="block text-xs font-medium text-[#808080] mb-2">Minecraft Version</label>
+              <label className="block text-xs font-medium text-[#808080] mb-2">
+                Minecraft Version
+              </label>
               {isLoadingVersions ? (
                 <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded-lg">
                   <Loader2 size={14} className="animate-spin" />
                   <span>Loading versions...</span>
+                </div>
+              ) : filteredVersions.length === 0 ? (
+                <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded-lg">
+                  <AlertCircle size={14} />
+                  <span>No compatible versions available</span>
                 </div>
               ) : (
                 <div className="relative">
@@ -350,7 +407,6 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         </div>
       </div>
 
-      {/* Alert Modal */}
       {alertModal && (
         <AlertModal
           isOpen={alertModal.isOpen}

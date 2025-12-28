@@ -36,6 +36,15 @@ pub async fn get_minecraft_versions_by_type(version_type: String) -> Result<Vec<
 }
 
 #[tauri::command]
+pub async fn get_supported_game_versions() -> Result<Vec<String>, String> {
+    let installer = FabricInstaller::new(get_meta_dir());
+    installer
+        .get_supported_game_versions()
+        .await
+        .map_err(|e| format!("Failed to fetch Fabric supported versions: {}", e))
+}
+
+#[tauri::command]
 pub async fn install_minecraft(version: String) -> Result<String, String> {
     if !version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
         return Err("Invalid version format".to_string());

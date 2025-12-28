@@ -33,6 +33,26 @@ impl FabricInstaller {
         Ok(versions)
     }
 
+    pub async fn get_supported_game_versions(&self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let url = format!("{}/versions/game", FABRIC_META_URL);
+        
+        let response = self.http_client.get(&url).send().await?;
+        
+        if !response.status().is_success() {
+            return Err(format!("Failed to fetch game versions: HTTP {}", response.status()).into());
+        }
+        
+        #[derive(serde::Deserialize)]
+        struct GameVersion {
+            version: String,
+        }
+        
+        let versions: Vec<GameVersion> = response.json().await?;
+        
+        // Return all version IDs
+        Ok(versions.into_iter().map(|v| v.version).collect())
+    }
+
     pub async fn get_fabric_profile(
         &self,
         minecraft_version: &str,

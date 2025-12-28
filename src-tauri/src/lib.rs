@@ -31,6 +31,7 @@ use commands::{
     get_minecraft_versions,
     get_minecraft_versions_with_metadata,
     get_minecraft_versions_by_type,
+    get_supported_game_versions,
     install_minecraft,
     check_version_installed,
     get_fabric_versions,
@@ -127,6 +128,7 @@ pub fn run() {
             get_minecraft_versions,
             get_minecraft_versions_with_metadata,
             get_minecraft_versions_by_type,
+            get_supported_game_versions,
             install_minecraft,
             check_version_installed,
             
