@@ -666,7 +666,7 @@ function App() {
                         <button
                           onClick={handleAddAccount}
                           disabled={isLoggingIn}
-                          className="w-full flex items-center gap-2 p-2 text-sm text-[#e8e8e8] hover:bg-[#1f1f1f] rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full flex items-center gap-2 px-2.5 py-2.5 text-sm text-[#e8e8e8] hover:bg-[#1f1f1f] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <LogIn size={18} className="text-[#16a34a]" />
                           <span>{isLoggingIn ? 'Authenticating...' : 'Add another account'}</span>
@@ -674,7 +674,7 @@ function App() {
 
                         {accounts.filter(acc => !acc.is_active).length > 0 && (
                           <>
-                            <div className="h-px bg-[#2a2a2a] my-1" />
+                            <div className="h-px bg-[#2a2a2a]" />
                             <div className="max-h-60 overflow-y-auto">
                               {accounts
                                 .filter(acc => !acc.is_active)
