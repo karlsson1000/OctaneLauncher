@@ -597,7 +597,7 @@ export function InstanceDetailsTab({
                         />
                       ) : (
                         <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Package size={24} className="text-[#16a34a]/60" />
+                          <Package size={32} className="text-[#16a34a]" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
