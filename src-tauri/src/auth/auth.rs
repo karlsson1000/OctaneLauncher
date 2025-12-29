@@ -25,8 +25,7 @@ pub struct Authenticator {
 
 impl Authenticator {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let client_id = std::env::var("MICROSOFT_CLIENT_ID")
-            .map_err(|_| "MICROSOFT_CLIENT_ID not found in environment variables")?;
+        let client_id = env!("MICROSOFT_CLIENT_ID").to_string();
 
         let oauth_client = BasicClient::new(
             ClientId::new(client_id),

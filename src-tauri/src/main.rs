@@ -2,6 +2,5 @@
 
 fn main() {
     dotenvy::dotenv().ok();
-    
     atomic_launcher_lib::run()
 }
