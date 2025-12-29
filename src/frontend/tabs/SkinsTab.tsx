@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import * as skinview3d from "skinview3d"
-import { Upload, RotateCcw, Loader2, User } from "lucide-react"
+import { Upload, RotateCcw, Loader2, HatGlasses } from "lucide-react"
 
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
@@ -318,7 +318,7 @@ export function SkinsTab(props: SkinsTabProps) {
           </div>
           
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
-            <User size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
+            <HatGlasses size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
             <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">Sign In Required</h3>
             <p className="text-sm text-[#808080]">Please sign in with your Microsoft account to manage your skin</p>
           </div>
@@ -329,7 +329,7 @@ export function SkinsTab(props: SkinsTabProps) {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-[#e8e8e8] tracking-tight">Skins</h1>
