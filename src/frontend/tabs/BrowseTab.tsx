@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { ModsTab, ModsSelector } from "./ModsTab"
-import { ModpacksTab, ModpackVersionSelector } from "./ModpacksTab"
+import { ModpacksTab } from "./ModpacksTab"
+import { FolderDown } from "lucide-react"
 import type { Instance } from "../../types"
 
 interface BrowseTabProps {
@@ -8,20 +9,41 @@ interface BrowseTabProps {
   instances: Instance[]
   onSetSelectedInstance: (instance: Instance) => void
   onRefreshInstances?: () => void
+  onShowCreationToast?: (instanceName: string) => void
 }
 
-export function BrowseTab({ selectedInstance, instances, onSetSelectedInstance, onRefreshInstances }: BrowseTabProps) {
+declare global {
+  interface Window {
+    uploadModpackHandler?: () => Promise<void>
+  }
+}
+
+export function BrowseTab({ 
+  selectedInstance, 
+  instances, 
+  onSetSelectedInstance, 
+  onRefreshInstances, 
+  onShowCreationToast 
+}: BrowseTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<"mods" | "modpacks">("mods")
-  
-  // State for modpack version selector
+
   const [selectedModpackVersion, setSelectedModpackVersion] = useState<string | null>(null)
   const [availableModpackVersions, setAvailableModpackVersions] = useState<string[]>([])
   const [isLoadingModpackVersions, setIsLoadingModpackVersions] = useState(false)
 
+  const handleImport = async () => {
+    console.log("handleImport called, onShowCreationToast is:", onShowCreationToast)
+    if (window.uploadModpackHandler) {
+      await window.uploadModpackHandler()
+    } else {
+      console.log("Upload handler not ready")
+    }
+  }
+
   return (
     <div className="p-6 space-y-4">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <div className="flex items-center gap-4">
               <button
@@ -53,12 +75,13 @@ export function BrowseTab({ selectedInstance, instances, onSetSelectedInstance, 
               onSetSelectedInstance={onSetSelectedInstance}
             />
           ) : (
-            <ModpackVersionSelector
-              selectedVersion={selectedModpackVersion}
-              onSetSelectedVersion={setSelectedModpackVersion}
-              versions={availableModpackVersions}
-              isLoading={isLoadingModpackVersions}
-            />
+            <button
+              onClick={handleImport}
+              className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded-lg flex items-center justify-center transition-all cursor-pointer"
+              title="Import modpack"
+            >
+              <FolderDown size={24} strokeWidth={2} />
+            </button>
           )}
         </div>
       </div>
@@ -79,6 +102,8 @@ export function BrowseTab({ selectedInstance, instances, onSetSelectedInstance, 
           onSetAvailableVersions={setAvailableModpackVersions}
           isLoadingVersions={isLoadingModpackVersions}
           onSetIsLoadingVersions={setIsLoadingModpackVersions}
+          onImport={handleImport}
+          onShowCreationToast={onShowCreationToast}
         />
       )}
     </div>
