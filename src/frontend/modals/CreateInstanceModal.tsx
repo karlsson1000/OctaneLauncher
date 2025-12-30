@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { X, Loader2, Package, AlertCircle } from "lucide-react"
+import { open } from '@tauri-apps/plugin-dialog'
+import { X, Loader2, Package, AlertCircle, FileDown } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
 import type { FabricVersion, Instance } from "../../types"
 
@@ -35,18 +36,15 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     type: "warning" | "danger" | "success" | "info"
   } | null>(null)
 
-  // Version filtering state
   const [versionFilter, setVersionFilter] = useState<"release" | "snapshot">("release")
   const [allVersions, setAllVersions] = useState<MinecraftVersion[]>([])
   const [isLoadingVersions, setIsLoadingVersions] = useState(false)
   const [fabricSupportedVersions, setFabricSupportedVersions] = useState<string[]>([])
 
-  // Check if instance name already exists
   const instanceExists = instances.some(
     instance => instance.name.toLowerCase() === newInstanceName.trim().toLowerCase()
   )
 
-  // Load versions with metadata on mount
   useEffect(() => {
     loadVersionsWithMetadata()
     loadFabricSupportedVersions()
@@ -58,7 +56,6 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       const versionsData = await invoke<MinecraftVersion[]>("get_minecraft_versions_with_metadata")
       setAllVersions(versionsData)
       
-      // Set initial selected version to first release
       const firstRelease = versionsData.find(v => v.type === "release")
       if (firstRelease) {
         setSelectedVersion(firstRelease.id)
@@ -85,7 +82,6 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     }
   }
 
-  // Get filtered versions based on selected filter and loader type
   const getFilteredVersions = () => {
     let filtered: MinecraftVersion[]
     
@@ -95,7 +91,6 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       filtered = allVersions.filter(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
     }
 
-    // If Fabric is selected, only show Fabric-supported versions from the release filter
     if (loaderType === "fabric" && versionFilter === "release") {
       filtered = filtered.filter(v => fabricSupportedVersions.includes(v.id))
     }
@@ -105,17 +100,13 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
   const filteredVersions = getFilteredVersions()
 
-  // Update selected version when switching loader types
   useEffect(() => {
     if (loaderType === "fabric") {
-      // Force to release filter when Fabric is selected
       if (versionFilter === "snapshot") {
         setVersionFilter("release")
       }
       
-      // Check if current version supports Fabric
       if (versionFilter === "release" && !fabricSupportedVersions.includes(selectedVersion)) {
-        // Switch to first supported version
         const firstSupported = allVersions.find(v => 
           (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") && 
           fabricSupportedVersions.includes(v.id)
@@ -125,7 +116,6 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         }
       }
       
-      // Load Fabric versions if not loaded
       if (fabricVersions.length === 0) {
         loadFabricVersions()
       }
@@ -156,17 +146,76 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     }
   }
 
+  const handleImportFile = async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{
+          name: 'Instance Files',
+          extensions: ['mrpack', 'zip']
+        }]
+      })
+
+      if (!selected) return
+
+      const filePath = selected as string
+      
+      // Close modal immediately after file is selected
+      onClose()
+
+      let extractedName = ""
+      try {
+        extractedName = await invoke<string>("get_modpack_name_from_file", {
+          filePath: filePath
+        })
+      } catch (error) {
+        console.error("Failed to extract name from file:", error)
+        const fileName = filePath.split(/[/\\]/).pop()?.replace(/\.(mrpack|zip)$/, '') || "Imported Instance"
+        extractedName = fileName
+      }
+
+      let finalName = extractedName
+      let counter = 1
+      while (instances.some(i => i.name.toLowerCase() === finalName.toLowerCase())) {
+        finalName = `${extractedName} (${counter})`
+        counter++
+      }
+
+      setIsCreating(true)
+      onStartCreating(finalName)
+
+      await invoke("install_modpack_from_file", {
+        filePath: filePath,
+        instanceName: finalName,
+        preferredGameVersion: null,
+      })
+
+      onSuccess()
+    } catch (error) {
+      console.error("Import error:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to import instance: ${error}`,
+        type: "danger"
+      })
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const handleCreateInstance = async () => {
     if (!newInstanceName.trim() || instanceExists) return
 
     setIsCreating(true)
+    const finalName = newInstanceName.trim()
 
-    onStartCreating(newInstanceName)
+    onStartCreating(finalName)
     onClose()
     
     try {
       await invoke<string>("create_instance", {
-        instanceName: newInstanceName,
+        instanceName: finalName,
         version: selectedVersion,
         loader: loaderType === "fabric" ? "fabric" : null,
         loaderVersion: loaderType === "fabric" ? selectedFabricVersion : null,
@@ -186,8 +235,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     }
   }
 
-  const isCreateDisabled = 
-    isCreating || 
+  const isCreateDisabled = isCreating || 
     !newInstanceName.trim() || 
     instanceExists ||
     (loaderType === "fabric" && !selectedFabricVersion) ||
@@ -215,6 +263,31 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
           </div>
 
           <div className="p-5 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {}}
+                disabled={isCreating}
+                className="px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <Package size={20} className="text-[#16a34a]" strokeWidth={1.5} />
+                  <span>Custom</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={handleImportFile}
+                disabled={isCreating}
+                className="px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <FileDown size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
+                  <span>Import File</span>
+                </div>
+              </button>
+            </div>
+
             <div>
               <label className="block text-xs font-medium text-[#808080] mb-2">Instance Name</label>
               <input
@@ -239,7 +312,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
             <div>
               <label className="block text-xs font-medium text-[#808080] mb-2">Version Type</label>
-              <div className="grid grid-cols-2 gap-2 mb-3">
+              <div className="flex gap-2 mb-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -247,7 +320,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                     const firstRelease = filteredVersions.find(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
                     if (firstRelease) setSelectedVersion(firstRelease.id)
                   }}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     versionFilter === "release"
                       ? "bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
@@ -264,7 +337,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                     if (firstSnapshot) setSelectedVersion(firstSnapshot.id)
                   }}
                   disabled={loaderType === "fabric"}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     versionFilter === "snapshot"
                       ? "bg-[#eab308]/10 ring-2 ring-[#eab308] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
@@ -312,19 +385,19 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
             <div>
               <label className="block text-xs font-medium text-[#808080] mb-2">Mod Loader</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setLoaderType("vanilla")}
                   disabled={isCreating}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer group ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                     loaderType === "vanilla"
                       ? "bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
                   }`}
                 >
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <Package size={20} className={loaderType === "vanilla" ? "text-[#16a34a]" : "text-[#4a4a4a]"} strokeWidth={1.5} />
+                  <div className="flex items-center justify-center gap-2">
+                    <Package size={18} className={loaderType === "vanilla" ? "text-[#16a34a]" : "text-[#4a4a4a]"} strokeWidth={1.5} />
                     <span>Vanilla</span>
                   </div>
                 </button>
@@ -332,14 +405,14 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   type="button"
                   onClick={() => setLoaderType("fabric")}
                   disabled={isCreating}
-                  className={`px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer group ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                     loaderType === "fabric"
                       ? "bg-[#3b82f6]/10 ring-2 ring-[#3b82f6] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
                   }`}
                 >
-                  <div className="flex flex-col items-center justify-center gap-1.5">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className={loaderType === "fabric" ? "text-[#3b82f6]" : "text-[#4a4a4a]"}>
+                  <div className="flex items-center justify-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className={loaderType === "fabric" ? "text-[#3b82f6]" : "text-[#4a4a4a]"}>
                       <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
