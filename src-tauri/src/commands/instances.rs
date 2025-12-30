@@ -665,6 +665,27 @@ pub fn open_world_folder(instance_name: String, folder_name: String) -> Result<S
     Ok(format!("Opened world folder '{}'", folder_name))
 }
 
+#[tauri::command]
+pub fn delete_world(instance_name: String, folder_name: String) -> Result<String, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    
+    // Sanitize folder_name to prevent path traversal
+    if folder_name.contains("..") || folder_name.contains("/") || folder_name.contains("\\") {
+        return Err("Invalid folder name".to_string());
+    }
+    
+    let world_dir = get_instance_dir(&safe_name).join("saves").join(&folder_name);
+
+    if !world_dir.exists() {
+        return Err(format!("World folder '{}' does not exist", folder_name));
+    }
+
+    std::fs::remove_dir_all(&world_dir)
+        .map_err(|e| format!("Failed to delete world folder: {}", e))?;
+
+    Ok(format!("Successfully deleted world '{}'", folder_name))
+}
+
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct World {
     pub name: String,
@@ -674,6 +695,7 @@ pub struct World {
     pub game_mode: Option<String>,
     pub version: Option<String>,
     pub icon: Option<String>,
+    pub created: Option<i64>,
 }
 
 #[tauri::command]
@@ -701,6 +723,13 @@ pub fn get_instance_worlds(instance_name: String) -> Result<Vec<World>, String> 
                 // Calculate folder size
                 let size = calculate_dir_size(&path).unwrap_or(0);
 
+                // Get creation timestamp
+                let created = path.metadata()
+                    .ok()
+                    .and_then(|m| m.created().ok())
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|d| d.as_secs() as i64);
+
                 // Try to read world icon
                 let icon = read_world_icon(&path);
 
@@ -712,13 +741,20 @@ pub fn get_instance_worlds(instance_name: String) -> Result<Vec<World>, String> 
                     game_mode: None,
                     version: None,
                     icon,
+                    created,
                 });
             }
         }
     }
 
-    // Sort by folder name
-    worlds.sort_by(|a, b| a.folder_name.cmp(&b.folder_name));
+    worlds.sort_by(|a, b| {
+        match (a.created, b.created) {
+            (Some(a_time), Some(b_time)) => b_time.cmp(&a_time),
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            (None, None) => a.folder_name.cmp(&b.folder_name),
+        }
+    });
 
     Ok(worlds)
 }

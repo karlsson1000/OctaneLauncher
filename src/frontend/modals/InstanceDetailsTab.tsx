@@ -23,6 +23,7 @@ interface World {
   game_mode?: string
   version?: string
   icon?: string
+  created?: number
 }
 
 interface InstanceDetailsTabProps {
@@ -243,6 +244,23 @@ export function InstanceDetailsTab({
     return `${bytes} B`
   }
 
+  const formatDate = (timestamp?: number): string => {
+    if (!timestamp) return "Unknown"
+    const date = new Date(timestamp * 1000)
+    
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    
+    let hours = date.getHours()
+    const minutes = String(date.getMinutes()).padStart(2, '0')
+    const ampm = hours >= 12 ? 'PM' : 'AM'
+    hours = hours % 12
+    hours = hours ? hours : 12 // the hour '0' should be '12'
+    
+    return `${year}-${month}-${day} at ${hours}:${minutes} ${ampm}`
+  }
+
   const getMinecraftVersion = (instance: Instance): string => {
     if (instance.loader === "fabric") {
       const parts = instance.version.split('-')
@@ -312,16 +330,15 @@ export function InstanceDetailsTab({
       message: `Are you sure you want to delete "${worldName}"?\n\nThis action cannot be undone.`,
       type: "danger",
       onConfirm: async () => {
+        setConfirmModal(null)
         try {
           await invoke("delete_world", {
             instanceName: instance.name,
             folderName
           })
           await loadWorlds()
-          setConfirmModal(null)
         } catch (error) {
           console.error("Failed to delete world:", error)
-          setConfirmModal(null)
           setAlertModal({
             isOpen: true,
             title: "Error",
@@ -737,7 +754,10 @@ return (
                             <h3 className="font-semibold text-base text-[#e8e8e8] truncate">
                               {world.name}
                             </h3>
-                            <div className="flex items-center gap-2 text-sm text-[#808080]">
+                            <p className="text-xs text-[#808080] mt-0.5">
+                              Created {formatDate(world.created)}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm text-[#808080] mt-0.5">
                               <span>{formatFileSize(world.size)}</span>
                               {world.game_mode && (
                                 <>
