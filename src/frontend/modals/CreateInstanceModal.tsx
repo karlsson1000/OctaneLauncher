@@ -320,7 +320,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                     const firstRelease = filteredVersions.find(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
                     if (firstRelease) setSelectedVersion(firstRelease.id)
                   }}
-                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                     versionFilter === "release"
                       ? "bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
@@ -337,7 +337,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                     if (firstSnapshot) setSelectedVersion(firstSnapshot.id)
                   }}
                   disabled={loaderType === "fabric"}
-                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
                     versionFilter === "snapshot"
                       ? "bg-[#eab308]/10 ring-2 ring-[#eab308] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
