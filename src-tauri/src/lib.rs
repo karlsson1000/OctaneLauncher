@@ -57,6 +57,7 @@ use commands::{
     get_modpack_manifest,
     get_modpack_game_versions,
     install_modpack_from_file,
+    get_modpack_name_from_file,
     
     // Server commands
     get_servers,
@@ -197,6 +198,7 @@ pub fn run() {
             get_modpack_manifest,
             get_modpack_game_versions,
             install_modpack_from_file,
+            get_modpack_name_from_file,
 
             // Servers
             get_servers,

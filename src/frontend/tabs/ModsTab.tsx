@@ -84,7 +84,7 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
           />
         ) : (
           <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
-            <Package size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
+            <Package size={24} className="text-[#4a4a4a]" strokeWidth={1.5} />
           </div>
         )}
         <div className="text-left min-w-0">

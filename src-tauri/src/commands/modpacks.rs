@@ -449,6 +449,70 @@ pub async fn get_modpack_game_versions() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub async fn get_modpack_name_from_file(
+    file_path: String,
+) -> Result<String, String> {
+    use std::path::Path;
+    
+    let file_path_obj = Path::new(&file_path);
+    if !file_path_obj.exists() {
+        return Err("Modpack file does not exist".to_string());
+    }
+    
+    let extension = file_path_obj
+        .extension()
+        .and_then(|e| e.to_str())
+        .ok_or_else(|| "Invalid file extension".to_string())?;
+    
+    if extension != "mrpack" && extension != "zip" {
+        return Err("Invalid modpack file format. Expected .mrpack or .zip".to_string());
+    }
+    
+    let temp_dir = std::env::temp_dir();
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let extract_dir = temp_dir.join(format!("modpack_preview_{}", timestamp));
+    
+    std::fs::create_dir_all(&extract_dir)
+        .map_err(|e| format!("Failed to create extraction directory: {}", e))?;
+    
+    let extract_result = extract_modpack(file_path_obj, &extract_dir);
+    if let Err(e) = extract_result {
+        let _ = std::fs::remove_dir_all(&extract_dir);
+        return Err(format!("Failed to extract modpack: {}", e));
+    }
+    
+    let manifest_path = extract_dir.join("modrinth.index.json");
+    if !manifest_path.exists() {
+        let _ = std::fs::remove_dir_all(&extract_dir);
+        return Err("Invalid modpack: modrinth.index.json not found".to_string());
+    }
+    
+    let manifest_content = std::fs::read_to_string(&manifest_path)
+        .map_err(|e| {
+            let _ = std::fs::remove_dir_all(&extract_dir);
+            format!("Failed to read manifest: {}", e)
+        })?;
+    
+    let manifest: serde_json::Value = serde_json::from_str(&manifest_content)
+        .map_err(|e| {
+            let _ = std::fs::remove_dir_all(&extract_dir);
+            format!("Failed to parse manifest: {}", e)
+        })?;
+    
+    let modpack_name = manifest.get("name")
+        .and_then(|n| n.as_str())
+        .unwrap_or("Imported Modpack")
+        .to_string();
+    
+    let _ = std::fs::remove_dir_all(&extract_dir);
+    
+    Ok(modpack_name)
+}
+
+#[tauri::command]
 pub async fn install_modpack_from_file(
     file_path: String,
     instance_name: String,

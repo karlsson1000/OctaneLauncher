@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { open } from '@tauri-apps/plugin-dialog'
 import { Search, Download, Loader2, Package, ChevronLeft, ChevronRight, CheckCircle, AlertCircle } from "lucide-react"
-import { ImportModpackModal } from "../modals/ImportModpackModal"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
 interface ModpacksTabProps {
@@ -24,6 +23,9 @@ interface ModpackInstallProgress {
   progress: number
   stage: string
 }
+
+const YOUR_MODPACK_SLUG = "stellarmc-enhanced"
+const YOUR_MODPACK_AUTHOR = "StellarMC"
 
 export function ModpacksTab({ 
   instances, 
@@ -52,8 +54,7 @@ export function ModpacksTab({
   const [loadingVersions, setLoadingVersions] = useState<Set<string>>(new Set())
   const [modpackGalleries, setModpackGalleries] = useState<Record<string, string[]>>({})
   const [showInstalledOnly, setShowInstalledOnly] = useState(false)
-  const [showImportModal, setShowImportModal] = useState(false)
-  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null)
+  const [customModpack, setCustomModpack] = useState<ModrinthProject | null>(null)
 
   useEffect(() => {
     if (onImport) {
@@ -62,6 +63,7 @@ export function ModpacksTab({
   }, [onImport])
 
   useEffect(() => {
+    loadCustomModpack()
     loadPopularModpacks()
     loadAvailableVersions()
   }, [])
@@ -95,6 +97,41 @@ export function ModpacksTab({
       }
     }
   }, [searchQuery, selectedVersion])
+
+  const loadCustomModpack = async () => {
+    try {
+      const projectDetails = await invoke<any>("get_project_details", {
+        idOrSlug: YOUR_MODPACK_SLUG,
+      })
+
+      const modpackData: ModrinthProject = {
+        project_id: projectDetails.id,
+        slug: projectDetails.slug,
+        title: projectDetails.title,
+        description: projectDetails.description,
+        author: YOUR_MODPACK_AUTHOR,
+        icon_url: projectDetails.icon_url,
+        downloads: projectDetails.downloads || 0,
+        follows: 0,
+        date_created: "",
+        date_modified: "",
+        latest_version: "",
+        license: "",
+        client_side: "required",
+        server_side: "optional",
+        project_type: "modpack",
+        categories: [],
+        versions: [],
+        gallery: [],
+        display_categories: []
+      }
+      
+      setCustomModpack(modpackData)
+      loadModpackGallery(projectDetails.id)
+    } catch (error) {
+      console.error("Failed to load your modpack:", error)
+    }
+  }
 
   const loadAvailableVersions = async () => {
     onSetIsLoadingVersions(true)
@@ -196,12 +233,27 @@ export function ModpacksTab({
 
   const getFilteredModpacks = () => {
     if (!searchResults) return []
-    if (!showInstalledOnly) return searchResults.hits
-    return searchResults.hits.filter(modpack => isModpackInstalled(modpack.title))
+    
+    const modpacks = showInstalledOnly 
+      ? searchResults.hits.filter(modpack => isModpackInstalled(modpack.title))
+      : searchResults.hits
+
+    const shouldShowYourModpack = currentPage === 1 && !searchQuery.trim() && customModpack
+    
+    if (shouldShowYourModpack) {
+      const filteredModpacks = modpacks.filter(m => m.project_id !== customModpack!.project_id)
+      return [customModpack!, ...filteredModpacks]
+    }
+    
+    return modpacks
   }
 
   const getPaginatedModpacks = () => {
     const filtered = getFilteredModpacks()
+    if (!showInstalledOnly && !searchQuery.trim() && currentPage === 1 && customModpack) {
+      return filtered.slice(0, itemsPerPage)
+    }
+    
     if (!showInstalledOnly) return filtered
     
     const startIndex = (currentPage - 1) * itemsPerPage
@@ -285,7 +337,7 @@ export function ModpacksTab({
     try {
       const projectId = modpack.project_id
       let versions = modpackVersions[projectId]
-      
+
       if (!versions) {
         setLoadingVersions(prev => new Set(prev).add(projectId))
         versions = await invoke<ModrinthVersion[]>("get_modpack_versions", {
@@ -313,12 +365,15 @@ export function ModpacksTab({
       
       setInstallingModpacks(prev => new Set(prev).add(modpack.project_id))
       
-      // Show creation toast immediately
-      console.log("Calling onShowCreationToast with:", finalName)
+      console.log("Installing modpack:", {
+        slug: modpack.slug,
+        instanceName: finalName,
+        versionId: versionId,
+        gameVersion: selectedVersion
+      })
+      
       if (onShowCreationToast) {
         onShowCreationToast(finalName)
-      } else {
-        console.warn("onShowCreationToast is not defined!")
       }
       
       await invoke("install_modpack", {
@@ -386,51 +441,54 @@ export function ModpacksTab({
 
       if (!selected) return
 
-      // Store the file path and show the modal
-      setSelectedFilePath(selected as string)
-      setShowImportModal(true)
+      const filePath = selected as string
+      
+      try {
+        // Extract modpack name from the file
+        const modpackName = await invoke<string>("get_modpack_name_from_file", {
+          filePath: filePath
+        })
+        
+        console.log("Extracted modpack name:", modpackName)
+        
+        // Check if instance already exists and generate unique name if needed
+        let finalName = modpackName
+        const existingInstance = instances.find(
+          i => i.name.toLowerCase() === modpackName.toLowerCase()
+        )
+        
+        if (existingInstance) {
+          finalName = `${modpackName}-${Date.now()}`
+          console.log("Instance exists, using name:", finalName)
+        }
+        
+        // Show toast notification
+        if (onShowCreationToast) {
+          onShowCreationToast(finalName)
+        }
+        
+        // Import directly without modal
+        await invoke("install_modpack_from_file", {
+          filePath: filePath,
+          instanceName: finalName,
+          preferredGameVersion: selectedVersion,
+        })
+
+        if (onRefreshInstances) {
+          setTimeout(() => {
+            onRefreshInstances()
+          }, 500)
+        }
+        
+      } catch (error) {
+        console.error("Failed to import modpack:", error)
+        alert(`Failed to install modpack: ${error}`)
+      }
+      
     } catch (error) {
       console.error("Failed to select modpack file:", error)
       alert(`Failed to select file: ${error}`)
     }
-  }
-
-  const handleConfirmImport = async (instanceName: string) => {
-    if (!selectedFilePath) return
-
-    setShowImportModal(false)
-
-    try {
-      // Show creation toast immediately
-      console.log("Calling onShowCreationToast with:", instanceName)
-      if (onShowCreationToast) {
-        onShowCreationToast(instanceName)
-      } else {
-        console.warn("onShowCreationToast is not defined!")
-      }
-
-      await invoke("install_modpack_from_file", {
-        filePath: selectedFilePath,
-        instanceName: instanceName,
-        preferredGameVersion: selectedVersion,
-      })
-
-      if (onRefreshInstances) {
-        setTimeout(() => {
-          onRefreshInstances()
-        }, 500)
-      }
-    } catch (error) {
-      console.error("Failed to upload modpack:", error)
-      alert(`Failed to install modpack: ${error}`)
-    } finally {
-      setSelectedFilePath(null)
-    }
-  }
-
-  const handleCancelImport = () => {
-    setShowImportModal(false)
-    setSelectedFilePath(null)
   }
 
   const filteredModpacks = getFilteredModpacks()
@@ -442,8 +500,7 @@ export function ModpacksTab({
     : searchResults && searchResults.total_hits > itemsPerPage
 
   return (
-    <>
-      <div className="max-w-7xl mx-auto flex gap-4">
+    <div className="max-w-7xl mx-auto flex gap-4">
       <div className="flex-1 min-w-0">
         <div className="relative mb-4">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a4a4a]" strokeWidth={2} />
@@ -720,16 +777,5 @@ export function ModpacksTab({
         </div>
       </div>
     </div>
-
-    {/* Import Modal */}
-    {showImportModal && (
-      <ImportModpackModal
-        instances={instances}
-        defaultName=""
-        onConfirm={handleConfirmImport}
-        onCancel={handleCancelImport}
-      />
-    )}
-  </>
   )
 }
