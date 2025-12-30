@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { Play, FolderOpen, Trash2, Package, Loader2, ExternalLink, Edit2, X, Check, ImagePlus, Camera } from "lucide-react"
+import { Play, FolderOpen, Trash2, Package, Loader2, ExternalLink, Edit2, X, Check, ImagePlus, Camera, Globe } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "./ConfirmModal"
 import type { Instance } from "../../types"
@@ -13,6 +13,16 @@ interface InstalledMod {
   downloads?: number
   author?: string
   disabled?: boolean
+}
+
+interface World {
+  name: string
+  folder_name: string
+  size: number
+  last_played?: number
+  game_mode?: string
+  version?: string
+  icon?: string
 }
 
 interface InstanceDetailsTabProps {
@@ -34,7 +44,9 @@ export function InstanceDetailsTab({
 }: InstanceDetailsTabProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [installedMods, setInstalledMods] = useState<InstalledMod[]>([])
+  const [worlds, setWorlds] = useState<World[]>([])
   const [isLoadingMods, setIsLoadingMods] = useState(true)
+  const [isLoadingWorlds, setIsLoadingWorlds] = useState(true)
   const [isRenaming, setIsRenaming] = useState(false)
   const [newName, setNewName] = useState(instance.name)
   const [renameError, setRenameError] = useState<string | null>(null)
@@ -57,6 +69,7 @@ export function InstanceDetailsTab({
 
   useEffect(() => {
     loadInstalledMods()
+    loadWorlds()
     loadInstanceIcon()
   }, [instance.name])
 
@@ -72,6 +85,21 @@ export function InstanceDetailsTab({
     }
   }
 
+  const loadWorlds = async () => {
+    setIsLoadingWorlds(true)
+    try {
+      const worldsList = await invoke<World[]>("get_instance_worlds", {
+        instanceName: instance.name
+      })
+      setWorlds(worldsList)
+    } catch (error) {
+      console.error("Failed to load worlds:", error)
+      setWorlds([])
+    } finally {
+      setIsLoadingWorlds(false)
+    }
+  }
+
   const handleIconClick = () => {
     fileInputRef.current?.click()
   }
@@ -80,7 +108,6 @@ export function InstanceDetailsTab({
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       setAlertModal({
         isOpen: true,
@@ -91,7 +118,6 @@ export function InstanceDetailsTab({
       return
     }
 
-    // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       setAlertModal({
         isOpen: true,
@@ -105,7 +131,6 @@ export function InstanceDetailsTab({
     setIsUploadingIcon(true)
 
     try {
-      // Read file as base64
       const reader = new FileReader()
       reader.onload = async () => {
         const base64 = (reader.result as string).split(',')[1]
@@ -136,7 +161,6 @@ export function InstanceDetailsTab({
       setIsUploadingIcon(false)
     }
 
-    // Reset input
     if (event.target) {
       event.target.value = ''
     }
@@ -310,6 +334,34 @@ export function InstanceDetailsTab({
     })
   }
 
+  const handleDeleteWorld = async (folderName: string, worldName: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete World",
+      message: `Are you sure you want to delete "${worldName}"?\n\nThis action cannot be undone.`,
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await invoke("delete_world", {
+            instanceName: instance.name,
+            folderName
+          })
+          await loadWorlds()
+          setConfirmModal(null)
+        } catch (error) {
+          console.error("Failed to delete world:", error)
+          setConfirmModal(null)
+          setAlertModal({
+            isOpen: true,
+            title: "Error",
+            message: `Failed to delete world: ${error}`,
+            type: "danger"
+          })
+        }
+      }
+    })
+  }
+
   const handleToggleMod = async (mod: InstalledMod) => {
     try {
       await invoke("toggle_mod", {
@@ -334,6 +386,41 @@ export function InstanceDetailsTab({
       await invoke("open_mods_folder", { instanceName: instance.name })
     } catch (error) {
       console.error("Failed to open mods folder:", error)
+    }
+  }
+
+  const handleOpenWorldsFolder = async () => {
+    console.log("Attempting to open worlds folder for instance:", instance.name)
+    try {
+      const result = await invoke("open_worlds_folder", { instanceName: instance.name })
+      console.log("Open worlds folder result:", result)
+    } catch (error) {
+      console.error("Failed to open worlds folder:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to open worlds folder: ${error}`,
+        type: "danger"
+      })
+    }
+  }
+
+  const handleOpenWorldFolder = async (folderName: string) => {
+    console.log("Attempting to open world folder:", folderName, "for instance:", instance.name)
+    try {
+      const result = await invoke("open_world_folder", {
+        instanceName: instance.name,
+        folderName
+      })
+      console.log("Open world folder result:", result)
+    } catch (error) {
+      console.error("Failed to open world folder:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to open world folder: ${error}`,
+        type: "danger"
+      })
     }
   }
 
@@ -549,96 +636,178 @@ export function InstanceDetailsTab({
 
           <div className="border-t border-[#2a2a2a] my-6"></div>
 
-          {/* Mods Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-[#e8e8e8] tracking-tight">Installed Mods</h2>
-                <span className="px-2 py-0.5 bg-[#1a1a1a] text-[#808080] text-xs rounded">
-                  {installedMods.length} {installedMods.length === 1 ? 'mod' : 'mods'}
-                </span>
+          {/* Two Column Layout for Mods and Worlds */}
+          <div className="grid grid-cols-2 gap-0 relative">
+            {/* Mods Section */}
+            <div className="pr-6 border-r border-[#2a2a2a]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold text-[#e8e8e8] tracking-tight">Installed Mods</h2>
+                  <span className="px-2 py-0.5 bg-[#1a1a1a] text-[#808080] text-xs rounded">
+                    {installedMods.length} {installedMods.length === 1 ? 'mod' : 'mods'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleOpenModsFolder}
+                  className="flex items-center gap-1.5 text-sm text-[#808080] hover:text-[#e8e8e8] transition-colors cursor-pointer"
+                >
+                  <ExternalLink size={14} />
+                  <span>Open Folder</span>
+                </button>
               </div>
-              <button
-                onClick={handleOpenModsFolder}
-                className="flex items-center gap-1.5 text-sm text-[#808080] hover:text-[#e8e8e8] transition-colors cursor-pointer"
-              >
-                <ExternalLink size={14} />
-                <span>Open Mods Folder</span>
-              </button>
-            </div>
-            
-            {isLoadingMods ? (
-              <div className="text-center py-16">
-                <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
-              </div>
-            ) : installedMods.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Package size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
-                <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No mods installed</h3>
-                <p className="text-sm text-[#808080]">Browse the mods tab to add mods</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {installedMods.map((mod) => (
-                  <div
-                    key={mod.filename}
-                    className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl p-4 transition-all ${
-                      mod.disabled ? 'opacity-60' : ''
-                    }`}
-                  >
-                    <div className="flex gap-4">
-                      {mod.icon_url ? (
-                        <img 
-                          src={mod.icon_url} 
-                          alt={mod.name || mod.filename} 
-                          className={`w-16 h-16 rounded-lg flex-shrink-0 ${
-                            mod.disabled ? 'grayscale' : ''
-                          }`} 
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Package size={32} className="text-[#16a34a]" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0">
-                          <h3 className="font-semibold text-base text-[#e8e8e8] truncate">
+              
+              {isLoadingMods ? (
+                <div className="text-center py-16">
+                  <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
+                </div>
+              ) : installedMods.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                  <h3 className="text-base font-semibold text-[#e8e8e8] mb-1">No mods installed</h3>
+                  <p className="text-sm text-[#808080]">Browse the mods tab to add mods</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {installedMods.map((mod) => (
+                    <div
+                      key={mod.filename}
+                      className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl p-3 transition-all ${
+                        mod.disabled ? 'opacity-60' : ''
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        {mod.icon_url ? (
+                          <img 
+                            src={mod.icon_url} 
+                            alt={mod.name || mod.filename} 
+                            className={`w-12 h-12 rounded-lg flex-shrink-0 ${
+                              mod.disabled ? 'grayscale' : ''
+                            }`} 
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Package size={24} className="text-[#16a34a]" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm text-[#e8e8e8] truncate">
                             {mod.name || mod.filename}
                           </h3>
-                          {mod.author && (
-                            <span className="text-xs text-[#808080] whitespace-nowrap">by {mod.author}</span>
-                          )}
+                          <p className="text-xs text-[#808080] truncate">{mod.filename}</p>
+                          <p className="text-xs text-[#4a4a4a] mt-0.5">{formatFileSize(mod.size)}</p>
                         </div>
-                        <p className="text-sm text-[#808080] truncate mb-1">{mod.filename}</p>
-                        <p className="text-xs text-[#4a4a4a]">{formatFileSize(mod.size)}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleToggleMod(mod)}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                            mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
-                          }`}
-                          title={mod.disabled ? 'Enable mod' : 'Disable mod'}
-                        >
-                          <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              mod.disabled ? 'translate-x-1' : 'translate-x-6'
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            onClick={() => handleToggleMod(mod)}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
+                              mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
                             }`}
-                          />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMod(mod.filename, mod.name)}
-                          className="p-2 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer"
-                          title="Delete mod"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                            title={mod.disabled ? 'Enable mod' : 'Disable mod'}
+                          >
+                            <span
+                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                                mod.disabled ? 'translate-x-1' : 'translate-x-5'
+                              }`}
+                            />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMod(mod.filename, mod.name)}
+                            className="p-1 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer"
+                            title="Delete mod"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Worlds Section */}
+            <div className="pl-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold text-[#e8e8e8] tracking-tight">Worlds</h2>
+                  <span className="px-2 py-0.5 bg-[#1a1a1a] text-[#808080] text-xs rounded">
+                    {worlds.length} {worlds.length === 1 ? 'world' : 'worlds'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleOpenWorldsFolder}
+                  className="flex items-center gap-1.5 text-sm text-[#808080] hover:text-[#e8e8e8] transition-colors cursor-pointer"
+                >
+                  <ExternalLink size={14} />
+                  <span>Open Folder</span>
+                </button>
               </div>
-            )}
+              
+              {isLoadingWorlds ? (
+                <div className="text-center py-16">
+                  <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
+                </div>
+              ) : worlds.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                  <h3 className="text-base font-semibold text-[#e8e8e8] mb-1">No worlds yet</h3>
+                  <p className="text-sm text-[#808080]">Launch the game to create a world</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {worlds.map((world) => (
+                    <div
+                      key={world.folder_name}
+                      className="bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl p-3 transition-all"
+                    >
+                      <div className="flex gap-3">
+                        {world.icon ? (
+                          <img 
+                            src={world.icon} 
+                            alt={world.name} 
+                            className="w-12 h-12 rounded-lg flex-shrink-0 object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <Globe size={24} className="text-[#16a34a]" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm text-[#e8e8e8] truncate">
+                            {world.name}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs text-[#808080]">
+                            <span>{formatFileSize(world.size)}</span>
+                            {world.game_mode && (
+                              <>
+                                <span>•</span>
+                                <span className="capitalize">{world.game_mode}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <button
+                            onClick={() => handleOpenWorldFolder(world.folder_name)}
+                            className="p-1 hover:bg-[#2a2a2a] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-all cursor-pointer"
+                            title="Open world folder"
+                          >
+                            <FolderOpen size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteWorld(world.folder_name, world.name)}
+                            className="p-1 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer"
+                            title="Delete world"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -628,3 +628,134 @@ pub async fn save_debug_report(version: String) -> Result<String, String> {
     
     Ok(filepath.to_string_lossy().to_string())
 }
+
+#[tauri::command]
+pub fn open_worlds_folder(instance_name: String) -> Result<String, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    
+    let saves_dir = get_instance_dir(&safe_name).join("saves");
+
+    if !saves_dir.exists() {
+        std::fs::create_dir_all(&saves_dir)
+            .map_err(|e| format!("Failed to create saves folder: {}", e))?;
+    }
+
+    open_folder(saves_dir).map_err(|e| format!("Failed to open saves folder: {}", e))?;
+
+    Ok(format!("Opened saves folder for instance '{}'", safe_name))
+}
+
+#[tauri::command]
+pub fn open_world_folder(instance_name: String, folder_name: String) -> Result<String, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    
+    // Sanitize folder_name to prevent path traversal
+    if folder_name.contains("..") || folder_name.contains("/") || folder_name.contains("\\") {
+        return Err("Invalid folder name".to_string());
+    }
+    
+    let world_dir = get_instance_dir(&safe_name).join("saves").join(&folder_name);
+
+    if !world_dir.exists() {
+        return Err(format!("World folder '{}' does not exist", folder_name));
+    }
+
+    open_folder(world_dir).map_err(|e| format!("Failed to open world folder: {}", e))?;
+
+    Ok(format!("Opened world folder '{}'", folder_name))
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct World {
+    pub name: String,
+    pub folder_name: String,
+    pub size: u64,
+    pub last_played: Option<i64>,
+    pub game_mode: Option<String>,
+    pub version: Option<String>,
+    pub icon: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_instance_worlds(instance_name: String) -> Result<Vec<World>, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    
+    let saves_dir = get_instance_dir(&safe_name).join("saves");
+
+    if !saves_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut worlds = Vec::new();
+
+    if let Ok(entries) = std::fs::read_dir(&saves_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            
+            if path.is_dir() {
+                let folder_name = path.file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("")
+                    .to_string();
+
+                // Calculate folder size
+                let size = calculate_dir_size(&path).unwrap_or(0);
+
+                // Try to read world icon
+                let icon = read_world_icon(&path);
+
+                worlds.push(World {
+                    name: folder_name.clone(),
+                    folder_name,
+                    size,
+                    last_played: None,
+                    game_mode: None,
+                    version: None,
+                    icon,
+                });
+            }
+        }
+    }
+
+    // Sort by folder name
+    worlds.sort_by(|a, b| a.folder_name.cmp(&b.folder_name));
+
+    Ok(worlds)
+}
+
+fn read_world_icon(world_path: &std::path::Path) -> Option<String> {
+    let icon_path = world_path.join("icon.png");
+    
+    if !icon_path.exists() {
+        return None;
+    }
+    
+    // Read the icon file
+    if let Ok(image_bytes) = std::fs::read(&icon_path) {
+        let base64_data = base64::engine::general_purpose::STANDARD.encode(&image_bytes);
+        Some(format!("data:image/png;base64,{}", base64_data))
+    } else {
+        None
+    }
+}
+
+fn calculate_dir_size(path: &std::path::Path) -> std::io::Result<u64> {
+    let mut size = 0u64;
+    
+    if path.is_file() {
+        return Ok(path.metadata()?.len());
+    }
+    
+    for entry in std::fs::read_dir(path)? {
+        let entry = entry?;
+        let entry_path = entry.path();
+        
+        if entry_path.is_dir() {
+            size += calculate_dir_size(&entry_path)?;
+        } else {
+            size += entry.metadata()?.len();
+        }
+    }
+    
+    Ok(size)
+}

@@ -26,6 +26,9 @@ use commands::{
     get_instance_icon,
     get_launcher_directory,
     open_instance_folder,
+    open_worlds_folder,
+    open_world_folder,
+    get_instance_worlds,
     
     // Version commands
     get_minecraft_versions,
@@ -152,6 +155,9 @@ pub fn run() {
             delete_instance,
             rename_instance,
             duplicate_instance,
+            open_worlds_folder,
+            open_world_folder,
+            get_instance_worlds,
             
             // Instance icons
             set_instance_icon,
