@@ -166,25 +166,6 @@ export function InstanceDetailsTab({
     }
   }
 
-  const handleRemoveIcon = async () => {
-    try {
-      await invoke("remove_instance_icon", {
-        instanceName: instance.name
-      })
-      
-      setInstanceIcon(null)
-      onInstanceUpdated()
-    } catch (error) {
-      console.error("Failed to remove icon:", error)
-      setAlertModal({
-        isOpen: true,
-        title: "Error",
-        message: `Failed to remove icon: ${error}`,
-        type: "danger"
-      })
-    }
-  }
-
   const loadInstalledMods = async () => {
     setIsLoadingMods(true)
     try {
@@ -306,32 +287,22 @@ export function InstanceDetailsTab({
     })
   }
 
-  const handleDeleteMod = async (filename: string, modName?: string) => {
-    setConfirmModal({
-      isOpen: true,
-      title: "Delete Mod",
-      message: `Are you sure you want to delete "${modName || filename}"?\n\nThis action cannot be undone.`,
-      type: "danger",
-      onConfirm: async () => {
-        try {
-          await invoke("delete_mod", {
-            instanceName: instance.name,
-            filename
-          })
-          await loadInstalledMods()
-          setConfirmModal(null)
-        } catch (error) {
-          console.error("Failed to delete mod:", error)
-          setConfirmModal(null)
-          setAlertModal({
-            isOpen: true,
-            title: "Error",
-            message: `Failed to delete mod: ${error}`,
-            type: "danger"
-          })
-        }
-      }
-    })
+  const handleDeleteMod = async (filename: string) => {
+    try {
+      await invoke("delete_mod", {
+        instanceName: instance.name,
+        filename
+      })
+      await loadInstalledMods()
+    } catch (error) {
+      console.error("Failed to delete mod:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to delete mod: ${error}`,
+        type: "danger"
+      })
+    }
   }
 
   const handleDeleteWorld = async (folderName: string, worldName: string) => {
@@ -470,7 +441,7 @@ export function InstanceDetailsTab({
     }
   }
 
-  return (
+return (
     <>
       <div className="p-6 space-y-4">
         <div className="max-w-7xl mx-auto">
@@ -487,36 +458,25 @@ export function InstanceDetailsTab({
               />
               
               {instanceIcon ? (
-                <div className="relative">
+                <button
+                  onClick={handleIconClick}
+                  disabled={isUploadingIcon}
+                  className="w-16 h-16 rounded-xl overflow-hidden relative cursor-pointer bg-transparent"
+                >
                   <img
                     src={instanceIcon}
                     alt={instance.name}
-                    className="w-16 h-16 rounded-xl object-cover"
+                    className="w-full h-full object-cover"
                   />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-1">
-                    <button
-                      onClick={handleIconClick}
-                      disabled={isUploadingIcon}
-                      className="p-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-md transition-colors cursor-pointer"
-                      title="Change icon"
-                    >
-                      <Camera size={14} />
-                    </button>
-                    <button
-                      onClick={handleRemoveIcon}
-                      disabled={isUploadingIcon}
-                      className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md transition-colors cursor-pointer"
-                      title="Remove icon"
-                    >
-                      <X size={14} />
-                    </button>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera size={20} className="text-white" />
                   </div>
-                </div>
+                </button>
               ) : (
                 <button
                   onClick={handleIconClick}
                   disabled={isUploadingIcon}
-                  className="w-16 h-16 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-xl flex items-center justify-center transition-all group bg-transparent cursor-pointer"
+                  className="w-16 h-16 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-xl flex items-center justify-center transition-all bg-transparent cursor-pointer"
                   title="Add icon"
                 >
                   {isUploadingIcon ? (
@@ -547,14 +507,12 @@ export function InstanceDetailsTab({
                           <button
                             onClick={handleRename}
                             className="p-1.5 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-md transition-colors cursor-pointer"
-                            title="Save"
                           >
                             <Check size={16} />
                           </button>
                           <button
                             onClick={cancelRename}
                             className="p-1.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-colors cursor-pointer"
-                            title="Cancel"
                           >
                             <X size={16} />
                           </button>
@@ -620,12 +578,10 @@ export function InstanceDetailsTab({
                     {isDeleting ? (
                       <>
                         <Loader2 size={16} className="animate-spin" />
-                        <span>Deleting...</span>
                       </>
                     ) : (
                       <>
                         <Trash2 size={16} />
-                        <span>Delete</span>
                       </>
                     )}
                   </button>
@@ -671,52 +627,54 @@ export function InstanceDetailsTab({
                   {installedMods.map((mod) => (
                     <div
                       key={mod.filename}
-                      className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl p-3 transition-all ${
+                      className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl overflow-hidden transition-all ${
                         mod.disabled ? 'opacity-60' : ''
                       }`}
                     >
-                      <div className="flex gap-3">
+                      <div className="flex min-h-0">
                         {mod.icon_url ? (
-                          <img 
-                            src={mod.icon_url} 
-                            alt={mod.name || mod.filename} 
-                            className={`w-12 h-12 rounded-lg flex-shrink-0 ${
-                              mod.disabled ? 'grayscale' : ''
-                            }`} 
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Package size={24} className="text-[#16a34a]" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-sm text-[#e8e8e8] truncate">
-                            {mod.name || mod.filename}
-                          </h3>
-                          <p className="text-xs text-[#808080] truncate">{mod.filename}</p>
-                          <p className="text-xs text-[#4a4a4a] mt-0.5">{formatFileSize(mod.size)}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <button
-                            onClick={() => handleToggleMod(mod)}
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer ${
-                              mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
-                            }`}
-                            title={mod.disabled ? 'Enable mod' : 'Disable mod'}
-                          >
-                            <span
-                              className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                                mod.disabled ? 'translate-x-1' : 'translate-x-5'
+                          <div className="w-22 bg-[#1a1a1a] flex items-center justify-center flex-shrink-0 self-stretch">
+                            <img
+                              src={mod.icon_url}
+                              alt={mod.name || mod.filename}
+                              className={`w-full h-full object-contain ${
+                                mod.disabled ? 'grayscale' : ''
                               }`}
                             />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMod(mod.filename, mod.name)}
-                            className="p-1 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer"
-                            title="Delete mod"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          </div>
+                        ) : (
+                          <div className="w-22 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 flex items-center justify-center flex-shrink-0 self-stretch">
+                            <Package size={32} className="text-[#16a34a]" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base text-[#e8e8e8] truncate">
+                              {mod.name || mod.filename}
+                            </h3>
+                            <p className="text-sm text-[#808080] truncate">{mod.filename}</p>
+                            <p className="text-sm text-[#4a4a4a] mt-0.5">{formatFileSize(mod.size)}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <button
+                              onClick={() => handleToggleMod(mod)}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                                mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  mod.disabled ? 'translate-x-1' : 'translate-x-6'
+                                }`}
+                              />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMod(mod.filename)}
+                              className="p-1.5 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer mt-1"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -758,49 +716,52 @@ export function InstanceDetailsTab({
                   {worlds.map((world) => (
                     <div
                       key={world.folder_name}
-                      className="bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl p-3 transition-all"
+                      className="bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl overflow-hidden transition-all"
                     >
-                      <div className="flex gap-3">
+                      <div className="flex min-h-0">
                         {world.icon ? (
-                          <img 
-                            src={world.icon} 
-                            alt={world.name} 
-                            className="w-12 h-12 rounded-lg flex-shrink-0 object-cover"
-                          />
+                          <div className="w-22 bg-[#1a1a1a] flex items-center justify-center flex-shrink-0 self-stretch">
+                            <img 
+                              src={world.icon} 
+                              alt={world.name} 
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
                         ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <Globe size={24} className="text-[#16a34a]" />
+                          <div className="w-22 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 flex items-center justify-center flex-shrink-0 self-stretch">
+                            <Globe size={32} className="text-[#16a34a]" />
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-sm text-[#e8e8e8] truncate">
-                            {world.name}
-                          </h3>
-                          <div className="flex items-center gap-2 text-xs text-[#808080]">
-                            <span>{formatFileSize(world.size)}</span>
-                            {world.game_mode && (
-                              <>
-                                <span>•</span>
-                                <span className="capitalize">{world.game_mode}</span>
-                              </>
-                            )}
+                        <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base text-[#e8e8e8] truncate">
+                              {world.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-[#808080]">
+                              <span>{formatFileSize(world.size)}</span>
+                              {world.game_mode && (
+                                <>
+                                  <span>•</span>
+                                  <span className="capitalize">{world.game_mode}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <button
-                            onClick={() => handleOpenWorldFolder(world.folder_name)}
-                            className="p-1 hover:bg-[#2a2a2a] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-all cursor-pointer"
-                            title="Open world folder"
-                          >
-                            <FolderOpen size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteWorld(world.folder_name, world.name)}
-                            className="p-1 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer"
-                            title="Delete world"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex flex-col items-end gap-1">
+                            <button
+                              onClick={() => handleOpenWorldFolder(world.folder_name)}
+                              className="p-1.5 hover:bg-[#2a2a2a] text-[#808080] hover:text-[#e8e8e8] rounded-md transition-all cursor-pointer"
+                            >
+                              <FolderOpen size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteWorld(world.folder_name, world.name)}
+                              className="p-1.5 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer"
+                              title="Delete world"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
