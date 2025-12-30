@@ -271,32 +271,19 @@ export function InstancesTab({
     }
   }
 
-  const handleDeleteTemplate = async (templateId: string, templateName: string) => {
-    setShowApplyMenu(false)
-    setSelectedTemplateId(null)
-    
-    setConfirmModal({
-      isOpen: true,
-      title: "Delete Template",
-      message: `Are you sure you want to delete "${templateName}"?\n\nThis action cannot be undone.`,
-      type: "danger",
-      onConfirm: async () => {
-        try {
-          await invoke("delete_template", { templateId })
-          await loadTemplates()
-          setConfirmModal(null)
-        } catch (error) {
-          console.error("Failed to delete template:", error)
-          setConfirmModal(null)
-          setAlertModal({
-            isOpen: true,
-            title: "Error",
-            message: `Failed to delete template: ${error}`,
-            type: "danger"
-          })
-        }
-      }
-    })
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      await invoke("delete_template", { templateId })
+      await loadTemplates()
+    } catch (error) {
+      console.error("Failed to delete template:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to delete template: ${error}`,
+        type: "danger"
+      })
+    }
   }
 
   const handleApplyTemplate = async (templateId: string, instanceName: string) => {
@@ -579,7 +566,7 @@ export function InstancesTab({
                       <button
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleDeleteTemplate(template.id, template.name)
+                          handleDeleteTemplate(template.id)
                         }}
                         className="p-1 hover:bg-[#1f1f1f] text-[#808080] hover:text-red-400 rounded transition-all cursor-pointer"
                         title="Delete Template"
