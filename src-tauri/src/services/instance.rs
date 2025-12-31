@@ -126,6 +126,60 @@ impl InstanceManager {
         }));
     }
 
+    fn get_java_version(java_path: &str) -> Result<u32, Box<dyn std::error::Error>> {
+        let output = Command::new(java_path)
+            .arg("-version")
+            .output()?;
+        
+        let version_text = String::from_utf8_lossy(&output.stderr);
+        
+        // Parse version from output
+        if let Some(version_line) = version_text.lines().next() {
+            if let Some(major) = version_line
+                .split('"')
+                .nth(1)
+                .and_then(|v| v.split('.').next())
+                .and_then(|v| v.parse::<u32>().ok())
+            {
+                return Ok(major);
+            }
+        }
+        
+        Err("Could not parse Java version".into())
+    }
+
+    fn get_required_java_version(minecraft_version: &str) -> u32 {
+        // Extract base Minecraft version
+        let base_version = if let Some(pos) = minecraft_version.find('-') {
+            &minecraft_version[..pos]
+        } else {
+            minecraft_version
+        };
+
+        // Parse version components
+        let parts: Vec<&str> = base_version.split('.').collect();
+        
+        if parts.len() >= 2 {
+            if let (Ok(major), Ok(minor)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                if major == 1 && minor >= 20 {
+                    if parts.len() >= 3 {
+                        if let Ok(patch) = parts[2].parse::<u32>() {
+                            if minor == 20 && patch >= 5 {
+                                return 21;
+                            }
+                        }
+                    }
+                    return 17;
+                }
+                if major == 1 && minor >= 18 {
+                    return 17;
+                }
+            }
+        }
+        
+        8
+    }
+
     pub fn launch(
         instance_name: &str,
         username: &str,
@@ -183,7 +237,7 @@ impl InstanceManager {
             match find_java() {
                 Some(path) => path,
                 None => {
-                    let err_msg = "Java not found. Please install Java 17 or higher or specify a custom Java path in settings.";
+                    let err_msg = "Java not found. Please install Java or specify a custom Java path in settings.";
                     Self::emit_error_log(&app_handle, instance_name, err_msg);
                     return Err(err_msg.into());
                 }
@@ -191,6 +245,30 @@ impl InstanceManager {
         };
 
         println!("Java found: {}", java_path);
+
+        // Check Java version
+        let required_java = Self::get_required_java_version(&version);
+        println!("Required Java version: {}", required_java);
+
+        match Self::get_java_version(&java_path) {
+            Ok(java_version) => {
+                println!("Detected Java version: {}", java_version);
+                if java_version < required_java {
+                    let err_msg = format!(
+                        "Java {} detected, but Minecraft {} requires Java {} or higher. Please update Java in Settings.",
+                        java_version, version, required_java
+                    );
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            }
+            Err(e) => {
+                let warning = format!("Could not detect Java version ({}). Proceeding anyway, but launch may fail if Java is incompatible.", e);
+                println!("Warning: {}", warning);
+                Self::emit_error_log(&app_handle, instance_name, &format!("WARNING: {}", warning));
+            }
+        }
+
         println!("RAM allocation: {}MB", effective_settings.memory_mb);
 
         // Check if this is a Fabric instance
@@ -643,7 +721,7 @@ impl InstanceManager {
                             if line.contains("UnsupportedClassVersionError") {
                                 let _ = app_handle_clone.emit("console-log", serde_json::json!({
                                     "instance": instance_name_clone,
-                                    "message": "ERROR: Wrong Java version! This Minecraft version requires Java 21 or higher. Please update Java in Settings.",
+                                    "message": "ERROR: Wrong Java version! This Minecraft version requires a newer Java version. Please update Java in Settings.",
                                     "type": "stderr"
                                 }));
                                 has_shown_friendly_error = true;
