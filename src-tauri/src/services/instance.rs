@@ -118,6 +118,14 @@ impl InstanceManager {
         Ok(())
     }
 
+    fn emit_error_log(app_handle: &tauri::AppHandle, instance_name: &str, error_msg: &str) {
+        let _ = app_handle.emit("console-log", serde_json::json!({
+            "instance": instance_name,
+            "message": format!("ERROR: {}", error_msg),
+            "type": "stderr"
+        }));
+    }
+
     pub fn launch(
         instance_name: &str,
         username: &str,
@@ -131,12 +139,28 @@ impl InstanceManager {
         let instance_dir = get_instance_dir(instance_name);
 
         if !instance_dir.exists() {
-            return Err(format!("Instance '{}' does not exist", instance_name).into());
+            let err_msg = format!("Instance '{}' does not exist", instance_name);
+            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            return Err(err_msg.into());
         }
 
         // Load instance metadata
         let instance_json = instance_dir.join("instance.json");
-        let instance: Instance = serde_json::from_str(&fs::read_to_string(&instance_json)?)?;
+        let instance: Instance = match fs::read_to_string(&instance_json) {
+            Ok(content) => match serde_json::from_str(&content) {
+                Ok(inst) => inst,
+                Err(e) => {
+                    let err_msg = format!("Failed to parse instance.json: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            },
+            Err(e) => {
+                let err_msg = format!("Failed to read instance.json: {}", e);
+                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                return Err(err_msg.into());
+            }
+        };
 
         let version = instance.version.clone();
         println!("Version: {}", version);
@@ -156,7 +180,14 @@ impl InstanceManager {
         let java_path = if let Some(custom_java) = &effective_settings.java_path {
             custom_java.clone()
         } else {
-            find_java().ok_or("Java not found. Please install Java 17 or higher.")?
+            match find_java() {
+                Some(path) => path,
+                None => {
+                    let err_msg = "Java not found. Please install Java 17 or higher or specify a custom Java path in settings.";
+                    Self::emit_error_log(&app_handle, instance_name, err_msg);
+                    return Err(err_msg.into());
+                }
+            }
         };
 
         println!("Java found: {}", java_path);
@@ -170,17 +201,35 @@ impl InstanceManager {
         let json_path = versions_dir.join(format!("{}.json", version));
 
         if !json_path.exists() {
-            return Err(format!("Version {} is not installed!", version).into());
+            let err_msg = format!("Version {} is not installed!", version);
+            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            return Err(err_msg.into());
         }
 
-        let json_content = fs::read_to_string(&json_path)?;
+        let json_content = match fs::read_to_string(&json_path) {
+            Ok(content) => content,
+            Err(e) => {
+                let err_msg = format!("Failed to read version JSON: {}", e);
+                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                return Err(err_msg.into());
+            }
+        };
+
+        let current_os = get_current_os();
+        println!("Current OS: {}", current_os);
 
         // Parse the profile based on type
         let (main_class, base_version_id, all_libraries, assets_id) = if is_fabric {
             println!("Parsing as Fabric profile...");
             
-            let fabric_profile: FabricProfileJson = serde_json::from_str(&json_content)
-                .map_err(|e| format!("Failed to parse Fabric profile: {}", e))?;
+            let fabric_profile: FabricProfileJson = match serde_json::from_str(&json_content) {
+                Ok(profile) => profile,
+                Err(e) => {
+                    let err_msg = format!("Failed to parse Fabric profile: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            };
             
             println!("Fabric main class: {}", fabric_profile.main_class);
             println!("Inherits from: {}", fabric_profile.inherits_from);
@@ -189,24 +238,54 @@ impl InstanceManager {
             let base_json_path = base_version_dir.join(format!("{}.json", fabric_profile.inherits_from));
             
             if !base_json_path.exists() {
-                return Err(format!(
+                let err_msg = format!(
                     "Base Minecraft version {} not found! Please install it first.",
                     fabric_profile.inherits_from
-                ).into());
+                );
+                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                return Err(err_msg.into());
             }
             
-            let base_json_content = fs::read_to_string(&base_json_path)?;
-            let base_version: VersionDetails = serde_json::from_str(&base_json_content)?;
+            let base_json_content = match fs::read_to_string(&base_json_path) {
+                Ok(content) => content,
+                Err(e) => {
+                    let err_msg = format!("Failed to read base version JSON: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            };
+            
+            let base_version: VersionDetails = match serde_json::from_str(&base_json_content) {
+                Ok(version) => version,
+                Err(e) => {
+                    let err_msg = format!("Failed to parse base version: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            };
             
             println!("Loaded base Minecraft version: {}", base_version.id);
             
             let mut combined_libs = Vec::new();
-            
+
             for lib in &fabric_profile.libraries {
                 combined_libs.push((lib.name.clone(), lib.url.clone(), None));
             }
-            
+
             for lib in &base_version.libraries {
+                // Skip native libraries
+                if lib.name.contains(":natives-") {
+                    continue;
+                }
+                
+                // Check rules if they exist
+                if let Some(rules) = &lib.rules {
+                    if !should_include_library(rules, &current_os) {
+                        println!("Skipping base library {} (OS rules don't match)", lib.name);
+                        continue;
+                    }
+                }
+                
                 if let Some(downloads) = &lib.downloads {
                     if let Some(artifact) = &downloads.artifact {
                         combined_libs.push((
@@ -229,11 +308,30 @@ impl InstanceManager {
         } else {
             println!("Parsing as vanilla Minecraft profile...");
             
-            let version_details: VersionDetails = serde_json::from_str(&json_content)
-                .map_err(|e| format!("Failed to parse Minecraft profile: {}", e))?;
+            let version_details: VersionDetails = match serde_json::from_str(&json_content) {
+                Ok(details) => details,
+                Err(e) => {
+                    let err_msg = format!("Failed to parse Minecraft profile: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            };
             
             let mut libs = Vec::new();
             for lib in &version_details.libraries {
+                // Skip native libraries
+                if lib.name.contains(":natives-") {
+                    continue;
+                }
+                
+                // Check rules if they exist
+                if let Some(rules) = &lib.rules {
+                    if !should_include_library(rules, &current_os) {
+                        println!("Skipping library {} (OS rules don't match)", lib.name);
+                        continue;
+                    }
+                }
+                
                 if let Some(downloads) = &lib.downloads {
                     if let Some(artifact) = &downloads.artifact {
                         libs.push((
@@ -257,15 +355,33 @@ impl InstanceManager {
 
         // Create natives directory
         let natives_dir = instance_dir.join("natives");
-        fs::create_dir_all(&natives_dir)?;
+        if let Err(e) = fs::create_dir_all(&natives_dir) {
+            let err_msg = format!("Failed to create natives directory: {}", e);
+            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            return Err(err_msg.into());
+        }
 
         // Load the base version to extract native libraries
         let base_version_dir = meta_dir.join("versions").join(&base_version_id);
         let base_json_path = base_version_dir.join(format!("{}.json", base_version_id));
-        let base_json_content = fs::read_to_string(&base_json_path)?;
-        let base_version: VersionDetails = serde_json::from_str(&base_json_content)?;
+        let base_json_content = match fs::read_to_string(&base_json_path) {
+            Ok(content) => content,
+            Err(e) => {
+                let err_msg = format!("Failed to read base version JSON: {}", e);
+                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                return Err(err_msg.into());
+            }
+        };
         
-        let current_os = get_current_os();
+        let base_version: VersionDetails = match serde_json::from_str(&base_json_content) {
+            Ok(version) => version,
+            Err(e) => {
+                let err_msg = format!("Failed to parse base version: {}", e);
+                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                return Err(err_msg.into());
+            }
+        };
+        
         let libraries_dir = meta_dir.join("libraries");
         
         println!("Extracting native libraries for OS: {}", current_os);
@@ -334,14 +450,26 @@ impl InstanceManager {
                                         }
                                         println!("    ✓ Extracted native library");
                                     }
-                                    Err(e) => println!("    ✗ Failed to open native archive: {}", e),
+                                    Err(e) => {
+                                        let err_msg = format!("Failed to open native archive: {}", e);
+                                        println!("    ✗ {}", err_msg);
+                                        Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                                    }
                                 }
                             }
-                            Err(e) => println!("    ✗ Failed to open native file: {}", e),
+                            Err(e) => {
+                                let err_msg = format!("Failed to open native file: {}", e);
+                                println!("    ✗ {}", err_msg);
+                                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                            }
                         }
                     } else {
-                        println!("    ✗ Native library not found at: {}", native_path.display());
-                        println!("       CRITICAL: This will cause LWJGL to fail!");
+                        let err_msg = format!(
+                            "Native library not found: {}. This will cause LWJGL to fail!",
+                            artifact.path
+                        );
+                        println!("    ✗ {}", err_msg);
+                        Self::emit_error_log(&app_handle, instance_name, &err_msg);
                         return Err(format!(
                             "Native library missing: {}. Please reinstall Minecraft {}",
                             artifact.path, base_version_id
@@ -354,17 +482,24 @@ impl InstanceManager {
         println!("✓ Extracted {} native library files from {} native JARs", natives_extracted, natives_attempted);
         
         if natives_attempted == 0 {
+            let err_msg = format!(
+                "No native libraries found for OS '{}'. Minecraft cannot start without natives.",
+                current_os
+            );
+            Self::emit_error_log(&app_handle, instance_name, &err_msg);
             return Err(format!(
-                "CRITICAL ERROR: No native libraries found for OS '{}'. Minecraft cannot start without natives. Please reinstall Minecraft version {}",
-                current_os, base_version_id
+                "{}. Please reinstall Minecraft version {}",
+                err_msg, base_version_id
             ).into());
         }
         
         if natives_extracted == 0 && natives_attempted > 0 {
-            return Err(format!(
-                "CRITICAL ERROR: Found {} native JARs but failed to extract any files. Check file permissions and disk space.",
+            let err_msg = format!(
+                "Found {} native JARs but failed to extract any files. Check file permissions and disk space.",
                 natives_attempted
-            ).into());
+            );
+            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            return Err(err_msg.into());
         }
 
         // Build classpath
@@ -394,7 +529,9 @@ impl InstanceManager {
             if lib_path.exists() {
                 classpath.push(lib_path.to_string_lossy().to_string());
             } else {
-                println!("Warning: Library not found: {}", lib_path.display());
+                let warning = format!("Library not found: {}", lib_path.display());
+                println!("Warning: {}", warning);
+                Self::emit_error_log(&app_handle, instance_name, &format!("WARNING: {}", warning));
             }
         }
 
@@ -404,11 +541,13 @@ impl InstanceManager {
             .join(format!("{}.jar", base_version_id));
 
         if !client_jar.exists() {
-            return Err(format!(
+            let err_msg = format!(
                 "Minecraft {} JAR not found at: {}",
                 base_version_id,
                 client_jar.display()
-            ).into());
+            );
+            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            return Err(err_msg.into());
         }
 
         classpath.push(client_jar.to_string_lossy().to_string());
@@ -423,7 +562,7 @@ impl InstanceManager {
         println!("Natives directory: {}", natives_dir.display());
         println!("Starting Minecraft process...");
 
-        let mut cmd = Command::new(java_path);
+        let mut cmd = Command::new(&java_path);
         cmd.arg(format!("-Xmx{}M", effective_settings.memory_mb))
             .arg(format!("-Xms{}M", effective_settings.memory_mb))
             .arg(format!("-Djava.library.path={}", natives_dir.display()))
@@ -453,8 +592,14 @@ impl InstanceManager {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
-        let mut child = cmd.spawn()
-            .map_err(|e| format!("Failed to spawn Minecraft process: {}", e))?;
+        let mut child = match cmd.spawn() {
+            Ok(child) => child,
+            Err(e) => {
+                let err_msg = format!("Failed to spawn Minecraft process: {}. Check if Java path is correct: {}", e, java_path);
+                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                return Err(err_msg.into());
+            }
+        };
 
         println!("✓ Minecraft process started (PID: {:?})", child.id());
 
@@ -487,17 +632,62 @@ impl InstanceManager {
             let app_handle_clone = app_handle.clone();
             
             std::thread::spawn(move || {
+                let mut has_shown_friendly_error = false;
+                
                 for line in reader.lines() {
                     if let Ok(line) = line {
                         // Filter out any lines that might contain the access token
-                        if !line.contains("accessToken") && !line.contains("MINECRAFT_ACCESS_TOKEN") {
-                            println!("[STDERR] {}", line);
-                            let _ = app_handle_clone.emit("console-log", serde_json::json!({
-                                "instance": instance_name_clone,
-                                "message": line,
-                                "type": "stderr"
-                            }));
+                        if line.contains("accessToken") || line.contains("MINECRAFT_ACCESS_TOKEN") {
+                            continue;
                         }
+                        
+                        // Check for common errors and show friendly messages
+                        if !has_shown_friendly_error {
+                            if line.contains("UnsupportedClassVersionError") {
+                                let _ = app_handle_clone.emit("console-log", serde_json::json!({
+                                    "instance": instance_name_clone,
+                                    "message": "ERROR: Wrong Java version! This Minecraft version requires Java 21 or higher. Please update Java in Settings.",
+                                    "type": "stderr"
+                                }));
+                                has_shown_friendly_error = true;
+                            } else if line.contains("class file version 65.0") {
+                                let _ = app_handle_clone.emit("console-log", serde_json::json!({
+                                    "instance": instance_name_clone,
+                                    "message": "ERROR: Java version too old! You need Java 21 or newer. Your current Java is too old.",
+                                    "type": "stderr"
+                                }));
+                                has_shown_friendly_error = true;
+                            } else if line.contains("class file version 61.0") {
+                                let _ = app_handle_clone.emit("console-log", serde_json::json!({
+                                    "instance": instance_name_clone,
+                                    "message": "ERROR: Java version too old! You need Java 17 or newer. Your current Java is too old.",
+                                    "type": "stderr"
+                                }));
+                                has_shown_friendly_error = true;
+                            } else if line.contains("Could not find or load main class") {
+                                let _ = app_handle_clone.emit("console-log", serde_json::json!({
+                                    "instance": instance_name_clone,
+                                    "message": "ERROR: Game files are corrupted or missing. Try reinstalling this Minecraft version.",
+                                    "type": "stderr"
+                                }));
+                                has_shown_friendly_error = true;
+                            } else if line.contains("java.lang.OutOfMemoryError") {
+                                let _ = app_handle_clone.emit("console-log", serde_json::json!({
+                                    "instance": instance_name_clone,
+                                    "message": "ERROR: Not enough memory allocated! Increase RAM allocation in Settings.",
+                                    "type": "stderr"
+                                }));
+                                has_shown_friendly_error = true;
+                            }
+                        }
+                        
+                        // Always log the actual error for advanced users
+                        println!("[STDERR] {}", line);
+                        let _ = app_handle_clone.emit("console-log", serde_json::json!({
+                            "instance": instance_name_clone,
+                            "message": line,
+                            "type": "stderr"
+                        }));
                     }
                 }
             });

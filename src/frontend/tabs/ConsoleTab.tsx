@@ -27,8 +27,6 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
     ).join('\n')
   }
 
-
-
   const handleUploadToMcLogs = async () => {
     setUploadState({ loading: true, url: null, error: null })
     
@@ -168,16 +166,27 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
             </div>
           ) : (
             <div className="h-full overflow-y-auto p-4 font-mono text-sm">
-              {consoleLogs.map((log, index) => (
-                <div
-                  key={index}
-                  className={`py-0.5 leading-relaxed ${log.type === "stderr" ? "text-red-400" : "text-[#e8e8e8]"}`}
-                >
-                  <span className="text-[#4a4a4a] mr-2">{new Date().toLocaleTimeString()}</span>
-                  <span className="text-[#16a34a] mr-2">[{log.instance}]</span>
-                  <span>{log.message}</span>
-                </div>
-              ))}
+              {consoleLogs.map((log, index) => {
+                const isError = log.type === "stderr" || log.message.toLowerCase().includes("error") || log.message.toLowerCase().includes("failed");
+                const isWarning = log.message.toLowerCase().includes("warning") || log.message.toLowerCase().includes("warn");
+                
+                return (
+                  <div
+                    key={index}
+                    className={`py-0.5 leading-relaxed ${
+                      isError 
+                        ? "text-red-400" 
+                        : isWarning 
+                        ? "text-yellow-400" 
+                        : "text-[#e8e8e8]"
+                    }`}
+                  >
+                    <span className="text-[#4a4a4a] mr-2">{new Date().toLocaleTimeString()}</span>
+                    <span className="text-[#16a34a] mr-2">[{log.instance}]</span>
+                    <span>{log.message}</span>
+                  </div>
+                );
+              })}
               <div ref={consoleEndRef} />
             </div>
           )}
