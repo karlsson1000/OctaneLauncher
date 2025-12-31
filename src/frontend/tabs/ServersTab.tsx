@@ -224,10 +224,9 @@ export function ServersTab({}: ServersTabProps) {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all shadow-lg cursor-pointer"
+            className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded-lg flex items-center justify-center transition-all cursor-pointer"
           >
-            <Plus size={16} strokeWidth={2} />
-            <span>Add Server</span>
+            <Plus size={28} strokeWidth={2} />
           </button>
         </div>
 
