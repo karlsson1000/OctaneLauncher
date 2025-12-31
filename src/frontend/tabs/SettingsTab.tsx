@@ -207,7 +207,7 @@ export function SettingsTab({ settings, launcherDirectory, onSettingsChange, onB
           <div className="space-y-4">
             {/* Appearance */}
             <div className="bg-[#1a1a1a] rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-0">
                 <div className="flex items-center gap-3">
                   <ImagePlus size={28} className="text-[#16a34a] flex-shrink-0" strokeWidth={1.5} />
                   <div>
