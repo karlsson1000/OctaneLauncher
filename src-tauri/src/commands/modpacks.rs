@@ -178,6 +178,46 @@ pub async fn install_modpack(
     )
     .map_err(|e| format!("Failed to create instance: {}", e))?;
     
+    // Fetch project details separately to avoid holding non-Send types across await
+    let icon_url_opt = match client.get_project(&modpack_slug).await {
+        Ok(project) => {
+            println!("Successfully fetched project info for: {}", modpack_slug);
+            if let Some(ref url) = project.icon_url {
+                println!("Icon URL: {}", url);
+            } else {
+                println!("No icon URL found in project data");
+            }
+            project.icon_url
+        },
+        Err(e) => {
+            println!("Failed to fetch project info for {}: {}", modpack_slug, e);
+            None
+        }
+    };
+    
+    if let Some(icon_url) = icon_url_opt {
+        let temp_dir = std::env::temp_dir();
+        let icon_extension = icon_url.split('.').last().unwrap_or("png");
+        let icon_path = temp_dir.join(format!("modpack_icon_{}.{}", safe_name, icon_extension));
+        
+        if validate_download_url(&icon_url).is_ok() {
+            if client.download_mod_file(&icon_url, &icon_path).await.is_ok() {
+                println!("Icon downloaded successfully");
+                // Read the file and convert to base64
+                if let Ok(icon_bytes) = std::fs::read(&icon_path) {
+                    use base64::{Engine as _, engine::general_purpose};
+                    let icon_base64 = general_purpose::STANDARD.encode(&icon_bytes);
+                    
+                    match crate::commands::set_instance_icon(safe_name.clone(), icon_base64).await {
+                        Ok(_) => println!("Icon set successfully for instance: {}", safe_name),
+                        Err(e) => println!("Failed to set icon: {}", e),
+                    }
+                }
+                let _ = std::fs::remove_file(&icon_path);
+            }
+        }
+    }
+    
     let instance_dir = get_instance_dir(&safe_name);
     let mods_dir = instance_dir.join("mods");
     
@@ -333,14 +373,17 @@ fn copy_dir_recursive(
 fn extract_modpack(
     archive_path: &std::path::Path,
     dest_dir: &std::path::Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), String> {
     use zip::ZipArchive;
     
-    let file = std::fs::File::open(archive_path)?;
-    let mut archive = ZipArchive::new(file)?;
+    let file = std::fs::File::open(archive_path)
+        .map_err(|e| e.to_string())?;
+    let mut archive = ZipArchive::new(file)
+        .map_err(|e| e.to_string())?;
     
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i)?;
+        let mut file = archive.by_index(i)
+            .map_err(|e| e.to_string())?;
         let outpath = match file.enclosed_name() {
             Some(path) => dest_dir.join(path),
             None => continue,
@@ -351,15 +394,19 @@ fn extract_modpack(
         }
         
         if file.name().ends_with('/') {
-            std::fs::create_dir_all(&outpath)?;
+            std::fs::create_dir_all(&outpath)
+                .map_err(|e| e.to_string())?;
         } else {
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
-                    std::fs::create_dir_all(p)?;
+                    std::fs::create_dir_all(p)
+                        .map_err(|e| e.to_string())?;
                 }
             }
-            let mut outfile = std::fs::File::create(&outpath)?;
-            std::io::copy(&mut file, &mut outfile)?;
+            let mut outfile = std::fs::File::create(&outpath)
+                .map_err(|e| e.to_string())?;
+            std::io::copy(&mut file, &mut outfile)
+                .map_err(|e| e.to_string())?;
         }
     }
     
@@ -642,6 +689,26 @@ pub async fn install_modpack_from_file(
         None,
     )
     .map_err(|e| format!("Failed to create instance: {}", e))?;
+
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 55,
+        "stage": "Setting modpack icon..."
+    }));
+    
+    let icon_candidates = vec!["icon.png", "icon.jpg", "pack.png"];
+    for icon_name in icon_candidates {
+        let icon_path = extract_dir.join(icon_name);
+        if icon_path.exists() {
+            if let Some(icon_path_str) = icon_path.to_str() {
+                let _ = crate::commands::set_instance_icon(
+                    safe_name.clone(),
+                    icon_path_str.to_string()
+                );
+                break;
+            }
+        }
+    }
     
     let instance_dir = get_instance_dir(&safe_name);
     
