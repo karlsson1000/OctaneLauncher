@@ -270,7 +270,6 @@ function App() {
 
   const handleAddAccount = async () => {
     setIsLoggingIn(true)
-    setShowAccountDropdown(false)
     try {
       await invoke<AccountInfo>("microsoft_login_and_store")
       await loadAccounts()
@@ -733,7 +732,10 @@ function App() {
                       
                       <div className="absolute bottom-1 left-0 right-0 bg-[#1a1a1a] rounded-lg shadow-xl z-50 overflow-hidden">
                         <button
-                          onClick={handleAddAccount}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleAddAccount()
+                          }}
                           disabled={isLoggingIn}
                           className="w-full flex items-center gap-2 px-2.5 py-2.5 text-sm text-[#e8e8e8] hover:bg-[#1f1f1f] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
