@@ -4,6 +4,8 @@ use crate::services::fabric::FabricInstaller;
 use crate::services::accounts::AccountManager;
 use crate::models::Instance;
 use crate::utils::*;
+use std::sync::Mutex;
+use tauri::State;
 use crate::commands::validation::sanitize_instance_name;
 use tauri::Emitter;
 use base64::{Engine as _, engine::general_purpose};
@@ -144,6 +146,45 @@ pub async fn create_instance(
     let success_msg = format!("Successfully created instance '{}'", safe_name);
     println!("✓ {}", success_msg);
     Ok(success_msg)
+}
+
+lazy_static::lazy_static! {
+    pub static ref RUNNING_PROCESSES: Mutex<std::collections::HashMap<String, u32>> = Mutex::new(std::collections::HashMap::new());
+}
+
+#[tauri::command]
+pub async fn kill_instance(instance_name: String) -> Result<String, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    
+    let pid = {
+        let processes = RUNNING_PROCESSES.lock().unwrap();
+        processes.get(&safe_name).copied()
+    };
+    
+    if let Some(pid) = pid {
+        #[cfg(target_os = "windows")]
+        {
+            use std::process::Command;
+            let _ = Command::new("taskkill")
+                .args(&["/F", "/PID", &pid.to_string()])
+                .output();
+        }
+        
+        #[cfg(not(target_os = "windows"))]
+        {
+            unsafe {
+                libc::kill(pid as i32, libc::SIGTERM);
+            }
+        }
+        
+        // Remove from tracking
+        let mut processes = RUNNING_PROCESSES.lock().unwrap();
+        processes.remove(&safe_name);
+        
+        Ok(format!("Instance '{}' stopped", safe_name))
+    } else {
+        Err("Instance is not running".to_string())
+    }
 }
 
 #[tauri::command]

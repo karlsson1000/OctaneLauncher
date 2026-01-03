@@ -12,6 +12,8 @@ dependencies = [
  "dotenv",
  "dotenvy",
  "image",
+ "lazy_static",
+ "libc",
  "oauth2",
  "open",
  "reqwest 0.12.25",

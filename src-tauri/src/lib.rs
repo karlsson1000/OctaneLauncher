@@ -20,6 +20,7 @@ use commands::{
     rename_instance,
     duplicate_instance,
     launch_instance,
+    kill_instance,
     launch_instance_with_active_account,
     set_instance_icon,
     remove_instance_icon,
@@ -97,6 +98,9 @@ use commands::{
     get_user_capes,
     equip_cape,
     remove_cape,
+    get_skin_history,
+    apply_skin_from_history,
+    clear_skin_history,
     
     // System commands
     get_system_info,
@@ -143,6 +147,9 @@ pub fn run() {
             get_user_capes,
             equip_cape,
             remove_cape,
+            get_skin_history,
+            apply_skin_from_history,
+            clear_skin_history,
             
             // Minecraft versions
             get_minecraft_versions,
@@ -174,6 +181,7 @@ pub fn run() {
             
             // Launch
             launch_instance,
+            kill_instance,
             
             // Launcher directory
             get_launcher_directory,

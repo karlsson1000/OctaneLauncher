@@ -676,8 +676,18 @@ impl InstanceManager {
             }
         };
 
+        let child_pid = child.id();
+        println!("✓ Minecraft process started (PID: {:?})", child_pid);
+
+        // Store the PID for later termination
+        {
+            let mut processes = crate::commands::instances::RUNNING_PROCESSES.lock().unwrap();
+            processes.insert(instance_name.to_string(), child_pid);
+        }
+
         println!("✓ Minecraft process started (PID: {:?})", child.id());
 
+        // Capture stdout
         if let Some(stdout) = child.stdout.take() {
             let reader = BufReader::new(stdout);
             let instance_name_clone = instance_name.to_string();
@@ -776,6 +786,24 @@ impl InstanceManager {
         fs::write(instance_json, updated_json)?;
 
         println!("✓ Launch command completed successfully!");
+
+        // Monitor process exit and emit event when it closes
+        let instance_name_clone = instance_name.to_string();
+        let app_handle_clone = app_handle.clone();
+        std::thread::spawn(move || {
+            let _ = child.wait();
+            println!("Instance '{}' has exited", instance_name_clone);
+            
+            // Remove from running processes
+            {
+                let mut processes = crate::commands::instances::RUNNING_PROCESSES.lock().unwrap();
+                processes.remove(&instance_name_clone);
+            }
+            
+            let _ = app_handle_clone.emit("instance-exited", serde_json::json!({
+                "instance": instance_name_clone
+            }));
+        });
 
         Ok(())
     }

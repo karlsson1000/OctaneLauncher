@@ -31,6 +31,7 @@ function App() {
   const [accounts, setAccounts] = useState<AccountInfo[]>([])
   const [showAccountDropdown, setShowAccountDropdown] = useState(false)
   const [launchingInstanceName, setLaunchingInstanceName] = useState<string | null>(null)
+  const [runningInstances, setRunningInstances] = useState<Set<string>>(new Set())
   const [isLoggingIn, setIsLoggingIn] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [versions, setVersions] = useState<string[]>([])
@@ -164,11 +165,24 @@ function App() {
     loadSettings()
     loadAccounts()
     loadSidebarBackground()
-    const unlisten = listen<ConsoleLog>("console-log", (event) => {
+    
+    // Listen for console logs
+    const unlistenConsole = listen<ConsoleLog>("console-log", (event) => {
       setConsoleLogs((prev) => [...prev, event.payload])
     })
+    
+    // Listen for instance exit events
+    const unlistenExit = listen<{ instance: string }>("instance-exited", (event) => {
+      setRunningInstances((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(event.payload.instance)
+        return newSet
+      })
+    })
+    
     return () => {
-      unlisten.then((fn) => fn())
+      unlistenConsole.then((fn) => fn())
+      unlistenExit.then((fn) => fn())
     }
   }, [isReady])
 
@@ -312,9 +326,8 @@ function App() {
         appHandle: appWindow,
       })
       await loadInstances()
-      setTimeout(() => {
-        setLaunchingInstanceName(null)
-      }, 2000)
+      setRunningInstances((prev) => new Set(prev).add(instance.name))
+      setLaunchingInstanceName(null)
     } catch (error) {
       console.error("Launch error:", error)
       setLaunchingInstanceName(null)
@@ -427,12 +440,30 @@ function App() {
         appHandle: appWindow,
       })
       await loadInstances()
-      setTimeout(() => {
-        setLaunchingInstanceName(null)
-      }, 2000)
+      setRunningInstances((prev) => new Set(prev).add(instance.name))
+      setLaunchingInstanceName(null)
     } catch (error) {
       console.error("Launch error:", error)
       setLaunchingInstanceName(null)
+    }
+  }
+
+  const handleKillInstance = async (instance: Instance) => {
+    try {
+      await invoke("kill_instance", { instanceName: instance.name })
+      setRunningInstances((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(instance.name)
+        return newSet
+      })
+    } catch (error) {
+      console.error("Failed to kill instance:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to stop instance: ${error}`,
+        type: "danger"
+      })
     }
   }
 
@@ -638,6 +669,8 @@ function App() {
                   <div className="space-y-1">
                     {recentInstances.map((instance) => {
                       const icon = instanceIcons[instance.name]
+                      const isRunning = runningInstances.has(instance.name)
+                      const isLaunching = launchingInstanceName === instance.name
                       return (
                         <button
                           key={instance.name}
@@ -669,26 +702,33 @@ function App() {
                               <span className="truncate">{formatLastPlayed(instance.last_played!)}</span>
                             </div>
                           </div>
-                          {isAuthenticated && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleQuickLaunch(instance)
-                              }}
-                              disabled={launchingInstanceName !== null}
-                              className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer mr-1 ${
-                                launchingInstanceName === instance.name
-                                  ? "bg-red-500/10 text-red-400"
-                                  : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
-                              } disabled:opacity-50`}
-                            >
-                              {launchingInstanceName === instance.name ? (
-                                <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                              ) : (
-                                <Play size={16} fill="currentColor" strokeWidth={0} />
-                              )}
-                            </button>
-                          )}
+                            {isAuthenticated && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (isRunning) {
+                                    handleKillInstance(instance)
+                                  } else {
+                                    handleQuickLaunch(instance)
+                                  }
+                                }}
+                                disabled={launchingInstanceName !== null}
+                                className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer mr-1 ${
+                                  isRunning || isLaunching
+                                    ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20"
+                                    : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
+                                } disabled:opacity-50`}
+                                title={isRunning ? "Stop instance" : "Launch instance"}
+                              >
+                                {isLaunching ? (
+                                  <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                                ) : isRunning ? (
+                                  <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                                ) : (
+                                  <Play size={16} fill="currentColor" strokeWidth={0} />
+                                )}
+                              </button>
+                            )}
                         </button>
                       )
                     })}
