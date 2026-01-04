@@ -8,6 +8,7 @@ interface HomeTabProps {
   instances: Instance[]
   isAuthenticated: boolean
   launchingInstanceName: string | null
+  runningInstances: Set<string>
   onLaunch: (instance: Instance) => void | Promise<void>
   onOpenFolder: () => void
   onDeleteInstance: (name: string) => void
@@ -16,6 +17,7 @@ interface HomeTabProps {
   onOpenFolderByInstance?: (instance: Instance) => void
   onDuplicateInstance?: (instance: Instance) => void
   onRefreshInstances?: () => void
+  onKillInstance?: (instance: Instance) => void
 }
 
 interface Snapshot {
@@ -42,12 +44,14 @@ export function HomeTab({
   instances,
   isAuthenticated,
   launchingInstanceName,
+  runningInstances,
   onLaunch,
   onCreateNew,
   onShowDetails,
   onOpenFolderByInstance,
   onDuplicateInstance,
   onDeleteInstance,
+  onKillInstance,
 }: HomeTabProps) {
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -202,6 +206,7 @@ export function HomeTab({
               {recentInstances.map((instance) => {
                 const icon = instanceIcons[instance.name]
                 const isLaunching = launchingInstanceName === instance.name
+                const isRunning = runningInstances.has(instance.name)
                 return (
                   <div
                     key={instance.name}
@@ -242,16 +247,21 @@ export function HomeTab({
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            onLaunch(instance)
+                            if (isRunning && onKillInstance) {
+                              onKillInstance(instance)
+                            } else {
+                              onLaunch(instance)
+                            }
                           }}
-                          disabled={launchingInstanceName !== null}
+                          disabled={launchingInstanceName !== null && !isRunning}
                           className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-md transition-all cursor-pointer ${
-                            isLaunching
-                              ? "bg-red-500/10 text-red-400"
+                            isRunning || isLaunching
+                              ? "bg-red-500/10 text-red-400 opacity-100"
                               : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                           } disabled:opacity-50`}
+                          title={isRunning ? "Stop instance" : "Launch instance"}
                         >
-                          {isLaunching ? (
+                          {isLaunching || isRunning ? (
                             <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
                           ) : (
                             <Play size={18} fill="currentColor" strokeWidth={0} />

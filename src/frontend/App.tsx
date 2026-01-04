@@ -898,6 +898,7 @@ function App() {
                   instances={instances}
                   isAuthenticated={isAuthenticated}
                   launchingInstanceName={launchingInstanceName}
+                  runningInstances={runningInstances}
                   onLaunch={handleLaunch}
                   onOpenFolder={handleOpenInstanceFolder}
                   onDeleteInstance={handleDeleteInstance}
@@ -906,6 +907,7 @@ function App() {
                   onOpenFolderByInstance={handleOpenInstanceFolderByInstance}
                   onDuplicateInstance={handleDuplicateInstance}
                   onRefreshInstances={loadInstances}
+                  onKillInstance={handleKillInstance}
                 />
               )}
 
@@ -915,6 +917,7 @@ function App() {
                   selectedInstance={selectedInstance}
                   isAuthenticated={isAuthenticated}
                   launchingInstanceName={launchingInstanceName}
+                  runningInstances={runningInstances}
                   onSetSelectedInstance={setSelectedInstance}
                   onLaunch={() => selectedInstance && handleLaunch(selectedInstance)}
                   onCreateNew={() => setShowCreateModal(true)}
@@ -922,6 +925,7 @@ function App() {
                   onOpenFolder={handleOpenInstanceFolderByInstance}
                   onDuplicateInstance={handleDuplicateInstance}
                   onDeleteInstance={handleDeleteInstance}
+                  onKillInstance={handleKillInstance}
                 />
               )}
 

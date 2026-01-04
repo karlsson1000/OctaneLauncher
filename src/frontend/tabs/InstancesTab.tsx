@@ -46,6 +46,7 @@ interface InstancesTabProps {
   selectedInstance: Instance | null
   isAuthenticated: boolean
   launchingInstanceName: string | null
+  runningInstances: Set<string>
   onSetSelectedInstance: (instance: Instance) => void
   onLaunch: () => void
   onCreateNew: () => void
@@ -53,12 +54,14 @@ interface InstancesTabProps {
   onOpenFolder?: (instance: Instance) => void
   onDuplicateInstance?: (instance: Instance) => void
   onDeleteInstance?: (instanceName: string) => void
+  onKillInstance?: (instance: Instance) => void
 }
 
 export function InstancesTab({
   instances,
   isAuthenticated,
   launchingInstanceName,
+  runningInstances,
   onCreateNew,
   onSetSelectedInstance,
   onLaunch,
@@ -66,6 +69,7 @@ export function InstancesTab({
   onOpenFolder,
   onDuplicateInstance,
   onDeleteInstance,
+  onKillInstance,
 }: InstancesTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [contextMenu, setContextMenu] = useState<{
@@ -384,6 +388,7 @@ export function InstancesTab({
               {filteredInstances.map((instance) => {
                 const icon = instanceIcons[instance.name]
                 const isLaunching = launchingInstanceName === instance.name
+                const isRunning = runningInstances.has(instance.name)
                 return (
                   <div
                     key={instance.name}
@@ -424,16 +429,21 @@ export function InstancesTab({
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            handleQuickLaunch(instance)
+                            if (isRunning && onKillInstance) {
+                              onKillInstance(instance)
+                            } else {
+                              handleQuickLaunch(instance)
+                            }
                           }}
-                          disabled={launchingInstanceName !== null}
+                          disabled={launchingInstanceName !== null && !isRunning}
                           className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-md transition-all cursor-pointer ${
-                            isLaunching
-                              ? "bg-red-500/10 text-red-400"
+                            isRunning || isLaunching
+                              ? "bg-red-500/10 text-red-400 opacity-100"
                               : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                           } disabled:opacity-50`}
+                          title={isRunning ? "Stop instance" : "Launch instance"}
                         >
-                          {isLaunching ? (
+                          {isLaunching || isRunning ? (
                             <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
                           ) : (
                             <Play size={18} fill="currentColor" strokeWidth={0} />
