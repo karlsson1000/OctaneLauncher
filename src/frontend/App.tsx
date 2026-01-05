@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { LogOut, Settings, LogIn, Home, Package, Puzzle, Terminal, Minus, Square, X, Server, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, HatGlasses } from "lucide-react"
+import { LogOut, Settings, LogIn, Home, Package, Puzzle, Terminal, Minus, Square, X, Server, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, HatGlasses, FolderOpen, Copy, Trash2 } from "lucide-react"
 import { HomeTab } from "./tabs/HomeTab"
 import { InstancesTab } from "./tabs/InstancesTab"
 import { BrowseTab } from "./tabs/BrowseTab"
@@ -14,6 +14,7 @@ import { CreateInstanceModal } from "./modals/CreateInstanceModal"
 import { CreationProgressToast } from "./modals/CreationProgressToast"
 import { InstanceDetailsTab } from "./modals/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
+import { ContextMenu } from "./modals/ContextMenu"
 import type { Instance, LauncherSettings, ConsoleLog } from "../types"
 
 interface AccountInfo {
@@ -61,6 +62,11 @@ function App() {
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isNavigating, setIsNavigating] = useState(false)
   const [sidebarBackground, setSidebarBackground] = useState<string | null>(null)
+  const [sidebarContextMenu, setSidebarContextMenu] = useState<{
+    x: number
+    y: number
+    instance: Instance
+  } | null>(null)
 
   const appWindow = getCurrentWindow()
 
@@ -480,6 +486,16 @@ function App() {
     }
   }
 
+  const handleSidebarContextMenu = (e: React.MouseEvent, instance: Instance) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSidebarContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      instance,
+    })
+  }
+
   return (
     <div className={`flex flex-col h-screen bg-[#0d0d0d] text-[#e8e8e8] overflow-hidden font-sans ${!isReady ? 'opacity-0' : 'opacity-100 transition-opacity duration-300'}`}>
       <div 
@@ -567,6 +583,48 @@ function App() {
           message={alertModal.message}
           type={alertModal.type}
           onClose={() => setAlertModal(null)}
+        />
+      )}
+
+      {sidebarContextMenu && (
+        <ContextMenu
+          x={sidebarContextMenu.x}
+          y={sidebarContextMenu.y}
+          onClose={() => setSidebarContextMenu(null)}
+          items={[
+            {
+              label: "Open",
+              icon: <Package size={16} />,
+              onClick: () => {
+                setSelectedInstance(sidebarContextMenu.instance)
+                setActiveTab("instances")
+                setShowInstanceDetails(true)
+              },
+            },
+            {
+              label: "Open Folder",
+              icon: <FolderOpen size={16} />,
+              onClick: () => {
+                handleOpenInstanceFolderByInstance(sidebarContextMenu.instance)
+              },
+            },
+            {
+              label: "Duplicate",
+              icon: <Copy size={16} />,
+              onClick: () => {
+                handleDuplicateInstance(sidebarContextMenu.instance)
+              },
+            },
+            { separator: true },
+            {
+              label: "Delete",
+              icon: <Trash2 size={16} />,
+              onClick: () => {
+                handleDeleteInstance(sidebarContextMenu.instance.name)
+              },
+              danger: true,
+            },
+          ]}
         />
       )}
 
@@ -692,6 +750,7 @@ function App() {
                             setActiveTab("instances")
                             setShowInstanceDetails(true)
                           }}
+                          onContextMenu={(e) => handleSidebarContextMenu(e, instance)}
                           className="group w-full flex items-center gap-2 rounded cursor-pointer transition-all text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f] px-1.5 py-1.5"
                         >
                           {icon ? (
