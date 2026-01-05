@@ -9,6 +9,8 @@ use std::collections::HashMap;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthResponse {
     pub access_token: String,
+    pub refresh_token: String,
+    pub token_expiry: DateTime<Utc>,
     pub username: String,
     pub uuid: String,
 }
@@ -211,6 +213,8 @@ pub struct StoredAccount {
     pub uuid: String,
     pub username: String,
     pub access_token: String,
+    pub refresh_token: String,
+    pub token_expiry: DateTime<Utc>,
     pub added_at: String,
     pub last_used: Option<String>,
 }

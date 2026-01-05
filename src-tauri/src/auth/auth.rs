@@ -2,8 +2,8 @@ use crate::models::*;
 use chrono::Utc;
 use oauth2::{
     basic::{BasicClient, BasicTokenResponse},
-    AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl, Scope,
-    TokenResponse, TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl, 
+    RefreshToken, Scope, TokenResponse, TokenUrl,
 };
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -252,7 +252,7 @@ impl Authenticator {
 
         Ok(TokenWithExpiry {
             token: mc_response.access_token,
-            expiry: Utc::now() + Duration::from_secs(mc_response.expires_in as u64),
+            expiry: Utc::now() + chrono::Duration::seconds(mc_response.expires_in as i64),
         })
     }
 
@@ -297,13 +297,18 @@ impl Authenticator {
             println!("Could not open browser automatically: {}", e);
         }
 
-        // SECURITY FIX: Pass expected CSRF token to callback handler
         let code = self.wait_for_callback(csrf_token.secret()).await?;
 
         println!("✓ Authorization code received and validated");
 
         let token_response = self.exchange_code(code, pkce_verifier).await?;
         let msa_token = token_response.access_token().secret();
+        let refresh_token = token_response
+            .refresh_token()
+            .ok_or("No refresh token received")?
+            .secret()
+            .to_string();
+        
         println!("✓ Microsoft access token obtained");
 
         let xbl_token = self.authenticate_xbox(msa_token).await?;
@@ -343,6 +348,51 @@ impl Authenticator {
 
         Ok(AuthResponse {
             access_token: mc_token.token.to_string(),
+            refresh_token,
+            token_expiry: mc_token.expiry,
+            username: profile.name.to_string(),
+            uuid: profile.id.to_string(),
+        })
+    }
+
+    pub async fn refresh_tokens(
+        &self,
+        refresh_token: &str,
+    ) -> Result<AuthResponse, Box<dyn std::error::Error>> {
+        println!("=== Refreshing Microsoft Token ===");
+        
+        let token_response = self
+            .oauth_client
+            .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
+            .request_async(oauth2::reqwest::async_http_client)
+            .await?;
+
+        let msa_token = token_response.access_token().secret();
+        let new_refresh_token = token_response
+            .refresh_token()
+            .ok_or("No refresh token in response")?
+            .secret()
+            .to_string();
+        
+        println!("✓ Microsoft token refreshed");
+
+        // Re-authenticate through the Xbox/XSTS/Minecraft chain
+        let xbl_token = self.authenticate_xbox(msa_token).await?;
+        println!("✓ Xbox Live token obtained");
+
+        let (xsts_token, userhash) = self.obtain_xsts(&xbl_token.token).await?;
+        println!("✓ XSTS token obtained");
+
+        let mc_token = self.authenticate_minecraft(&xsts_token.token, &userhash).await?;
+        println!("✓ Minecraft access token refreshed");
+
+        let profile = self.get_minecraft_profile(&mc_token.token).await?;
+        println!("✓ Profile retrieved");
+
+        Ok(AuthResponse {
+            access_token: mc_token.token.to_string(),
+            refresh_token: new_refresh_token,
+            token_expiry: mc_token.expiry,
             username: profile.name.to_string(),
             uuid: profile.id.to_string(),
         })

@@ -1,147 +1,188 @@
-use crate::models::{AccountsData, StoredAccount, AccountInfo};
-use crate::utils::get_launcher_dir;
-use chrono::Utc;
+use crate::models::{AccountInfo, AccountsData, StoredAccount};
+use chrono::{DateTime, Utc};
 use std::fs;
+use std::path::PathBuf;
 
 pub struct AccountManager;
 
 impl AccountManager {
-    fn get_accounts_file() -> std::path::PathBuf {
-        get_launcher_dir().join("accounts.json")
+    fn get_accounts_file() -> Result<PathBuf, Box<dyn std::error::Error>> {
+        let data_dir = dirs::data_dir()
+            .ok_or("Could not find data directory")?
+            .join("atomic-launcher");
+        
+        fs::create_dir_all(&data_dir)?;
+        Ok(data_dir.join("accounts.json"))
     }
 
-    /// Load all accounts from disk
-    pub fn load() -> Result<AccountsData, Box<dyn std::error::Error>> {
-        let accounts_file = Self::get_accounts_file();
+    fn load_accounts() -> Result<AccountsData, Box<dyn std::error::Error>> {
+        let path = Self::get_accounts_file()?;
         
-        if !accounts_file.exists() {
+        if !path.exists() {
             return Ok(AccountsData::default());
         }
-        
-        let content = fs::read_to_string(&accounts_file)?;
-        let accounts_data: AccountsData = serde_json::from_str(&content)?;
-        
-        Ok(accounts_data)
+
+        let contents = fs::read_to_string(path)?;
+        let data: AccountsData = serde_json::from_str(&contents)?;
+        Ok(data)
     }
 
-    /// Save accounts to disk
-    pub fn save(accounts_data: &AccountsData) -> Result<(), Box<dyn std::error::Error>> {
-        let accounts_file = Self::get_accounts_file();
-        let json = serde_json::to_string_pretty(accounts_data)?;
-        fs::write(&accounts_file, json)?;
+    fn save_accounts(data: &AccountsData) -> Result<(), Box<dyn std::error::Error>> {
+        let path = Self::get_accounts_file()?;
+        let json = serde_json::to_string_pretty(data)?;
+        fs::write(path, json)?;
         Ok(())
     }
 
-    /// Add a new account
     pub fn add_account(
         uuid: String,
         username: String,
         access_token: String,
+        refresh_token: String,
+        token_expiry: DateTime<Utc>,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let mut accounts_data = Self::load()?;
+        let mut data = Self::load_accounts()?;
         
-        let stored_account = StoredAccount {
+        let account = StoredAccount {
             uuid: uuid.clone(),
             username,
             access_token,
+            refresh_token,
+            token_expiry,
             added_at: Utc::now().to_rfc3339(),
             last_used: Some(Utc::now().to_rfc3339()),
         };
+
+        data.accounts.insert(uuid.clone(), account);
         
-        // Add the account
-        accounts_data.accounts.insert(uuid.clone(), stored_account);
-        
-        // Set as active account if it's the first one
-        if accounts_data.active_account_uuid.is_none() {
-            accounts_data.active_account_uuid = Some(uuid);
+        // Set as active if it's the first account
+        if data.active_account_uuid.is_none() {
+            data.active_account_uuid = Some(uuid);
         }
-        
-        Self::save(&accounts_data)?;
+
+        Self::save_accounts(&data)?;
         Ok(())
     }
 
-    /// Remove an account
-    pub fn remove_account(uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let mut accounts_data = Self::load()?;
-        
-        // Remove the account
-        accounts_data.accounts.remove(uuid);
-        
-        // If this was the active account, switch to another one
-        if accounts_data.active_account_uuid.as_deref() == Some(uuid) {
-            accounts_data.active_account_uuid = accounts_data
-                .accounts
-                .keys()
-                .next()
-                .map(|k| k.to_string());
-        }
-        
-        Self::save(&accounts_data)?;
-        Ok(())
+    pub fn account_exists(uuid: &str) -> Result<bool, Box<dyn std::error::Error>> {
+        let data = Self::load_accounts()?;
+        Ok(data.accounts.contains_key(uuid))
     }
 
-    /// Set the active account
-    pub fn set_active_account(uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let mut accounts_data = Self::load()?;
-        
-        // Verify account exists
-        if !accounts_data.accounts.contains_key(uuid) {
-            return Err(format!("Account with UUID {} not found", uuid).into());
-        }
-        
-        // Update last used timestamp
-        if let Some(account) = accounts_data.accounts.get_mut(uuid) {
-            account.last_used = Some(Utc::now().to_rfc3339());
-        }
-        
-        accounts_data.active_account_uuid = Some(uuid.to_string());
-        Self::save(&accounts_data)?;
-        Ok(())
-    }
-
-    /// Get the active account
-    pub fn get_active_account() -> Result<Option<StoredAccount>, Box<dyn std::error::Error>> {
-        let accounts_data = Self::load()?;
-        
-        if let Some(uuid) = &accounts_data.active_account_uuid {
-            Ok(accounts_data.accounts.get(uuid).cloned())
-        } else {
-            Ok(None)
-        }
-    }
-
-    /// Get all accounts as a list
     pub fn get_all_accounts() -> Result<Vec<AccountInfo>, Box<dyn std::error::Error>> {
-        let accounts_data = Self::load()?;
+        let data = Self::load_accounts()?;
         
-        let mut accounts: Vec<AccountInfo> = accounts_data
+        let accounts: Vec<AccountInfo> = data
             .accounts
             .values()
             .map(|acc| AccountInfo {
                 uuid: acc.uuid.clone(),
                 username: acc.username.clone(),
-                is_active: accounts_data.active_account_uuid.as_deref() == Some(&acc.uuid),
+                is_active: data.active_account_uuid.as_ref() == Some(&acc.uuid),
                 added_at: acc.added_at.clone(),
                 last_used: acc.last_used.clone(),
             })
             .collect();
-        
-        // Sort by last used (most recent first)
-        accounts.sort_by(|a, b| {
-            match (&b.last_used, &a.last_used) {
-                (Some(b_time), Some(a_time)) => b_time.cmp(a_time),
-                (Some(_), None) => std::cmp::Ordering::Less,
-                (None, Some(_)) => std::cmp::Ordering::Greater,
-                (None, None) => std::cmp::Ordering::Equal,
-            }
-        });
-        
+
         Ok(accounts)
     }
 
-    /// Check if an account with this UUID already exists
-    pub fn account_exists(uuid: &str) -> Result<bool, Box<dyn std::error::Error>> {
-        let accounts_data = Self::load()?;
-        Ok(accounts_data.accounts.contains_key(uuid))
+    pub fn get_active_account() -> Result<Option<StoredAccount>, Box<dyn std::error::Error>> {
+        let data = Self::load_accounts()?;
+        
+        if let Some(uuid) = &data.active_account_uuid {
+            Ok(data.accounts.get(uuid).cloned())
+        } else {
+            Ok(None)
+        }
+    }
+
+    pub fn set_active_account(uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut data = Self::load_accounts()?;
+        
+        if !data.accounts.contains_key(uuid) {
+            return Err("Account not found".into());
+        }
+
+        data.active_account_uuid = Some(uuid.to_string());
+        
+        // Update last_used timestamp
+        if let Some(account) = data.accounts.get_mut(uuid) {
+            account.last_used = Some(Utc::now().to_rfc3339());
+        }
+
+        Self::save_accounts(&data)?;
+        Ok(())
+    }
+
+    pub fn remove_account(uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let mut data = Self::load_accounts()?;
+        
+        data.accounts.remove(uuid);
+        
+        // If removed account was active, clear active account
+        if data.active_account_uuid.as_ref() == Some(&uuid.to_string()) {
+            data.active_account_uuid = None;
+        }
+
+        Self::save_accounts(&data)?;
+        Ok(())
+    }
+
+    pub fn update_account_tokens(
+        uuid: &str,
+        access_token: String,
+        refresh_token: String,
+        token_expiry: DateTime<Utc>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut data = Self::load_accounts()?;
+        
+        let account = data
+            .accounts
+            .get_mut(uuid)
+            .ok_or("Account not found")?;
+
+        account.access_token = access_token;
+        account.refresh_token = refresh_token;
+        account.token_expiry = token_expiry;
+        account.last_used = Some(Utc::now().to_rfc3339());
+
+        Self::save_accounts(&data)?;
+        Ok(())
+    }
+
+    pub async fn get_valid_token(uuid: &str) -> Result<String, Box<dyn std::error::Error>> {
+        let mut data = Self::load_accounts()?;
+        
+        let account = data
+            .accounts
+            .get_mut(uuid)
+            .ok_or("Account not found")?;
+
+        // Check if token is expired or will expire in next 5 minutes
+        let now = Utc::now();
+        let refresh_threshold = chrono::Duration::minutes(5);
+        
+        if account.token_expiry - now < refresh_threshold {
+            println!("Token expired or expiring soon, refreshing...");
+            
+            let authenticator = crate::auth::Authenticator::new()?;
+            let refreshed = authenticator.refresh_tokens(&account.refresh_token).await?;
+            
+            // Update stored account
+            account.access_token = refreshed.access_token.clone();
+            account.refresh_token = refreshed.refresh_token;
+            account.token_expiry = refreshed.token_expiry;
+            account.last_used = Some(now.to_rfc3339());
+            
+            Self::save_accounts(&data)?;
+            
+            println!("✓ Token refreshed successfully");
+            Ok(refreshed.access_token)
+        } else {
+            println!("Token still valid (expires in {} minutes)", 
+                     (account.token_expiry - now).num_minutes());
+            Ok(account.access_token.clone())
+        }
     }
 }

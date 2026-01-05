@@ -252,16 +252,20 @@ pub async fn launch_instance_with_active_account(
     app_handle: tauri::AppHandle,
 ) -> Result<String, String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
-    
+
     let active_account = AccountManager::get_active_account()
         .map_err(|e| format!("Failed to get active account: {}", e))?
         .ok_or_else(|| "No active account. Please sign in first.".to_string())?;
-    
+
+    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+        .await
+        .map_err(|e| format!("Failed to get valid token: {}", e))?;
+
     crate::services::instance::InstanceManager::launch(
         &safe_name,
         &active_account.username,
         &active_account.uuid,
-        &active_account.access_token,
+        &access_token,
         app_handle,
     )
     .map_err(|e| format!("Failed to launch instance: {}", e))?;

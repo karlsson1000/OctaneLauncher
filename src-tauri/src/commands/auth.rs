@@ -63,7 +63,7 @@ pub async fn remove_account(uuid: String) -> Result<String, String> {
 
 #[tauri::command]
 pub async fn microsoft_login_and_store() -> Result<AccountInfo, String> {
-    let authenticator = crate::auth::Authenticator::new()
+    let authenticator = Authenticator::new()
         .map_err(|e| format!("Failed to initialize authenticator: {}", e))?;
     
     let auth_response = authenticator
@@ -75,6 +75,15 @@ pub async fn microsoft_login_and_store() -> Result<AccountInfo, String> {
         .map_err(|e| format!("Failed to check account: {}", e))?;
     
     if account_exists {
+        // Update existing account with new tokens
+        AccountManager::update_account_tokens(
+            &auth_response.uuid,
+            auth_response.access_token.clone(),
+            auth_response.refresh_token.clone(),
+            auth_response.token_expiry,
+        )
+        .map_err(|e| format!("Failed to update account: {}", e))?;
+        
         AccountManager::set_active_account(&auth_response.uuid)
             .map_err(|e| format!("Failed to switch account: {}", e))?;
     } else {
@@ -82,6 +91,8 @@ pub async fn microsoft_login_and_store() -> Result<AccountInfo, String> {
             auth_response.uuid.clone(),
             auth_response.username.clone(),
             auth_response.access_token.clone(),
+            auth_response.refresh_token.clone(),
+            auth_response.token_expiry,
         )
         .map_err(|e| format!("Failed to store account: {}", e))?;
     }
@@ -93,4 +104,28 @@ pub async fn microsoft_login_and_store() -> Result<AccountInfo, String> {
         .into_iter()
         .find(|acc| acc.uuid == auth_response.uuid)
         .ok_or_else(|| "Failed to retrieve account info".to_string())
+}
+
+#[tauri::command]
+pub async fn get_launch_token() -> Result<String, String> {
+    let active = AccountManager::get_active_account()
+        .map_err(|e| format!("Failed to get active account: {}", e))?
+        .ok_or("No active account selected")?;
+    
+    AccountManager::get_valid_token(&active.uuid)
+        .await
+        .map_err(|e| format!("Failed to get valid token: {}", e))
+}
+
+#[tauri::command]
+pub async fn refresh_account_token(uuid: String) -> Result<String, String> {
+    if !uuid.chars().all(|c| c.is_alphanumeric() || c == '-') || uuid.len() > 36 {
+        return Err("Invalid UUID format".to_string());
+    }
+    
+    AccountManager::get_valid_token(&uuid)
+        .await
+        .map_err(|e| format!("Failed to refresh token: {}", e))?;
+    
+    Ok("Token refreshed successfully".to_string())
 }

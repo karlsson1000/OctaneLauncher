@@ -26,6 +26,8 @@ use commands::{
     launch_instance,
     kill_instance,
     launch_instance_with_active_account,
+    get_launch_token,
+    refresh_account_token,
     set_instance_icon,
     remove_instance_icon,
     get_instance_icon,
@@ -124,6 +126,11 @@ async fn frontend_ready(app: AppHandle) {
     }
 }
 
+#[tauri::command]
+fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let discord_rpc = Arc::new(DiscordRpc::new("1457530211968221184"));
@@ -143,6 +150,9 @@ pub fn run() {
             // Splash screen
             frontend_ready,
             
+            // App info
+            get_app_version,
+            
             // Authentication
             microsoft_login,
             microsoft_login_and_store,
@@ -151,6 +161,8 @@ pub fn run() {
             switch_account,
             remove_account,
             launch_instance_with_active_account,
+            get_launch_token,
+            refresh_account_token,
             
             // Skin Management
             upload_skin,
