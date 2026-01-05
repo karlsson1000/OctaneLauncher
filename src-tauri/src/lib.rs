@@ -3,6 +3,10 @@ mod commands;
 mod services;
 mod utils;
 mod models;
+mod discord_rpc;
+
+use discord_rpc::DiscordRpc;
+use std::sync::Arc;
 
 use commands::{
     // Auth commands
@@ -122,6 +126,16 @@ async fn frontend_ready(app: AppHandle) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let discord_rpc = Arc::new(DiscordRpc::new("1457530211968221184"));
+    
+    // Set the presence once when app starts
+    discord_rpc.set_activity(
+        "Playing Minecraft",
+        None,
+        "atomic_launcher",
+        "Atomic Launcher",
+    );
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
