@@ -87,7 +87,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
           <p className="text-sm text-[#808080] mt-0.5">View game output and logs</p>
         </div>
 
-        <div className="bg-[#101010] rounded-md overflow-hidden" style={{ height: 'calc(100vh - 280px)' }}>
+        <div className="bg-[#101010] rounded-md overflow-hidden" style={{ height: 'calc(100vh - 225px)' }}>
           {consoleLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
