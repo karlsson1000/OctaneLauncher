@@ -2,12 +2,12 @@ import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { LogOut, Settings, LogIn, Home, Package, Puzzle, Terminal, Minus, Square, X, Server, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, HatGlasses, FolderOpen, Copy, Trash2 } from "lucide-react"
+import { LogOut, Settings, LogIn, Home, Package, Puzzle, Terminal, Minus, Square, X, Server, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, HatGlasses, FolderOpen, Copy, Trash2, Telescope } from "lucide-react"
 import { HomeTab } from "./tabs/HomeTab"
 import { InstancesTab } from "./tabs/InstancesTab"
 import { BrowseTab } from "./tabs/BrowseTab"
 import { ConsoleTab } from "./tabs/ConsoleTab"
-import { SettingsTab } from "./tabs/SettingsTab"
+import { SettingsModal } from "./modals/SettingsModal"
 import { ServersTab } from "./tabs/ServersTab"
 import { SkinsTab } from "./tabs/SkinsTab"
 import { CreateInstanceModal } from "./modals/CreateInstanceModal"
@@ -15,6 +15,7 @@ import { CreationProgressToast } from "./modals/CreationProgressToast"
 import { InstanceDetailsTab } from "./modals/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
 import { ContextMenu } from "./modals/ContextMenu"
+import { MapTab } from "./tabs/MapTab"
 import type { Instance, LauncherSettings, ConsoleLog } from "../types"
 
 interface AccountInfo {
@@ -40,7 +41,7 @@ function App() {
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null)
   const [launcherDirectory, setLauncherDirectory] = useState("")
   const [settings, setSettings] = useState<LauncherSettings | null>(null)
-  const [activeTab, setActiveTab] = useState<"home" | "instances" | "browse" | "console" | "settings" | "servers" | "skins">("home")
+  const [activeTab, setActiveTab] = useState<"home" | "instances" | "browse" | "console" | "servers" | "skins" | "map">("home")
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLog[]>([])
   const [showInstanceDetails, setShowInstanceDetails] = useState(false)
   const [creatingInstanceName, setCreatingInstanceName] = useState<string | null>(null)
@@ -62,6 +63,7 @@ function App() {
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isNavigating, setIsNavigating] = useState(false)
   const [sidebarBackground, setSidebarBackground] = useState<string | null>(null)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [sidebarContextMenu, setSidebarContextMenu] = useState<{
     x: number
     y: number
@@ -715,6 +717,22 @@ function App() {
                 <HatGlasses size={19} strokeWidth={2} />
                 <span>Skins</span>
               </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab("map")
+                  setShowInstanceDetails(false)
+                }}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
+                  activeTab === "map"
+                    ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
+                    : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
+                }`}
+              >
+                <Telescope size={19} strokeWidth={2} />
+                <span>Server Maps</span>
+              </button>
+
               <button
                 onClick={() => {
                   setActiveTab("console")
@@ -936,15 +954,8 @@ function App() {
             )}
             
             <button
-              onClick={() => {
-                setActiveTab("settings")
-                setShowInstanceDetails(false)
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer mb-1 ${
-                activeTab === "settings"
-                  ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
-                  : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
-              }`}
+              onClick={() => setShowSettingsModal(true)}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer mb-1 text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
             >
               <Settings size={18} strokeWidth={2} />
               <span>Settings</span>
@@ -1026,25 +1037,29 @@ function App() {
                 />
               )}
 
+              {activeTab === "map" && (
+                <MapTab />
+              )}
+
               {activeTab === "console" && (
                 <ConsoleTab
                   consoleLogs={consoleLogs}
                   onClearConsole={() => setConsoleLogs([])}
                 />
               )}
-
-              {activeTab === "settings" && (
-                <SettingsTab
-                  settings={settings}
-                  launcherDirectory={launcherDirectory}
-                  onSettingsChange={setSettings}
-                  onBackgroundChanged={loadSidebarBackground}
-                />
-              )}
             </>
           )}
         </main>
       </div>
+
+      <SettingsModal
+        isOpen={showSettingsModal}
+        settings={settings}
+        launcherDirectory={launcherDirectory}
+        onClose={() => setShowSettingsModal(false)}
+        onSettingsChange={setSettings}
+        onBackgroundChanged={loadSidebarBackground}
+      />
 
       {showCreateModal && (
         <CreateInstanceModal
