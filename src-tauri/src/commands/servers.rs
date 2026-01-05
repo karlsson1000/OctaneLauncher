@@ -169,6 +169,12 @@ pub async fn launch_server(
 
     println!("Using account: {}", active_account.username);
 
+    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+        .await
+        .map_err(|e| format!("Failed to get valid token: {}", e))?;
+
+    println!("✓ Token validated/refreshed");
+
     // Try to find the most recently played instance
     let instances = InstanceManager::get_all()
         .map_err(|e| format!("Failed to get instances: {}", e))?;
@@ -213,7 +219,7 @@ pub async fn launch_server(
         &instance_name,
         &active_account.username,
         &active_account.uuid,
-        &active_account.access_token,
+        &access_token,
         &server_arg,
         app_handle.clone(),
     )
