@@ -1,7 +1,6 @@
 import { useState, useRef } from "react"
 import { ModsTab, ModsSelector } from "./ModsTab"
 import { ModpacksTab } from "./ModpacksTab"
-import { FolderDown } from "lucide-react"
 import type { Instance } from "../../types"
 
 interface BrowseTabProps {
@@ -10,12 +9,6 @@ interface BrowseTabProps {
   onSetSelectedInstance: (instance: Instance) => void
   onRefreshInstances?: () => void
   onShowCreationToast?: (instanceName: string) => void
-}
-
-declare global {
-  interface Window {
-    uploadModpackHandler?: () => Promise<void>
-  }
 }
 
 export function BrowseTab({ 
@@ -31,15 +24,6 @@ export function BrowseTab({
   const [selectedModpackVersion, setSelectedModpackVersion] = useState<string | null>(null)
   const [availableModpackVersions, setAvailableModpackVersions] = useState<string[]>([])
   const [isLoadingModpackVersions, setIsLoadingModpackVersions] = useState(false)
-
-  const handleImport = async () => {
-    console.log("handleImport called, onShowCreationToast is:", onShowCreationToast)
-    if (window.uploadModpackHandler) {
-      await window.uploadModpackHandler()
-    } else {
-      console.log("Upload handler not ready")
-    }
-  }
 
   return (
     <div className="p-6 space-y-4" ref={scrollContainerRef}>
@@ -69,20 +53,12 @@ export function BrowseTab({
             </p>
           </div>
           
-          {activeSubTab === "mods" ? (
+          {activeSubTab === "mods" && (
             <ModsSelector 
               instances={instances}
               selectedInstance={selectedInstance}
               onSetSelectedInstance={onSetSelectedInstance}
             />
-          ) : (
-            <button
-              onClick={handleImport}
-              className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded-lg flex items-center justify-center transition-all cursor-pointer"
-              title="Import modpack"
-            >
-              <FolderDown size={24} strokeWidth={2} />
-            </button>
           )}
         </div>
       </div>
@@ -104,7 +80,6 @@ export function BrowseTab({
           onSetAvailableVersions={setAvailableModpackVersions}
           isLoadingVersions={isLoadingModpackVersions}
           onSetIsLoadingVersions={setIsLoadingModpackVersions}
-          onImport={handleImport}
           onShowCreationToast={onShowCreationToast}
           scrollContainerRef={scrollContainerRef}
         />

@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { open } from '@tauri-apps/plugin-dialog'
 import { Search, Download, Loader2, Package, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X } from "lucide-react"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
@@ -13,7 +12,6 @@ interface ModpacksTabProps {
   onSetAvailableVersions: (versions: string[]) => void
   isLoadingVersions: boolean
   onSetIsLoadingVersions: (loading: boolean) => void
-  onImport?: () => void
   onShowCreationToast?: (instanceName: string) => void
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
 }
@@ -27,7 +25,6 @@ export function ModpacksTab({
   selectedVersion,
   onSetAvailableVersions,
   onSetIsLoadingVersions,
-  onImport,
   onShowCreationToast,
   scrollContainerRef
 }: ModpacksTabProps) {
@@ -48,12 +45,6 @@ export function ModpacksTab({
   
   const [selectedModpack, setSelectedModpack] = useState<ModrinthProject | null>(null)
   const [selectedModpackVersion, setSelectedModpackVersion] = useState<string>("")
-
-  useEffect(() => {
-    if (onImport) {
-      window.uploadModpackHandler = handleUploadModpack
-    }
-  }, [onImport])
 
   useEffect(() => {
     loadCustomModpack()
@@ -399,64 +390,6 @@ export function ModpacksTab({
     }
   }
 
-  const handleUploadModpack = async () => {
-    try {
-      const selected = await open({
-        multiple: false,
-        filters: [{
-          name: 'Modpack Files',
-          extensions: ['mrpack', 'zip']
-        }]
-      })
-
-      if (!selected) return
-
-      const filePath = selected as string
-      
-      try {
-        const modpackName = await invoke<string>("get_modpack_name_from_file", {
-          filePath: filePath
-        })
-        
-        console.log("Extracted modpack name:", modpackName)
-        
-        let finalName = modpackName
-        const existingInstance = instances.find(
-          i => i.name.toLowerCase() === modpackName.toLowerCase()
-        )
-        
-        if (existingInstance) {
-          finalName = `${modpackName}-${Date.now()}`
-          console.log("Instance exists, using name:", finalName)
-        }
-        
-        if (onShowCreationToast) {
-          onShowCreationToast(finalName)
-        }
-        
-        await invoke("install_modpack_from_file", {
-          filePath: filePath,
-          instanceName: finalName,
-          preferredGameVersion: selectedVersion,
-        })
-
-        if (onRefreshInstances) {
-          setTimeout(() => {
-            onRefreshInstances()
-          }, 500)
-        }
-        
-      } catch (error) {
-        console.error("Failed to import modpack:", error)
-        alert(`Failed to install modpack: ${error}`)
-      }
-      
-    } catch (error) {
-      console.error("Failed to select modpack file:", error)
-      alert(`Failed to select file: ${error}`)
-    }
-  }
-
   const filteredModpacks = getFilteredModpacks()
   const totalPages = showInstalledOnly 
     ? Math.ceil(filteredModpacks.length / itemsPerPage)
@@ -475,7 +408,7 @@ export function ModpacksTab({
             placeholder="Search modpacks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#1a1a1a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
+            className="w-full bg-[#1a1a1a] rounded pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -489,7 +422,7 @@ export function ModpacksTab({
             setShowInstalledOnly(!showInstalledOnly)
             setCurrentPage(1)
           }}
-          className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-4 py-2.5 rounded text-sm font-medium transition-all cursor-pointer whitespace-nowrap ${
             showInstalledOnly
               ? "bg-[#16a34a] text-white"
               : "bg-[#1a1a1a] text-[#808080] hover:bg-[#1f1f1f] hover:text-[#e8e8e8]"
@@ -512,7 +445,7 @@ export function ModpacksTab({
               return (
                 <div
                   key={modpack.project_id}
-                  className="relative bg-[#1a1a1a] rounded-xl overflow-hidden transition-all group"
+                  className="relative bg-[#1a1a1a] rounded-md overflow-hidden transition-all group"
                 >
                   <div className="relative h-48 overflow-hidden">
                     {backgroundImage ? (
@@ -530,7 +463,7 @@ export function ModpacksTab({
                   </div>
 
                   <div className="relative bg-[#1a1a1a] p-4 flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0">
+                    <div className="w-14 h-14 rounded overflow-hidden flex-shrink-0">
                       {modpack.icon_url ? (
                         <img
                           src={modpack.icon_url}
@@ -557,28 +490,28 @@ export function ModpacksTab({
                     </div>
 
                     {installed ? (
-                      <div className="flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm bg-[#16a34a] text-white">
+                      <div className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-[#16a34a] text-white">
                         <span className="flex items-center gap-1.5">
                           <CheckCircle size={16} />
                           Installed
                         </span>
                       </div>
                     ) : status === 'success' ? (
-                      <div className="flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm bg-[#16a34a] text-white">
+                      <div className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-[#16a34a] text-white">
                         <span className="flex items-center gap-1.5">
                           <CheckCircle size={16} />
                           Success
                         </span>
                       </div>
                     ) : status === 'error' ? (
-                      <div className="flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm bg-red-600 text-white">
+                      <div className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-red-600 text-white">
                         <span className="flex items-center gap-1.5">
                           <AlertCircle size={16} />
                           Error
                         </span>
                       </div>
                     ) : isInstalling ? (
-                      <div className="flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm bg-[#2a2a2a] text-[#808080]">
+                      <div className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-[#2a2a2a] text-[#808080]">
                         <span className="flex items-center gap-1.5">
                           <Loader2 size={16} className="animate-spin" />
                           Installing
@@ -590,7 +523,7 @@ export function ModpacksTab({
                           e.stopPropagation()
                           openModpackModal(modpack)
                         }}
-                        className="flex-shrink-0 px-4 py-2 rounded-lg font-medium text-sm bg-[#16a34a] hover:bg-[#15803d] text-white transition-colors cursor-pointer"
+                        className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-[#16a34a] hover:bg-[#15803d] text-white transition-colors cursor-pointer"
                       >
                         <span className="flex items-center gap-1.5">
                           <Download size={16} />
@@ -612,7 +545,7 @@ export function ModpacksTab({
                   handlePageChange(currentPage - 1)
                 }}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded text-sm transition-colors cursor-pointer"
               >
                 <ChevronLeft size={16} />
                 Previous
@@ -626,7 +559,7 @@ export function ModpacksTab({
                         e.preventDefault()
                         handlePageChange(1)
                       }}
-                      className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                      className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded text-sm transition-colors cursor-pointer"
                     >
                       1
                     </button>
@@ -642,14 +575,14 @@ export function ModpacksTab({
                       e.preventDefault()
                       handlePageChange(currentPage - 1)
                     }}
-                    className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                    className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded text-sm transition-colors cursor-pointer"
                   >
                     {currentPage - 1}
                   </button>
                 )}
 
                 <button
-                  className="px-3 py-2 bg-[#16a34a] text-white rounded-lg text-sm font-medium"
+                  className="px-3 py-2 bg-[#16a34a] text-white rounded text-sm font-medium"
                 >
                   {currentPage}
                 </button>
@@ -660,7 +593,7 @@ export function ModpacksTab({
                       e.preventDefault()
                       handlePageChange(currentPage + 1)
                     }}
-                    className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                    className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded text-sm transition-colors cursor-pointer"
                   >
                     {currentPage + 1}
                   </button>
@@ -676,7 +609,7 @@ export function ModpacksTab({
                         e.preventDefault()
                         handlePageChange(totalPages)
                       }}
-                      className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                      className="px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded text-sm transition-colors cursor-pointer"
                     >
                       {totalPages}
                     </button>
@@ -690,7 +623,7 @@ export function ModpacksTab({
                   handlePageChange(currentPage + 1)
                 }}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded-lg text-sm transition-colors cursor-pointer"
+                className="flex items-center gap-1 px-3 py-2 bg-[#1a1a1a] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded text-sm transition-colors cursor-pointer"
               >
                 Next
                 <ChevronRight size={16} />
@@ -702,7 +635,7 @@ export function ModpacksTab({
 
       {selectedModpack && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={() => setSelectedModpack(null)}>
-          <div className="bg-[#1a1a1a] rounded-xl w-full max-w-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#1a1a1a] rounded-md w-full max-w-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="relative h-64">
               {modpackGalleries[selectedModpack.project_id]?.[0] ? (
                 <img
@@ -718,7 +651,7 @@ export function ModpacksTab({
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
               <button
                 onClick={() => setSelectedModpack(null)}
-                className="absolute top-4 right-4 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+                className="absolute top-4 right-4 w-8 h-8 bg-black/50 hover:bg-black/70 rounded flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X size={20} className="text-white" />
               </button>
@@ -726,7 +659,7 @@ export function ModpacksTab({
 
             <div className="p-6 space-y-4">
               <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
+                <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
                   {selectedModpack.icon_url ? (
                     <img src={selectedModpack.icon_url} alt={selectedModpack.title} className="w-full h-full object-cover" />
                   ) : (
@@ -760,7 +693,7 @@ export function ModpacksTab({
                     <select
                       value={selectedModpackVersion}
                       onChange={(e) => setSelectedModpackVersion(e.target.value)}
-                      className="w-full bg-[#0f0f0f] text-[#e8e8e8] rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] cursor-pointer appearance-none"
+                      className="w-full bg-[#0f0f0f] text-[#e8e8e8] rounded px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] cursor-pointer appearance-none"
                     >
                       {modpackVersions[selectedModpack.project_id].map((version) => (
                         <option key={version.id} value={version.id}>
@@ -782,14 +715,14 @@ export function ModpacksTab({
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setSelectedModpack(null)}
-                  className="px-8 py-2.5 bg-[#0f0f0f] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg font-medium text-sm transition-colors cursor-pointer"
+                  className="px-8 py-2.5 bg-[#0f0f0f] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded font-medium text-sm transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleInstallModpack}
                   disabled={!selectedModpackVersion || loadingVersions.has(selectedModpack.project_id)}
-                  className="px-8 py-2.5 bg-[#16a34a] hover:bg-[#15803d] disabled:bg-[#2a2a2a] disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
+                  className="px-8 py-2.5 bg-[#16a34a] hover:bg-[#15803d] disabled:bg-[#2a2a2a] disabled:cursor-not-allowed text-white rounded font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Download size={18} />
                   Install
