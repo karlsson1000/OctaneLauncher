@@ -40,7 +40,6 @@ export function SettingsTab({ settings, launcherDirectory, onSettingsChange, onB
 
   useEffect(() => {
     if (!settings?.java_path) {
-      // No java_path set
       setShowCustomPath(false)
       setCustomPathValue("")
       return
@@ -226,7 +225,7 @@ export function SettingsTab({ settings, launcherDirectory, onSettingsChange, onB
             {/* Left Column */}
             <div className="space-y-6">
               {/* Memory Allocation */}
-              <div className="bg-[#1a1a1a] rounded-xl p-6">
+              <div className="bg-[#101010] rounded-md p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <Cpu size={24} className="text-[#16a34a]" strokeWidth={2} />
                   <div>
@@ -288,7 +287,7 @@ export function SettingsTab({ settings, launcherDirectory, onSettingsChange, onB
               </div>
 
               {/* Java Configuration */}
-              <div className="bg-[#1a1a1a] rounded-xl p-6">
+              <div className="bg-[#101010] rounded-md p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <Coffee size={24} className="text-[#16a34a]" strokeWidth={2} />
                   <div>
@@ -382,7 +381,7 @@ export function SettingsTab({ settings, launcherDirectory, onSettingsChange, onB
             {/* Right Column */}
             <div className="space-y-6">
               {/* Appearance */}
-              <div className="bg-[#1a1a1a] rounded-xl p-6">
+              <div className="bg-[#101010] rounded-md p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <ImagePlus size={24} className="text-[#16a34a]" strokeWidth={2} />
                   <div>
@@ -440,7 +439,7 @@ export function SettingsTab({ settings, launcherDirectory, onSettingsChange, onB
               </div>
 
               {/* Launcher Directory */}
-              <div className="bg-[#1a1a1a] rounded-xl p-6">
+              <div className="bg-[#101010] rounded-md p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <FolderOpen size={24} className="text-[#16a34a]" strokeWidth={2} />
                   <div>

@@ -255,7 +255,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded-lg flex items-center justify-center transition-all cursor-pointer"
+            className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded flex items-center justify-center transition-all cursor-pointer"
           >
             <Plus size={28} strokeWidth={2} />
           </button>
@@ -269,7 +269,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
               placeholder="Search servers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#1a1a1a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
+              className="w-full bg-[#1a1a1a] rounded pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
             />
           </div>
         )}
@@ -281,14 +281,14 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
             <p className="text-sm text-[#808080] mb-4">Add your first server to get started</p>
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all shadow-lg cursor-pointer"
+              className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-medium text-sm flex items-center gap-2 transition-all shadow-lg cursor-pointer"
             >
               <Plus size={16} strokeWidth={2} />
               <span>Add Server</span>
             </button>
           </div>
         ) : filteredServers.length === 0 ? (
-          <div className="bg-[#1a1a1a] rounded-xl p-12 flex flex-col items-center justify-center">
+          <div className="bg-[#1a1a1a] rounded-md p-12 flex flex-col items-center justify-center">
             <Search size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
             <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No servers found</h3>
             <p className="text-sm text-[#808080]">Try adjusting your search query</p>
@@ -306,14 +306,14 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                 <div
                   key={server.name}
                   onClick={() => setSelectedServer(server)}
-                  className="bg-[#1a1a1a] rounded-xl p-4 cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a] relative"
+                  className="bg-[#1a1a1a] rounded-md p-4 cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a] relative"
                 >
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       setServerToDelete(server.name)
                     }}
-                    className="absolute top-4 right-4 px-3 py-2 bg-[#dc2626]/10 hover:bg-[#dc2626]/20 text-[#dc2626] rounded-lg text-xs font-medium transition-all cursor-pointer"
+                    className="absolute top-4 right-4 px-3 py-2 bg-[#dc2626]/10 hover:bg-[#dc2626]/20 text-[#dc2626] rounded text-xs font-medium transition-all cursor-pointer"
                     title="Remove server"
                   >
                     <Trash2 size={14} />
@@ -324,10 +324,10 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                       <img 
                         src={server.favicon} 
                         alt={server.name} 
-                        className="w-16 h-16 rounded-lg object-cover"
+                        className="w-16 h-16 rounded object-cover"
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded flex items-center justify-center flex-shrink-0">
                         <Server size={28} className="text-[#16a34a]/60" strokeWidth={1.5} />
                       </div>
                     )}
@@ -369,7 +369,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                   <button
                     onClick={(e) => handleLaunchServer(server, e)}
                     disabled={server.status !== "online" || isLaunching || isAnyInstanceRunning}
-                    className={`w-full py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all ${
+                    className={`w-full py-2.5 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all ${
                       isAnyInstanceRunning
                         ? "bg-red-500/10 text-red-400 cursor-not-allowed"
                         : server.status === "online" && !isLaunching

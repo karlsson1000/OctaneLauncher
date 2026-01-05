@@ -342,9 +342,9 @@ export function SkinsTab(props: SkinsTabProps) {
         <div className="flex gap-24 items-start justify-center">
           {/* 3D Skin Viewer */}
           <div className="flex-shrink-0">
-            <div className="rounded-xl overflow-hidden relative">
+            <div className="rounded-md overflow-hidden relative">
               {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-[#0d0d0d] bg-opacity-90 z-10 rounded-xl">
+                <div className="absolute inset-0 flex items-center justify-center bg-[#0d0d0d] bg-opacity-90 z-10 rounded-md">
                   <div className="text-center">
                     <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto mb-3" />
                     <p className="text-sm text-[#808080]">Loading skin...</p>
@@ -355,7 +355,7 @@ export function SkinsTab(props: SkinsTabProps) {
               <div className="flex items-center justify-center p-4">
                 <canvas 
                   ref={canvasRef}
-                  className="rounded-lg"
+                  className="rounded"
                 />
               </div>
             </div>
@@ -363,7 +363,7 @@ export function SkinsTab(props: SkinsTabProps) {
 
           {/* Controls Panel */}
           <div className="flex-1 max-w-sm space-y-4">
-            <div className="bg-[#1a1a1a] rounded-xl p-5">
+            <div className="bg-[#1a1a1a] rounded-md p-5">
               <h3 className="text-base font-semibold text-[#e8e8e8] mb-4">Skin Model</h3>
               
               <div className="flex gap-2 mb-6">
@@ -375,7 +375,7 @@ export function SkinsTab(props: SkinsTabProps) {
                       viewerRef.current.render()
                     }
                   }}
-                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  className={`flex-1 px-4 py-2.5 rounded text-sm font-medium transition-all cursor-pointer ${
                     skinVariant === "classic"
                       ? "bg-[#16a34a] text-white"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#1f1f1f] hover:text-[#e8e8e8]"
@@ -391,7 +391,7 @@ export function SkinsTab(props: SkinsTabProps) {
                       viewerRef.current.render()
                     }
                   }}
-                  className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  className={`flex-1 px-4 py-2.5 rounded text-sm font-medium transition-all cursor-pointer ${
                     skinVariant === "slim"
                       ? "bg-[#16a34a] text-white"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#1f1f1f] hover:text-[#e8e8e8]"
@@ -413,7 +413,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading || loading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium text-sm transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded font-medium text-sm transition-all cursor-pointer"
                 >
                   {uploading ? (
                     <>
@@ -431,7 +431,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 <button
                   onClick={handleReset}
                   disabled={resetting || loading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0d0d0d] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded-lg font-medium text-sm transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0d0d0d] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded font-medium text-sm transition-all cursor-pointer"
                 >
                   {resetting ? (
                     <>
@@ -449,7 +449,7 @@ export function SkinsTab(props: SkinsTabProps) {
             </div>
 
             {/* Capes Section */}
-            <div className="bg-[#1a1a1a] rounded-xl p-5">
+            <div className="bg-[#1a1a1a] rounded-md p-5">
               <h3 className="text-base font-semibold text-[#e8e8e8] mb-4">Capes</h3>
               
               {loadingCapes ? (
@@ -486,7 +486,7 @@ export function SkinsTab(props: SkinsTabProps) {
                   {activeCape && (
                     <button
                       onClick={handleCapeRemove}
-                      className="w-full px-3 py-2.5 bg-[#0d0d0d] hover:bg-[#1f1f1f] text-[#808080] hover:text-[#e8e8e8] rounded-lg text-sm font-medium transition-all cursor-pointer"
+                      className="w-full px-3 py-2.5 bg-[#0d0d0d] hover:bg-[#1f1f1f] text-[#808080] hover:text-[#e8e8e8] rounded text-sm font-medium transition-all cursor-pointer"
                     >
                       Remove Cape
                     </button>
@@ -500,7 +500,7 @@ export function SkinsTab(props: SkinsTabProps) {
             </div>
             
             {error && (
-              <div className="bg-[#1a1a1a] rounded-lg p-4">
+              <div className="bg-[#1a1a1a] rounded p-4">
                 <p className="text-xs text-red-400 leading-relaxed">{error}</p>
               </div>
             )}

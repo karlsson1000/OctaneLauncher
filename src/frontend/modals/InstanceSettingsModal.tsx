@@ -266,7 +266,7 @@ export function InstanceSettingsModal({
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md shadow-2xl">
+        <div className="bg-[#1a1a1a] rounded-md w-full max-w-md shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between p-5">
             <div className="flex items-center gap-3">
@@ -278,7 +278,7 @@ export function InstanceSettingsModal({
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 hover:bg-[#0d0d0d] rounded-lg transition-colors text-[#808080] hover:text-[#e8e8e8] cursor-pointer"
+              className="p-1.5 hover:bg-[#0d0d0d] rounded transition-colors text-[#808080] hover:text-[#e8e8e8] cursor-pointer"
             >
               <X size={16} strokeWidth={2} />
             </button>
@@ -303,7 +303,7 @@ export function InstanceSettingsModal({
                     <button
                       onClick={handleIconClick}
                       disabled={isUploadingIcon}
-                      className="w-20 h-20 rounded-xl overflow-hidden relative cursor-pointer bg-transparent"
+                      className="w-20 h-20 rounded-md overflow-hidden relative cursor-pointer bg-transparent"
                     >
                       <img
                         src={localIcon}
@@ -319,7 +319,7 @@ export function InstanceSettingsModal({
                   <button
                     onClick={handleIconClick}
                     disabled={isUploadingIcon}
-                    className="w-20 h-20 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-xl flex items-center justify-center transition-all bg-transparent cursor-pointer"
+                    className="w-20 h-20 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-md flex items-center justify-center transition-all bg-transparent cursor-pointer"
                   >
                     {isUploadingIcon ? (
                       <Loader2 size={28} className="text-[#16a34a] animate-spin" />
@@ -333,7 +333,7 @@ export function InstanceSettingsModal({
                   <button
                     onClick={handleIconClick}
                     disabled={isUploadingIcon}
-                    className="w-full px-4 py-2 bg-[#0d0d0d] hover:bg-[#2a2a2a] text-[#e8e8e8] rounded-lg text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                    className="w-full px-4 py-2 bg-[#0d0d0d] hover:bg-[#2a2a2a] text-[#e8e8e8] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {localIcon ? "Change Icon" : "Upload Icon"}
                   </button>
@@ -341,7 +341,7 @@ export function InstanceSettingsModal({
                     <button
                       onClick={handleRemoveIcon}
                       disabled={isUploadingIcon}
-                      className="w-full px-4 py-2 bg-[#0d0d0d] hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-lg text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                      className="w-full px-4 py-2 bg-[#0d0d0d] hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                     >
                       Remove Icon
                     </button>
@@ -372,7 +372,7 @@ export function InstanceSettingsModal({
                       e.currentTarget.blur()
                     }
                   }}
-                  className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors"
+                  className="w-full bg-[#0d0d0d] rounded px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors"
                   placeholder="Enter instance name"
                   disabled={isRenamingInstance}
                 />
@@ -392,7 +392,7 @@ export function InstanceSettingsModal({
               <div>
                 <label className="block text-xs font-medium text-[#808080] mb-2">Fabric Loader Version</label>
                 {isLoadingFabric ? (
-                  <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded-lg">
+                  <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded">
                     <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
                     <span>Loading versions...</span>
                   </div>
@@ -406,7 +406,7 @@ export function InstanceSettingsModal({
                           setSelectedFabricVersion(newVersion)
                           handleUpdateFabricLoader(newVersion)
                         }}
-                        className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none"
+                        className="w-full bg-[#0d0d0d] rounded px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none"
                         disabled={isUpdatingFabric}
                       >
                         {fabricVersions.map((version) => (
@@ -435,7 +435,7 @@ export function InstanceSettingsModal({
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="w-full px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? (
                   <>

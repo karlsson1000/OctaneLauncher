@@ -592,7 +592,7 @@ function App() {
                   setActiveTab("home")
                   setShowInstanceDetails(false)
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-medium transition-all cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
                   activeTab === "home"
                     ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
                     : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
@@ -606,7 +606,7 @@ function App() {
                   setActiveTab("instances")
                   setShowInstanceDetails(false)
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-medium transition-all cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
                   activeTab === "instances"
                     ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
                     : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
@@ -620,7 +620,7 @@ function App() {
                   setActiveTab("browse")
                   setShowInstanceDetails(false)
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-medium transition-all cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
                   activeTab === "browse"
                     ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
                     : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
@@ -634,7 +634,7 @@ function App() {
                   setActiveTab("servers")
                   setShowInstanceDetails(false)
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-medium transition-all cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
                   activeTab === "servers"
                     ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
                     : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
@@ -648,7 +648,7 @@ function App() {
                   setActiveTab("skins")
                   setShowInstanceDetails(false)
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-medium transition-all cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
                   activeTab === "skins"
                     ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
                     : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
@@ -662,7 +662,7 @@ function App() {
                   setActiveTab("console")
                   setShowInstanceDetails(false)
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-[15px] font-medium transition-all cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
                   activeTab === "console"
                     ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
                     : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
@@ -692,16 +692,16 @@ function App() {
                             setActiveTab("instances")
                             setShowInstanceDetails(true)
                           }}
-                          className="group w-full flex items-center gap-2 rounded-md cursor-pointer transition-all text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f] px-1.5 py-1.5"
+                          className="group w-full flex items-center gap-2 rounded cursor-pointer transition-all text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f] px-1.5 py-1.5"
                         >
                           {icon ? (
                             <img
                               src={icon}
                               alt={instance.name}
-                              className="w-9 h-9 rounded-md object-cover flex-shrink-0"
+                              className="w-9 h-9 rounded object-cover flex-shrink-0"
                             />
                           ) : (
-                            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#0d0d0d] rounded-md">
+                            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#0d0d0d] rounded">
                               <Package size={24} className="text-[#4a4a4a]" strokeWidth={1.5} />
                             </div>
                           )}
@@ -726,7 +726,7 @@ function App() {
                                   }
                                 }}
                                 disabled={launchingInstanceName !== null}
-                                className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md transition-all cursor-pointer mr-1 ${
+                                className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all cursor-pointer mr-1 ${
                                   isRunning || isLaunching
                                     ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20"
                                     : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
@@ -757,13 +757,13 @@ function App() {
                 <div className="relative py-1 mb-0.5">
                   <button
                     onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                    className="w-full flex items-center gap-2.5 p-2 cursor-pointer hover:bg-[#1f1f1f] rounded-md transition-colors"
+                    className="w-full flex items-center gap-2.5 p-2 cursor-pointer hover:bg-[#1f1f1f] rounded transition-colors"
                   >
                     <div className="relative">
                       <img
                         src={`https://cravatar.eu/avatar/${activeAccount.username}/32`}
                         alt={activeAccount.username}
-                        className="w-8 h-8 rounded-md"
+                        className="w-8 h-8 rounded"
                       />
                     </div>
                     <div className="flex-1 min-w-0 text-left">
@@ -783,7 +783,7 @@ function App() {
                         onClick={() => setShowAccountDropdown(false)}
                       />
                       
-                      <div className="absolute bottom-1 left-0 right-0 bg-[#1a1a1a] rounded-lg shadow-xl z-50 overflow-hidden">
+                      <div className="absolute bottom-1 left-0 right-0 bg-[#1a1a1a] rounded shadow-xl z-50 overflow-hidden">
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -814,7 +814,7 @@ function App() {
                                       <img
                                         src={`https://cravatar.eu/avatar/${account.username}/32`}
                                         alt={account.username}
-                                        className="w-8 h-8 rounded-md"
+                                        className="w-8 h-8 rounded"
                                       />
                                       <div className="flex-1 min-w-0 text-left">
                                         <div className="text-sm font-medium text-[#e8e8e8] truncate">
@@ -844,7 +844,7 @@ function App() {
                             <img
                               src={`https://cravatar.eu/avatar/${activeAccount.username}/32`}
                               alt={activeAccount.username}
-                              className="w-8 h-8 rounded-md"
+                              className="w-8 h-8 rounded"
                             />
                             <div className="flex-1 min-w-0 text-left">
                               <div className="text-xs text-[#808080]">Welcome back,</div>
@@ -869,7 +869,7 @@ function App() {
               <button
                 onClick={handleAddAccount}
                 disabled={isLoggingIn}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-base font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mb-2 text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mb-2 text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"
               >
                 <LogIn size={20} className="text-[#16a34a]" strokeWidth={2} />
                 <span>{isLoggingIn ? 'Authenticating...' : 'Sign In'}</span>
@@ -881,7 +881,7 @@ function App() {
                 setActiveTab("settings")
                 setShowInstanceDetails(false)
               }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-base font-medium transition-all cursor-pointer mb-1 ${
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer mb-1 ${
                 activeTab === "settings"
                   ? "bg-[#2a2a2a] text-[#e8e8e8] shadow-sm"
                   : "text-[#808080] hover:text-[#e8e8e8] hover:bg-[#1f1f1f]"

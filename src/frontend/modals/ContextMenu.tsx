@@ -67,7 +67,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const menuContent = useMemo(() => (
     <div
       ref={menuRef}
-      className="fixed z-[100] bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg overflow-hidden min-w-[180px]"
+      className="fixed z-[100] bg-[#1a1a1a] border border-[#2a2a2a] rounded overflow-hidden min-w-[180px]"
       style={{ left: x, top: y }}
     >
       {items.map((item, index) => (

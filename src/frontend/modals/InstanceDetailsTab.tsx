@@ -350,7 +350,7 @@ export function InstanceDetailsTab({
           <div className="flex items-start gap-4 mb-6">
             <div className="flex-shrink-0">
               {instanceIcon ? (
-                <div className="w-16 h-16 rounded-xl overflow-hidden">
+                <div className="w-16 h-16 rounded-md overflow-hidden">
                   <img
                     src={instanceIcon}
                     alt={instance.name}
@@ -358,7 +358,7 @@ export function InstanceDetailsTab({
                   />
                 </div>
               ) : (
-                <div className="w-16 h-16 border-2 border-dashed border-[#2a2a2a] rounded-xl flex items-center justify-center bg-transparent">
+                <div className="w-16 h-16 border-2 border-dashed border-[#2a2a2a] rounded-md flex items-center justify-center bg-transparent">
                   <Package size={24} className="text-[#4a4a4a]" />
                 </div>
               )}
@@ -387,7 +387,7 @@ export function InstanceDetailsTab({
                   <button
                     onClick={onLaunch}
                     disabled={!isAuthenticated}
-                    className={`px-6 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer ${
+                    className={`px-6 py-2.5 rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer ${
                       isLaunching
                         ? "bg-red-500/10 text-red-400"
                         : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
@@ -407,14 +407,14 @@ export function InstanceDetailsTab({
                   </button>
                   <button
                     onClick={handleOpenFolder}
-                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
                   >
                     <FolderOpen size={16} />
                     <span>Open Folder</span>
                   </button>
                   <button
                     onClick={() => setIsSettingsOpen(true)}
-                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                    className="px-4 py-2.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] text-[#e8e8e8] rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
                     title="Instance Settings"
                   >
                     <Settings size={18} />
@@ -459,7 +459,7 @@ export function InstanceDetailsTab({
                   {installedMods.map((mod) => (
                     <div
                       key={mod.filename}
-                      className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl overflow-hidden transition-all ${
+                      className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-md overflow-hidden transition-all ${
                         mod.disabled ? 'opacity-60' : ''
                       }`}
                     >
@@ -547,7 +547,7 @@ export function InstanceDetailsTab({
                   {worlds.map((world) => (
                     <div
                       key={world.folder_name}
-                      className="bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-xl overflow-hidden transition-all"
+                      className="bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-md overflow-hidden transition-all"
                     >
                       <div className="flex min-h-0">
                         {world.icon ? (

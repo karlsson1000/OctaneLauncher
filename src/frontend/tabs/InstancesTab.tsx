@@ -336,14 +336,14 @@ export function InstancesTab({
                   setShowTemplateMenu(!showTemplateMenu)
                   setShowApplyMenu(false)
                 }}
-                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded-lg flex items-center justify-center transition-all cursor-pointer"
+                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded flex items-center justify-center transition-all cursor-pointer"
                 title="Templates"
               >
                 <FileText size={24} strokeWidth={2} />
               </button>
               <button
                 onClick={onCreateNew}
-                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded-lg flex items-center justify-center transition-all cursor-pointer"
+                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded flex items-center justify-center transition-all cursor-pointer"
                 title="New Instance"
               >
                 <Plus size={28} strokeWidth={2} />
@@ -359,7 +359,7 @@ export function InstancesTab({
                 placeholder="Search instances..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#1a1a1a] rounded-lg pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
+                className="w-full bg-[#1a1a1a] rounded pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
               />
             </div>
           )}
@@ -371,14 +371,14 @@ export function InstancesTab({
               <p className="text-sm text-[#808080] mb-4">Create your first instance to get started</p>
               <button
                 onClick={onCreateNew}
-                className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
                 <span>Create Instance</span>
               </button>
             </div>
           ) : filteredInstances.length === 0 ? (
-            <div className="bg-[#1a1a1a] rounded-xl p-12 flex flex-col items-center justify-center">
+            <div className="bg-[#1a1a1a] rounded-md p-12 flex flex-col items-center justify-center">
               <Search size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
               <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No instances found</h3>
               <p className="text-sm text-[#808080]">Try adjusting your search query</p>
@@ -397,7 +397,7 @@ export function InstancesTab({
                       onShowDetails(instance)
                     }}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="group relative bg-[#1a1a1a] rounded-xl overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a]"
+                    className="group relative bg-[#1a1a1a] rounded-md overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a]"
                   >
                     <div className="aspect-square bg-[#141414] flex items-center justify-center overflow-hidden">
                       {icon ? (
@@ -436,7 +436,7 @@ export function InstancesTab({
                             }
                           }}
                           disabled={launchingInstanceName !== null && !isRunning}
-                          className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-md transition-all cursor-pointer ${
+                          className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all cursor-pointer ${
                             isRunning || isLaunching
                               ? "bg-red-500/10 text-red-400 opacity-100"
                               : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
@@ -463,7 +463,7 @@ export function InstancesTab({
       {showTemplateMenu && !showApplyMenu && createPortal(
         <div
           ref={templateMenuRef}
-          className="fixed w-80 bg-[#1a1a1a] rounded-lg z-[9999] overflow-hidden"
+          className="fixed w-80 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
           style={{
             top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
             right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
@@ -517,7 +517,7 @@ export function InstancesTab({
           <div className="p-3">
             <button
               onClick={handleImportTemplate}
-              className="w-full h-12 hover:bg-[#2a2a2a] text-[#16a34a] rounded-lg flex items-center justify-center gap-3 transition-all cursor-pointer"
+              className="w-full h-12 hover:bg-[#2a2a2a] text-[#16a34a] rounded flex items-center justify-center gap-3 transition-all cursor-pointer"
             >
               <FileDown size={22} strokeWidth={2} />
               <span className="text-sm font-medium text-[#e8e8e8]">Import Template</span>
@@ -531,7 +531,7 @@ export function InstancesTab({
       {showApplyMenu && createPortal(
         <div
           ref={applyMenuRef}
-          className="fixed w-80 bg-[#1a1a1a] rounded-lg z-[9999] overflow-hidden"
+          className="fixed w-80 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
           style={{
             top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
             right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
@@ -597,7 +597,7 @@ export function InstancesTab({
                           onClick={() => handleApplyTemplate(template.id, instance.name)}
                           className="w-full p-2.5 pl-3 pr-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer flex items-center gap-3 group"
                         >
-                          <div className="w-10 h-10 bg-[#1a1a1a] rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <div className="w-10 h-10 bg-[#1a1a1a] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
                             {icon ? (
                               <img
                                 src={icon}

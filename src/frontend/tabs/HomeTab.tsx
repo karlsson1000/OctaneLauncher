@@ -179,7 +179,7 @@ export function HomeTab({
           </div>
           <button
             onClick={onCreateNew}
-            className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded-lg flex items-center justify-center transition-all cursor-pointer"
+            className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded flex items-center justify-center transition-all cursor-pointer"
             title="New Instance"
           >
             <Plus size={28} strokeWidth={2} />
@@ -195,7 +195,7 @@ export function HomeTab({
               <p className="text-sm text-[#808080] mb-4">Launch an instance to see it here</p>
               <button
                 onClick={onCreateNew}
-                className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
                 <span>Create Instance</span>
@@ -212,7 +212,7 @@ export function HomeTab({
                     key={instance.name}
                     onClick={() => onShowDetails(instance)}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="group relative bg-[#1a1a1a] rounded-xl overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a]"
+                    className="group relative bg-[#1a1a1a] rounded-md overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a]"
                   >
                     {/* Square Image Section */}
                     <div className="aspect-square bg-[#141414] flex items-center justify-center overflow-hidden">
@@ -254,7 +254,7 @@ export function HomeTab({
                             }
                           }}
                           disabled={launchingInstanceName !== null && !isRunning}
-                          className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-md transition-all cursor-pointer ${
+                          className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all cursor-pointer ${
                             isRunning || isLaunching
                               ? "bg-red-500/10 text-red-400 opacity-100"
                               : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
@@ -288,7 +288,7 @@ export function HomeTab({
               <div className="w-8 h-8 border-2 border-[#2a2a2a] border-t-[#16a34a] rounded-full animate-spin" />
             </div>
           ) : snapshots.length === 0 ? (
-            <div className="bg-[#1a1a1a] rounded-xl p-8 text-center">
+            <div className="bg-[#1a1a1a] rounded-md p-8 text-center">
               <p className="text-[#808080]">Unable to load snapshots</p>
             </div>
           ) : (
@@ -303,7 +303,7 @@ export function HomeTab({
                       console.error('Failed to open link:', error)
                     }
                   }}
-                  className="bg-[#1a1a1a] rounded-lg overflow-hidden relative group cursor-pointer"
+                  className="bg-[#1a1a1a] rounded-md overflow-hidden relative group cursor-pointer"
                 >
                   {/* External Link Icon */}
                   <div className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
