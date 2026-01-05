@@ -102,29 +102,23 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
   useEffect(() => {
     if (loaderType === "fabric") {
-      // Force back to releases for Fabric and update version
+      // Force back to releases for modded loaders
       if (versionFilter === "snapshot") {
         setVersionFilter("release")
-        const releases = allVersions.filter(v => 
-          (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") &&
+      }
+      
+      // Check if current version is supported
+      if (!fabricSupportedVersions.includes(selectedVersion)) {
+        const firstSupported = allVersions.find(v => 
+          (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") && 
           fabricSupportedVersions.includes(v.id)
         )
-        if (releases.length > 0) {
-          setSelectedVersion(releases[0].id)
-        }
-      } else {
-        // Already on releases, but check if current version is supported
-        if (!fabricSupportedVersions.includes(selectedVersion)) {
-          const firstSupported = allVersions.find(v => 
-            (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") && 
-            fabricSupportedVersions.includes(v.id)
-          )
-          if (firstSupported) {
-            setSelectedVersion(firstSupported.id)
-          }
+        if (firstSupported) {
+          setSelectedVersion(firstSupported.id)
         }
       }
       
+      // Load loader versions
       if (fabricVersions.length === 0) {
         loadFabricVersions()
       }
@@ -169,7 +163,6 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
       const filePath = selected as string
       
-      // Close modal immediately after file is selected
       onClose()
 
       let extractedName = ""
@@ -226,7 +219,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       await invoke<string>("create_instance", {
         instanceName: finalName,
         version: selectedVersion,
-        loader: loaderType === "fabric" ? "fabric" : null,
+        loader: loaderType === "vanilla" ? null : loaderType,
         loaderVersion: loaderType === "fabric" ? selectedFabricVersion : null,
       })
 
@@ -254,7 +247,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   return (
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#1a1a1a] rounded-xl w-full max-w-md shadow-2xl">
+        <div className="bg-[#1a1a1a] rounded-md w-full max-w-md shadow-2xl">
           <div className="flex items-center justify-between p-5">
             <div className="flex items-center gap-3">
               <Package size={32} className="text-[#16a34a]" strokeWidth={1.5} />
@@ -265,7 +258,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
             </div>
             <button 
               onClick={onClose} 
-              className="p-1.5 hover:bg-[#0d0d0d] rounded-lg transition-colors text-[#808080] hover:text-[#e8e8e8] cursor-pointer"
+              className="p-1.5 hover:bg-[#0d0d0d] rounded transition-colors text-[#808080] hover:text-[#e8e8e8] cursor-pointer"
             >
               <X size={16} strokeWidth={2} />
             </button>
@@ -277,7 +270,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 type="button"
                 onClick={() => {}}
                 disabled={isCreating}
-                className="px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
+                className="px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
               >
                 <div className="flex items-center justify-center gap-2">
                   <Package size={20} className="text-[#16a34a]" strokeWidth={1.5} />
@@ -288,7 +281,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 type="button"
                 onClick={handleImportFile}
                 disabled={isCreating}
-                className="px-4 py-3 rounded-lg text-sm font-medium transition-all cursor-pointer bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
+                className="px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
               >
                 <div className="flex items-center justify-center gap-2">
                   <FileDown size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
@@ -304,7 +297,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 value={newInstanceName}
                 onChange={(e) => setNewInstanceName(e.target.value)}
                 placeholder="My Minecraft Instance"
-                className={`w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
+                className={`w-full bg-[#0d0d0d] rounded px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
                   instanceExists && newInstanceName.trim()
                     ? 'ring-1 ring-red-500/50 focus:ring-red-500'
                     : 'focus:ring-1 focus:ring-[#16a34a]'
@@ -326,11 +319,9 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   type="button"
                   onClick={() => {
                     setVersionFilter("release")
-                    // Calculate releases immediately with the new filter
                     const releases = allVersions.filter(v => 
                       v.type === "release" || v.type === "old_beta" || v.type === "old_alpha"
                     )
-                    // If Fabric is enabled, filter to supported versions
                     const availableReleases = loaderType === "fabric" 
                       ? releases.filter(v => fabricSupportedVersions.includes(v.id))
                       : releases
@@ -339,7 +330,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                       setSelectedVersion(availableReleases[0].id)
                     }
                   }}
-                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  className={`px-6 py-1.5 rounded text-sm font-medium transition-all cursor-pointer ${
                     versionFilter === "release"
                       ? "bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
@@ -350,20 +341,19 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 <button
                   type="button"
                   onClick={() => {
-                    if (loaderType === "fabric") return
+                    if (loaderType !== "vanilla") return
                     setVersionFilter("snapshot")
-                    // Calculate snapshots immediately with the new filter
                     const snapshots = allVersions.filter(v => v.type === "snapshot")
                     if (snapshots.length > 0) {
                       setSelectedVersion(snapshots[0].id)
                     }
                   }}
-                  disabled={loaderType === "fabric"}
-                  className={`px-6 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  disabled={loaderType !== "vanilla"}
+                  className={`px-6 py-1.5 rounded text-sm font-medium transition-all cursor-pointer ${
                     versionFilter === "snapshot"
                       ? "bg-[#eab308]/10 ring-2 ring-[#eab308] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
-                  } ${loaderType === "fabric" ? "opacity-50 cursor-not-allowed" : ""}`}
+                  } ${loaderType !== "vanilla" ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   Snapshots
                 </button>
@@ -373,12 +363,12 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 Minecraft Version
               </label>
               {isLoadingVersions ? (
-                <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded-lg">
+                <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded">
                   <Loader2 size={14} className="animate-spin" />
                   <span>Loading versions...</span>
                 </div>
               ) : filteredVersions.length === 0 ? (
-                <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded-lg">
+                <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded">
                   <AlertCircle size={14} />
                   <span>No compatible versions available</span>
                 </div>
@@ -387,7 +377,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   <select
                     value={selectedVersion}
                     onChange={(e) => setSelectedVersion(e.target.value)}
-                    className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors appearance-none"
+                    className="w-full bg-[#0d0d0d] rounded px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors appearance-none"
                     disabled={isCreating}
                   >
                     {filteredVersions.map((version) => (
@@ -412,7 +402,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   type="button"
                   onClick={() => setLoaderType("vanilla")}
                   disabled={isCreating}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all cursor-pointer ${
                     loaderType === "vanilla"
                       ? "bg-[#16a34a]/10 ring-2 ring-[#16a34a] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
@@ -427,7 +417,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   type="button"
                   onClick={() => setLoaderType("fabric")}
                   disabled={isCreating}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${
+                  className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all cursor-pointer ${
                     loaderType === "fabric"
                       ? "bg-[#3b82f6]/10 ring-2 ring-[#3b82f6] text-[#e8e8e8]"
                       : "bg-[#0d0d0d] text-[#808080] hover:bg-[#2a2a2a]"
@@ -449,7 +439,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
               <div>
                 <label className="block text-xs font-medium text-[#808080] mb-2">Fabric Loader Version</label>
                 {isLoadingFabric ? (
-                  <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded-lg">
+                  <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded">
                     <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
                     <span>Loading versions...</span>
                   </div>
@@ -458,7 +448,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                     <select
                       value={selectedFabricVersion}
                       onChange={(e) => setSelectedFabricVersion(e.target.value)}
-                      className="w-full bg-[#0d0d0d] rounded-lg px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none"
+                      className="w-full bg-[#0d0d0d] rounded px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none"
                       disabled={isCreating}
                     >
                       {fabricVersions.map((version) => (
@@ -482,14 +472,14 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
             <button
               onClick={onClose}
               disabled={isCreating}
-              className="px-4 py-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#e8e8e8] rounded-lg font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#e8e8e8] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleCreateInstance}
               disabled={isCreateDisabled}
-              className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isCreating ? (
                 <>
