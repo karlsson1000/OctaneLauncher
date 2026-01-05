@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2 } from "lucide-react"
+import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2, RefreshCw } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "./ConfirmModal"
 import { InstanceSettingsModal } from "./InstanceSettingsModal"
@@ -14,6 +14,21 @@ interface InstalledMod {
   downloads?: number
   author?: string
   disabled?: boolean
+  project_id?: string
+  current_version_id?: string
+}
+
+interface ModUpdate {
+  filename: string
+  projectId: string
+  currentVersionId: string
+  latestVersion: {
+    id: string
+    name: string
+    version_number: string
+    downloadUrl: string
+    filename: string
+  }
 }
 
 interface World {
@@ -50,6 +65,9 @@ export function InstanceDetailsTab({
   const [isLoadingWorlds, setIsLoadingWorlds] = useState(true)
   const [instanceIcon, setInstanceIcon] = useState<string | null>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [availableUpdates, setAvailableUpdates] = useState<ModUpdate[]>([])
+  const [isCheckingUpdates, setIsCheckingUpdates] = useState(false)
+  const [isUpdatingMods, setIsUpdatingMods] = useState(false)
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
     title: string
@@ -148,6 +166,37 @@ export function InstanceDetailsTab({
               })
               
               if (bestMatch) {
+                // Get the current version to track updates
+                const mcVersion = getMinecraftVersion(instance)
+                try {
+                  const versions = await invoke<any[]>("get_mod_versions", {
+                    idOrSlug: bestMatch.project_id,
+                    loaders: [instance.loader],
+                    gameVersions: [mcVersion],
+                  })
+                  
+                  if (versions && versions.length > 0) {
+                    // Find current installed version by matching filename
+                    const currentVersion = versions.find((v: any) => 
+                      v.files.some((f: any) => f.filename === actualFilename)
+                    )
+                    
+                    return {
+                      ...mod,
+                      disabled: isDisabled,
+                      name: bestMatch.title,
+                      description: bestMatch.description,
+                      icon_url: bestMatch.icon_url,
+                      downloads: bestMatch.downloads,
+                      author: bestMatch.author,
+                      project_id: bestMatch.project_id,
+                      current_version_id: currentVersion?.id,
+                    }
+                  }
+                } catch (versionError) {
+                  console.error(`Failed to fetch versions for ${bestMatch.title}:`, versionError)
+                }
+                
                 return {
                   ...mod,
                   disabled: isDisabled,
@@ -156,6 +205,7 @@ export function InstanceDetailsTab({
                   icon_url: bestMatch.icon_url,
                   downloads: bestMatch.downloads,
                   author: bestMatch.author,
+                  project_id: bestMatch.project_id,
                 }
               }
             }
@@ -173,6 +223,109 @@ export function InstanceDetailsTab({
     } finally {
       setIsLoadingMods(false)
     }
+  }
+
+  const checkForUpdates = async () => {
+    if (!instance || instance.loader !== "fabric") return
+    
+    setIsCheckingUpdates(true)
+    const updates: ModUpdate[] = []
+    
+    try {
+      const mcVersion = getMinecraftVersion(instance)
+      
+      for (const mod of installedMods) {
+        if (!mod.project_id || !mod.current_version_id || mod.disabled) continue
+        
+        try {
+          const versions = await invoke<any[]>("get_mod_versions", {
+            idOrSlug: mod.project_id,
+            loaders: [instance.loader],
+            gameVersions: [mcVersion],
+          })
+          
+          if (versions && versions.length > 0) {
+            const latestVersion = versions[0]
+            
+            // Check if there's a newer version
+            if (latestVersion.id !== mod.current_version_id) {
+              const primaryFile = latestVersion.files.find((f: any) => f.primary) || latestVersion.files[0]
+              
+              if (primaryFile) {
+                updates.push({
+                  filename: mod.filename,
+                  projectId: mod.project_id,
+                  currentVersionId: mod.current_version_id,
+                  latestVersion: {
+                    id: latestVersion.id,
+                    name: latestVersion.name,
+                    version_number: latestVersion.version_number,
+                    downloadUrl: primaryFile.url,
+                    filename: primaryFile.filename,
+                  }
+                })
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to check updates for ${mod.name || mod.filename}:`, error)
+        }
+      }
+      
+      setAvailableUpdates(updates)
+    } catch (error) {
+      console.error("Failed to check for updates:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to check for updates: ${error}`,
+        type: "danger"
+      })
+    } finally {
+      setIsCheckingUpdates(false)
+    }
+  }
+
+  const updateAllMods = async () => {
+    if (availableUpdates.length === 0) return
+    
+    setIsUpdatingMods(true)
+    let successCount = 0
+    let failCount = 0
+    
+    for (const update of availableUpdates) {
+      try {
+        // Download the new version
+        await invoke("download_mod", {
+          instanceName: instance.name,
+          downloadUrl: update.latestVersion.downloadUrl,
+          filename: update.latestVersion.filename,
+        })
+        
+        // Delete the old version (only if it has a different filename)
+        if (update.filename !== update.latestVersion.filename) {
+          try {
+            await invoke("delete_mod", {
+              instanceName: instance.name,
+              filename: update.filename
+            })
+          } catch (deleteError) {
+            console.error(`Failed to delete old version ${update.filename}:`, deleteError)
+          }
+        }
+        
+        successCount++
+      } catch (error) {
+        console.error(`Failed to update mod ${update.filename}:`, error)
+        failCount++
+      }
+    }
+    
+    setIsUpdatingMods(false)
+    setAvailableUpdates([])
+    
+    // Reload mods list
+    await loadInstalledMods()
   }
 
   const formatFileSize = (bytes: number): string => {
@@ -235,6 +388,8 @@ export function InstanceDetailsTab({
         filename
       })
       await loadInstalledMods()
+      // Clear available updates since mod list changed
+      setAvailableUpdates([])
     } catch (error) {
       console.error("Failed to delete mod:", error)
       setAlertModal({
@@ -292,14 +447,6 @@ export function InstanceDetailsTab({
     }
   }
 
-  const handleOpenModsFolder = async () => {
-    try {
-      await invoke("open_mods_folder", { instanceName: instance.name })
-    } catch (error) {
-      console.error("Failed to open mods folder:", error)
-    }
-  }
-
   const handleOpenWorldsFolder = async () => {
     try {
       await invoke("open_worlds_folder", { instanceName: instance.name })
@@ -342,6 +489,7 @@ export function InstanceDetailsTab({
   }
 
   const fabricLoaderVersion = getFabricLoaderVersion(instance)
+  const modsWithProjectId = installedMods.filter(mod => mod.project_id && !mod.disabled).length
 
   return (
     <>
@@ -435,13 +583,49 @@ export function InstanceDetailsTab({
                     {installedMods.length} {installedMods.length === 1 ? 'mod' : 'mods'}
                   </span>
                 </div>
-                <button
-                  onClick={handleOpenModsFolder}
-                  className="flex items-center gap-1.5 text-sm text-[#808080] hover:text-[#e8e8e8] transition-colors cursor-pointer"
-                >
-                  <ExternalLink size={14} />
-                  <span>Open Folder</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  {instance.loader === "fabric" && modsWithProjectId > 0 && (
+                    <>
+                      {availableUpdates.length > 0 ? (
+                        <button
+                          onClick={updateAllMods}
+                          disabled={isUpdatingMods}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3b82f6] hover:bg-[#2563eb] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm font-medium transition-colors cursor-pointer"
+                        >
+                          {isUpdatingMods ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              <span>Updating...</span>
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw size={14} />
+                              <span>Update All ({availableUpdates.length})</span>
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={checkForUpdates}
+                          disabled={isCheckingUpdates}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] hover:bg-[#1f1f1f] disabled:opacity-50 text-[#808080] hover:text-[#e8e8e8] rounded text-sm transition-colors cursor-pointer"
+                        >
+                          {isCheckingUpdates ? (
+                            <>
+                              <Loader2 size={14} className="animate-spin" />
+                              <span>Checking...</span>
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw size={14} />
+                              <span>Check for Updates</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               
               {isLoadingMods ? (
@@ -456,61 +640,72 @@ export function InstanceDetailsTab({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {installedMods.map((mod) => (
-                    <div
-                      key={mod.filename}
-                      className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-md overflow-hidden transition-all ${
-                        mod.disabled ? 'opacity-60' : ''
-                      }`}
-                    >
-                      <div className="flex min-h-0">
-                        {mod.icon_url ? (
-                          <div className="w-22 bg-[#1a1a1a] flex items-center justify-center flex-shrink-0 self-stretch">
-                            <img
-                              src={mod.icon_url}
-                              alt={mod.name || mod.filename}
-                              className={`w-full h-full object-contain ${
-                                mod.disabled ? 'grayscale' : ''
-                              }`}
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-22 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 flex items-center justify-center flex-shrink-0 self-stretch">
-                            <Package size={32} className="text-[#16a34a]" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base text-[#e8e8e8] truncate">
-                              {mod.name || mod.filename}
-                            </h3>
-                            <p className="text-sm text-[#808080] truncate">{mod.filename}</p>
-                            <p className="text-sm text-[#4a4a4a] mt-0.5">{formatFileSize(mod.size)}</p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <button
-                              onClick={() => handleToggleMod(mod)}
-                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                                mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                  mod.disabled ? 'translate-x-1' : 'translate-x-6'
+                  {installedMods.map((mod) => {
+                    const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
+                    
+                    return (
+                      <div
+                        key={mod.filename}
+                        className={`bg-[#1a1a1a] hover:bg-[#1f1f1f] rounded-md overflow-hidden transition-all ${
+                          mod.disabled ? 'opacity-60' : ''
+                        } ${hasUpdate ? 'ring-2 ring-[#3b82f6]/50' : ''}`}
+                      >
+                        <div className="flex min-h-0">
+                          {mod.icon_url ? (
+                            <div className="w-22 bg-[#1a1a1a] flex items-center justify-center flex-shrink-0 self-stretch">
+                              <img
+                                src={mod.icon_url}
+                                alt={mod.name || mod.filename}
+                                className={`w-full h-full object-contain ${
+                                  mod.disabled ? 'grayscale' : ''
                                 }`}
                               />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteMod(mod.filename)}
-                              className="p-1.5 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer mt-1"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            </div>
+                          ) : (
+                            <div className="w-22 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 flex items-center justify-center flex-shrink-0 self-stretch">
+                              <Package size={32} className="text-[#16a34a]" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-base text-[#e8e8e8] truncate">
+                                  {mod.name || mod.filename}
+                                </h3>
+                                {hasUpdate && (
+                                  <span className="px-1.5 py-0.5 bg-[#3b82f6] text-white text-xs rounded font-medium">
+                                    Update
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-[#808080] truncate">{mod.filename}</p>
+                              <p className="text-sm text-[#4a4a4a] mt-0.5">{formatFileSize(mod.size)}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              <button
+                                onClick={() => handleToggleMod(mod)}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                                  mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
+                                }`}
+                              >
+                                <span
+                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                    mod.disabled ? 'translate-x-1' : 'translate-x-6'
+                                  }`}
+                                />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteMod(mod.filename)}
+                                className="p-1.5 hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded-md transition-all cursor-pointer mt-1"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
