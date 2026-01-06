@@ -463,65 +463,100 @@ export function InstancesTab({
       {showTemplateMenu && !showApplyMenu && createPortal(
         <div
           ref={templateMenuRef}
-          className="fixed w-80 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
+          className="fixed w-96 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
           style={{
             top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
             right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
           }}
         >
           <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-[#e8e8e8]">Templates</h3>
-            <p className="text-xs text-[#808080] mt-1">Manage instance templates</p>
+            <h3 className="text-base font-semibold text-[#e8e8e8]">Template Manager</h3>
+            <p className="text-xs text-[#808080] mt-1">Create, apply, and manage templates</p>
           </div>
           <div className="h-px bg-[#2a2a2a]" />
-          
-          <button
-            onClick={() => {
-              setShowTemplateMenu(false)
-              setShowApplyMenu(true)
-            }}
-            disabled={templates.length === 0 || instances.length === 0}
-            className="w-full p-3 hover:bg-[#2a2a2a] transition-colors text-left cursor-pointer flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <FileText size={22} className="text-[#16a34a]" strokeWidth={2} />
-            <span className="text-sm font-medium text-[#e8e8e8]">Apply Template</span>
-          </button>
-          <div className="h-px bg-[#2a2a2a]" />
 
-            <div className="px-3 pt-3 pb-2">
-              <p className="text-xs text-[#808080]">Create from instance:</p>
-            </div>
-
-            <div className="bg-[#0f0f0f]">
-              <div className="max-h-64 overflow-y-auto">
-                {instances.map((instance) => (
-                  <button
-                    key={instance.name}
-                    onClick={() => handleCreateTemplate(instance.name)}
-                    className="w-full p-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer flex items-center justify-between group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Download size={22} className="text-[#16a34a]" strokeWidth={2} />
-                      <div>
-                        <div className="text-sm font-medium text-[#e8e8e8]">{instance.name}</div>
-                        <div className="text-xs text-[#808080]">{instance.version}</div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+          {/* Quick Actions */}
+          <div className="p-3 space-y-2">
+            <button
+              onClick={() => {
+                setShowTemplateMenu(false)
+                setShowApplyMenu(true)
+              }}
+              disabled={templates.length === 0 || instances.length === 0}
+              className="w-full p-3 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 disabled:bg-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-left cursor-pointer flex items-center gap-3"
+            >
+              <div className="w-10 h-10 bg-[#16a34a]/20 rounded flex items-center justify-center flex-shrink-0">
+                <Download size={20} className="text-[#16a34a]" strokeWidth={2} />
               </div>
-            </div>
+              <div>
+                <div className="text-sm font-medium text-[#e8e8e8]">Apply Template to Instance</div>
+                <div className="text-xs text-[#808080] mt-0.5">
+                  {templates.length === 0 ? "No templates available" : `${templates.length} template${templates.length !== 1 ? 's' : ''} available`}
+                </div>
+              </div>
+            </button>
 
-          <div className="h-px bg-[#2a2a2a]" />
-          
-          <div className="p-3">
             <button
               onClick={handleImportTemplate}
-              className="w-full h-12 hover:bg-[#2a2a2a] text-[#16a34a] rounded flex items-center justify-center gap-3 transition-all cursor-pointer"
+              className="w-full p-3 bg-[#2a2a2a] hover:bg-[#333333] rounded transition-colors text-left cursor-pointer flex items-center gap-3"
             >
-              <FileDown size={22} strokeWidth={2} />
-              <span className="text-sm font-medium text-[#e8e8e8]">Import Template</span>
+              <div className="w-10 h-10 bg-[#333333] rounded flex items-center justify-center flex-shrink-0">
+                <FileDown size={20} className="text-[#e8e8e8]" strokeWidth={2} />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-[#e8e8e8]">Import Template</div>
+                <div className="text-xs text-[#808080] mt-0.5">From JSON file</div>
+              </div>
             </button>
+          </div>
+
+          <div className="h-px bg-[#2a2a2a]" />
+
+          {/* Create Template Section */}
+          <div className="p-3 pb-2">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-[#808080] uppercase tracking-wide">Create New Template</h4>
+              <span className="text-xs text-[#4a4a4a]">{instances.length} instance{instances.length !== 1 ? 's' : ''}</span>
+            </div>
+            
+            <div className="bg-[#0f0f0f] rounded overflow-hidden">
+              <div className="max-h-64 overflow-y-auto">
+                {instances.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <Package size={32} className="text-[#4a4a4a] mx-auto mb-2" strokeWidth={1.5} />
+                    <p className="text-xs text-[#808080]">No instances available</p>
+                  </div>
+                ) : (
+                  instances.map((instance) => {
+                    const icon = instanceIcons[instance.name]
+                    return (
+                      <button
+                        key={instance.name}
+                        onClick={() => handleCreateTemplate(instance.name)}
+                        className="w-full p-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer flex items-center gap-3 group border-b border-[#1a1a1a] last:border-0"
+                      >
+                        <div className="w-10 h-10 bg-[#1a1a1a] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {icon ? (
+                            <img
+                              src={icon}
+                              alt={instance.name}
+                              className="w-full h-full object-contain p-1"
+                            />
+                          ) : (
+                            <Package size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-[#e8e8e8] truncate">{instance.name}</div>
+                          <div className="text-xs text-[#808080]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
+                        </div>
+                        <Plus size={16} className="text-[#4a4a4a] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
+                      </button>
+                    )
+                  })
+                )}
+              </div>
+            </div>
           </div>
         </div>,
         document.body
@@ -531,7 +566,7 @@ export function InstancesTab({
       {showApplyMenu && createPortal(
         <div
           ref={applyMenuRef}
-          className="fixed w-80 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
+          className="fixed w-96 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
           style={{
             top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
             right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
@@ -543,83 +578,105 @@ export function InstancesTab({
           </div>
           <div className="h-px bg-[#2a2a2a]" />
           
-          <div className="max-h-64 overflow-y-auto">
-            {templates.map((template) => (
-              <div key={template.id} className="last:border-0">
-                <button
-                  onClick={() => setSelectedTemplateId(selectedTemplateId === template.id ? null : template.id)}
-                  className="w-full p-3 hover:bg-[#2a2a2a] transition-colors text-left cursor-pointer"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText size={24} className="text-[#16a34a]" strokeWidth={2} />
-                      <div>
-                        <div className="text-sm font-medium text-[#e8e8e8]">{template.name}</div>
-                        <div className="text-xs text-[#808080]">{formatDate(template.created_at)}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ChevronDown 
-                        size={16} 
-                        className={`text-[#808080] transition-transform ${selectedTemplateId === template.id ? 'rotate-180' : ''}`} 
-                      />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleExportTemplate(template.id, template.name)
-                        }}
-                        className="p-1 hover:bg-[#1f1f1f] text-[#808080] hover:text-[#16a34a] rounded transition-all cursor-pointer"
-                        title="Export Template"
-                      >
-                        <FileUp size={14} strokeWidth={2} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteTemplate(template.id)
-                        }}
-                        className="p-1 hover:bg-[#1f1f1f] text-[#808080] hover:text-red-400 rounded transition-all cursor-pointer"
-                        title="Delete Template"
-                      >
-                        <Trash2 size={14} strokeWidth={2} />
-                      </button>
-                    </div>
+          {/* Templates List */}
+          <div className="p-3 pb-2">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-[#808080] uppercase tracking-wide">Available Templates</h4>
+              <span className="text-xs text-[#4a4a4a]">{templates.length} template{templates.length !== 1 ? 's' : ''}</span>
+            </div>
+
+            <div className="bg-[#0f0f0f] rounded overflow-hidden">
+              <div className="max-h-96 overflow-y-auto">
+                {templates.length === 0 ? (
+                  <div className="p-6 text-center">
+                    <FileText size={32} className="text-[#4a4a4a] mx-auto mb-2" strokeWidth={1.5} />
+                    <p className="text-xs text-[#808080]">No templates available</p>
                   </div>
-                </button>
-                
-                {selectedTemplateId === template.id && (
-                  <div className="bg-[#0f0f0f]">
-                    {instances.map((instance) => {
-                      const icon = instanceIcons[instance.name]
-                      return (
-                        <button
-                          key={instance.name}
-                          onClick={() => handleApplyTemplate(template.id, instance.name)}
-                          className="w-full p-2.5 pl-3 pr-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer flex items-center gap-3 group"
-                        >
-                          <div className="w-10 h-10 bg-[#1a1a1a] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {icon ? (
-                              <img
-                                src={icon}
-                                alt={instance.name}
-                                className="w-full h-full object-contain p-1"
-                              />
-                            ) : (
-                              <Package size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
-                            )}
+                ) : (
+                  templates.map((template) => (
+                    <div key={template.id} className="border-b border-[#1a1a1a] last:border-0">
+                      <button
+                        onClick={() => setSelectedTemplateId(selectedTemplateId === template.id ? null : template.id)}
+                        className="w-full p-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="w-10 h-10 bg-[#16a34a]/20 rounded flex items-center justify-center flex-shrink-0">
+                              <FileText size={20} className="text-[#16a34a]" strokeWidth={2} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-[#e8e8e8] truncate">{template.name}</div>
+                              <div className="text-xs text-[#808080]">{formatDate(template.created_at)}</div>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <div className="text-sm text-[#e8e8e8]">{instance.name}</div>
-                            <div className="text-xs text-[#808080]">{instance.version}</div>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleExportTemplate(template.id, template.name)
+                              }}
+                              className="p-1.5 hover:bg-[#1f1f1f] text-[#808080] hover:text-[#16a34a] rounded transition-all cursor-pointer"
+                              title="Export Template"
+                            >
+                              <FileUp size={16} strokeWidth={2} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteTemplate(template.id)
+                              }}
+                              className="p-1.5 hover:bg-[#1f1f1f] text-[#808080] hover:text-red-400 rounded transition-all cursor-pointer"
+                              title="Delete Template"
+                            >
+                              <Trash2 size={16} strokeWidth={2} />
+                            </button>
+                            <ChevronDown 
+                              size={16} 
+                              className={`text-[#808080] transition-transform ml-1 ${selectedTemplateId === template.id ? 'rotate-180' : ''}`} 
+                            />
                           </div>
-                          <Download size={16} className="text-[#808080] group-hover:text-[#16a34a] transition-colors flex-shrink-0" />
-                        </button>
-                      )
-                    })}
-                  </div>
+                        </div>
+                      </button>
+                      
+                      {selectedTemplateId === template.id && (
+                        <div className="bg-[#0a0a0a]">
+                          <div className="px-3 py-2">
+                            <h5 className="text-xs font-medium text-[#808080] uppercase tracking-wide mb-2">Apply to Instance</h5>
+                          </div>
+                          {instances.map((instance) => {
+                            const icon = instanceIcons[instance.name]
+                            return (
+                              <button
+                                key={instance.name}
+                                onClick={() => handleApplyTemplate(template.id, instance.name)}
+                                className="w-full p-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer flex items-center gap-3 group border-t border-[#1a1a1a] first:border-0"
+                              >
+                                <div className="w-10 h-10 bg-[#1a1a1a] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                  {icon ? (
+                                    <img
+                                      src={icon}
+                                      alt={instance.name}
+                                      className="w-full h-full object-contain p-1"
+                                    />
+                                  ) : (
+                                    <Package size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium text-[#e8e8e8] truncate">{instance.name}</div>
+                                  <div className="text-xs text-[#808080]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
+                                </div>
+                                <Download size={16} className="text-[#808080] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))
                 )}
               </div>
-            ))}
+            </div>
           </div>
         </div>,
         document.body
