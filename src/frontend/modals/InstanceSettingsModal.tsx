@@ -264,13 +264,19 @@ export function InstanceSettingsModal({
   }
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#1a1a1a] rounded-md w-full max-w-md shadow-2xl">
+      <>
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={onClose}
+        >
+          <div 
+            className="bg-[#1a1a1a] rounded-md w-full max-w-md shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
           {/* Header */}
           <div className="flex items-center justify-between p-5">
             <div className="flex items-center gap-3">
-              <Settings size={32} className="text-[#16a34a]" strokeWidth={1.5} />
+              <Settings size={32} className="text-[#4572e3]" strokeWidth={1.5} />
               <div>
                 <h2 className="text-base font-semibold text-[#e8e8e8] tracking-tight">Instance Settings</h2>
                 <p className="text-xs text-[#808080] mt-0.5">Manage your instance configuration</p>
