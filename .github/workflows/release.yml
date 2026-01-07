@@ -43,7 +43,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
         with:
-          tagName: __VERSION__
+          tagName: ${{ github.ref_name }}
           releaseName: 'Atomic Launcher ${{ github.ref_name }}'
           releaseDraft: false
           prerelease: false
