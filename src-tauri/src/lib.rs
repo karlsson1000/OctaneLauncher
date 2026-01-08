@@ -137,7 +137,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Check for updates on startup
-            #[cfg(desktop)]
+            #[cfg(all(desktop, not(debug_assertions)))]
             {
                 let handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
