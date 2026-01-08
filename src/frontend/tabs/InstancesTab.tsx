@@ -326,8 +326,8 @@ export function InstancesTab({
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-semibold text-[#e8e8e8] tracking-tight">Instances</h1>
-              <p className="text-sm text-[#808080] mt-0.5">Manage all your instances</p>
+              <h1 className="text-2xl font-semibold text-[#e6edf3] tracking-tight">Instances</h1>
+              <p className="text-sm text-[#7d8590] mt-0.5">Manage all your instances</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -336,52 +336,51 @@ export function InstancesTab({
                   setShowTemplateMenu(!showTemplateMenu)
                   setShowApplyMenu(false)
                 }}
-                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded flex items-center justify-center transition-all cursor-pointer"
-                title="Templates"
+                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#7d8590] hover:text-[#e6edf3] rounded flex items-center justify-center transition-all cursor-pointer"
               >
                 <FileText size={24} strokeWidth={2} />
               </button>
               <button
                 onClick={onCreateNew}
-                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded flex items-center justify-center transition-all cursor-pointer"
-                title="New Instance"
+                className="px-4 h-8 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
               >
-                <Plus size={28} strokeWidth={2} />
+                <Plus size={16} />
+                New
               </button>
             </div>
           </div>
 
           {instances.length > 0 && (
             <div className="relative mb-4">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a4a4a]" strokeWidth={2} />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590]" strokeWidth={2} />
               <input
                 type="text"
                 placeholder="Search instances..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#1a1a1a] rounded pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
+                className="w-full bg-[#141414] rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6edf3] placeholder-[#7d8590] border border-[#2a2a2a] focus:outline-none focus:ring-1 focus:ring-[#3a3a3a] transition-all"
               />
             </div>
           )}
 
           {instances.length === 0 ? (
             <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
-              <Package size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
-              <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No instances yet</h3>
-              <p className="text-sm text-[#808080] mb-4">Create your first instance to get started</p>
+              <Package size={64} className="text-[#238636] mb-4" strokeWidth={1.5} />
+              <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">No instances yet</h3>
+              <p className="text-sm text-[#7d8590] mb-4">Create your first instance to get started</p>
               <button
                 onClick={onCreateNew}
-                className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#238636] hover:bg-[#2ea043] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
                 <span>Create Instance</span>
               </button>
             </div>
           ) : filteredInstances.length === 0 ? (
-            <div className="bg-[#1a1a1a] rounded-md p-12 flex flex-col items-center justify-center">
-              <Search size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
-              <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No instances found</h3>
-              <p className="text-sm text-[#808080]">Try adjusting your search query</p>
+            <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-12 flex flex-col items-center justify-center">
+              <Search size={64} className="text-[#238636] mb-4" strokeWidth={1.5} />
+              <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">No instances found</h3>
+              <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
@@ -397,9 +396,9 @@ export function InstancesTab({
                       onShowDetails(instance)
                     }}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="group relative bg-[#1a1a1a] rounded-md overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a]"
+                    className="group relative bg-[#141414] rounded-md overflow-hidden cursor-pointer transition-all hover:ring-1 hover:ring-[#2a2a2a] border border-[#2a2a2a]"
                   >
-                    <div className="aspect-square bg-[#141414] flex items-center justify-center overflow-hidden">
+                    <div className="aspect-square bg-[#0f0f0f] flex items-center justify-center overflow-hidden">
                       {icon ? (
                         <img
                           src={icon}
@@ -407,20 +406,20 @@ export function InstancesTab({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Package size={88} className="text-[#4a4a4a]" strokeWidth={1.5} />
+                        <Package size={88} className="text-[#3a3a3a]" strokeWidth={1.5} />
                       )}
                     </div>
                     
-                    <div className="bg-[#1a1a1a] p-3 flex items-center justify-between gap-2">
+                    <div className="bg-[#141414] p-3 flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-[#e8e8e8] truncate mb-0.5">{instance.name}</h3>
+                        <h3 className="text-sm font-semibold text-[#e6edf3] truncate mb-0.5">{instance.name}</h3>
                         <div className="flex items-center gap-1.5 text-xs">
-                          <span className="text-[#808080]">{getMinecraftVersion(instance)}</span>
-                          <span className="text-[#4a4a4a]">•</span>
+                          <span className="text-[#7d8590]">{getMinecraftVersion(instance)}</span>
+                          <span className="text-[#3a3a3a]">•</span>
                           {instance.loader === "fabric" ? (
                             <span className="text-[#3b82f6]">Fabric</span>
                           ) : (
-                            <span className="text-[#16a34a]">Vanilla</span>
+                            <span className="text-[#238636]">Vanilla</span>
                           )}
                         </div>
                       </div>
@@ -439,7 +438,7 @@ export function InstancesTab({
                           className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all cursor-pointer ${
                             isRunning || isLaunching
                               ? "bg-red-500/10 text-red-400 opacity-100"
-                              : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
+                              : "bg-[#238636]/10 hover:bg-[#238636]/20 text-[#238636]"
                           } disabled:opacity-50`}
                           title={isRunning ? "Stop instance" : "Launch instance"}
                         >
@@ -463,15 +462,15 @@ export function InstancesTab({
       {showTemplateMenu && !showApplyMenu && createPortal(
         <div
           ref={templateMenuRef}
-          className="fixed w-96 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
+          className="fixed w-96 bg-[#141414] border border-[#2a2a2a] rounded z-[9999] overflow-hidden"
           style={{
             top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
             right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
           }}
         >
           <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-[#e8e8e8]">Template Manager</h3>
-            <p className="text-xs text-[#808080] mt-1">Create, apply, and manage templates</p>
+            <h3 className="text-base font-semibold text-[#e6edf3]">Template Manager</h3>
+            <p className="text-xs text-[#7d8590] mt-1">Create, apply, and manage templates</p>
           </div>
           <div className="h-px bg-[#2a2a2a]" />
 
@@ -483,14 +482,14 @@ export function InstancesTab({
                 setShowApplyMenu(true)
               }}
               disabled={templates.length === 0 || instances.length === 0}
-              className="w-full p-3 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 disabled:bg-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-left cursor-pointer flex items-center gap-3"
+              className="w-full p-3 bg-[#238636]/10 hover:bg-[#238636]/20 disabled:bg-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-left cursor-pointer flex items-center gap-3"
             >
-              <div className="w-10 h-10 bg-[#16a34a]/20 rounded flex items-center justify-center flex-shrink-0">
-                <Download size={20} className="text-[#16a34a]" strokeWidth={2} />
+              <div className="w-10 h-10 bg-[#238636]/20 rounded flex items-center justify-center flex-shrink-0">
+                <Download size={20} className="text-[#238636]" strokeWidth={2} />
               </div>
               <div>
-                <div className="text-sm font-medium text-[#e8e8e8]">Apply Template to Instance</div>
-                <div className="text-xs text-[#808080] mt-0.5">
+                <div className="text-sm font-medium text-[#e6edf3]">Apply Template to Instance</div>
+                <div className="text-xs text-[#7d8590] mt-0.5">
                   {templates.length === 0 ? "No templates available" : `${templates.length} template${templates.length !== 1 ? 's' : ''} available`}
                 </div>
               </div>
@@ -501,11 +500,11 @@ export function InstancesTab({
               className="w-full p-3 bg-[#2a2a2a] hover:bg-[#333333] rounded transition-colors text-left cursor-pointer flex items-center gap-3"
             >
               <div className="w-10 h-10 bg-[#333333] rounded flex items-center justify-center flex-shrink-0">
-                <FileDown size={20} className="text-[#e8e8e8]" strokeWidth={2} />
+                <FileDown size={20} className="text-[#e6edf3]" strokeWidth={2} />
               </div>
               <div>
-                <div className="text-sm font-medium text-[#e8e8e8]">Import Template</div>
-                <div className="text-xs text-[#808080] mt-0.5">From JSON file</div>
+                <div className="text-sm font-medium text-[#e6edf3]">Import Template</div>
+                <div className="text-xs text-[#7d8590] mt-0.5">From JSON file</div>
               </div>
             </button>
           </div>
@@ -515,16 +514,16 @@ export function InstancesTab({
           {/* Create Template Section */}
           <div className="p-3 pb-2">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-[#808080] uppercase tracking-wide">Create New Template</h4>
-              <span className="text-xs text-[#4a4a4a]">{instances.length} instance{instances.length !== 1 ? 's' : ''}</span>
+              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">Create New Template</h4>
+              <span className="text-xs text-[#3a3a3a]">{instances.length} instance{instances.length !== 1 ? 's' : ''}</span>
             </div>
             
             <div className="bg-[#0f0f0f] rounded overflow-hidden">
               <div className="max-h-64 overflow-y-auto">
                 {instances.length === 0 ? (
                   <div className="p-6 text-center">
-                    <Package size={32} className="text-[#4a4a4a] mx-auto mb-2" strokeWidth={1.5} />
-                    <p className="text-xs text-[#808080]">No instances available</p>
+                    <Package size={32} className="text-[#3a3a3a] mx-auto mb-2" strokeWidth={1.5} />
+                    <p className="text-xs text-[#7d8590]">No instances available</p>
                   </div>
                 ) : (
                   instances.map((instance) => {
@@ -533,7 +532,7 @@ export function InstancesTab({
                       <button
                         key={instance.name}
                         onClick={() => handleCreateTemplate(instance.name)}
-                        className="w-full p-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer flex items-center gap-3 group border-b border-[#1a1a1a] last:border-0"
+                        className="w-full p-3 hover:bg-[#141414] transition-colors text-left cursor-pointer flex items-center gap-3 group border-b border-[#1a1a1a] last:border-0"
                       >
                         <div className="w-10 h-10 bg-[#1a1a1a] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {icon ? (
@@ -543,14 +542,14 @@ export function InstancesTab({
                               className="w-full h-full object-contain p-1"
                             />
                           ) : (
-                            <Package size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
+                            <Package size={20} className="text-[#3a3a3a]" strokeWidth={1.5} />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#e8e8e8] truncate">{instance.name}</div>
-                          <div className="text-xs text-[#808080]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
+                          <div className="text-sm font-medium text-[#e6edf3] truncate">{instance.name}</div>
+                          <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
                         </div>
-                        <Plus size={16} className="text-[#4a4a4a] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
+                        <Plus size={16} className="text-[#3a3a3a] group-hover:text-[#238636] transition-colors flex-shrink-0" strokeWidth={2} />
                       </button>
                     )
                   })
@@ -566,47 +565,47 @@ export function InstancesTab({
       {showApplyMenu && createPortal(
         <div
           ref={applyMenuRef}
-          className="fixed w-96 bg-[#1a1a1a] rounded z-[9999] overflow-hidden"
+          className="fixed w-96 bg-[#141414] border border-[#2a2a2a] rounded z-[9999] overflow-hidden"
           style={{
             top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
             right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
           }}
         >
           <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-[#e8e8e8]">Apply Template</h3>
-            <p className="text-xs text-[#808080] mt-1">Select a template and instance</p>
+            <h3 className="text-base font-semibold text-[#e6edf3]">Apply Template</h3>
+            <p className="text-xs text-[#7d8590] mt-1">Select a template and instance</p>
           </div>
           <div className="h-px bg-[#2a2a2a]" />
           
           {/* Templates List */}
           <div className="p-3 pb-2">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-[#808080] uppercase tracking-wide">Available Templates</h4>
-              <span className="text-xs text-[#4a4a4a]">{templates.length} template{templates.length !== 1 ? 's' : ''}</span>
+              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">Available Templates</h4>
+              <span className="text-xs text-[#3a3a3a]">{templates.length} template{templates.length !== 1 ? 's' : ''}</span>
             </div>
 
             <div className="bg-[#0f0f0f] rounded overflow-hidden">
               <div className="max-h-96 overflow-y-auto">
                 {templates.length === 0 ? (
                   <div className="p-6 text-center">
-                    <FileText size={32} className="text-[#4a4a4a] mx-auto mb-2" strokeWidth={1.5} />
-                    <p className="text-xs text-[#808080]">No templates available</p>
+                    <FileText size={32} className="text-[#3a3a3a] mx-auto mb-2" strokeWidth={1.5} />
+                    <p className="text-xs text-[#7d8590]">No templates available</p>
                   </div>
                 ) : (
                   templates.map((template) => (
                     <div key={template.id} className="border-b border-[#1a1a1a] last:border-0">
                       <button
                         onClick={() => setSelectedTemplateId(selectedTemplateId === template.id ? null : template.id)}
-                        className="w-full p-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer"
+                        className="w-full p-3 hover:bg-[#141414] transition-colors text-left cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="w-10 h-10 bg-[#16a34a]/20 rounded flex items-center justify-center flex-shrink-0">
-                              <FileText size={20} className="text-[#16a34a]" strokeWidth={2} />
+                            <div className="w-10 h-10 bg-[#238636]/20 rounded flex items-center justify-center flex-shrink-0">
+                              <FileText size={20} className="text-[#238636]" strokeWidth={2} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-[#e8e8e8] truncate">{template.name}</div>
-                              <div className="text-xs text-[#808080]">{formatDate(template.created_at)}</div>
+                              <div className="text-sm font-medium text-[#e6edf3] truncate">{template.name}</div>
+                              <div className="text-xs text-[#7d8590]">{formatDate(template.created_at)}</div>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -615,7 +614,7 @@ export function InstancesTab({
                                 e.stopPropagation()
                                 handleExportTemplate(template.id, template.name)
                               }}
-                              className="p-1.5 hover:bg-[#1f1f1f] text-[#808080] hover:text-[#16a34a] rounded transition-all cursor-pointer"
+                              className="p-1.5 hover:bg-[#1f1f1f] text-[#7d8590] hover:text-[#238636] rounded transition-all cursor-pointer"
                               title="Export Template"
                             >
                               <FileUp size={16} strokeWidth={2} />
@@ -625,14 +624,14 @@ export function InstancesTab({
                                 e.stopPropagation()
                                 handleDeleteTemplate(template.id)
                               }}
-                              className="p-1.5 hover:bg-[#1f1f1f] text-[#808080] hover:text-red-400 rounded transition-all cursor-pointer"
+                              className="p-1.5 hover:bg-[#1f1f1f] text-[#7d8590] hover:text-red-400 rounded transition-all cursor-pointer"
                               title="Delete Template"
                             >
                               <Trash2 size={16} strokeWidth={2} />
                             </button>
                             <ChevronDown 
                               size={16} 
-                              className={`text-[#808080] transition-transform ml-1 ${selectedTemplateId === template.id ? 'rotate-180' : ''}`} 
+                              className={`text-[#7d8590] transition-transform ml-1 ${selectedTemplateId === template.id ? 'rotate-180' : ''}`} 
                             />
                           </div>
                         </div>
@@ -641,7 +640,7 @@ export function InstancesTab({
                       {selectedTemplateId === template.id && (
                         <div className="bg-[#0a0a0a]">
                           <div className="px-3 py-2">
-                            <h5 className="text-xs font-medium text-[#808080] uppercase tracking-wide mb-2">Apply to Instance</h5>
+                            <h5 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide mb-2">Apply to Instance</h5>
                           </div>
                           {instances.map((instance) => {
                             const icon = instanceIcons[instance.name]
@@ -649,7 +648,7 @@ export function InstancesTab({
                               <button
                                 key={instance.name}
                                 onClick={() => handleApplyTemplate(template.id, instance.name)}
-                                className="w-full p-3 hover:bg-[#1a1a1a] transition-colors text-left cursor-pointer flex items-center gap-3 group border-t border-[#1a1a1a] first:border-0"
+                                className="w-full p-3 hover:bg-[#141414] transition-colors text-left cursor-pointer flex items-center gap-3 group border-t border-[#1a1a1a] first:border-0"
                               >
                                 <div className="w-10 h-10 bg-[#1a1a1a] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
                                   {icon ? (
@@ -659,14 +658,14 @@ export function InstancesTab({
                                       className="w-full h-full object-contain p-1"
                                     />
                                   ) : (
-                                    <Package size={20} className="text-[#4a4a4a]" strokeWidth={1.5} />
+                                    <Package size={20} className="text-[#3a3a3a]" strokeWidth={1.5} />
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium text-[#e8e8e8] truncate">{instance.name}</div>
-                                  <div className="text-xs text-[#808080]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
+                                  <div className="text-sm font-medium text-[#e6edf3] truncate">{instance.name}</div>
+                                  <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
                                 </div>
-                                <Download size={16} className="text-[#808080] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
+                                <Download size={16} className="text-[#7d8590] group-hover:text-[#238636] transition-colors flex-shrink-0" strokeWidth={2} />
                               </button>
                             )
                           })}
