@@ -26,6 +26,8 @@ pub struct Instance {
     pub settings_override: Option<LauncherSettings>,
     #[serde(default)]
     pub icon_path: Option<String>,
+    #[serde(default)]
+    pub total_playtime_seconds: u64,
 }
 
 // ===== FRIENDS SYSTEM MODELS =====

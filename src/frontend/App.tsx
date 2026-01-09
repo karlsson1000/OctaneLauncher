@@ -287,7 +287,7 @@ function App() {
       })
       await loadInstances()
       setRunningInstances((prev) => new Set(prev).add(instance.name))
-      setLaunchingInstanceName(null)
+
     } catch (error) {
       console.error("Launch error:", error)
       setLaunchingInstanceName(null)

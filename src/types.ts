@@ -19,6 +19,7 @@ export interface Instance {
   last_played: string | null
   settings_override: LauncherSettings | null
   icon_path: string | null
+  total_playtime_seconds?: number
 }
 
 export interface FabricVersion {

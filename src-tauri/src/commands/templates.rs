@@ -95,6 +95,7 @@ pub async fn create_instance_from_template(
         last_played: None,
         icon_path: None,
         settings_override: template.launcher_settings,
+        total_playtime_seconds: 0,
     };
 
     let instance_json = instance_dir.join("instance.json");
