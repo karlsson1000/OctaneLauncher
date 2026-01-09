@@ -31,7 +31,7 @@
     "active": true,
     "targets": [
       "nsis",
-      "app",
+      "dmg",
       "deb"
     ],
     "icon": [
