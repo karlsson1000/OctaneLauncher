@@ -413,13 +413,13 @@ export function InstancesTab({
                     <div className="bg-[#141414] p-3 flex items-center justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-semibold text-[#e6edf3] truncate mb-0.5">{instance.name}</h3>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <span className="text-[#7d8590]">{getMinecraftVersion(instance)}</span>
-                          <span className="text-[#3a3a3a]">•</span>
+                        <div className="flex items-center gap-1.5 text-xs min-w-0">
+                          <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
+                          <span className="text-[#3a3a3a] flex-shrink-0">•</span>
                           {instance.loader === "fabric" ? (
-                            <span className="text-[#3b82f6]">Fabric</span>
+                            <span className="text-[#3b82f6] flex-shrink-0">Fabric</span>
                           ) : (
-                            <span className="text-[#238636]">Vanilla</span>
+                            <span className="text-[#238636] flex-shrink-0">Vanilla</span>
                           )}
                         </div>
                       </div>
