@@ -1,7 +1,6 @@
 use crate::models::{Friend, FriendRequest, FriendStatus, RequestStatus, UserStatusUpdate};
 use chrono::Utc;
 use serde_json::json;
-use std::env;
 
 pub struct FriendsService {
     client: reqwest::Client,
@@ -11,10 +10,8 @@ pub struct FriendsService {
 
 impl FriendsService {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let supabase_url = env::var("SUPABASE_URL")
-            .map_err(|_| "SUPABASE_URL not set in environment")?;
-        let supabase_key = env::var("SUPABASE_ANON_KEY")
-            .map_err(|_| "SUPABASE_ANON_KEY not set in environment")?;
+        let supabase_url = env!("SUPABASE_URL").to_string();
+        let supabase_key = env!("SUPABASE_ANON_KEY").to_string();
 
         Ok(Self {
             client: reqwest::Client::new(),
