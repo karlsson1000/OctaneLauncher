@@ -160,8 +160,7 @@ function App() {
 
   const handleUpdateLater = () => {
     if (updateInfo) {
-      // Store the dismissed version so we don't show it again this session
-      localStorage.setItem("dismissed_update_version", updateInfo.new_version)
+      sessionStorage.setItem("dismissed_update_version", updateInfo.new_version)
     }
     setShowUpdateNotification(false)
   }
