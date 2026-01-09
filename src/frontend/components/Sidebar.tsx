@@ -608,48 +608,55 @@ export function Sidebar(props: SidebarProps) {
                   </div>
                 )}
 
-                <div className="space-y-1" key={friendsUpdateKey}>
-                  {friends.map((friend) => {
-                    const statusKey = `${friend.uuid}-${friend.status}-${friend.current_instance || 'none'}`
-                    return (
-                      <div
-                        key={statusKey}
-                        className="group flex items-center gap-2 px-1.5 py-1.5 rounded cursor-pointer hover:bg-[#171717] transition-all"
-                      >
-                        <div className="relative flex-shrink-0">
-                          <img
-                            src={`https://cravatar.eu/avatar/${friend.username}/32`}
-                            alt={friend.username}
-                            className="w-7 h-7 rounded"
-                          />
-                          <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#1a1a1a] ${getStatusColor(friend.status)}`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#e6edf3] truncate leading-tight">
-                            {friend.username}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-[#7d8590] truncate leading-tight">
-                            <span>
-                              {friend.status === "online" ? "Online" : 
-                               friend.status === "ingame" ? (friend.current_instance ? `Playing ${friend.current_instance}` : "In Game") :
-                               "Offline"}
-                            </span>
-                            {friend.status === "ingame" && (
-                              <Gamepad2 size={14} className="flex-shrink-0" />
-                            )}
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleRemoveFriend(friend.uuid, friend.username)}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer"
-                          title="Remove Friend"
+                {friends.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                    <UserPlus size={32} className="text-[#3a3a3a] mb-3" strokeWidth={1.5} />
+                    <p className="text-sm text-[#7d8590]">No friends yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1" key={friendsUpdateKey}>
+                    {friends.map((friend) => {
+                      const statusKey = `${friend.uuid}-${friend.status}-${friend.current_instance || 'none'}`
+                      return (
+                        <div
+                          key={statusKey}
+                          className="group flex items-center gap-2 px-1.5 py-1.5 rounded cursor-pointer hover:bg-[#171717] transition-all"
                         >
-                          <X size={14} className="text-red-400" />
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
+                          <div className="relative flex-shrink-0">
+                            <img
+                              src={`https://cravatar.eu/avatar/${friend.username}/32`}
+                              alt={friend.username}
+                              className="w-7 h-7 rounded"
+                            />
+                            <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#1a1a1a] ${getStatusColor(friend.status)}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-[#e6edf3] truncate leading-tight">
+                              {friend.username}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-[#7d8590] truncate leading-tight">
+                              <span>
+                                {friend.status === "online" ? "Online" : 
+                                 friend.status === "ingame" ? (friend.current_instance ? `Playing ${friend.current_instance}` : "In Game") :
+                                 "Offline"}
+                              </span>
+                              {friend.status === "ingame" && (
+                                <Gamepad2 size={14} className="flex-shrink-0" />
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveFriend(friend.uuid, friend.username)}
+                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer"
+                            title="Remove Friend"
+                          >
+                            <X size={14} className="text-red-400" />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
