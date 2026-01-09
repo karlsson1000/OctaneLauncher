@@ -149,42 +149,75 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<UpdateInfo>, 
                     let current_version = app.package_info().version.to_string();
                     let new_version = update.version.clone();
                     
+                    println!("Update available: {} -> {}", current_version, new_version);
+
                     Ok(Some(UpdateInfo {
                         current_version,
                         new_version,
                     }))
                 }
-                Ok(None) => Ok(None),
-                Err(e) => Err(format!("Failed to check for updates: {}", e))
+                Ok(None) => {
+                    println!("No updates available");
+                    Ok(None)
+                }
+                Err(e) => {
+                    eprintln!("Failed to check for updates: {}", e);
+                    Err(format!("Failed to check for updates: {}", e))
+                }
             }
         }
-        Err(e) => Err(format!("Failed to get updater: {}", e))
+        Err(e) => {
+            eprintln!("Failed to get updater: {}", e);
+            Err(format!("Failed to get updater: {}", e))
+        }
     }
 }
 
 #[tauri::command]
 async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    println!("Starting update installation...");
+    
     match app.updater() {
         Ok(updater) => {
             match updater.check().await {
                 Ok(Some(update)) => {
-                    let mut downloaded = 0;
+                    println!("Downloading and installing update version: {}", update.version);
                     
                     match update.download_and_install(
                         |chunk_length, content_length| {
-                            downloaded += chunk_length;
+                            if let Some(total) = content_length {
+                                let progress = (chunk_length as f64 / total as f64) * 100.0;
+                                println!("Download progress: {:.1}%", progress);
+                            }
                         },
-                        || {},
+                        || {
+                            println!("Update downloaded successfully, installing...");
+                        },
                     ).await {
-                        Ok(_) => Ok(()),
-                        Err(e) => Err(format!("Failed to install update: {}", e))
+                        Ok(_) => {
+                            println!("Update installed successfully, app will restart");
+                            Ok(())
+                        }
+                        Err(e) => {
+                            eprintln!("Failed to install update: {}", e);
+                            Err(format!("Failed to install update: {}", e))
+                        }
                     }
                 }
-                Ok(None) => Err("No update available".to_string()),
-                Err(e) => Err(format!("Failed to check for updates: {}", e))
+                Ok(None) => {
+                    println!("No update available to install");
+                    Err("No update available".to_string())
+                }
+                Err(e) => {
+                    eprintln!("Failed to check for updates during install: {}", e);
+                    Err(format!("Failed to check for updates: {}", e))
+                }
             }
         }
-        Err(e) => Err(format!("Failed to get updater: {}", e))
+        Err(e) => {
+            eprintln!("Failed to get updater: {}", e);
+            Err(format!("Failed to get updater: {}", e))
+        }
     }
 }
 
