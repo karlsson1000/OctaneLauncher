@@ -280,36 +280,3 @@ pub async fn download_mod(
 
     Ok(format!("Successfully downloaded {}", safe_filename))
 }
-
-// ===== FAVORITE MODS STORAGE =====
-
-#[tauri::command]
-pub fn get_favorite_mods(app: AppHandle) -> Result<String, String> {
-    let app_dir = app.path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-    
-    let favorites_path = app_dir.join("favorite_mods.json");
-    
-    if favorites_path.exists() {
-        std::fs::read_to_string(favorites_path)
-            .map_err(|e| format!("Failed to read favorites: {}", e))
-    } else {
-        Ok("[]".to_string())
-    }
-}
-
-#[tauri::command]
-pub fn save_favorite_mods(app: AppHandle, data: String) -> Result<(), String> {
-    let app_dir = app.path()
-        .app_data_dir()
-        .map_err(|e| format!("Failed to get app data directory: {}", e))?;
-
-    std::fs::create_dir_all(&app_dir)
-        .map_err(|e| format!("Failed to create app directory: {}", e))?;
-    
-    let favorites_path = app_dir.join("favorite_mods.json");
-    
-    std::fs::write(favorites_path, data)
-        .map_err(|e| format!("Failed to write favorites: {}", e))
-}
