@@ -9,14 +9,6 @@ const getCommitHash = () => {
   }
 };
 
-const getDateVersion = () => {
-  const now = new Date();
-  const year = now.getFullYear().toString().slice(-2);
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  return `${year}.${month}.${day}`;
-};
-
 if (process.env.CI && process.env.GITHUB_REF_NAME) {
   const version = process.env.GITHUB_REF_NAME;
   const commitHash = getCommitHash();
@@ -42,23 +34,23 @@ if (process.env.CI && process.env.GITHUB_REF_NAME) {
 }
 
 // Local dev
-const dateVersion = getDateVersion();
+const version = '0.1.0-dev';
 const commitHash = getCommitHash();
 
 // Update Cargo.toml
 const cargoPath = './src-tauri/Cargo.toml';
 let cargo = fs.readFileSync(cargoPath, 'utf-8');
-cargo = cargo.replace(/^version = ".*"$/m, `version = "${dateVersion}"`);
+cargo = cargo.replace(/^version = ".*"$/m, `version = "${version}"`);
 fs.writeFileSync(cargoPath, cargo);
 
 // Update tauri.conf.json
 const tauriConfPath = './src-tauri/tauri.conf.json';
 let tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, 'utf-8'));
-tauriConf.version = dateVersion;
+tauriConf.version = version;
 fs.writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2));
 
 const commitHashPath = './src-tauri/commit_hash.txt';
 fs.writeFileSync(commitHashPath, commitHash);
 
-console.log(`Build version: ${dateVersion}`);
+console.log(`Build version (local dev): ${version}`);
 console.log(`Commit hash: ${commitHash}`);
