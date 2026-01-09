@@ -1,4 +1,4 @@
-import { Download, X, Clock, Loader2 } from "lucide-react"
+import { Download, X, Clock } from "lucide-react"
 
 interface UpdateNotificationToastProps {
   currentVersion: string
@@ -15,17 +15,9 @@ export function UpdateNotificationToast({
   onLater 
 }: UpdateNotificationToastProps) {
   return (
-    <div className="fixed top-14 right-4 z-40 w-80 bg-[#141414] border border-[#2a2a2a] rounded-md shadow-lg overflow-hidden animate-in slide-in-from-right-4 duration-300">
+    <div className="fixed top-14 right-4 z-40 w-80 bg-[#141414] border border-[#2a2a2a] rounded-md overflow-hidden animate-in slide-in-from-right-4 duration-300">
       <div className="p-4">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-[#238636] to-[#2ea043] flex items-center justify-center">
-            {isInstalling ? (
-              <Loader2 size={20} className="text-white animate-spin" />
-            ) : (
-              <Download size={20} className="text-white" />
-            )}
-          </div>
-          
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
