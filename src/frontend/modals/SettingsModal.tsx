@@ -41,6 +41,7 @@ export function SettingsModal({
     message: string
     type: "warning" | "danger" | "success" | "info"
   } | null>(null)
+  const [isClosing, setIsClosing] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -198,11 +199,19 @@ export function SettingsModal({
     }
   }
 
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsClosing(false)
+      onClose()
+    }, 150)
+  }
+
   const getMemoryRecommendation = (mb: number) => {
     if (!systemInfo) {
       if (mb < 2048) return { text: "Low - May struggle with modded", color: "text-yellow-500" }
-      if (mb < 4096) return { text: "Good for vanilla", color: "text-[#16a34a]" }
-      if (mb <= 12288) return { text: "Good for modded", color: "text-[#16a34a]" }
+      if (mb < 4096) return { text: "Good for vanilla", color: "text-[#4572e3]" }
+      if (mb <= 12288) return { text: "Good for modded", color: "text-[#4572e3]" }
       if (mb <= 16384) return { text: "High allocation", color: "text-yellow-500" }
       return { text: "Excessive - More isn't always better", color: "text-red-500" }
     }
@@ -210,8 +219,8 @@ export function SettingsModal({
     const maxRecommended = systemInfo.recommended_max_memory_mb
     
     if (mb < 2048) return { text: "Low - May struggle with modded", color: "text-yellow-500" }
-    if (mb < 4096) return { text: "Good for vanilla", color: "text-[#16a34a]" }
-    if (mb < 8192) return { text: "Good for modded", color: "text-[#16a34a]" }
+    if (mb < 4096) return { text: "Good for vanilla", color: "text-[#4572e3]" }
+    if (mb < 8192) return { text: "Good for modded", color: "text-[#4572e3]" }
     if (mb > maxRecommended) return { 
       text: `Exceeds recommended (${(maxRecommended / 1024).toFixed(1)} GB max)`, 
       color: "text-red-500" 
@@ -224,8 +233,8 @@ export function SettingsModal({
   if (!settings) {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-[#1a1a1a] rounded-lg p-8">
-          <div className="flex items-center gap-2 text-[#808080] text-base">
+        <div className="bg-[#101010] border border-[#2a2a2a] rounded-lg p-8">
+          <div className="flex items-center gap-2 text-[#7d8590] text-base">
             <Loader2 size={20} className="animate-spin" />
             <span>Loading settings...</span>
           </div>
@@ -238,33 +247,75 @@ export function SettingsModal({
 
   return (
     <>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes scaleIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes scaleOut {
+          from { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          to { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+        }
+        .modal-backdrop {
+          animation: fadeIn 0.15s ease-out forwards;
+        }
+        .modal-backdrop.closing {
+          animation: fadeOut 0.15s ease-in forwards;
+        }
+        .modal-content {
+          animation: scaleIn 0.15s ease-out forwards;
+        }
+        .modal-content.closing {
+          animation: scaleOut 0.15s ease-in forwards;
+        }
+      `}</style>
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        onClick={onClose}
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
+        onClick={handleClose}
       >
         <div 
-          className="bg-[#1a1a1a] rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
+          className={`bg-[#101010] rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-[#2a2a2a] modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-[#2a2a2a]">
             <div>
-              <h2 className="text-xl font-semibold text-[#e8e8e8]">Settings</h2>
-              <p className="text-sm text-[#808080] mt-0.5">
+              <h2 className="text-xl font-semibold text-[#e6edf3]">Settings</h2>
+              <p className="text-sm text-[#7d8590] mt-0.5">
                 Configure launcher and game settings
               </p>
             </div>
             <div className="flex items-center gap-3">
               {appVersion && (
-                <span className="bg-[#0d0d0d] px-3 py-1.5 rounded text-sm text-[#808080]">
+                <span className="bg-[#141414] border border-[#2a2a2a] px-3 py-1.5 rounded text-sm text-[#7d8590]">
                   Build {appVersion.split('-')[1] || appVersion}
                 </span>
               )}
               <button
-                onClick={onClose}
-                className="p-2 hover:bg-[#2a2a2a] rounded transition-colors cursor-pointer"
+                onClick={handleClose}
+                className="p-2 hover:bg-[#171717] rounded transition-colors cursor-pointer"
               >
-                <X size={20} className="text-[#808080]" />
+                <X size={20} className="text-[#7d8590]" />
               </button>
             </div>
           </div>
@@ -275,18 +326,18 @@ export function SettingsModal({
               {/* Left Column */}
               <div className="space-y-6">
                 {/* Memory Allocation */}
-                <div className="bg-[#101010] rounded-md p-6">
+                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
                   <div className="flex items-center gap-3 mb-5">
                     <Cpu size={24} className="text-[#4572e3]" strokeWidth={2} />
                     <div>
-                      <h2 className="text-base font-semibold text-[#e8e8e8]">Memory Allocation</h2>
-                      <p className="text-xs text-[#808080]">RAM allocated to Minecraft</p>
+                      <h2 className="text-base font-semibold text-[#e6edf3]">Memory Allocation</h2>
+                      <p className="text-xs text-[#7d8590]">RAM allocated to Minecraft</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-bold text-[#e8e8e8]">
+                      <span className="text-2xl font-bold text-[#e6edf3]">
                         {(settings.memory_mb / 1024).toFixed(1)} GB
                       </span>
                       <span className={`text-xs font-medium ${memoryRec.color}`}>
@@ -310,7 +361,7 @@ export function SettingsModal({
                       }}
                     />
 
-                    <div className="flex justify-between text-xs text-[#4a4a4a]">
+                    <div className="flex justify-between text-xs text-[#7d8590]">
                       <span>1 GB</span>
                       <span>{systemInfo ? `${(systemInfo.total_memory_mb / 4 / 1024).toFixed(0)} GB` : '8 GB'}</span>
                       <span>{systemInfo ? `${(systemInfo.total_memory_mb / 2 / 1024).toFixed(0)} GB` : '16 GB'}</span>
@@ -320,14 +371,14 @@ export function SettingsModal({
                     {systemInfo && (
                       <div className="pt-2 border-t border-[#2a2a2a]">
                         <div className="flex justify-between text-xs">
-                          <span className="text-[#808080]">System Total</span>
-                          <span className="text-[#e8e8e8] font-medium">
+                          <span className="text-[#7d8590]">System Total</span>
+                          <span className="text-[#e6edf3] font-medium">
                             {(systemInfo.total_memory_mb / 1024).toFixed(1)} GB
                           </span>
                         </div>
                         <div className="flex justify-between text-xs mt-1">
-                          <span className="text-[#808080]">Available</span>
-                          <span className="text-[#e8e8e8] font-medium">
+                          <span className="text-[#7d8590]">Available</span>
+                          <span className="text-[#e6edf3] font-medium">
                             {(systemInfo.available_memory_mb / 1024).toFixed(1)} GB
                           </span>
                         </div>
@@ -337,12 +388,12 @@ export function SettingsModal({
                 </div>
 
                 {/* Java Configuration */}
-                <div className="bg-[#101010] rounded-md p-6">
+                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
                   <div className="flex items-center gap-3 mb-5">
                     <Coffee size={24} className="text-[#4572e3]" strokeWidth={2} />
                     <div>
-                      <h2 className="text-base font-semibold text-[#e8e8e8]">Java Runtime</h2>
-                      <p className="text-xs text-[#808080]">Java installation for game</p>
+                      <h2 className="text-base font-semibold text-[#e6edf3]">Java Runtime</h2>
+                      <p className="text-xs text-[#7d8590]">Java installation for game</p>
                     </div>
                   </div>
 
@@ -350,7 +401,7 @@ export function SettingsModal({
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <select
-                          className="w-full bg-[#0d0d0d] rounded-lg px-4 py-3 text-sm text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#4572e3] transition-all cursor-pointer appearance-none pr-10"
+                          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#e6edf3] focus:outline-none focus:ring-2 focus:ring-[#4572e3] transition-all cursor-pointer appearance-none pr-10"
                           value={showCustomPath ? "custom" : settings.java_path || "auto"}
                           onChange={(e) => {
                             const value = e.target.value
@@ -373,13 +424,13 @@ export function SettingsModal({
                           ))}
                           <option value="custom">Custom Path...</option>
                         </select>
-                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080] pointer-events-none" />
+                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7d8590] pointer-events-none" />
                       </div>
                       
                       <button
                         onClick={loadJavaInstallations}
                         disabled={isLoadingJava}
-                        className="px-4 py-3 bg-[#0d0d0d] hover:bg-[#0a0a0a] disabled:opacity-50 rounded-lg text-sm font-medium transition-all text-[#e8e8e8] cursor-pointer flex-shrink-0"
+                        className="px-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#171717] disabled:opacity-50 rounded-lg text-sm font-medium transition-all text-[#e6edf3] cursor-pointer flex-shrink-0"
                       >
                         {isLoadingJava ? (
                           <Loader2 size={16} className="animate-spin" />
@@ -393,7 +444,7 @@ export function SettingsModal({
                       <div className="space-y-2">
                         <input
                           type="text"
-                          className="w-full bg-[#0d0d0d] rounded-lg px-4 py-3 text-sm text-[#e8e8e8] focus:outline-none focus:ring-2 focus:ring-[#4572e3] transition-all font-mono"
+                          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#e6edf3] focus:outline-none focus:ring-2 focus:ring-[#4572e3] transition-all font-mono"
                           placeholder="C:\Program Files\Java\jdk-21\bin\javaw.exe"
                           value={customPathValue}
                           onChange={(e) => setCustomPathValue(e.target.value)}
@@ -415,13 +466,10 @@ export function SettingsModal({
                             }
                           }}
                         />
-                        <p className="text-xs text-[#808080]">
-                          Enter the full path to javaw.exe or java executable
-                        </p>
                       </div>
                     )}
 
-                    <p className="text-xs text-[#4a4a4a]">
+                    <p className="text-xs text-[#7d8590]">
                       Java 17+ required for Minecraft 1.18 and newer versions
                     </p>
                   </div>
@@ -431,19 +479,19 @@ export function SettingsModal({
               {/* Right Column */}
               <div className="space-y-6">
                 {/* Appearance */}
-                <div className="bg-[#101010] rounded-md p-6">
+                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
                   <div className="flex items-center gap-3 mb-5">
                     <ImagePlus size={24} className="text-[#4572e3]" strokeWidth={2} />
                     <div>
-                      <h2 className="text-base font-semibold text-[#e8e8e8]">Sidebar Background</h2>
-                      <p className="text-xs text-[#808080]">Customize launcher appearance</p>
+                      <h2 className="text-base font-semibold text-[#e6edf3]">Sidebar Background</h2>
+                      <p className="text-xs text-[#7d8590]">Customize launcher appearance</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     {sidebarBgPreview ? (
                       <div className="relative group">
-                        <div className="h-20 rounded-lg overflow-hidden bg-[#0d0d0d]">
+                        <div className="h-20 rounded-lg overflow-hidden bg-[#1a1a1a] border border-[#2a2a2a]">
                           <img
                             src={sidebarBgPreview}
                             alt="Background preview"
@@ -468,12 +516,12 @@ export function SettingsModal({
                     ) : (
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full h-36 bg-[#0d0d0d] hover:bg-[#0a0a0a] border-2 border-dashed border-[#2a2a2a] hover:border-[#4572e3] rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center gap-3 group"
+                        className="w-full h-36 bg-[#1a1a1a] hover:bg-[#171717] border-2 border-dashed border-[#2a2a2a] hover:border-[#4572e3] rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center gap-3 group"
                       >
-                        <ImagePlus size={32} className="text-[#4a4a4a] group-hover:text-[#4572e3] transition-colors" strokeWidth={1.5} />
+                        <ImagePlus size={32} className="text-[#7d8590] group-hover:text-[#4572e3] transition-colors" strokeWidth={1.5} />
                         <div className="text-center">
-                          <p className="text-sm font-medium text-[#e8e8e8]">Add Background Image</p>
-                          <p className="text-xs text-[#808080] mt-1">PNG, JPG up to 10MB</p>
+                          <p className="text-sm font-medium text-[#e6edf3]">Add Background Image</p>
+                          <p className="text-xs text-[#7d8590] mt-1">PNG, JPG up to 10MB</p>
                         </div>
                       </button>
                     )}
@@ -489,17 +537,17 @@ export function SettingsModal({
                 </div>
 
                 {/* Launcher Directory */}
-                <div className="bg-[#101010] rounded-md p-6">
+                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
                   <div className="flex items-center gap-3 mb-5">
                     <FolderOpen size={24} className="text-[#4572e3]" strokeWidth={2} />
                     <div>
-                      <h2 className="text-base font-semibold text-[#e8e8e8]">Game Directory</h2>
-                      <p className="text-xs text-[#808080]">Instance and asset storage</p>
+                      <h2 className="text-base font-semibold text-[#e6edf3]">Game Directory</h2>
+                      <p className="text-xs text-[#7d8590]">Instance and asset storage</p>
                     </div>
                   </div>
 
-                  <div className="bg-[#0d0d0d] rounded-lg p-4">
-                    <p className="text-xs text-[#808080] font-mono break-all leading-relaxed">
+                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4">
+                    <p className="text-xs text-[#7d8590] font-mono break-all leading-relaxed">
                       {launcherDirectory || 'Loading...'}
                     </p>
                   </div>

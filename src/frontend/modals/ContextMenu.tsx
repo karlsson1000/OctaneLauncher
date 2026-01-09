@@ -67,7 +67,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const menuContent = useMemo(() => (
     <div
       ref={menuRef}
-      className="fixed z-[100] bg-[#1a1a1a] border border-[#2a2a2a] rounded overflow-hidden min-w-[180px]"
+      className="fixed z-[100] bg-[#141414] border border-[#2a2a2a] rounded-md shadow-lg overflow-hidden min-w-[180px]"
       style={{ left: x, top: y }}
     >
       {items.map((item, index) => (
@@ -84,8 +84,8 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
             }}
             className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
               item.danger
-                ? "text-[#dc2626] hover:bg-[#dc2626]/10"
-                : "text-[#e8e8e8] hover:bg-[#2a2a2a]"
+                ? "text-red-400 hover:bg-red-500/10"
+                : "text-[#e6edf3] hover:bg-[#1a1a1a]"
             }`}
           >
             {item.icon && <span className="flex-shrink-0">{item.icon}</span>}

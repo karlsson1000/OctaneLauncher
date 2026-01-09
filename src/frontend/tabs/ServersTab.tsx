@@ -231,17 +231,17 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "online": return "text-[#16a34a]"
+      case "online": return "text-[#238636]"
       case "offline": return "text-[#dc2626]"
-      default: return "text-[#808080]"
+      default: return "text-[#7d8590]"
     }
   }
 
   const getStatusBgColor = (status: string) => {
     switch (status) {
-      case "online": return "bg-[#16a34a]/10"
+      case "online": return "bg-[#238636]/10"
       case "offline": return "bg-[#dc2626]/10"
-      default: return "bg-[#808080]/10"
+      default: return "bg-[#7d8590]/10"
     }
   }
 
@@ -250,48 +250,49 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[#e8e8e8] tracking-tight">Servers</h1>
-            <p className="text-sm text-[#808080] mt-0.5">Manage your favorite Minecraft servers</p>
+            <h1 className="text-2xl font-semibold text-[#e6edf3] tracking-tight">Servers</h1>
+            <p className="text-sm text-[#7d8590] mt-0.5">Manage your favorite Minecraft servers</p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
-            className="w-10 h-10 hover:bg-[#1a1a1a] text-[#e8e8e8] rounded flex items-center justify-center transition-all cursor-pointer"
+            className="px-4 h-8 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
           >
-            <Plus size={28} strokeWidth={2} />
+            <Plus size={16} />
+            Add Server
           </button>
         </div>
 
         {servers.length > 0 && (
           <div className="relative mb-4">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a4a4a]" strokeWidth={2} />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590]" strokeWidth={2} />
             <input
               type="text"
               placeholder="Search servers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#1a1a1a] rounded pl-10 pr-4 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-2 focus:ring-[#2a2a2a] transition-all"
+              className="w-full bg-[#141414] rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6edf3] placeholder-[#7d8590] border border-[#2a2a2a] focus:outline-none focus:ring-1 focus:ring-[#3a3a3a] transition-all"
             />
           </div>
         )}
 
         {servers.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
-            <Server size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No servers added</h3>
-            <p className="text-sm text-[#808080] mb-4">Add your first server to get started</p>
+            <Server size={64} className="text-[#238636] mb-4" strokeWidth={1.5} />
+            <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">No servers added</h3>
+            <p className="text-sm text-[#7d8590] mb-4">Add your first server to get started</p>
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-medium text-sm flex items-center gap-2 transition-all shadow-lg cursor-pointer"
+              className="px-4 py-2 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
             >
               <Plus size={16} strokeWidth={2} />
               <span>Add Server</span>
             </button>
           </div>
         ) : filteredServers.length === 0 ? (
-          <div className="bg-[#1a1a1a] rounded-md p-12 flex flex-col items-center justify-center">
-            <Search size={64} className="text-[#16a34a] mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-semibold text-[#e8e8e8] mb-1">No servers found</h3>
-            <p className="text-sm text-[#808080]">Try adjusting your search query</p>
+          <div className="p-12 flex flex-col items-center justify-center">
+            <Search size={64} className="text-[#238636] mb-4" strokeWidth={1.5} />
+            <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">No servers found</h3>
+            <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -306,7 +307,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                 <div
                   key={server.name}
                   onClick={() => setSelectedServer(server)}
-                  className="group bg-[#1a1a1a] rounded-md p-4 cursor-pointer transition-all hover:ring-2 hover:ring-[#2a2a2a] relative"
+                  className="group bg-[#141414] rounded-md p-4 cursor-pointer transition-all hover:ring-1 hover:ring-[#2a2a2a] border border-[#2a2a2a] relative"
                 >
                   <button
                     onClick={(e) => {
@@ -327,16 +328,16 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                         className="w-16 h-16 rounded object-cover"
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#16a34a]/10 to-[#15803d]/10 rounded flex items-center justify-center flex-shrink-0">
-                        <Server size={28} className="text-[#16a34a]/60" strokeWidth={1.5} />
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#238636]/10 to-[#2ea043]/10 rounded flex items-center justify-center flex-shrink-0">
+                        <Server size={28} className="text-[#238636]/60" strokeWidth={1.5} />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-base text-[#e8e8e8] truncate mb-0">
+                      <h3 className="font-semibold text-base text-[#e6edf3] truncate mb-0">
                         {server.name}
                       </h3>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-[#808080] truncate">
+                        <span className="text-xs text-[#7d8590] truncate">
                           {displayAddress}
                         </span>
                       </div>
@@ -345,22 +346,22 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                           {server.status}
                         </span>
                         {server.version && (
-                          <span className="text-xs text-[#4a4a4a] truncate">{server.version}</span>
+                          <span className="text-xs text-[#7d8590] truncate">{server.version}</span>
                         )}
                       </div>
                     </div>
                   </div>
 
                   {server.motd && (
-                    <p className="text-xs text-[#808080] mb-2 truncate leading-relaxed">
+                    <p className="text-xs text-[#7d8590] mb-2 truncate leading-relaxed">
                       {server.motd}
                     </p>
                   )}
 
                   {server.status === "online" && server.players_online !== undefined && (
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-[#808080]">Players</span>
-                      <span className="text-sm font-medium text-[#e8e8e8]">
+                      <span className="text-xs text-[#7d8590]">Players</span>
+                      <span className="text-sm font-medium text-[#e6edf3]">
                         {server.players_online.toLocaleString()} / {server.players_max?.toLocaleString()}
                       </span>
                     </div>
@@ -375,8 +376,8 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                         : isLaunching
                         ? "bg-red-500/10 text-red-400 cursor-not-allowed"
                         : server.status === "online"
-                        ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"
-                        : "bg-[#2a2a2a] text-[#808080] cursor-not-allowed"
+                        ? "bg-[#238636]/10 hover:bg-[#238636]/20 text-[#238636] cursor-pointer"
+                        : "bg-[#2a2a2a] text-[#7d8590] cursor-not-allowed"
                     }`}
                   >
                     {isAnyInstanceRunning || isLaunching ? (

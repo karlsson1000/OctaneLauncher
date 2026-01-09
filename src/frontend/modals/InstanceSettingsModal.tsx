@@ -27,9 +27,9 @@ export function InstanceSettingsModal({
   const [isRenamingInstance, setIsRenamingInstance] = useState(false)
   const [isUploadingIcon, setIsUploadingIcon] = useState(false)
   const [localIcon, setLocalIcon] = useState<string | null>(instanceIcon)
+  const [isClosing, setIsClosing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // Fabric loader state
   const [fabricVersions, setFabricVersions] = useState<FabricVersion[]>([])
   const [selectedFabricVersion, setSelectedFabricVersion] = useState<string>(instance.loader_version || "")
   const [isLoadingFabric, setIsLoadingFabric] = useState(false)
@@ -102,7 +102,6 @@ export function InstanceSettingsModal({
         message: `Failed to update Fabric loader: ${error}`,
         type: "danger"
       })
-      // Reset selection on error
       setSelectedFabricVersion(instance.loader_version || "")
     } finally {
       setIsUpdatingFabric(false)
@@ -207,6 +206,14 @@ export function InstanceSettingsModal({
     })
   }
 
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsClosing(false)
+      onClose()
+    }, 150)
+  }
+
   const handleRename = async (trimmedName: string) => {
     if (!trimmedName) {
       setRenameError("Instance name cannot be empty")
@@ -265,36 +272,75 @@ export function InstanceSettingsModal({
 
   return (
       <>
+        <style>{`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+          }
+          @keyframes scaleIn {
+            from { 
+              opacity: 0;
+              transform: scale(0.95);
+            }
+            to { 
+              opacity: 1;
+              transform: scale(1);
+            }
+          }
+          @keyframes scaleOut {
+            from { 
+              opacity: 1;
+              transform: scale(1);
+            }
+            to { 
+              opacity: 0;
+              transform: scale(0.95);
+            }
+          }
+          .modal-backdrop {
+            animation: fadeIn 0.15s ease-out forwards;
+          }
+          .modal-backdrop.closing {
+            animation: fadeOut 0.15s ease-in forwards;
+          }
+          .modal-content {
+            animation: scaleIn 0.15s ease-out forwards;
+          }
+          .modal-content.closing {
+            animation: scaleOut 0.15s ease-in forwards;
+          }
+        `}</style>
         <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={onClose}
+          className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
+          onClick={handleClose}
         >
           <div 
-            className="bg-[#1a1a1a] rounded-md w-full max-w-md shadow-2xl"
+            className={`bg-[#141414] border border-[#2a2a2a] rounded-md w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
-          {/* Header */}
-          <div className="flex items-center justify-between p-5">
+          <div className="flex items-center justify-between p-5 border-b border-[#2a2a2a]">
             <div className="flex items-center gap-3">
               <Settings size={32} className="text-[#4572e3]" strokeWidth={1.5} />
               <div>
-                <h2 className="text-base font-semibold text-[#e8e8e8] tracking-tight">Instance Settings</h2>
-                <p className="text-xs text-[#808080] mt-0.5">Manage your instance configuration</p>
+                <h2 className="text-base font-semibold text-[#e6edf3] tracking-tight">Instance Settings</h2>
+                <p className="text-xs text-[#7d8590] mt-0.5">Manage your instance configuration</p>
               </div>
             </div>
             <button
-              onClick={onClose}
-              className="p-1.5 hover:bg-[#0d0d0d] rounded transition-colors text-[#808080] hover:text-[#e8e8e8] cursor-pointer"
+              onClick={handleClose}
+              className="p-1.5 hover:bg-[#1a1a1a] rounded transition-colors text-[#7d8590] hover:text-[#e6edf3] cursor-pointer"
             >
               <X size={16} strokeWidth={2} />
             </button>
           </div>
 
-          {/* Content */}
           <div className="p-5 space-y-4">
-            {/* Instance Icon Section */}
             <div>
-              <label className="block text-xs font-medium text-[#808080] mb-2">Instance Icon</label>
+              <label className="block text-xs font-medium text-[#7d8590] mb-2">Instance Icon</label>
               <div className="flex items-center gap-4">
                 <input
                   ref={fileInputRef}
@@ -309,7 +355,7 @@ export function InstanceSettingsModal({
                     <button
                       onClick={handleIconClick}
                       disabled={isUploadingIcon}
-                      className="w-20 h-20 rounded-md overflow-hidden relative cursor-pointer bg-transparent"
+                      className="w-20 h-20 rounded-md overflow-hidden relative cursor-pointer bg-transparent border border-[#2a2a2a]"
                     >
                       <img
                         src={localIcon}
@@ -325,21 +371,21 @@ export function InstanceSettingsModal({
                   <button
                     onClick={handleIconClick}
                     disabled={isUploadingIcon}
-                    className="w-20 h-20 border-2 border-dashed border-[#2a2a2a] hover:border-[#16a34a]/50 rounded-md flex items-center justify-center transition-all bg-transparent cursor-pointer"
+                    className="w-20 h-20 border-2 border-dashed border-[#2a2a2a] hover:border-[#238636]/50 rounded-md flex items-center justify-center transition-all bg-[#0f0f0f] cursor-pointer"
                   >
                     {isUploadingIcon ? (
-                      <Loader2 size={28} className="text-[#16a34a] animate-spin" />
+                      <Loader2 size={28} className="text-[#238636] animate-spin" />
                     ) : (
-                      <ImagePlus size={28} className="text-[#4a4a4a] hover:text-[#16a34a] transition-colors" />
+                      <ImagePlus size={28} className="text-[#3a3a3a] group-hover:text-[#238636] transition-colors" />
                     )}
                   </button>
                 )}
                 
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 flex flex-col gap-2 h-20">
                   <button
                     onClick={handleIconClick}
                     disabled={isUploadingIcon}
-                    className="w-full px-4 py-2 bg-[#0d0d0d] hover:bg-[#2a2a2a] text-[#e8e8e8] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                    className="flex-1 w-full px-4 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#e6edf3] rounded-md text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {localIcon ? "Change Icon" : "Upload Icon"}
                   </button>
@@ -347,7 +393,7 @@ export function InstanceSettingsModal({
                     <button
                       onClick={handleRemoveIcon}
                       disabled={isUploadingIcon}
-                      className="w-full px-4 py-2 bg-[#0d0d0d] hover:bg-red-500/10 text-[#808080] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                      className="flex-1 w-full px-4 bg-[#1a1a1a] hover:bg-red-500/10 border border-[#2a2a2a] text-[#7d8590] hover:text-red-400 rounded-md text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                     >
                       Remove Icon
                     </button>
@@ -356,9 +402,8 @@ export function InstanceSettingsModal({
               </div>
             </div>
 
-            {/* Instance Name Section */}
             <div>
-              <label className="block text-xs font-medium text-[#808080] mb-2">Instance Name</label>
+              <label className="block text-xs font-medium text-[#7d8590] mb-2">Instance Name</label>
               <div className="relative">
                 <input
                   type="text"
@@ -378,13 +423,13 @@ export function InstanceSettingsModal({
                       e.currentTarget.blur()
                     }
                   }}
-                  className="w-full bg-[#0d0d0d] rounded px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors"
+                  className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-md px-3 py-2.5 pr-10 text-sm text-[#e6edf3] placeholder-[#3a3a3a] focus:outline-none focus:ring-1 focus:ring-[#238636] transition-colors"
                   placeholder="Enter instance name"
                   disabled={isRenamingInstance}
                 />
                 {isRenamingInstance && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <Loader2 size={14} className="animate-spin text-[#16a34a]" />
+                    <Loader2 size={14} className="animate-spin text-[#238636]" />
                   </div>
                 )}
               </div>
@@ -393,12 +438,11 @@ export function InstanceSettingsModal({
               )}
             </div>
 
-            {/* Fabric Loader Section */}
             {isFabricInstance && (
               <div>
-                <label className="block text-xs font-medium text-[#808080] mb-2">Fabric Loader Version</label>
+                <label className="block text-xs font-medium text-[#7d8590] mb-2">Fabric Loader Version</label>
                 {isLoadingFabric ? (
-                  <div className="flex items-center gap-2 text-[#808080] text-xs py-2 px-3 bg-[#0d0d0d] rounded">
+                  <div className="flex items-center gap-2 text-[#7d8590] text-xs py-2 px-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-md">
                     <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
                     <span>Loading versions...</span>
                   </div>
@@ -412,7 +456,7 @@ export function InstanceSettingsModal({
                           setSelectedFabricVersion(newVersion)
                           handleUpdateFabricLoader(newVersion)
                         }}
-                        className="w-full bg-[#0d0d0d] rounded px-3 py-2.5 pr-10 text-sm text-[#e8e8e8] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none"
+                        className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-md px-3 py-2.5 pr-10 text-sm text-[#e6edf3] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none cursor-pointer"
                         disabled={isUpdatingFabric}
                       >
                         {fabricVersions.map((version) => (
@@ -425,7 +469,7 @@ export function InstanceSettingsModal({
                         {isUpdatingFabric ? (
                           <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
                         ) : (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#808080" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7d8590" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="6 9 12 15 18 9"></polyline>
                           </svg>
                         )}
@@ -436,12 +480,11 @@ export function InstanceSettingsModal({
               </div>
             )}
 
-            {/* Danger Zone */}
             <div className="pt-4 border-t border-[#2a2a2a]">
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="w-full px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-md font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? (
                   <>

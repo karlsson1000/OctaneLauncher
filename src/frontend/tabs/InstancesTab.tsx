@@ -336,7 +336,7 @@ export function InstancesTab({
                   setShowTemplateMenu(!showTemplateMenu)
                   setShowApplyMenu(false)
                 }}
-                className="w-10 h-10 hover:bg-[#1a1a1a] text-[#7d8590] hover:text-[#e6edf3] rounded flex items-center justify-center transition-all cursor-pointer"
+                className="w-9 h-9 hover:bg-[#1a1a1a] text-[#7d8590] hover:text-[#e6edf3] rounded flex items-center justify-center transition-all cursor-pointer"
               >
                 <FileText size={24} strokeWidth={2} />
               </button>

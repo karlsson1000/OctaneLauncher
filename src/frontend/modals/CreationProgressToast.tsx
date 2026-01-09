@@ -175,9 +175,9 @@ export function CreationProgressToast({
   const getStatusColor = () => {
     switch (status) {
       case "creating":
-        return "from-[#16a34a] to-[#15803d]"
+        return "from-[#238636] to-[#2ea043]"
       case "success":
-        return "from-[#16a34a] to-[#16a34a]"
+        return "from-[#238636] to-[#238636]"
       case "error":
         return "from-red-500 to-red-600"
     }
@@ -203,39 +203,39 @@ export function CreationProgressToast({
   }
 
   return (
-    <div className="fixed top-14 right-4 z-40 w-80 bg-[#1a1a1a] rounded overflow-hidden animate-in slide-in-from-right-4 duration-300">
+    <div className="fixed top-14 right-4 z-40 w-80 bg-[#141414] border border-[#2a2a2a] rounded-md shadow-lg overflow-hidden animate-in slide-in-from-right-4 duration-300">
       <div className="p-4">
         <div className="flex items-start gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-[#e8e8e8] truncate">
+                  <p className="text-sm font-medium text-[#e6edf3] truncate">
                     {getStatusText()}
                   </p>
                   {status === "creating" && (
-                    <Loader2 size={14} className="animate-spin text-[#16a34a] flex-shrink-0" />
+                    <Loader2 size={14} className="animate-spin text-[#238636] flex-shrink-0" />
                   )}
                   {status === "success" && (
-                    <CheckCircle2 size={16} className="text-[#16a34a] flex-shrink-0" />
+                    <CheckCircle2 size={16} className="text-[#238636] flex-shrink-0" />
                   )}
                   {status === "error" && (
                     <XCircle size={16} className="text-red-500 flex-shrink-0" />
                   )}
                 </div>
-                <p className="text-xs text-[#808080] mt-0.5 truncate">{instanceName}</p>
+                <p className="text-xs text-[#7d8590] mt-0.5 truncate">{instanceName}</p>
               </div>
               
               <div className="flex items-center gap-2">
                 {/* Percentage */}
-                <p className="text-xs text-[#4a4a4a] flex-shrink-0">
+                <p className="text-xs text-[#3a3a3a] flex-shrink-0">
                   {Math.round(progress)}%
                 </p>
                 
                 {status !== "creating" && (
                   <button
                     onClick={handleDismiss}
-                    className="flex-shrink-0 p-1 hover:bg-[#2a2a2a] rounded transition-colors text-[#808080] hover:text-[#e8e8e8] cursor-pointer"
+                    className="flex-shrink-0 p-1 hover:bg-[#1a1a1a] rounded transition-colors text-[#7d8590] hover:text-[#e6edf3] cursor-pointer"
                   >
                     <X size={14} />
                   </button>

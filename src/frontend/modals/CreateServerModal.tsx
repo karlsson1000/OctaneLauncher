@@ -27,6 +27,7 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
   const [serverPort, setServerPort] = useState("")
   const [isTesting, setIsTesting] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [isClosing, setIsClosing] = useState(false)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean
     title: string
@@ -42,6 +43,14 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
   // Validate port number - empty string is valid (defaults to 25565)
   const portNumber = serverPort.trim() === "" ? 25565 : parseInt(serverPort)
   const isValidPort = serverPort.trim() === "" || (!isNaN(portNumber) && portNumber > 0 && portNumber <= 65535)
+
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsClosing(false)
+      onClose()
+    }, 150)
+  }
 
   const testConnection = async () => {
     if (!serverAddress.trim() || !isValidPort) return
@@ -102,7 +111,7 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
       }
 
       onSuccess(newServer)
-      onClose()
+      handleClose()
     } catch (error) {
       console.error("Create server error:", error)
       setAlertModal({
@@ -125,19 +134,67 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-[#1a1a1a] rounded-md w-full max-w-md shadow-2xl">
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes scaleIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes scaleOut {
+          from { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          to { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+        }
+        .modal-backdrop {
+          animation: fadeIn 0.15s ease-out forwards;
+        }
+        .modal-backdrop.closing {
+          animation: fadeOut 0.15s ease-in forwards;
+        }
+        .modal-content {
+          animation: scaleIn 0.15s ease-out forwards;
+        }
+        .modal-content.closing {
+          animation: scaleOut 0.15s ease-in forwards;
+        }
+      `}</style>
+      <div 
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
+        onClick={handleClose}
+      >
+        <div 
+          className={`bg-[#141414] border border-[#2a2a2a] rounded-md w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="flex items-center justify-between p-5">
             <div className="flex items-center gap-3">
-              <Server size={32} className="text-[#16a34a]" strokeWidth={1.5} />
+              <Server size={32} className="text-[#238636]" strokeWidth={1.5} />
               <div>
-                <h2 className="text-base font-semibold text-[#e8e8e8] tracking-tight">Add Server</h2>
-                <p className="text-xs text-[#808080] mt-0.5">Add a new Minecraft server</p>
+                <h2 className="text-base font-semibold text-[#e6edf3] tracking-tight">Add Server</h2>
+                <p className="text-xs text-[#7d8590] mt-0.5">Add a new Minecraft server</p>
               </div>
             </div>
             <button 
-              onClick={onClose} 
-              className="p-1.5 hover:bg-[#0d0d0d] rounded transition-colors text-[#808080] hover:text-[#e8e8e8] cursor-pointer"
+              onClick={handleClose} 
+              className="p-1.5 hover:bg-[#1a1a1a] rounded transition-colors text-[#7d8590] hover:text-[#e6edf3] cursor-pointer"
             >
               <X size={16} strokeWidth={2} />
             </button>
@@ -145,16 +202,16 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
 
           <div className="p-5 space-y-4">
             <div>
-              <label className="block text-xs font-medium text-[#808080] mb-2">Server Name</label>
+              <label className="block text-xs font-medium text-[#7d8590] mb-2">Server Name</label>
               <input
                 type="text"
                 value={serverName}
                 onChange={(e) => setServerName(e.target.value)}
                 placeholder="My Server"
-                className={`w-full bg-[#0d0d0d] rounded px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
+                className={`w-full bg-[#0f0f0f] border rounded-md px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#3a3a3a] focus:outline-none transition-colors ${
                   serverExists && serverName.trim()
-                    ? 'ring-1 ring-red-500/50 focus:ring-red-500'
-                    : 'focus:ring-1 focus:ring-[#16a34a]'
+                    ? 'border-red-500/50 focus:border-red-500'
+                    : 'border-[#2a2a2a] focus:border-[#238636]'
                 }`}
                 disabled={isCreating}
               />
@@ -167,29 +224,29 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#808080] mb-2">Server Address</label>
+              <label className="block text-xs font-medium text-[#7d8590] mb-2">Server Address</label>
               <input
                 type="text"
                 value={serverAddress}
                 onChange={(e) => setServerAddress(e.target.value)}
                 placeholder="mc.hypixel.net"
-                className="w-full bg-[#0d0d0d] rounded px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none focus:ring-1 focus:ring-[#16a34a] transition-colors"
+                className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-md px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#3a3a3a] focus:outline-none focus:border-[#238636] transition-colors"
                 disabled={isCreating}
               />
-              <p className="text-xs text-[#4a4a4a] mt-1.5">Enter the server IP or domain</p>
+              <p className="text-xs text-[#3a3a3a] mt-1.5">Enter the server IP or domain</p>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#808080] mb-2">Server Port (Optional)</label>
+              <label className="block text-xs font-medium text-[#7d8590] mb-2">Server Port (Optional)</label>
               <input
                 type="text"
                 value={serverPort}
                 onChange={(e) => setServerPort(e.target.value)}
                 placeholder="25565"
-                className={`w-full bg-[#0d0d0d] rounded px-3 py-2.5 text-sm text-[#e8e8e8] placeholder-[#4a4a4a] focus:outline-none transition-colors ${
+                className={`w-full bg-[#0f0f0f] border rounded-md px-3 py-2.5 text-sm text-[#e6edf3] placeholder-[#3a3a3a] focus:outline-none transition-colors ${
                   serverPort && !isValidPort
-                    ? 'ring-1 ring-red-500/50 focus:ring-red-500'
-                    : 'focus:ring-1 focus:ring-[#16a34a]'
+                    ? 'border-red-500/50 focus:border-red-500'
+                    : 'border-[#2a2a2a] focus:border-[#238636]'
                 }`}
                 disabled={isCreating}
               />
@@ -199,14 +256,14 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
                   <span>Port must be between 1 and 65535</span>
                 </div>
               )}
-              <p className="text-xs text-[#4a4a4a] mt-1.5">Leave empty to use default port (25565)</p>
+              <p className="text-xs text-[#3a3a3a] mt-1.5">Leave empty to use default port (25565)</p>
             </div>
 
             {/* Test Connection Button */}
             <button
               onClick={testConnection}
               disabled={!serverAddress.trim() || !isValidPort || isTesting}
-              className="w-full px-4 py-2.5 bg-[#2a2a2a] hover:bg-[#1f1f1f] disabled:opacity-50 disabled:cursor-not-allowed text-[#e8e8e8] rounded font-medium text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+              className="w-full px-4 py-2.5 bg-[#0f0f0f] hover:bg-[#1a1a1a] border border-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6edf3] rounded-md font-medium text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               {isTesting ? (
                 <>
@@ -223,10 +280,10 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
 
             {/* Test Result */}
             {testResult && (
-              <div className={`flex items-start gap-2 p-3 rounded border ${
+              <div className={`flex items-start gap-2 p-3 rounded-md border ${
                 testResult.success 
-                  ? 'bg-[#16a34a]/10 border-[#16a34a]/20 text-[#16a34a]' 
-                  : 'bg-[#dc2626]/10 border-[#dc2626]/20 text-[#dc2626]'
+                  ? 'bg-[#238636]/10 border-[#238636]/20 text-[#238636]' 
+                  : 'bg-red-500/10 border-red-500/20 text-red-400'
               }`}>
                 <AlertCircle size={14} className="mt-0.5 flex-shrink-0" strokeWidth={2} />
                 <span className="text-xs">{testResult.message}</span>
@@ -236,16 +293,16 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
 
           <div className="flex items-center justify-end gap-2 p-5">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isCreating}
-              className="px-4 py-2 bg-[#2a2a2a] hover:bg-[#3a3a3a] text-[#e8e8e8] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="px-4 py-2 bg-[#0f0f0f] hover:bg-[#1a1a1a] border border-[#2a2a2a] text-[#e6edf3] rounded-md font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleCreateServer}
               disabled={isCreateDisabled}
-              className="px-4 py-2 bg-[#16a34a] hover:bg-[#15803d] text-white rounded font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-4 py-2 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm"
             >
               {isCreating ? (
                 <>
