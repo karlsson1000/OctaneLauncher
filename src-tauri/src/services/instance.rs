@@ -803,8 +803,8 @@ impl InstanceManager {
         }
 
         cmd.current_dir(&instance_dir)
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
         let mut child = match cmd.spawn() {
             Ok(child) => child,
@@ -823,6 +823,19 @@ impl InstanceManager {
             let mut processes = crate::commands::instances::RUNNING_PROCESSES.lock().unwrap();
             processes.insert(instance_name.to_string(), child_pid);
         }
+
+        // Update user status to in-game for the launching account
+        let instance_name_for_status = instance_name.to_string();
+        let launching_uuid = uuid.to_string();
+        tauri::async_runtime::spawn(async move {
+            if let Err(e) = crate::commands::friends::update_specific_user_status(
+                launching_uuid.clone(),
+                "ingame".to_string(),
+                Some(instance_name_for_status)
+            ).await {
+                eprintln!("Failed to update status to ingame: {}", e);
+            }
+        });
 
         // Capture stdout
         if let Some(stdout) = child.stdout.take() {
@@ -927,6 +940,7 @@ impl InstanceManager {
         // Monitor process exit and emit event when it closes
         let instance_name_clone = instance_name.to_string();
         let app_handle_clone = app_handle.clone();
+        let launching_uuid = uuid.to_string();
         std::thread::spawn(move || {
             let _ = child.wait();
             println!("Instance '{}' has exited", instance_name_clone);
@@ -936,6 +950,17 @@ impl InstanceManager {
                 let mut processes = crate::commands::instances::RUNNING_PROCESSES.lock().unwrap();
                 processes.remove(&instance_name_clone);
             }
+
+            // Update user status back to online for the account that launched it
+            tauri::async_runtime::spawn(async move {
+                if let Err(e) = crate::commands::friends::update_specific_user_status(
+                    launching_uuid.clone(),
+                    "online".to_string(),
+                    None
+                ).await {
+                    eprintln!("Failed to update status to online: {}", e);
+                }
+            });
             
             let _ = app_handle_clone.emit("instance-exited", serde_json::json!({
                 "instance": instance_name_clone

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { LogOut, Settings, LogIn, Home, Package, Puzzle, Terminal, Minus, Square, X, Server, Play, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, HatGlasses, FolderOpen, Copy, Trash2, Telescope } from "lucide-react"
+import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Telescope, Terminal, Settings } from "lucide-react"
 import { HomeTab } from "./tabs/HomeTab"
 import { InstancesTab } from "./tabs/InstancesTab"
 import { BrowseTab } from "./tabs/BrowseTab"
@@ -14,8 +14,8 @@ import { CreateInstanceModal } from "./modals/CreateInstanceModal"
 import { CreationProgressToast } from "./modals/CreationProgressToast"
 import { InstanceDetailsTab } from "./modals/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
-import { ContextMenu } from "./modals/ContextMenu"
 import { MapTab } from "./tabs/MapTab"
+import { Sidebar } from "./components/Sidebar"
 import type { Instance, LauncherSettings, ConsoleLog } from "../types"
 
 interface AccountInfo {
@@ -31,10 +31,8 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [activeAccount, setActiveAccount] = useState<AccountInfo | null>(null)
   const [accounts, setAccounts] = useState<AccountInfo[]>([])
-  const [showAccountDropdown, setShowAccountDropdown] = useState(false)
   const [launchingInstanceName, setLaunchingInstanceName] = useState<string | null>(null)
   const [runningInstances, setRunningInstances] = useState<Set<string>>(new Set())
-  const [isLoggingIn, setIsLoggingIn] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [versions, setVersions] = useState<string[]>([])
   const [instances, setInstances] = useState<Instance[]>([])
@@ -71,49 +69,6 @@ function App() {
   } | null>(null)
 
   const appWindow = getCurrentWindow()
-
-  const recentInstances = [...instances]
-    .filter(inst => inst.last_played)
-    .sort((a, b) => {
-      const timeA = a.last_played ? new Date(a.last_played).getTime() : 0
-      const timeB = b.last_played ? new Date(b.last_played).getTime() : 0
-      return timeB - timeA
-    })
-    .slice(0, 3)
-
-  const getMinecraftVersion = (instance: Instance): string => {
-    if (instance.loader === "fabric") {
-      const parts = instance.version.split('-')
-      return parts[parts.length - 1]
-    }
-    return instance.version
-  }
-
-  const formatLastPlayed = (timestamp: string): string => {
-    const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-
-    if (days > 0) return `${days}d ago`
-    if (hours > 0) return `${hours}h ago`
-    if (minutes > 0) return `${minutes}m ago`
-    return 'Just now'
-  }
-
-  const formatLastUsed = (timestamp: string | null): string => {
-    if (!timestamp) return 'Never'
-    
-    const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-
-    if (days > 0) return `${days}d ago`
-    if (hours > 0) return `${hours}h ago`
-    if (minutes > 0) return `${minutes}m ago`
-    return 'Just now'
-  }
 
   const pushToHistory = (tab: typeof activeTab, showDetails: boolean, instance: Instance | null) => {
     if (isNavigating) return
@@ -155,6 +110,16 @@ function App() {
       setTimeout(() => setIsNavigating(false), 0)
     }
   }
+
+  const tabs = [
+    { id: "home" as const, icon: Home, label: "Home" },
+    { id: "instances" as const, icon: Package, label: "Instances" },
+    { id: "browse" as const, icon: Puzzle, label: "Mods" },
+    { id: "servers" as const, icon: Server, label: "Servers" },
+    { id: "skins" as const, icon: HatGlasses, label: "Skins" },
+    { id: "map" as const, icon: Telescope, label: "Server Maps" },
+    { id: "console" as const, icon: Terminal, label: "Console" },
+  ]
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -306,38 +271,6 @@ function App() {
       setIsAuthenticated(!!active)
     } catch (error) {
       console.error("Failed to load accounts:", error)
-    }
-  }
-
-  const handleAddAccount = async () => {
-    setIsLoggingIn(true)
-    try {
-      await invoke<AccountInfo>("microsoft_login_and_store")
-      await loadAccounts()
-    } catch (error) {
-      console.error("Login error:", error)
-    } finally {
-      setIsLoggingIn(false)
-    }
-  }
-
-  const handleSwitchAccount = async (uuid: string) => {
-    try {
-      await invoke("switch_account", { uuid })
-      await loadAccounts()
-      setShowAccountDropdown(false)
-    } catch (error) {
-      console.error("Failed to switch account:", error)
-    }
-  }
-
-  const handleRemoveAccount = async (uuid: string) => {
-    try {
-      await invoke("remove_account", { uuid })
-      await loadAccounts()
-      setShowAccountDropdown(false)
-    } catch (error) {
-      console.error("Failed to remove account:", error)
     }
   }
 
@@ -494,16 +427,6 @@ function App() {
     }
   }
 
-  const handleSidebarContextMenu = (e: React.MouseEvent, instance: Instance) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setSidebarContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      instance,
-    })
-  }
-
   return (
     <div className="flex flex-col h-screen bg-[#101010] text-[#e6edf3] overflow-hidden font-sans">
       <div 
@@ -511,12 +434,12 @@ function App() {
         style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
         className="h-10 bg-[#1a1a1a] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b border-[#2a2a2a]"
       >
-        <div className="flex items-center gap-2 mr-20">
+        <div className="flex items-center gap-2 mr-4">
           <img src="/logo.png" alt="Atomic Launcher" className="h-5 w-5" />
           <span className="text-sm font-semibold text-[#e6edf3]">Atomic Launcher</span>
         </div>
         
-        <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center gap-1 mr-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={navigateBack}
             disabled={historyIndex <= 0}
@@ -541,7 +464,40 @@ function App() {
           </button>
         </div>
 
-        <div className="flex items-center ml-auto" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex-1 flex items-center justify-center" style={{ WebkitAppRegion: 'drag' } as any}>
+          <nav className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id)
+                    setShowInstanceDetails(false)
+                  }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all cursor-pointer ${
+                    activeTab === tab.id
+                      ? "bg-[#101010] text-[#e6edf3]"
+                      : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#212121]"
+                  }`}
+                >
+                  <Icon size={16} strokeWidth={2} />
+                  <span>{tab.label}</span>
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+
+        <div className="flex items-center" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#212121] transition-all cursor-pointer"
+            title="Settings"
+          >
+            <Settings size={16} strokeWidth={2} />
+          </button>
+          <div className="w-px h-6 bg-[#2a2a2a] mx-2" style={{ pointerEvents: 'none' } as any} />
           <button
             onClick={() => appWindow.minimize()}
             className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#2a2a2a] transition-colors"
@@ -594,378 +550,31 @@ function App() {
         />
       )}
 
-      {sidebarContextMenu && (
-        <ContextMenu
-          x={sidebarContextMenu.x}
-          y={sidebarContextMenu.y}
-          onClose={() => setSidebarContextMenu(null)}
-          items={[
-            {
-              label: "Open",
-              icon: <Package size={16} />,
-              onClick: () => {
-                setSelectedInstance(sidebarContextMenu.instance)
-                setActiveTab("instances")
-                setShowInstanceDetails(true)
-              },
-            },
-            {
-              label: "Open Folder",
-              icon: <FolderOpen size={16} />,
-              onClick: () => {
-                handleOpenInstanceFolderByInstance(sidebarContextMenu.instance)
-              },
-            },
-            {
-              label: "Duplicate",
-              icon: <Copy size={16} />,
-              onClick: () => {
-                handleDuplicateInstance(sidebarContextMenu.instance)
-              },
-            },
-            { separator: true },
-            {
-              label: "Delete",
-              icon: <Trash2 size={16} />,
-              onClick: () => {
-                handleDeleteInstance(sidebarContextMenu.instance.name)
-              },
-              danger: true,
-            },
-          ]}
-        />
-      )}
-
       <div className="flex flex-1 overflow-hidden mt-10">
-        <aside 
-          className="sidebar-bg w-58 bg-[#1a1a1a] flex flex-col relative"
-          data-custom-bg={sidebarBackground ? "true" : undefined}
-          style={{
-            backgroundImage: sidebarBackground 
-              ? `linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), url(${sidebarBackground})` 
-              : undefined,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: sidebarBackground ? 'repeat' : 'no-repeat',
-            backgroundColor: '#1a1a1a'
-          }}
-        >
-  
-        <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-            <nav className="flex-shrink-0 px-2 py-3 space-y-1">
-              <button
-                onClick={() => {
-                  setActiveTab("home")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "home"
-                    ? "bg-[#212121] text-[#e6edf3]"
-                    : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-                }`}
-              >
-                <Home size={19} strokeWidth={2} />
-                <span>Home</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("instances")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "instances"
-                    ? "bg-[#212121] text-[#e6edf3]"
-                    : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-                }`}
-              >
-                <Package size={19} strokeWidth={2} />
-                <span>Instances</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("browse")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "browse"
-                    ? "bg-[#212121] text-[#e6edf3]"
-                    : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-                }`}
-              >
-                <Puzzle size={19} strokeWidth={2} />
-                <span>Mods</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("servers")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "servers"
-                    ? "bg-[#212121] text-[#e6edf3]"
-                    : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-                }`}
-              >
-                <Server size={19} strokeWidth={2} />
-                <span>Servers</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("skins")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "skins"
-                    ? "bg-[#212121] text-[#e6edf3]"
-                    : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-                }`}
-              >
-                <HatGlasses size={19} strokeWidth={2} />
-                <span>Skins</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab("map")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "map"
-                    ? "bg-[#212121] text-[#e6edf3]"
-                    : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-                }`}
-              >
-                <Telescope size={19} strokeWidth={2} />
-                <span>Server Maps</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab("console")
-                  setShowInstanceDetails(false)
-                }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all cursor-pointer ${
-                  activeTab === "console"
-                    ? "bg-[#212121] text-[#e6edf3]"
-                    : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-                }`}
-              >
-                <Terminal size={19} strokeWidth={2} />
-                <span>Console</span>
-              </button>
-            </nav>
-
-            {recentInstances.length > 0 && (
-              <div className="flex-1 overflow-y-auto px-2 pb-3">
-                <div className="py-2">
-                  <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider mb-2 px-2">
-                    Recently Played
-                  </h3>
-                  <div className="space-y-1">
-                    {recentInstances.map((instance) => {
-                      const icon = instanceIcons[instance.name]
-                      const isRunning = runningInstances.has(instance.name)
-                      const isLaunching = launchingInstanceName === instance.name
-                      return (
-                        <button
-                          key={instance.name}
-                          onClick={() => {
-                            setSelectedInstance(instance)
-                            setActiveTab("instances")
-                            setShowInstanceDetails(true)
-                          }}
-                          onContextMenu={(e) => handleSidebarContextMenu(e, instance)}
-                          className="group w-full flex items-center gap-2 rounded cursor-pointer transition-all text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717] px-1.5 py-1.5"
-                        >
-                          {icon ? (
-                            <img
-                              src={icon}
-                              alt={instance.name}
-                              className="w-9 h-9 rounded object-cover flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#101010] rounded">
-                              <Package size={24} className="text-[#3a3a3a]" strokeWidth={1.5} />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0 text-left">
-                            <div className="text-sm font-medium text-[#e6edf3] truncate leading-tight">
-                              {instance.name}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-[#7d8590] leading-tight mt-0.5">
-                              <span className="truncate">{getMinecraftVersion(instance)}</span>
-                              <span>•</span>
-                              <span className="truncate">{formatLastPlayed(instance.last_played!)}</span>
-                            </div>
-                          </div>
-                          {isAuthenticated && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (isRunning) {
-                                  handleKillInstance(instance)
-                                } else {
-                                  handleQuickLaunch(instance)
-                                }
-                              }}
-                              disabled={launchingInstanceName !== null}
-                              className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all cursor-pointer mr-1 ${
-                                isRunning || isLaunching
-                                  ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20"
-                                  : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
-                              } disabled:opacity-50`}
-                              title={isRunning ? "Stop instance" : "Launch instance"}
-                            >
-                              {isLaunching ? (
-                                <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                              ) : isRunning ? (
-                                <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                              ) : (
-                                <Play size={16} fill="currentColor" strokeWidth={0} />
-                              )}
-                            </button>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="p-2 space-y-1 relative z-10">
-            {isAuthenticated && activeAccount ? (
-              <>
-                <div className="relative py-1 mb-0.5">
-                  <button
-                    onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                    className="w-full flex items-center gap-2.5 p-2 cursor-pointer hover:bg-[#171717] rounded transition-colors"
-                  >
-                    <div className="relative">
-                      <img
-                        src={`https://cravatar.eu/avatar/${activeAccount.username}/32`}
-                        alt={activeAccount.username}
-                        className="w-8 h-8 rounded"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="text-xs text-[#7d8590]">Welcome back,</div>
-                      <div className="text-sm font-medium text-[#e6edf3] truncate">{activeAccount.username}</div>
-                    </div>
-                    <div className="flex flex-col text-[#7d8590]">
-                      <ChevronUp size={14} strokeWidth={2.5} />
-                      <ChevronDown size={14} strokeWidth={2.5} />
-                    </div>
-                  </button>
-
-                  {showAccountDropdown && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-40"
-                        onClick={() => setShowAccountDropdown(false)}
-                      />
-                      
-                      <div className="absolute bottom-1 left-0 right-0 bg-[#1a1a1a] rounded shadow-xl z-50 overflow-hidden border border-[#2a2a2a]">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleAddAccount()
-                          }}
-                          disabled={isLoggingIn}
-                          className="w-full flex items-center gap-2 px-2.5 py-2.5 text-sm text-[#e6edf3] hover:bg-[#1f1f1f] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <LogIn size={18} className="text-[#16a34a]" />
-                          <span>{isLoggingIn ? 'Authenticating...' : 'Add another account'}</span>
-                        </button>
-
-                        {accounts.filter(acc => !acc.is_active).length > 0 && (
-                          <>
-                            <div className="h-px bg-[#2a2a2a]" />
-                            <div className="max-h-60 overflow-y-auto">
-                              {accounts
-                                .filter(acc => !acc.is_active)
-                                .map((account) => (
-                                  <div
-                                    key={account.uuid}
-                                    className="flex items-center gap-2 p-2.5 hover:bg-[#2a2a2a] transition-colors group"
-                                  >
-                                    <button
-                                      onClick={() => handleSwitchAccount(account.uuid)}
-                                      className="flex-1 flex items-center gap-2.5 cursor-pointer"
-                                    >
-                                      <img
-                                        src={`https://cravatar.eu/avatar/${account.username}/32`}
-                                        alt={account.username}
-                                        className="w-8 h-8 rounded"
-                                      />
-                                      <div className="flex-1 min-w-0 text-left">
-                                        <div className="text-sm font-medium text-[#e6edf3] truncate">
-                                          {account.username}
-                                        </div>
-                                        <div className="text-xs text-[#7d8590]">
-                                          Last used: {formatLastUsed(account.last_used)}
-                                        </div>
-                                      </div>
-                                    </button>
-                                    
-                                    <button
-                                      onClick={() => handleRemoveAccount(account.uuid)}
-                                      className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer"
-                                    >
-                                      <LogOut size={16} className="text-red-400" />
-                                    </button>
-                                  </div>
-                                ))}
-                            </div>
-                          </>
-                        )}
-
-                        <div className="flex items-center gap-2.5 p-2 bg-[#2a2a2a] group">
-                          <div className="flex-1 flex items-center gap-2.5">
-                            <img
-                              src={`https://cravatar.eu/avatar/${activeAccount.username}/32`}
-                              alt={activeAccount.username}
-                              className="w-8 h-8 rounded"
-                            />
-                            <div className="flex-1 min-w-0 text-left">
-                              <div className="text-xs text-[#7d8590]">Welcome back,</div>
-                              <div className="text-sm font-medium text-[#e6edf3] truncate">{activeAccount.username}</div>
-                            </div>
-                          </div>
-                          
-                          <button
-                            onClick={() => handleRemoveAccount(activeAccount.uuid)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer"
-                          >
-                            <LogOut size={16} className="text-red-400" />
-                          </button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <button
-                onClick={handleAddAccount}
-                disabled={isLoggingIn}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mb-2 text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-              >
-                <LogIn size={20} className="text-[#16a34a]" strokeWidth={2} />
-                <span>{isLoggingIn ? 'Authenticating...' : 'Sign In'}</span>
-              </button>
-            )}
-            
-            <button
-              onClick={() => setShowSettingsModal(true)}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer mb-1 text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
-            >
-              <Settings size={18} strokeWidth={2} />
-              <span>Settings</span>
-            </button>
-          </div>
-        </aside>
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          showInstanceDetails={showInstanceDetails}
+          setShowInstanceDetails={setShowInstanceDetails}
+          instances={instances}
+          instanceIcons={instanceIcons}
+          runningInstances={runningInstances}
+          launchingInstanceName={launchingInstanceName}
+          isAuthenticated={isAuthenticated}
+          activeAccount={activeAccount}
+          accounts={accounts}
+          sidebarBackground={sidebarBackground}
+          sidebarContextMenu={sidebarContextMenu}
+          setSidebarContextMenu={setSidebarContextMenu}
+          setSelectedInstance={setSelectedInstance}
+          setShowSettingsModal={setShowSettingsModal}
+          onQuickLaunch={handleQuickLaunch}
+          onKillInstance={handleKillInstance}
+          onOpenInstanceFolder={handleOpenInstanceFolderByInstance}
+          onDuplicateInstance={handleDuplicateInstance}
+          onDeleteInstance={handleDeleteInstance}
+          loadAccounts={loadAccounts}
+        />
 
         <main className="flex-1 overflow-y-auto bg-[#101010]">
           {showInstanceDetails && selectedInstance ? (

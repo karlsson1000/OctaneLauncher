@@ -28,6 +28,55 @@ pub struct Instance {
     pub icon_path: Option<String>,
 }
 
+// ===== FRIENDS SYSTEM MODELS =====
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Friend {
+    pub uuid: String,
+    pub username: String,
+    pub status: FriendStatus,
+    pub last_seen: DateTime<Utc>,
+    pub current_instance: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum FriendStatus {
+    Online,
+    Offline,
+    InGame,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FriendRequest {
+    pub id: String,
+    pub from_uuid: String,
+    pub from_username: String,
+    pub to_uuid: String,
+    pub status: RequestStatus,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum RequestStatus {
+    Pending,
+    Accepted,
+    Rejected,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SendFriendRequestPayload {
+    pub username: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserStatusUpdate {
+    pub uuid: String,
+    pub status: FriendStatus,
+    pub current_server: Option<String>,
+}
+
 // ===== TEMPLATE MODELS =====
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -42,7 +91,6 @@ pub struct InstanceTemplate {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MinecraftOptions {
-    // Video - Basic
     pub fov: Option<f32>,
     pub render_distance: Option<i32>,
     pub simulation_distance: Option<i32>,
@@ -51,8 +99,6 @@ pub struct MinecraftOptions {
     pub vsync: Option<bool>,
     pub gui_scale: Option<i32>,
     pub brightness: Option<f32>,
-    
-    // Video - Quality
     pub entity_shadows: Option<bool>,
     pub particles: Option<String>,
     pub graphics: Option<String>,
@@ -63,8 +109,6 @@ pub struct MinecraftOptions {
     pub chunk_updates_mode: Option<i32>,
     pub cloud_rendering: Option<String>,
     pub vignette: Option<bool>,
-    
-    // Audio
     pub master_volume: Option<f32>,
     pub music_volume: Option<f32>,
     pub record_volume: Option<f32>,
@@ -75,20 +119,14 @@ pub struct MinecraftOptions {
     pub players_volume: Option<f32>,
     pub ambient_volume: Option<f32>,
     pub voice_volume: Option<f32>,
-    
-    // Controls - Mouse
     pub mouse_sensitivity: Option<f32>,
     pub invert_mouse: Option<bool>,
     pub raw_input: Option<bool>,
     pub discrete_mouse_scroll: Option<bool>,
     pub touchscreen: Option<bool>,
-    
-    // Controls - Movement
     pub auto_jump: Option<bool>,
     pub sneak_toggles: Option<bool>,
     pub sprint_toggles: Option<bool>,
-    
-    // Chat & Accessibility
     pub narrator: Option<i32>,
     pub chat_opacity: Option<f32>,
     pub chat_line_spacing: Option<f32>,
@@ -97,8 +135,6 @@ pub struct MinecraftOptions {
     pub chat_height_unfocused: Option<f32>,
     pub chat_width: Option<f32>,
     pub damage_tilt_strength: Option<f32>,
-    
-    // Keybinds
     pub keybinds: Option<HashMap<String, String>>,
 }
 
@@ -112,7 +148,7 @@ pub struct LauncherSettings {
 }
 
 fn default_memory() -> u32 {
-    2048 // 2GB default
+    2048
 }
 
 impl Default for LauncherSettings {
