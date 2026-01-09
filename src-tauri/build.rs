@@ -6,6 +6,12 @@ fn main() {
             if let Ok(client_id) = std::env::var("MICROSOFT_CLIENT_ID") {
                 println!("cargo:rustc-env=MICROSOFT_CLIENT_ID={}", client_id);
             }
+            if let Ok(url) = std::env::var("SUPABASE_URL") {
+                println!("cargo:rustc-env=SUPABASE_URL={}", url);
+            }
+            if let Ok(key) = std::env::var("SUPABASE_ANON_KEY") {
+                println!("cargo:rustc-env=SUPABASE_ANON_KEY={}", key);
+            }
         }
     }
     
