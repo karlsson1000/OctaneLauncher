@@ -446,7 +446,9 @@ export function Sidebar(props: SidebarProps) {
                             <Package size={24} className="text-[#3a3a3a]" strokeWidth={1.5} />
                           </div>
                         )}
-                        <div className="flex-1 min-w-0 text-left group-hover:pr-10 transition-all">
+                        <div className={`flex-1 min-w-0 text-left transition-all ${
+                          isRunning || isLaunching ? 'pr-10' : 'group-hover:pr-10'
+                        }`}>
                           <div className="text-sm font-medium text-[#e6edf3] truncate leading-tight">
                             {instance.name}
                           </div>
