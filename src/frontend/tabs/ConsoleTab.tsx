@@ -150,7 +150,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
                     onClick={() => setActiveInstance(instance)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
                       activeInstance === instance
-                        ? "bg-[#238636] text-white shadow-sm"
+                        ? "bg-[#238636] text-white"
                         : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#1a1a1a]"
                     }`}
                   >
@@ -163,7 +163,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
         </div>
 
         {/* Console Display */}
-        <div className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg overflow-hidden shadow-lg" style={{ height: 'calc(100vh - 225px)' }}>
+        <div className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 225px)' }}>
           {consoleLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
