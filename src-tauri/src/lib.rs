@@ -54,6 +54,8 @@ use commands::{
     open_world_folder,
     get_instance_worlds,
     delete_world,
+    update_instance_fabric_loader,
+    update_instance_minecraft_version,
     
     // Version commands
     get_minecraft_versions,
@@ -360,6 +362,8 @@ pub fn run() {
             open_world_folder,
             get_instance_worlds,
             delete_world,
+            update_instance_fabric_loader,
+            update_instance_minecraft_version,
             
             // Instance icons
             set_instance_icon,

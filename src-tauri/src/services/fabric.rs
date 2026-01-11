@@ -53,6 +53,51 @@ impl FabricInstaller {
         Ok(versions.into_iter().map(|v| v.version).collect())
     }
 
+    pub async fn get_compatible_loader_for_minecraft(
+        &self,
+        minecraft_version: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        let url = format!("{}/versions/loader/{}", FABRIC_META_URL, minecraft_version);
+        
+        println!("Fetching compatible Fabric loaders for Minecraft {}", minecraft_version);
+        let response = self.http_client.get(&url).send().await?;
+        
+        if !response.status().is_success() {
+            return Err(format!("Failed to fetch compatible loaders: HTTP {}", response.status()).into());
+        }
+        
+        let loaders: Vec<serde_json::Value> = response.json().await?;
+        
+        if loaders.is_empty() {
+            return Err("No Fabric loaders available for this Minecraft version".into());
+        }
+
+        for loader in &loaders {
+            if let Some(loader_obj) = loader.get("loader") {
+                if let (Some(version), Some(stable)) = (
+                    loader_obj.get("version").and_then(|v| v.as_str()),
+                    loader_obj.get("stable").and_then(|s| s.as_bool()),
+                ) {
+                    if stable {
+                        println!("Found stable Fabric loader: {}", version);
+                        return Ok(version.to_string());
+                    }
+                }
+            }
+        }
+
+        if let Some(first) = loaders.first() {
+            if let Some(version) = first.get("loader")
+                .and_then(|l| l.get("version"))
+                .and_then(|v| v.as_str()) {
+                println!("No stable loader found, using latest: {}", version);
+                return Ok(version.to_string());
+            }
+        }
+        
+        Err("No compatible Fabric loader found".into())
+    }
+
     pub async fn get_fabric_profile(
         &self,
         minecraft_version: &str,

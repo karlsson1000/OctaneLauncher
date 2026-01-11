@@ -34,6 +34,10 @@ export function InstanceSettingsModal({
   const [selectedFabricVersion, setSelectedFabricVersion] = useState<string>(instance.loader_version || "")
   const [isLoadingFabric, setIsLoadingFabric] = useState(false)
   const [isUpdatingFabric, setIsUpdatingFabric] = useState(false)
+  const [minecraftVersions, setMinecraftVersions] = useState<string[]>([])
+  const [selectedMinecraftVersion, setSelectedMinecraftVersion] = useState<string>("")
+  const [isLoadingVersions, setIsLoadingVersions] = useState(false)
+  const [isUpdatingVersion, setIsUpdatingVersion] = useState(false)
   
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
@@ -50,18 +54,51 @@ export function InstanceSettingsModal({
   } | null>(null)
 
   const isFabricInstance = instance.loader === "fabric"
+  
+  const getMinecraftVersion = (versionString: string): string => {
+    if (isFabricInstance) {
+      const parts = versionString.split('-')
+      return parts[parts.length - 1]
+    }
+    return versionString
+  }
 
   useEffect(() => {
     if (isOpen) {
       setLocalIcon(instanceIcon)
       setNewName(instance.name)
       setSelectedFabricVersion(instance.loader_version || "")
+      setSelectedMinecraftVersion(getMinecraftVersion(instance.version))
       
       if (isFabricInstance && fabricVersions.length === 0) {
         loadFabricVersions()
       }
+      
+      if (minecraftVersions.length === 0) {
+        loadMinecraftVersions()
+      }
     }
-  }, [isOpen, instanceIcon, instance.name, instance.loader_version, isFabricInstance])
+  }, [isOpen, instanceIcon, instance.name, instance.loader_version, instance.version, isFabricInstance])
+
+  const loadMinecraftVersions = async () => {
+    setIsLoadingVersions(true)
+    try {
+      const versions = await invoke<string[]>("get_minecraft_versions_by_type", {
+        versionType: "release"
+      })
+      setMinecraftVersions(versions)
+    } catch (error) {
+      console.error("Failed to load Minecraft versions:", error)
+      setAlertModal({
+        isOpen: true,
+        title: "Error",
+        message: `Failed to load Minecraft versions: ${error}`,
+        type: "danger"
+      })
+    } finally {
+      setIsLoadingVersions(false)
+    }
+  }
 
   const loadFabricVersions = async () => {
     setIsLoadingFabric(true)
@@ -79,6 +116,42 @@ export function InstanceSettingsModal({
     } finally {
       setIsLoadingFabric(false)
     }
+  }
+
+  const handleUpdateMinecraftVersion = async (newVersion: string) => {
+    if (!newVersion || newVersion === getMinecraftVersion(instance.version)) {
+      return
+    }
+
+    setConfirmModal({
+      isOpen: true,
+      title: "Update Minecraft Version",
+      message: `Are you sure you want to update this instance to Minecraft ${newVersion}?\n\nThis will download the new version and update the instance. Your worlds and settings will be preserved.`,
+      type: "warning",
+      onConfirm: async () => {
+        setConfirmModal(null)
+        setIsUpdatingVersion(true)
+        try {
+          await invoke("update_instance_minecraft_version", {
+            instanceName: instance.name,
+            newMinecraftVersion: newVersion
+          })
+          
+          onInstanceUpdated()
+        } catch (error) {
+          console.error("Failed to update Minecraft version:", error)
+          setAlertModal({
+            isOpen: true,
+            title: "Error",
+            message: `Failed to update Minecraft version: ${error}`,
+            type: "danger"
+          })
+          setSelectedMinecraftVersion(getMinecraftVersion(instance.version))
+        } finally {
+          setIsUpdatingVersion(false)
+        }
+      }
+    })
   }
 
   const handleUpdateFabricLoader = async (newVersion: string) => {
@@ -435,6 +508,44 @@ export function InstanceSettingsModal({
               </div>
               {renameError && (
                 <p className="text-xs text-red-400 mt-2">{renameError}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-[#7d8590] mb-2">Minecraft Version</label>
+              {isLoadingVersions ? (
+                <div className="flex items-center gap-2 text-[#7d8590] text-xs py-2 px-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-md">
+                  <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
+                  <span>Loading versions...</span>
+                </div>
+              ) : (
+                <div className="relative">
+                  <select
+                    value={selectedMinecraftVersion}
+                    onChange={(e) => {
+                      const newVersion = e.target.value
+                      setSelectedMinecraftVersion(newVersion)
+                      handleUpdateMinecraftVersion(newVersion)
+                    }}
+                    className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-md px-3 py-2.5 pr-10 text-sm text-[#e6edf3] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none cursor-pointer"
+                    disabled={isUpdatingVersion}
+                  >
+                    {minecraftVersions.map((version) => (
+                      <option key={version} value={version}>
+                        {version}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {isUpdatingVersion ? (
+                      <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7d8590" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
 

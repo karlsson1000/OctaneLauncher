@@ -420,8 +420,38 @@ impl InstanceManager {
             println!("Loaded base Minecraft version: {}", base_version.id);
             
             let mut combined_libs = Vec::new();
+            let mut base_lib_names = std::collections::HashSet::new();
+            for lib in &base_version.libraries {
+                // Skip native libraries
+                if lib.name.contains(":natives-") {
+                    continue;
+                }
+                
+                // Check rules if they exist
+                if let Some(rules) = &lib.rules {
+                    if !should_include_library(rules, &current_os) {
+                        continue;
+                    }
+                }
+
+                let parts: Vec<&str> = lib.name.split(':').collect();
+                if parts.len() >= 2 {
+                    let lib_key = format!("{}:{}", parts[0], parts[1]);
+                    base_lib_names.insert(lib_key);
+                }
+            }
 
             for lib in &fabric_profile.libraries {
+                let parts: Vec<&str> = lib.name.split(':').collect();
+                if parts.len() >= 2 {
+                    let lib_key = format!("{}:{}", parts[0], parts[1]);
+
+                    if base_lib_names.contains(&lib_key) {
+                        println!("Skipping Fabric library {} (Minecraft provides {})", lib.name, lib_key);
+                        continue;
+                    }
+                }
+                
                 combined_libs.push((lib.name.clone(), lib.url.clone(), None));
             }
 

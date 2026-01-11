@@ -912,3 +912,133 @@ pub async fn update_instance_fabric_loader(
     
     Ok(format!("Successfully updated Fabric loader to version {}", instance.loader_version.as_deref().unwrap_or("unknown")))
 }
+
+#[tauri::command]
+pub async fn update_instance_minecraft_version(
+    instance_name: String,
+    new_minecraft_version: String,
+    app_handle: tauri::AppHandle,
+) -> Result<String, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    
+    if !new_minecraft_version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
+        return Err("Invalid Minecraft version format".to_string());
+    }
+    
+    let instance_dir = get_instance_dir(&safe_name);
+    
+    if !instance_dir.exists() {
+        return Err(format!("Instance '{}' does not exist", safe_name));
+    }
+    
+    // Load instance metadata
+    let instance_json_path = instance_dir.join("instance.json");
+    let content = std::fs::read_to_string(&instance_json_path)
+        .map_err(|e| format!("Failed to read instance.json: {}", e))?;
+    
+    let mut instance: Instance = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse instance.json: {}", e))?;
+    
+    println!("Updating instance '{}' from version {} to {}", safe_name, instance.version, new_minecraft_version);
+    
+    // Check if this is a Fabric instance
+    let is_fabric = instance.loader == Some("fabric".to_string());
+    
+    if is_fabric {
+        let _ = app_handle.emit("version-update-progress", serde_json::json!({
+            "instance": safe_name,
+            "stage": format!("Installing Minecraft {}...", new_minecraft_version)
+        }));
+        
+        // First ensure the new Minecraft version is installed
+        let meta_dir = get_meta_dir();
+        let installer = MinecraftInstaller::new(meta_dir.clone());
+        
+        let needs_installation = !installer.check_version_installed(&new_minecraft_version);
+        
+        if needs_installation {
+            installer
+                .install_version(&new_minecraft_version)
+                .await
+                .map_err(|e| format!("Failed to install Minecraft {}: {}", new_minecraft_version, e))?;
+        }
+        
+        let _ = app_handle.emit("version-update-progress", serde_json::json!({
+            "instance": safe_name,
+            "stage": "Finding compatible Fabric loader..."
+        }));
+        
+        // Get a compatible Fabric loader version for the new Minecraft version
+        let fabric_installer = FabricInstaller::new(meta_dir.clone());
+        let compatible_loader = fabric_installer
+            .get_compatible_loader_for_minecraft(&new_minecraft_version)
+            .await
+            .map_err(|e| format!("Failed to find compatible Fabric loader: {}", e))?;
+        
+        println!("Found compatible Fabric loader: {}", compatible_loader);
+        
+        let _ = app_handle.emit("version-update-progress", serde_json::json!({
+            "instance": safe_name,
+            "stage": format!("Installing Fabric loader {}...", compatible_loader)
+        }));
+        
+        // Install Fabric for the new Minecraft version with compatible loader
+        let new_fabric_version_id = fabric_installer
+            .install_fabric(&new_minecraft_version, &compatible_loader)
+            .await
+            .map_err(|e| format!("Failed to install Fabric for Minecraft {}: {}", new_minecraft_version, e))?;
+        
+        println!("✓ Installed Fabric version: {}", new_fabric_version_id);
+        
+        // Update instance metadata with new Fabric version and loader version
+        instance.version = new_fabric_version_id;
+        instance.loader_version = Some(compatible_loader);
+    } else {
+        // Vanilla instance
+        let _ = app_handle.emit("version-update-progress", serde_json::json!({
+            "instance": safe_name,
+            "stage": format!("Installing Minecraft {}...", new_minecraft_version)
+        }));
+        
+        let meta_dir = get_meta_dir();
+        let installer = MinecraftInstaller::new(meta_dir);
+        
+        let needs_installation = !installer.check_version_installed(&new_minecraft_version);
+        
+        if needs_installation {
+            installer
+                .install_version(&new_minecraft_version)
+                .await
+                .map_err(|e| format!("Failed to install Minecraft {}: {}", new_minecraft_version, e))?;
+        }
+        
+        instance.version = new_minecraft_version.clone();
+    }
+    
+    let _ = app_handle.emit("version-update-progress", serde_json::json!({
+        "instance": safe_name,
+        "stage": "Updating instance metadata..."
+    }));
+    
+    // Clean natives directory to prevent classpath conflicts
+    let natives_dir = instance_dir.join("natives");
+    if natives_dir.exists() {
+        std::fs::remove_dir_all(&natives_dir)
+            .map_err(|e| format!("Failed to clean natives directory: {}", e))?;
+        println!("✓ Cleaned natives directory");
+    }
+    
+    // Save updated instance metadata
+    let updated_json = serde_json::to_string_pretty(&instance)
+        .map_err(|e| format!("Failed to serialize instance.json: {}", e))?;
+    
+    std::fs::write(&instance_json_path, updated_json)
+        .map_err(|e| format!("Failed to write instance.json: {}", e))?;
+    
+    let _ = app_handle.emit("version-update-progress", serde_json::json!({
+        "instance": safe_name,
+        "stage": "Complete!"
+    }));
+    
+    Ok(format!("Successfully updated instance to Minecraft version {}", new_minecraft_version))
+}
