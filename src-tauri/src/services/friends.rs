@@ -47,6 +47,7 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         json!({
             "uuid": uuid,
             "username": username,
+            "status": "online",
             "last_seen": Utc::now()
         })
     };
