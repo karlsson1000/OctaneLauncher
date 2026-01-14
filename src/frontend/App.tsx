@@ -433,6 +433,7 @@ function App() {
 
   const handleStartCreating = (instanceName: string) => {
     setCreatingInstanceName(instanceName)
+    setActiveTab('instances')
   }
 
   const handleCreationComplete = () => {
@@ -485,15 +486,15 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#101010] text-[#e6edf3] overflow-hidden font-sans">
+    <div className="flex flex-col h-screen bg-[#181a1f] text-[#e6e6e6] overflow-hidden font-sans">
       <div 
         data-tauri-drag-region
         style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
-        className="h-10 bg-[#1a1a1a] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b border-[#2a2a2a]"
+        className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b border-[#3a3f4b]"
       >
         <div className="flex items-center gap-2 mr-4">
           <img src="/logo.png" alt="Atomic Launcher" className="h-5 w-5" />
-          <span className="text-sm font-semibold text-[#e6edf3]">Atomic Launcher</span>
+          <span className="text-sm font-semibold text-[#e6e6e6]">Atomic Launcher</span>
         </div>
         
         <div className="flex items-center gap-1 mr-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
@@ -502,8 +503,8 @@ function App() {
             disabled={historyIndex <= 0}
             className={`h-7 w-7 flex items-center justify-center rounded transition-colors ${
               historyIndex > 0
-                ? "text-[#e6edf3] hover:bg-[#2a2a2a] cursor-pointer" 
-                : "text-[#3a3a3a] cursor-not-allowed"
+                ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" 
+                : "text-[#3a3f4b] cursor-not-allowed"
             }`}
           >
             <ChevronLeft size={16} strokeWidth={4} />
@@ -513,8 +514,8 @@ function App() {
             disabled={historyIndex >= navigationHistory.length - 1}
             className={`h-7 w-7 flex items-center justify-center rounded transition-colors ${
               historyIndex < navigationHistory.length - 1
-                ? "text-[#e6edf3] hover:bg-[#2a2a2a] cursor-pointer" 
-                : "text-[#3a3a3a] cursor-not-allowed"
+                ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" 
+                : "text-[#3a3f4b] cursor-not-allowed"
             }`}
           >
             <ChevronRight size={16} strokeWidth={4} />
@@ -534,11 +535,11 @@ function App() {
                   }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all cursor-pointer ${
                     activeTab === tab.id
-                      ? "bg-[#101010] text-[#e6edf3]"
-                      : "text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#212121]"
+                      ? "bg-[#181a1f] text-[#e6e6e6]"
+                      : "text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b]"
                   }`}
                 >
-                  <Icon size={16} strokeWidth={2} />
+                  <Icon size={16} strokeWidth={1.5} />
                   <span>{tab.label}</span>
                 </button>
               )
@@ -549,29 +550,29 @@ function App() {
         <div className="flex items-center" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={() => setShowSettingsModal(true)}
-            className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#212121] transition-all cursor-pointer"
+            className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-all cursor-pointer"
             title="Settings"
           >
-            <Settings size={16} strokeWidth={2} />
+            <Settings size={16} strokeWidth={1.5} />
           </button>
-          <div className="w-px h-6 bg-[#2a2a2a] mx-2" style={{ pointerEvents: 'none' } as any} />
+          <div className="w-px h-6 bg-[#3a3f4b] mx-2" style={{ pointerEvents: 'none' } as any} />
           <button
             onClick={() => appWindow.minimize()}
-            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#2a2a2a] transition-colors"
+            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors"
           >
-            <Minus size={16} />
+            <Minus size={16} strokeWidth={1.5} />
           </button>
           <button
             onClick={() => appWindow.toggleMaximize()}
-            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#2a2a2a] transition-colors"
+            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors"
           >
-            <Square size={14} />
+            <Square size={14} strokeWidth={1.5} />
           </button>
           <button
             onClick={() => appWindow.close()}
-            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6edf3] hover:bg-red-500 transition-colors"
+            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-red-500 transition-colors"
           >
-            <X size={16} />
+            <X size={16} strokeWidth={1.5} />
           </button>
         </div>
       </div>
@@ -643,7 +644,7 @@ function App() {
           loadAccounts={loadAccounts}
         />
 
-        <main className="flex-1 overflow-y-auto bg-[#101010]">
+        <main className="flex-1 overflow-y-auto bg-[#181a1f]">
           {showInstanceDetails && selectedInstance ? (
             <InstanceDetailsTab
               instance={selectedInstance}

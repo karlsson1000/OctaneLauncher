@@ -345,13 +345,13 @@ export function SkinsTab(props: SkinsTabProps) {
       <div className="p-6 space-y-4">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-[#e6edf3] tracking-tight">Skins</h1>
+            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Skins</h1>
             <p className="text-sm text-[#7d8590] mt-0.5">Manage your Minecraft skin</p>
           </div>
           
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
-            <HatGlasses size={64} className="text-[#238636] mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">Sign In Required</h3>
+            <HatGlasses size={64} className="text-[#4572e3] mb-4" strokeWidth={1.5} />
+            <h3 className="text-lg font-semibold text-[#e6e6e6] mb-1">Sign In Required</h3>
             <p className="text-sm text-[#7d8590]">Please sign in with your Microsoft account to manage your skin</p>
           </div>
         </div>
@@ -361,10 +361,42 @@ export function SkinsTab(props: SkinsTabProps) {
 
   return (
     <div className="p-6 space-y-4">
+      <style>{`
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.14),
+            rgba(255, 255, 255, 0.08)
+          );
+        }
+      `}</style>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-[#e6edf3] tracking-tight">Skins</h1>
+            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Skins</h1>
             <p className="text-sm text-[#7d8590] mt-0.5">
               {activeAccount ? `Viewing skin for ${activeAccount.username}` : "Manage your Minecraft skin"}
             </p>
@@ -374,11 +406,11 @@ export function SkinsTab(props: SkinsTabProps) {
         <div className="flex gap-24 items-center justify-center">
           {/* Skin Viewer */}
           <div className="flex-shrink-0 self-start mt-8">
-            <div className="rounded-md overflow-hidden relative bg-[#101010] p-4">
+            <div className="rounded-md overflow-hidden relative bg-[#181a1f] p-4">
               {loading && (
-                <div className="w-[250px] h-[406px] flex items-center justify-center bg-[#101010] rounded-md">
+                <div className="w-[250px] h-[406px] flex items-center justify-center bg-[#181a1f] rounded-md">
                   <div className="text-center">
-                    <Loader2 size={32} className="animate-spin text-[#238636] mx-auto mb-3" />
+                    <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto mb-3" />
                     <p className="text-sm text-[#7d8590]">Loading skin...</p>
                   </div>
                 </div>
@@ -403,26 +435,26 @@ export function SkinsTab(props: SkinsTabProps) {
 
           {/* Controls Panel */}
           <div className="flex-1 max-w-sm space-y-4">
-            <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-5">
-              <h3 className="text-base font-semibold text-[#e6edf3] mb-4">Skin Model</h3>
+            <div className="blur-border bg-[#22252b] rounded-md p-5">
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-4">Skin Model</h3>
               
               <div className="flex gap-2 mb-6">
                 <button
                   onClick={() => setSkinVariant("classic")}
-                  className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer border ${
+                  className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                     skinVariant === "classic"
-                      ? "bg-[#4572e3] text-white border-[#4572e3]"
-                      : "bg-[#0f0f0f] text-[#7d8590] hover:bg-[#1a1a1a] hover:text-[#e6edf3] border-[#2a2a2a]"
+                      ? "bg-[#4572e3] text-white"
+                      : "bg-[#181a1f] text-[#7d8590] hover:bg-[#1f2128] hover:text-[#e6e6e6]"
                   }`}
                 >
                   Classic
                 </button>
                 <button
                   onClick={() => setSkinVariant("slim")}
-                  className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer border ${
+                  className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer ${
                     skinVariant === "slim"
-                      ? "bg-[#4572e3] text-white border-[#4572e3]"
-                      : "bg-[#0f0f0f] text-[#7d8590] hover:bg-[#1a1a1a] hover:text-[#e6edf3] border-[#2a2a2a]"
+                      ? "bg-[#4572e3] text-white"
+                      : "bg-[#181a1f] text-[#7d8590] hover:bg-[#1f2128] hover:text-[#e6e6e6]"
                   }`}
                 >
                   Slim
@@ -441,7 +473,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading || loading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#238636] hover:bg-[#2ea043] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer shadow-sm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer shadow-sm"
                 >
                   {uploading ? (
                     <>
@@ -459,7 +491,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 <button
                   onClick={handleReset}
                   disabled={resetting || loading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0f0f0f] hover:bg-[#1a1a1a] border border-[#2a2a2a] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6edf3] rounded-md font-medium text-sm transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#181a1f] hover:bg-[#1f2128] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md font-medium text-sm transition-all cursor-pointer"
                 >
                   {resetting ? (
                     <>
@@ -478,9 +510,9 @@ export function SkinsTab(props: SkinsTabProps) {
 
             {/* Recent Skins */}
             {recentSkins.length > 0 && (
-              <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-5">
+              <div className="blur-border bg-[#22252b] rounded-md p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <h3 className="text-base font-semibold text-[#e6edf3]">Recent Skins</h3>
+                  <h3 className="text-base font-semibold text-[#e6e6e6]">Recent Skins</h3>
                 </div>
                 
                 <div className="flex gap-3">
@@ -498,7 +530,7 @@ export function SkinsTab(props: SkinsTabProps) {
                         key={`${skin.url}-${index}`}
                         onClick={() => handleRecentSkinSelect(skin)}
                         disabled={uploading}
-                        className="bg-[#0f0f0f] border border-[#2a2a2a] rounded-md hover:ring-2 hover:ring-[#4572e3] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer overflow-hidden"
+                        className="bg-[#181a1f] rounded-md hover:ring-2 hover:ring-[#4572e3] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer overflow-hidden"
                       >
                         <img
                           src={renderUrl}
@@ -514,16 +546,16 @@ export function SkinsTab(props: SkinsTabProps) {
             )}
 
             {/* Capes Section */}
-            <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-5">
+            <div className="blur-border bg-[#22252b] rounded-md p-5">
               <button
                 onClick={() => setCapesExpanded(!capesExpanded)}
                 className="w-full flex items-center justify-between cursor-pointer group"
               >
-                <h3 className="text-base font-semibold text-[#e6edf3]">Capes</h3>
+                <h3 className="text-base font-semibold text-[#e6e6e6]">Capes</h3>
                 <ChevronDown 
                   size={20}
                   strokeWidth={3}
-                  className={`text-[#7d8590] group-hover:text-[#e6edf3] transition-all ${
+                  className={`text-[#7d8590] group-hover:text-[#e6e6e6] transition-all ${
                     capesExpanded ? 'rotate-180' : ''
                   }`}
                 />
@@ -533,7 +565,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 <div className="mt-4">
                   {loadingCapes ? (
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 size={24} className="animate-spin text-[#238636]" />
+                      <Loader2 size={24} className="animate-spin text-[#16a34a]" />
                     </div>
                   ) : capes.length > 0 ? (
                     <div className="space-y-3">
@@ -542,7 +574,7 @@ export function SkinsTab(props: SkinsTabProps) {
                           <button
                             key={cape.id}
                             onClick={() => handleCapeSelect(cape.id)}
-                            className={`w-20 h-32 bg-[#0f0f0f] border border-[#2a2a2a] rounded-md overflow-hidden flex items-center justify-center transition-all cursor-pointer hover:ring-2 hover:ring-[#4572e3] ${
+                            className={`w-20 h-32 bg-[#181a1f] rounded-md overflow-hidden flex items-center justify-center transition-all cursor-pointer hover:ring-2 hover:ring-[#4572e3] ${
                               activeCape === cape.id
                                 ? "ring-2 ring-[#4572e3]"
                                 : ""
@@ -565,7 +597,7 @@ export function SkinsTab(props: SkinsTabProps) {
                       {activeCape && (
                         <button
                           onClick={handleCapeRemove}
-                          className="w-full px-3 py-2.5 bg-[#0f0f0f] hover:bg-[#1a1a1a] border border-[#2a2a2a] text-[#7d8590] hover:text-[#e6edf3] rounded-md text-sm font-medium transition-all cursor-pointer"
+                          className="w-full px-3 py-2.5 bg-[#181a1f] hover:bg-[#1f2128] text-[#7d8590] hover:text-[#e6e6e6] rounded-md text-sm font-medium transition-all cursor-pointer"
                         >
                           Remove Cape
                         </button>
@@ -581,7 +613,7 @@ export function SkinsTab(props: SkinsTabProps) {
             </div>
             
             {error && (
-              <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-4">
+              <div className="blur-border bg-[#22252b] rounded-md p-4">
                 <p className="text-xs text-red-400 leading-relaxed">{error}</p>
               </div>
             )}

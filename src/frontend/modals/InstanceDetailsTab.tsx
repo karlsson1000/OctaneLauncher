@@ -501,12 +501,44 @@ export function InstanceDetailsTab({
 
   return (
     <>
+      <style>{`
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.14),
+            rgba(255, 255, 255, 0.08)
+          );
+        }
+      `}</style>
       <div className="p-6 space-y-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-6">
             <div className="flex-shrink-0">
               {instanceIcon ? (
-                <div className="w-16 h-16 rounded-md overflow-hidden border border-[#2a2a2a]">
+                <div className="w-16 h-16 rounded-md overflow-hidden bg-[#181a1f]">
                   <img
                     src={instanceIcon}
                     alt={instance.name}
@@ -514,8 +546,8 @@ export function InstanceDetailsTab({
                   />
                 </div>
               ) : (
-                <div className="w-16 h-16 border border-[#2a2a2a] rounded-md flex items-center justify-center bg-[#0f0f0f]">
-                  <Package size={24} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                <div className="w-16 h-16 rounded-md flex items-center justify-center bg-[#181a1f]">
+                  <Package size={24} className="text-[#3a3f4b]" strokeWidth={1.5} />
                 </div>
               )}
             </div>
@@ -524,9 +556,9 @@ export function InstanceDetailsTab({
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-semibold text-[#e6edf3] tracking-tight leading-tight">{instance.name}</h1>
+                    <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight leading-tight">{instance.name}</h1>
                     {(instance.total_playtime_seconds ?? 0) > 0 && (
-                      <span className="px-2 py-0.5 bg-[#141414] border border-[#2a2a2a] text-[#7d8590] text-xs rounded">
+                      <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
                         {formatPlaytime(instance.total_playtime_seconds ?? 0)}
                       </span>
                     )}
@@ -542,7 +574,7 @@ export function InstanceDetailsTab({
                         )}
                       </>
                     ) : (
-                      <span className="text-[#238636]">Vanilla</span>
+                      <span className="text-[#16a34a]">Vanilla</span>
                     )}
                   </p>
                 </div>
@@ -553,7 +585,7 @@ export function InstanceDetailsTab({
                     className={`px-6 py-2.5 rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer ${
                       isLaunching || isRunning
                         ? "bg-red-500/10 text-red-400"
-                        : "bg-[#238636]/15 hover:bg-[#238636]/25 text-[#2ea043]"
+                        : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {isLaunching || isRunning ? (
@@ -570,14 +602,14 @@ export function InstanceDetailsTab({
                   </button>
                   <button
                     onClick={handleOpenFolder}
-                    className="px-4 py-2.5 bg-[#141414] hover:bg-[#1a1a1a] border border-[#2a2a2a] text-[#e6edf3] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                    className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
                   >
                     <FolderOpen size={16} />
                     <span>Open Folder</span>
                   </button>
                   <button
                     onClick={() => setIsSettingsOpen(true)}
-                    className="px-4 py-2.5 bg-[#141414] hover:bg-[#1a1a1a] border border-[#2a2a2a] text-[#e6edf3] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                    className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
                     title="Instance Settings"
                   >
                     <Settings size={18} />
@@ -587,14 +619,14 @@ export function InstanceDetailsTab({
             </div>
           </div>
 
-          <div className="border-t border-[#2a2a2a] my-6"></div>
+          <div className="border-t border-[#3a3f4b] my-6"></div>
 
           <div className="grid grid-cols-2 gap-0 relative">
-            <div className="pr-6 border-r border-[#2a2a2a]">
+            <div className="pr-6 border-r border-[#3a3f4b]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[#e6edf3] tracking-tight">Installed Mods</h2>
-                  <span className="px-2 py-0.5 bg-[#141414] border border-[#2a2a2a] text-[#7d8590] text-xs rounded">
+                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Installed Mods</h2>
+                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
                     {installedMods.length} {installedMods.length === 1 ? 'mod' : 'mods'}
                   </span>
                 </div>
@@ -605,7 +637,7 @@ export function InstanceDetailsTab({
                         <button
                           onClick={updateAllMods}
                           disabled={isUpdatingMods}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#3b82f6] hover:bg-[#2563eb] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors cursor-pointer"
                         >
                           {isUpdatingMods ? (
                             <>
@@ -623,7 +655,7 @@ export function InstanceDetailsTab({
                         <button
                           onClick={checkForUpdates}
                           disabled={isCheckingUpdates}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141414] hover:bg-[#1a1a1a] border border-[#2a2a2a] disabled:opacity-50 text-[#7d8590] hover:text-[#e6edf3] rounded-md text-sm transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer"
                         >
                           {isCheckingUpdates ? (
                             <>
@@ -645,12 +677,12 @@ export function InstanceDetailsTab({
               
               {isLoadingMods ? (
                 <div className="text-center py-16">
-                  <Loader2 size={32} className="animate-spin text-[#238636] mx-auto" />
+                  <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
                 </div>
               ) : installedMods.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
-                  <Package size={48} className="text-[#238636] mb-3" strokeWidth={1.5} />
-                  <h3 className="text-base font-semibold text-[#e6edf3] mb-1">No mods installed</h3>
+                  <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No mods installed</h3>
                   <p className="text-sm text-[#7d8590]">Browse the mods tab to add mods</p>
                 </div>
               ) : (
@@ -661,13 +693,13 @@ export function InstanceDetailsTab({
                     return (
                       <div
                         key={mod.filename}
-                        className={`bg-[#141414] border border-[#2a2a2a] hover:ring-1 hover:ring-[#2a2a2a] rounded-md overflow-hidden transition-all ${
+                        className={`blur-border bg-[#22252b] rounded-md overflow-hidden transition-all ${
                           mod.disabled ? 'opacity-60' : ''
-                        } ${hasUpdate ? 'ring-2 ring-[#3b82f6]/50' : ''}`}
+                        } ${hasUpdate ? 'ring-2 ring-[#4572e3]/50' : ''}`}
                       >
                         <div className="flex min-h-0">
                           {mod.icon_url ? (
-                            <div className="w-22 bg-[#0f0f0f] flex items-center justify-center flex-shrink-0 self-stretch">
+                            <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
                               <img
                                 src={mod.icon_url}
                                 alt={mod.name || mod.filename}
@@ -677,30 +709,30 @@ export function InstanceDetailsTab({
                               />
                             </div>
                           ) : (
-                            <div className="w-22 bg-[#0f0f0f] flex items-center justify-center flex-shrink-0 self-stretch">
-                              <Package size={32} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                            <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
+                              <Package size={32} className="text-[#3a3f4b]" strokeWidth={1.5} />
                             </div>
                           )}
-                          <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
+                          <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-base text-[#e6edf3] truncate">
+                                <h3 className="font-semibold text-base text-[#e6e6e6] truncate">
                                   {mod.name || mod.filename}
                                 </h3>
                                 {hasUpdate && (
-                                  <span className="px-1.5 py-0.5 bg-[#3b82f6] text-white text-xs rounded font-medium">
+                                  <span className="px-1.5 py-0.5 bg-[#4572e3] text-white text-xs rounded font-medium">
                                     Update
                                   </span>
                                 )}
                               </div>
                               <p className="text-sm text-[#7d8590] truncate">{mod.filename}</p>
-                              <p className="text-sm text-[#3a3a3a] mt-0.5">{formatFileSize(mod.size)}</p>
+                              <p className="text-sm text-[#3a3f4b] mt-0.5">{formatFileSize(mod.size)}</p>
                             </div>
                             <div className="flex flex-col items-end gap-1">
                               <button
                                 onClick={() => handleToggleMod(mod)}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                                  mod.disabled ? 'bg-red-500/80' : 'bg-[#238636]'
+                                  mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
                                 }`}
                               >
                                 <span
@@ -728,14 +760,14 @@ export function InstanceDetailsTab({
             <div className="pl-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[#e6edf3] tracking-tight">Worlds</h2>
-                  <span className="px-2 py-0.5 bg-[#141414] border border-[#2a2a2a] text-[#7d8590] text-xs rounded">
+                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Worlds</h2>
+                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
                     {worlds.length} {worlds.length === 1 ? 'world' : 'worlds'}
                   </span>
                 </div>
                 <button
                   onClick={handleOpenWorldsFolder}
-                  className="flex items-center gap-1.5 text-sm text-[#7d8590] hover:text-[#e6edf3] transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-sm text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
                 >
                   <ExternalLink size={14} />
                   <span>Open Folder</span>
@@ -744,12 +776,12 @@ export function InstanceDetailsTab({
               
               {isLoadingWorlds ? (
                 <div className="text-center py-16">
-                  <Loader2 size={32} className="animate-spin text-[#238636] mx-auto" />
+                  <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
                 </div>
               ) : worlds.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
-                  <Globe size={48} className="text-[#238636] mb-3" strokeWidth={1.5} />
-                  <h3 className="text-base font-semibold text-[#e6edf3] mb-1">No worlds yet</h3>
+                  <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No worlds yet</h3>
                   <p className="text-sm text-[#7d8590]">Launch the game to create a world</p>
                 </div>
               ) : (
@@ -757,11 +789,11 @@ export function InstanceDetailsTab({
                   {worlds.map((world) => (
                     <div
                       key={world.folder_name}
-                      className="bg-[#141414] border border-[#2a2a2a] hover:ring-1 hover:ring-[#2a2a2a] rounded-md overflow-hidden transition-all"
+                      className="blur-border bg-[#22252b] rounded-md overflow-hidden transition-all"
                     >
                       <div className="flex min-h-0">
                         {world.icon ? (
-                          <div className="w-22 bg-[#0f0f0f] flex items-center justify-center flex-shrink-0 self-stretch">
+                          <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
                             <img 
                               src={world.icon} 
                               alt={world.name} 
@@ -769,13 +801,13 @@ export function InstanceDetailsTab({
                             />
                           </div>
                         ) : (
-                          <div className="w-22 bg-[#0f0f0f] flex items-center justify-center flex-shrink-0 self-stretch">
-                            <Globe size={32} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                          <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
+                            <Globe size={32} className="text-[#3a3f4b]" strokeWidth={1.5} />
                           </div>
                         )}
-                        <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
+                        <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base text-[#e6edf3] truncate">
+                            <h3 className="font-semibold text-base text-[#e6e6e6] truncate">
                               {world.name}
                             </h3>
                             <p className="text-xs text-[#7d8590] mt-0.5">
@@ -794,7 +826,7 @@ export function InstanceDetailsTab({
                           <div className="flex flex-col items-end gap-1">
                             <button
                               onClick={() => handleOpenWorldFolder(world.folder_name)}
-                              className="p-1.5 hover:bg-[#1a1a1a] text-[#7d8590] hover:text-[#e6edf3] rounded-md transition-all cursor-pointer"
+                              className="p-1.5 hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded-md transition-all cursor-pointer"
                             >
                               <FolderOpen size={16} />
                             </button>

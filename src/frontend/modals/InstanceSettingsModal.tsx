@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react"
-import { X, Trash2, Camera, ImagePlus, Loader2, Settings } from "lucide-react"
+import { X, Trash2, Camera, ImagePlus, Loader2, Check } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "./ConfirmModal"
 import type { Instance, FabricVersion } from "../../types"
@@ -38,6 +38,10 @@ export function InstanceSettingsModal({
   const [selectedMinecraftVersion, setSelectedMinecraftVersion] = useState<string>("")
   const [isLoadingVersions, setIsLoadingVersions] = useState(false)
   const [isUpdatingVersion, setIsUpdatingVersion] = useState(false)
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false)
+  const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false)
+  const versionDropdownRef = useRef<HTMLDivElement>(null)
+  const fabricDropdownRef = useRef<HTMLDivElement>(null)
   
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
@@ -79,6 +83,20 @@ export function InstanceSettingsModal({
       }
     }
   }, [isOpen, instanceIcon, instance.name, instance.loader_version, instance.version, isFabricInstance])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (versionDropdownRef.current && !versionDropdownRef.current.contains(event.target as Node)) {
+        setIsVersionDropdownOpen(false)
+      }
+      if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) {
+        setIsFabricDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const loadMinecraftVersions = async () => {
     setIsLoadingVersions(true)
@@ -386,34 +404,77 @@ export function InstanceSettingsModal({
           .modal-content.closing {
             animation: scaleOut 0.15s ease-in forwards;
           }
+          
+          .blur-border {
+            position: relative;
+          }
+
+          .blur-border::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            padding: 2px;
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.08),
+              rgba(255, 255, 255, 0.04)
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            transition: none !important;
+          }
+          
+          .blur-border:hover::before {
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.08),
+              rgba(255, 255, 255, 0.04)
+            );
+          }
+          
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #3a3f4b;
+            border-radius: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #454a58;
+          }
         `}</style>
         <div 
           className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
           onClick={handleClose}
         >
           <div 
-            className={`bg-[#141414] border border-[#2a2a2a] rounded-md w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+            className={`blur-border bg-[#181a1f] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
+            style={{ pointerEvents: 'auto' }}
           >
-          <div className="flex items-center justify-between p-5 border-b border-[#2a2a2a]">
-            <div className="flex items-center gap-3">
-              <Settings size={32} className="text-[#4572e3]" strokeWidth={1.5} />
-              <div>
-                <h2 className="text-base font-semibold text-[#e6edf3] tracking-tight">Instance Settings</h2>
-                <p className="text-xs text-[#7d8590] mt-0.5">Manage your instance configuration</p>
-              </div>
+          <div className="flex items-center justify-between px-6 pt-6 pb-5">
+            <div>
+              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Instance Settings</h2>
             </div>
             <button
               onClick={handleClose}
-              className="p-1.5 hover:bg-[#1a1a1a] rounded transition-colors text-[#7d8590] hover:text-[#e6edf3] cursor-pointer"
+              className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
             >
-              <X size={16} strokeWidth={2} />
+              <X size={18} strokeWidth={2} />
             </button>
           </div>
 
-          <div className="p-5 space-y-4">
+          <div className="px-6 pb-4 space-y-5">
             <div>
-              <label className="block text-xs font-medium text-[#7d8590] mb-2">Instance Icon</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Icon</label>
               <div className="flex items-center gap-4">
                 <input
                   ref={fileInputRef}
@@ -428,7 +489,7 @@ export function InstanceSettingsModal({
                     <button
                       onClick={handleIconClick}
                       disabled={isUploadingIcon}
-                      className="w-20 h-20 rounded-md overflow-hidden relative cursor-pointer bg-transparent border border-[#2a2a2a]"
+                      className="w-20 h-20 rounded overflow-hidden relative cursor-pointer bg-transparent"
                     >
                       <img
                         src={localIcon}
@@ -444,12 +505,12 @@ export function InstanceSettingsModal({
                   <button
                     onClick={handleIconClick}
                     disabled={isUploadingIcon}
-                    className="w-20 h-20 border-2 border-dashed border-[#2a2a2a] hover:border-[#238636]/50 rounded-md flex items-center justify-center transition-all bg-[#0f0f0f] cursor-pointer"
+                    className="w-20 h-20 border-2 border-dashed border-[#3a3f4b] hover:border-[#4572e3]/50 rounded flex items-center justify-center transition-all bg-[#22252b] cursor-pointer"
                   >
                     {isUploadingIcon ? (
-                      <Loader2 size={28} className="text-[#238636] animate-spin" />
+                      <Loader2 size={28} className="text-[#4572e3] animate-spin" />
                     ) : (
-                      <ImagePlus size={28} className="text-[#3a3a3a] group-hover:text-[#238636] transition-colors" />
+                      <ImagePlus size={28} className="text-[#3a3f4b] group-hover:text-[#4572e3] transition-colors" />
                     )}
                   </button>
                 )}
@@ -458,7 +519,7 @@ export function InstanceSettingsModal({
                   <button
                     onClick={handleIconClick}
                     disabled={isUploadingIcon}
-                    className="flex-1 w-full px-4 bg-[#1a1a1a] hover:bg-[#1f1f1f] border border-[#2a2a2a] text-[#e6edf3] rounded-md text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                    className="flex-1 w-full px-4 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {localIcon ? "Change Icon" : "Upload Icon"}
                   </button>
@@ -466,7 +527,7 @@ export function InstanceSettingsModal({
                     <button
                       onClick={handleRemoveIcon}
                       disabled={isUploadingIcon}
-                      className="flex-1 w-full px-4 bg-[#1a1a1a] hover:bg-red-500/10 border border-[#2a2a2a] text-[#7d8590] hover:text-red-400 rounded-md text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                      className="flex-1 w-full px-4 bg-[#22252b] hover:bg-red-500/10 text-[#e6e6e6] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                     >
                       Remove Icon
                     </button>
@@ -476,7 +537,7 @@ export function InstanceSettingsModal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#7d8590] mb-2">Instance Name</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Name</label>
               <div className="relative">
                 <input
                   type="text"
@@ -496,13 +557,13 @@ export function InstanceSettingsModal({
                       e.currentTarget.blur()
                     }
                   }}
-                  className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-md px-3 py-2.5 pr-10 text-sm text-[#e6edf3] placeholder-[#3a3a3a] focus:outline-none focus:ring-1 focus:ring-[#238636] transition-colors"
+                  className="w-full bg-[#22252b] rounded px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all"
                   placeholder="Enter instance name"
                   disabled={isRenamingInstance}
                 />
                 {isRenamingInstance && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <Loader2 size={14} className="animate-spin text-[#238636]" />
+                    <Loader2 size={14} className="animate-spin text-[#4572e3]" />
                   </div>
                 )}
               </div>
@@ -512,90 +573,128 @@ export function InstanceSettingsModal({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#7d8590] mb-2">Minecraft Version</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Minecraft Version</label>
               {isLoadingVersions ? (
-                <div className="flex items-center gap-2 text-[#7d8590] text-xs py-2 px-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-md">
-                  <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
+                <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
+                  <Loader2 size={16} className="animate-spin text-[#4572e3]" />
                   <span>Loading versions...</span>
                 </div>
               ) : (
-                <div className="relative">
-                  <select
-                    value={selectedMinecraftVersion}
-                    onChange={(e) => {
-                      const newVersion = e.target.value
-                      setSelectedMinecraftVersion(newVersion)
-                      handleUpdateMinecraftVersion(newVersion)
-                    }}
-                    className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-md px-3 py-2.5 pr-10 text-sm text-[#e6edf3] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none cursor-pointer"
+                <div className="relative" ref={versionDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                    className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
+                      isVersionDropdownOpen ? 'rounded-t' : 'rounded'
+                    }`}
                     disabled={isUpdatingVersion}
                   >
-                    {minecraftVersions.map((version) => (
-                      <option key={version} value={version}>
-                        {version}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {selectedMinecraftVersion}
+                  </button>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                     {isUpdatingVersion ? (
-                      <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
+                      <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                    ) : isVersionDropdownOpen ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                      </svg>
                     ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7d8590" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="6 9 12 15 18 9"></polyline>
                       </svg>
                     )}
                   </div>
+                  
+                  {isVersionDropdownOpen && (
+                    <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                      {minecraftVersions.map((version) => (
+                        <button
+                          key={version}
+                          type="button"
+                          onClick={() => {
+                            setSelectedMinecraftVersion(version)
+                            setIsVersionDropdownOpen(false)
+                            handleUpdateMinecraftVersion(version)
+                          }}
+                          className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                        >
+                          <span>{version}</span>
+                          {selectedMinecraftVersion === version && (
+                            <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {isFabricInstance && (
               <div>
-                <label className="block text-xs font-medium text-[#7d8590] mb-2">Fabric Loader Version</label>
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Fabric Loader Version</label>
                 {isLoadingFabric ? (
-                  <div className="flex items-center gap-2 text-[#7d8590] text-xs py-2 px-3 bg-[#0f0f0f] border border-[#2a2a2a] rounded-md">
-                    <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
+                  <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
+                    <Loader2 size={16} className="animate-spin text-[#4572e3]" />
                     <span>Loading versions...</span>
                   </div>
                 ) : (
-                  <>
-                    <div className="relative">
-                      <select
-                        value={selectedFabricVersion}
-                        onChange={(e) => {
-                          const newVersion = e.target.value
-                          setSelectedFabricVersion(newVersion)
-                          handleUpdateFabricLoader(newVersion)
-                        }}
-                        className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-md px-3 py-2.5 pr-10 text-sm text-[#e6edf3] focus:outline-none focus:ring-1 focus:ring-[#3b82f6] transition-colors appearance-none cursor-pointer"
-                        disabled={isUpdatingFabric}
-                      >
-                        {fabricVersions.map((version) => (
-                          <option key={version.version} value={version.version}>
-                            {version.version} {version.stable ? "(Stable)" : ""}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                        {isUpdatingFabric ? (
-                          <Loader2 size={14} className="animate-spin text-[#3b82f6]" />
-                        ) : (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7d8590" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                          </svg>
-                        )}
-                      </div>
+                  <div className="relative" ref={fabricDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
+                      className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
+                        isFabricDropdownOpen ? 'rounded-t' : 'rounded'
+                      }`}
+                      disabled={isUpdatingFabric}
+                    >
+                      {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
+                    </button>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      {isUpdatingFabric ? (
+                        <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                      ) : isFabricDropdownOpen ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      )}
                     </div>
-                  </>
+                    
+                    {isFabricDropdownOpen && (
+                      <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                        {fabricVersions.map((version) => (
+                          <button
+                            key={version.version}
+                            type="button"
+                            onClick={() => {
+                              setSelectedFabricVersion(version.version)
+                              setIsFabricDropdownOpen(false)
+                              handleUpdateFabricLoader(version.version)
+                            }}
+                            className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                          >
+                            <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
+                            {selectedFabricVersion === version.version && (
+                              <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
 
-            <div className="pt-4 border-t border-[#2a2a2a]">
+            <div className="pt-3 border-t border-[#3a3f4b]">
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="w-full px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-md font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                className="w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isDeleting ? (
                   <>

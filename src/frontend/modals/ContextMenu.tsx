@@ -67,12 +67,12 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const menuContent = useMemo(() => (
     <div
       ref={menuRef}
-      className="fixed z-[100] bg-[#141414] border border-[#2a2a2a] rounded-md shadow-lg overflow-hidden min-w-[180px]"
+      className="fixed z-[100] bg-[#181a1f] rounded-md overflow-hidden min-w-[180px] border border-[#ffffff14]"
       style={{ left: x, top: y }}
     >
       {items.map((item, index) => (
         item.separator ? (
-          <div key={index} className="h-px bg-[#2a2a2a] my-1 mx-2" />
+          <div key={index} className="h-px bg-[#22252b] my-1 mx-2" />
         ) : (
           <button
             key={index}
@@ -85,7 +85,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
             className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
               item.danger
                 ? "text-red-400 hover:bg-red-500/10"
-                : "text-[#e6edf3] hover:bg-[#1a1a1a]"
+                : "text-[#e6e6e6] hover:bg-[#3a3f4b]"
             }`}
           >
             {item.icon && <span className="flex-shrink-0">{item.icon}</span>}

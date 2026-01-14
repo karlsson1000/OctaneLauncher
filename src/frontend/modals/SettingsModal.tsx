@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, ChevronDown, X } from "lucide-react"
+import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
 import type { LauncherSettings } from "../../types"
 
@@ -19,6 +19,8 @@ interface SettingsModalProps {
   onBackgroundChanged?: () => void
 }
 
+type SettingsTab = "game" | "appearance" | "integrations" | "about"
+
 export function SettingsModal({ 
   isOpen, 
   settings, 
@@ -27,6 +29,7 @@ export function SettingsModal({
   onSettingsChange, 
   onBackgroundChanged 
 }: SettingsModalProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTab>("game")
   const [javaInstallations, setJavaInstallations] = useState<string[]>([])
   const [isLoadingJava, setIsLoadingJava] = useState(false)
   const [showCustomPath, setShowCustomPath] = useState(false)
@@ -34,6 +37,7 @@ export function SettingsModal({
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null)
   const [sidebarBgPreview, setSidebarBgPreview] = useState<string | null>(null)
   const [appVersion, setAppVersion] = useState<string>("")
+  const [semanticVersion, setSemanticVersion] = useState<string>("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean
@@ -42,15 +46,29 @@ export function SettingsModal({
     type: "warning" | "danger" | "success" | "info"
   } | null>(null)
   const [isClosing, setIsClosing] = useState(false)
+  const [isJavaDropdownOpen, setIsJavaDropdownOpen] = useState(false)
+  const javaDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isOpen) {
+      setActiveTab("game")
       loadSystemInfo()
       loadSidebarBackground()
       loadJavaInstallations()
       loadAppVersion()
     }
   }, [isOpen])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (javaDropdownRef.current && !javaDropdownRef.current.contains(event.target as Node)) {
+        setIsJavaDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (!settings?.java_path) {
@@ -74,6 +92,9 @@ export function SettingsModal({
     try {
       const version = await invoke<string>("get_app_version")
       setAppVersion(version)
+
+      const semanticVer = version.split('-')[0]
+      setSemanticVersion(semanticVer)
     } catch (error) {
       console.error("Failed to get app version:", error)
     }
@@ -208,34 +229,13 @@ export function SettingsModal({
     }, 150)
   }
 
-  const getMemoryRecommendation = (mb: number) => {
-    if (!systemInfo) {
-      if (mb < 2048) return { text: "Low - May struggle with modded", color: "text-yellow-500" }
-      if (mb < 4096) return { text: "Good for vanilla", color: "text-[#4572e3]" }
-      if (mb <= 12288) return { text: "Good for modded", color: "text-[#4572e3]" }
-      if (mb <= 16384) return { text: "High allocation", color: "text-yellow-500" }
-      return { text: "Excessive - More isn't always better", color: "text-red-500" }
-    }
-    
-    const maxRecommended = systemInfo.recommended_max_memory_mb
-    
-    if (mb < 2048) return { text: "Low - May struggle with modded", color: "text-yellow-500" }
-    if (mb < 4096) return { text: "Good for vanilla", color: "text-[#4572e3]" }
-    if (mb < 8192) return { text: "Good for modded", color: "text-[#4572e3]" }
-    if (mb > maxRecommended) return { 
-      text: `Exceeds recommended (${(maxRecommended / 1024).toFixed(1)} GB max)`, 
-      color: "text-red-500" 
-    }
-    return { text: "High allocation", color: "text-yellow-500" }
-  }
-
   if (!isOpen) return null
 
   if (!settings) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-[#101010] border border-[#2a2a2a] rounded-lg p-8">
-          <div className="flex items-center gap-2 text-[#7d8590] text-base">
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-[#1a1d23] rounded p-8">
+          <div className="flex items-center gap-2 text-gray-400 text-base">
             <Loader2 size={20} className="animate-spin" />
             <span>Loading settings...</span>
           </div>
@@ -244,7 +244,16 @@ export function SettingsModal({
     )
   }
 
-  const memoryRec = getMemoryRecommendation(settings.memory_mb)
+  const tabs = [
+    { id: "game" as const, label: "Game", icon: Cpu },
+    { id: "appearance" as const, label: "Appearance", icon: ImagePlus },
+    { id: "integrations" as const, label: "Integrations", icon: () => (
+      <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+      </svg>
+    )},
+    { id: "about" as const, label: "System", icon: FolderOpen }
+  ]
 
   return (
     <>
@@ -289,282 +298,315 @@ export function SettingsModal({
         .modal-content.closing {
           animation: scaleOut 0.15s ease-in forwards;
         }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #3d424d;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #4d525d;
+        }
+        
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+          transition: none !important;
+        }
+        
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+        }
       `}</style>
       <div 
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
         onClick={handleClose}
       >
         <div 
-          className={`bg-[#101010] rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col border border-[#2a2a2a] modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border bg-[#1a1d23] rounded w-full max-w-3xl h-[500px] flex flex-col shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-[#2a2a2a]">
-            <div>
-              <h2 className="text-xl font-semibold text-[#e6edf3]">Settings</h2>
-              <p className="text-sm text-[#7d8590] mt-0.5">
-                Configure launcher and game settings
-              </p>
-            </div>
+          <div className="flex items-center justify-between p-5 border-b border-[#252932]">
+            <h2 className="text-xl font-semibold text-white">Settings</h2>
             <div className="flex items-center gap-3">
               {appVersion && (
-                <span className="bg-[#141414] border border-[#2a2a2a] px-3 py-1.5 rounded text-sm text-[#7d8590]">
+                <span className="bg-[#252932] px-2.5 py-1 rounded text-xs text-gray-400">
                   Build {appVersion.split('-')[1] || appVersion}
                 </span>
               )}
               <button
                 onClick={handleClose}
-                className="p-2 hover:bg-[#171717] rounded transition-colors cursor-pointer"
+                className="p-2 hover:bg-[#252932] rounded transition-colors text-gray-400 hover:text-white cursor-pointer"
               >
-                <X size={20} className="text-[#7d8590]" />
+                <X size={18} />
               </button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column */}
-              <div className="space-y-6">
-                {/* Memory Allocation */}
-                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
-                  <div className="flex items-center gap-3 mb-5">
-                    <Cpu size={24} className="text-[#4572e3]" strokeWidth={2} />
-                    <div>
-                      <h2 className="text-base font-semibold text-[#e6edf3]">Memory Allocation</h2>
-                      <p className="text-xs text-[#7d8590]">RAM allocated to Minecraft</p>
+          <div className="flex flex-1 min-h-0">
+            {/* Sidebar */}
+            <div className="w-48 border-r border-[#252932] p-3 space-y-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-colors cursor-pointer ${
+                      activeTab === tab.id
+                        ? 'bg-[#4572e3] text-white'
+                        : 'text-gray-400 hover:bg-[#252932] hover:text-white'
+                    }`}
+                  >
+                    <Icon size={18} />
+                    <span>{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Tab Content */}
+            <div className="flex-1 p-5">
+              {activeTab === "game" && (
+                <div className="space-y-5">
+                  {/* Memory */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-white">
+                      <Cpu size={18} className="text-[#4572e3]" />
+                      <span className="font-medium">Memory Allocation</span>
                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-bold text-[#e6edf3]">
-                        {(settings.memory_mb / 1024).toFixed(1)} GB
-                      </span>
-                      <span className={`text-xs font-medium ${memoryRec.color}`}>
-                        {memoryRec.text}
-                      </span>
-                    </div>
-
-                    <input
-                      type="range"
-                      min="1024"
-                      max={systemInfo?.total_memory_mb || 32768}
-                      step="512"
-                      value={settings.memory_mb}
-                      onChange={(e) => handleSettingChange({
-                        ...settings,
-                        memory_mb: parseInt(e.target.value)
-                      })}
-                      className="w-full h-2 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${((settings.memory_mb - 1024) / ((systemInfo?.total_memory_mb || 32768) - 1024)) * 100}%, #2a2a2a ${((settings.memory_mb - 1024) / ((systemInfo?.total_memory_mb || 32768) - 1024)) * 100}%, #2a2a2a 100%)`
-                      }}
-                    />
-
-                    <div className="flex justify-between text-xs text-[#7d8590]">
-                      <span>1 GB</span>
-                      <span>{systemInfo ? `${(systemInfo.total_memory_mb / 4 / 1024).toFixed(0)} GB` : '8 GB'}</span>
-                      <span>{systemInfo ? `${(systemInfo.total_memory_mb / 2 / 1024).toFixed(0)} GB` : '16 GB'}</span>
-                      <span>{systemInfo ? `${(systemInfo.total_memory_mb / 1024).toFixed(0)} GB` : '32 GB'}</span>
-                    </div>
-
-                    {systemInfo && (
-                      <div className="pt-2 border-t border-[#2a2a2a]">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-[#7d8590]">System Total</span>
-                          <span className="text-[#e6edf3] font-medium">
-                            {(systemInfo.total_memory_mb / 1024).toFixed(1)} GB
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs mt-1">
-                          <span className="text-[#7d8590]">Available</span>
-                          <span className="text-[#e6edf3] font-medium">
-                            {(systemInfo.available_memory_mb / 1024).toFixed(1)} GB
-                          </span>
-                        </div>
+                    <div className="bg-[#252932] rounded p-4 space-y-3">
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-bold text-white">
+                          {(settings.memory_mb / 1024).toFixed(1)} GB
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          of {systemInfo ? (systemInfo.total_memory_mb / 1024).toFixed(0) : '16'} GB total
+                        </span>
                       </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Java Configuration */}
-                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
-                  <div className="flex items-center gap-3 mb-5">
-                    <Coffee size={24} className="text-[#4572e3]" strokeWidth={2} />
-                    <div>
-                      <h2 className="text-base font-semibold text-[#e6edf3]">Java Runtime</h2>
-                      <p className="text-xs text-[#7d8590]">Java installation for game</p>
+                      <input
+                        type="range"
+                        min="1024"
+                        max={systemInfo?.total_memory_mb || 32768}
+                        step="512"
+                        value={settings.memory_mb}
+                        onChange={(e) => handleSettingChange({
+                          ...settings,
+                          memory_mb: parseInt(e.target.value)
+                        })}
+                        className="w-full h-2 bg-[#1a1d23] rounded-full appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${((settings.memory_mb - 1024) / ((systemInfo?.total_memory_mb || 32768) - 1024)) * 100}%, #1a1d23 ${((settings.memory_mb - 1024) / ((systemInfo?.total_memory_mb || 32768) - 1024)) * 100}%, #1a1d23 100%)`
+                        }}
+                      />
+                      {systemInfo && (
+                        <div className="pt-2 border-t border-[#1a1d23] space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">System Total</span>
+                            <span className="text-white font-medium">
+                              {(systemInfo.total_memory_mb / 1024).toFixed(1)} GB
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-400">Available</span>
+                            <span className="text-white font-medium">
+                              {(systemInfo.available_memory_mb / 1024).toFixed(1)} GB
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  {/* Java */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-white">
+                      <Coffee size={18} className="text-[#4572e3]" />
+                      <span className="font-medium">Java Runtime</span>
+                    </div>
                     <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <select
-                          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#e6edf3] focus:outline-none focus:ring-2 focus:ring-[#4572e3] transition-all cursor-pointer appearance-none pr-10"
-                          value={showCustomPath ? "custom" : settings.java_path || "auto"}
-                          onChange={(e) => {
-                            const value = e.target.value
-                            if (value === "custom") {
-                              setShowCustomPath(true)
-                              setCustomPathValue(settings.java_path || "")
-                              return
-                            }
-                            setShowCustomPath(false)
-                            setCustomPathValue("")
-                            handleSettingChange({
-                              ...settings,
-                              java_path: value === "auto" ? null : value
-                            })
-                          }}
+                      <div className="relative flex-1" ref={javaDropdownRef}>
+                        <button
+                          onClick={() => setIsJavaDropdownOpen(!isJavaDropdownOpen)}
+                          className={`w-full bg-[#252932] px-4 py-2.5 text-sm text-white text-left flex items-center justify-between cursor-pointer ${
+                            isJavaDropdownOpen ? 'rounded-t' : 'rounded'
+                          }`}
                         >
-                          <option value="auto">Auto-detect (Recommended)</option>
-                          {javaInstallations.map((path) => (
-                            <option key={path} value={path}>{path}</option>
-                          ))}
-                          <option value="custom">Custom Path...</option>
-                        </select>
-                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7d8590] pointer-events-none" />
+                          <span className="truncate">
+                            {showCustomPath ? "Custom Path..." : (settings.java_path || "Auto-detect (Recommended)")}
+                          </span>
+                          <ChevronDown size={16} className={`flex-shrink-0 ml-2 transition-transform ${isJavaDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {isJavaDropdownOpen && (
+                          <div className="absolute z-[60] w-full bg-[#252932] rounded-b shadow-lg max-h-48 overflow-y-auto custom-scrollbar border-t border-[#1a1d23]">
+                            <button
+                              onClick={() => {
+                                setShowCustomPath(false)
+                                setCustomPathValue("")
+                                handleSettingChange({ ...settings, java_path: null })
+                                setIsJavaDropdownOpen(false)
+                              }}
+                              className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
+                            >
+                              <span>Auto-detect (Recommended)</span>
+                              {!settings.java_path && !showCustomPath && (
+                                <Check size={16} className="text-white" />
+                              )}
+                            </button>
+                            {javaInstallations.map((path) => (
+                              <button
+                                key={path}
+                                onClick={() => {
+                                  setShowCustomPath(false)
+                                  setCustomPathValue("")
+                                  handleSettingChange({ ...settings, java_path: path })
+                                  setIsJavaDropdownOpen(false)
+                                }}
+                                className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
+                              >
+                                <span className="truncate">{path}</span>
+                                {settings.java_path === path && !showCustomPath && (
+                                  <Check size={16} className="text-white flex-shrink-0 ml-2" />
+                                )}
+                              </button>
+                            ))}
+                            <button
+                              onClick={() => {
+                                setShowCustomPath(true)
+                                setCustomPathValue(settings.java_path || "")
+                                setIsJavaDropdownOpen(false)
+                              }}
+                              className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
+                            >
+                              <span>Custom Path...</span>
+                              {showCustomPath && (
+                                <Check size={16} className="text-white" />
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
                       
                       <button
                         onClick={loadJavaInstallations}
                         disabled={isLoadingJava}
-                        className="px-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] hover:bg-[#171717] disabled:opacity-50 rounded-lg text-sm font-medium transition-all text-[#e6edf3] cursor-pointer flex-shrink-0"
+                        className="px-4 py-2.5 bg-[#252932] hover:bg-[#2d3139] disabled:opacity-50 rounded text-sm font-medium text-white cursor-pointer disabled:cursor-not-allowed"
                       >
-                        {isLoadingJava ? (
-                          <Loader2 size={16} className="animate-spin" />
-                        ) : (
-                          "Scan"
-                        )}
+                        {isLoadingJava ? <Loader2 size={16} className="animate-spin" /> : "Scan"}
                       </button>
                     </div>
 
                     {showCustomPath && (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-[#e6edf3] focus:outline-none focus:ring-2 focus:ring-[#4572e3] transition-all font-mono"
-                          placeholder="C:\Program Files\Java\jdk-21\bin\javaw.exe"
-                          value={customPathValue}
-                          onChange={(e) => setCustomPathValue(e.target.value)}
-                          onBlur={() => {
-                            if (customPathValue.trim()) {
-                              handleSettingChange({
-                                ...settings,
-                                java_path: customPathValue.trim()
-                              })
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && customPathValue.trim()) {
-                              handleSettingChange({
-                                ...settings,
-                                java_path: customPathValue.trim()
-                              })
-                              e.currentTarget.blur()
-                            }
-                          }}
-                        />
-                      </div>
+                      <input
+                        type="text"
+                        className="w-full bg-[#252932] rounded px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4572e3] font-mono"
+                        placeholder="C:\Program Files\Java\jdk-21\bin\javaw.exe"
+                        value={customPathValue}
+                        onChange={(e) => setCustomPathValue(e.target.value)}
+                        onBlur={() => {
+                          if (customPathValue.trim()) {
+                            handleSettingChange({ ...settings, java_path: customPathValue.trim() })
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && customPathValue.trim()) {
+                            handleSettingChange({ ...settings, java_path: customPathValue.trim() })
+                            e.currentTarget.blur()
+                          }
+                        }}
+                      />
                     )}
-
-                    <p className="text-xs text-[#7d8590]">
-                      Java 17+ required for Minecraft 1.18 and newer versions
-                    </p>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* Right Column */}
-              <div className="space-y-6">
-                {/* Appearance */}
-                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
-                  <div className="flex items-center gap-3 mb-5">
-                    <ImagePlus size={24} className="text-[#4572e3]" strokeWidth={2} />
-                    <div>
-                      <h2 className="text-base font-semibold text-[#e6edf3]">Sidebar Background</h2>
-                      <p className="text-xs text-[#7d8590]">Customize launcher appearance</p>
-                    </div>
+              {activeTab === "appearance" && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-white">
+                    <ImagePlus size={18} className="text-[#4572e3]" />
+                    <span className="font-medium">Sidebar Background</span>
                   </div>
-
-                  <div className="space-y-4">
-                    {sidebarBgPreview ? (
-                      <div className="relative group">
-                        <div className="h-20 rounded-lg overflow-hidden bg-[#1a1a1a] border border-[#2a2a2a]">
-                          <img
-                            src={sidebarBgPreview}
-                            alt="Background preview"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-3">
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded-lg text-sm font-medium transition-all cursor-pointer"
-                          >
-                            Change
-                          </button>
-                          <button
-                            onClick={handleRemoveBackground}
-                            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-all cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        </div>
+                  {sidebarBgPreview ? (
+                    <div className="relative group">
+                      <div className="h-48 rounded overflow-hidden bg-[#252932]">
+                        <img src={sidebarBgPreview} alt="Background" className="w-full h-full object-cover" />
                       </div>
-                    ) : (
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full h-36 bg-[#1a1a1a] hover:bg-[#171717] border-2 border-dashed border-[#2a2a2a] hover:border-[#4572e3] rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center gap-3 group"
-                      >
-                        <ImagePlus size={32} className="text-[#7d8590] group-hover:text-[#4572e3] transition-colors" strokeWidth={1.5} />
-                        <div className="text-center">
-                          <p className="text-sm font-medium text-[#e6edf3]">Add Background Image</p>
-                          <p className="text-xs text-[#7d8590] mt-1">PNG, JPG up to 10MB</p>
-                        </div>
-                      </button>
-                    )}
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
-
-                {/* Launcher Directory */}
-                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
-                  <div className="flex items-center gap-3 mb-5">
-                    <FolderOpen size={24} className="text-[#4572e3]" strokeWidth={2} />
-                    <div>
-                      <h2 className="text-base font-semibold text-[#e6edf3]">Game Directory</h2>
-                      <p className="text-xs text-[#7d8590]">Instance and asset storage</p>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded text-sm font-medium cursor-pointer"
+                        >
+                          Change
+                        </button>
+                        <button
+                          onClick={handleRemoveBackground}
+                          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-medium cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4">
-                    <p className="text-xs text-[#7d8590] font-mono break-all leading-relaxed">
-                      {launcherDirectory || 'Loading...'}
-                    </p>
-                  </div>
+                  ) : (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-48 bg-[#252932] hover:bg-[#2d3139] border-2 border-dashed border-[#2a2e36] hover:border-[#4572e3] rounded transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <ImagePlus size={32} className="text-gray-500" />
+                      <span className="text-sm text-gray-400">Click to upload image</span>
+                      <span className="text-xs text-gray-500">PNG, JPG up to 10MB</span>
+                    </button>
+                  )}
+                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                 </div>
+              )}
 
-                <div className="bg-[#141414] border border-[#2a2a2a] rounded-md p-6">
-                  <div className="flex items-center justify-between">
+              {activeTab === "integrations" && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-white mb-2">
+                    <svg className="w-[18px] h-[18px] text-[#4572e3]" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                    </svg>
+                    <span className="font-medium">Discord Rich Presence</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-[#252932] rounded p-4">
                     <div className="flex items-center gap-3">
-                      <svg className="w-6 h-6 text-[#5865F2]" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-5 h-5 text-[#5865F2]" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
                       </svg>
                       <div>
-                        <h2 className="text-base font-semibold text-[#e6edf3]">Discord Presence</h2>
-                        <p className="text-xs text-[#7d8590]">
-                          {settings.discord_rpc_enabled 
-                            ? "Shows 'Playing Atomic Launcher' on Discord" 
+                        <span className="text-sm font-medium text-white">Show Discord Status</span>
+                        <p className="text-xs text-gray-400">
+                          {settings.discord_rpc_enabled
+                            ? "Enabled"
                             : "Disabled"}
                         </p>
                       </div>
@@ -575,18 +617,45 @@ export function SettingsModal({
                         discord_rpc_enabled: !settings.discord_rpc_enabled
                       })}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                        settings.discord_rpc_enabled ? 'bg-[#4572e3]' : 'bg-[#2a2a2a]'
+                        settings.discord_rpc_enabled ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'
                       }`}
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          settings.discord_rpc_enabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settings.discord_rpc_enabled ? 'translate-x-6' : 'translate-x-1'
+                      }`} />
                     </button>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {activeTab === "about" && (
+                <div className="space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-white">
+                      <FolderOpen size={18} className="text-[#4572e3]" />
+                      <span className="font-medium">Game Directory</span>
+                    </div>
+                    <div className="bg-[#252932] rounded p-4">
+                      <p className="text-xs text-gray-400 font-mono break-all">
+                        {launcherDirectory || 'Loading...'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-white">
+                      <Info size={18} className="text-[#4572e3]" />
+                      <span className="font-medium">Version Information</span>
+                    </div>
+                    <div className="bg-[#252932] rounded p-4 space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Launcher Version</span>
+                        <span className="text-white font-medium">{semanticVersion || 'Loading...'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

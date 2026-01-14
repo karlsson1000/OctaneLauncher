@@ -1,8 +1,9 @@
-import { Package, Plus, FolderOpen, Copy, Trash2, Play, ExternalLink, LayoutGrid, LayoutList } from "lucide-react"
+import { Package, Plus, FolderOpen, Copy, Trash2, Play, ExternalLink, LayoutGrid, LayoutList, FileArchive } from "lucide-react"
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import type { Instance } from "../../types"
 import { ContextMenu } from "../modals/ContextMenu"
+import { ExportModal } from "../modals/ExportModal"
 
 interface HomeTabProps {
   instances: Instance[]
@@ -62,6 +63,7 @@ export function HomeTab({
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
   const [loadingSnapshots, setLoadingSnapshots] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+  const [exportModalInstance, setExportModalInstance] = useState<Instance | null>(null)
 
   // Get only the 5 most recently played instances
   const recentInstances = instances
@@ -184,23 +186,55 @@ export function HomeTab({
 
   return (
     <div className="p-6 space-y-6">
+      <style>{`
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.14),
+            rgba(255, 255, 255, 0.08)
+          );
+        }
+      `}</style>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[#e6edf3] tracking-tight">Home</h1>
+            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Home</h1>
             <p className="text-sm text-[#7d8590] mt-0.5">Recently played instances</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-              className="w-8.5 h-8.5 hover:bg-[#1a1a1a] text-[#7d8590] hover:text-[#e6edf3] rounded flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8.5 h-8.5 hover:bg-[#22252b] text-[#7d8590] hover:text-[#e6e6e6] rounded flex items-center justify-center transition-colors cursor-pointer"
             >
               {viewMode === "grid" ? <LayoutList size={22} /> : <LayoutGrid size={22} />}
             </button>
             <button
               onClick={onCreateNew}
-              className="px-4 h-8 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
+              className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
             >
               <Plus size={16} />
               New
@@ -212,12 +246,12 @@ export function HomeTab({
         <div>
           {recentInstances.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14">
-              <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6edf3] mb-1">No recently played instances</h3>
+              <Package size={48} className="text-[#7d8590] mb-3" strokeWidth={1.5} />
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No recently played instances</h3>
               <p className="text-sm text-[#7d8590] mb-4">Launch an instance to see it here</p>
               <button
                 onClick={onCreateNew}
-                className="px-4 py-2 bg-[#238636] hover:bg-[#2ea043] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
                 <span>Create Instance</span>
@@ -236,10 +270,10 @@ export function HomeTab({
                         key={instance.name}
                         onClick={() => onShowDetails(instance)}
                         onContextMenu={(e) => handleContextMenu(e, instance)}
-                        className="group relative bg-[#141414] rounded-md overflow-hidden cursor-pointer transition-all hover:ring-1 hover:ring-[#2a2a2a] border border-[#2a2a2a]"
+                        className="blur-border group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all"
                       >
                         {/* Square Image Section */}
-                        <div className="aspect-square bg-[#0f0f0f] flex items-center justify-center overflow-hidden">
+                        <div className="aspect-square bg-[#181a1f] flex items-center justify-center overflow-hidden relative z-0">
                           {icon ? (
                             <img
                               src={icon}
@@ -247,17 +281,17 @@ export function HomeTab({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <Package size={88} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                            <Package size={88} className="text-[#3a3f4b]" strokeWidth={1.5} />
                           )}
                         </div>
                         
                         {/* Solid Text Section with Play Button */}
-                        <div className="bg-[#141414] p-3 flex items-center justify-between gap-2">
+                        <div className="bg-[#22252b] p-3 flex items-center justify-between gap-2 relative z-0">
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-[#e6edf3] truncate mb-0.5">{instance.name}</h3>
+                            <h3 className="text-sm font-semibold text-[#e6e6e6] truncate mb-0.5">{instance.name}</h3>
                             <div className="flex items-center gap-1.5 text-xs min-w-0">
                               <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
-                              <span className="text-[#3a3a3a] flex-shrink-0">•</span>
+                              <span className="text-[#3a3f4b] flex-shrink-0">•</span>
                               {instance.loader === "fabric" ? (
                                 <span className="text-[#3b82f6] flex-shrink-0">Fabric</span>
                               ) : (
@@ -308,10 +342,10 @@ export function HomeTab({
                         key={instance.name}
                         onClick={() => onShowDetails(instance)}
                         onContextMenu={(e) => handleContextMenu(e, instance)}
-                        className="group relative bg-[#141414] rounded-md overflow-hidden cursor-pointer transition-all hover:ring-1 hover:ring-[#2a2a2a] border border-[#2a2a2a] flex items-center"
+                        className="blur-border group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all flex items-center"
                       >
                         {/* Instance Image */}
-                        <div className="w-20 h-20 bg-[#0f0f0f] flex items-center justify-center flex-shrink-0">
+                        <div className="w-20 h-20 bg-[#181a1f] flex items-center justify-center flex-shrink-0 relative z-0">
                           {icon ? (
                             <img
                               src={icon}
@@ -319,16 +353,16 @@ export function HomeTab({
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <Package size={32} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                            <Package size={32} className="text-[#3a3f4b]" strokeWidth={1.5} />
                           )}
                         </div>
                         
                         {/* Instance Info */}
-                        <div className="flex-1 min-w-0 px-4 py-3">
-                          <h3 className="text-base font-semibold text-[#e6edf3] truncate mb-1">{instance.name}</h3>
+                        <div className="flex-1 min-w-0 px-4 py-3 relative z-0">
+                          <h3 className="text-base font-semibold text-[#e6e6e6] truncate mb-1">{instance.name}</h3>
                           <div className="flex items-center gap-2 text-sm">
                             <span className="text-[#7d8590]">{getMinecraftVersion(instance)}</span>
-                            <span className="text-[#3a3a3a]">•</span>
+                            <span className="text-[#3a3f4b]">•</span>
                             {instance.loader === "fabric" ? (
                               <span className="text-[#3b82f6]">Fabric</span>
                             ) : (
@@ -377,16 +411,16 @@ export function HomeTab({
         {/* Snapshots Section */}
         <div className="mt-auto">
           <div className="mb-4">
-            <h2 className="text-xl font-semibold text-[#e6edf3] tracking-tight">Latest Snapshots</h2>
+            <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Latest Snapshots</h2>
             <p className="text-sm text-[#7d8590] mt-0.5">Recent Java Edition snapshots</p>
           </div>
 
           {loadingSnapshots ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-2 border-[#2a2a2a] border-t-[#16a34a] rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
             </div>
           ) : snapshots.length === 0 ? (
-            <div className="bg-[#141414] rounded-md p-8 text-center">
+            <div className="bg-[#22252b] rounded-md p-8 text-center">
               <p className="text-[#7d8590]">Unable to load snapshots</p>
             </div>
           ) : (
@@ -401,15 +435,19 @@ export function HomeTab({
                       console.error('Failed to open link:', error)
                     }
                   }}
-                  className="bg-[#141414] rounded-md overflow-hidden relative group cursor-pointer border border-[#2a2a2a] hover:border-[#3a3a3a] transition-colors flex flex-col"
+                  className="blur-border bg-[#22252b] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col"
                 >
                   {/* External Link Icon */}
-                  <div className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center bg-[#141414]/90 backdrop-blur-sm rounded border border-[#2a2a2a] opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ExternalLink size={14} className="text-[#e6edf3]" />
+                  <div className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center bg-[#22252b]/90 backdrop-blur-sm rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{
+                      boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.1)',
+                    }}
+                  >
+                    <ExternalLink size={14} className="text-[#e6e6e6]" />
                   </div>
                   
                   {/* Snapshot Image */}
-                  <div className="h-40 bg-[#0f0f0f] overflow-hidden relative flex-shrink-0">
+                  <div className="h-40 bg-[#181a1f] overflow-hidden relative flex-shrink-0 z-0">
                     {snapshot.image?.url ? (
                       <img
                         src={`https://launchercontent.mojang.com${snapshot.image.url}`}
@@ -418,7 +456,7 @@ export function HomeTab({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Package size={48} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                        <Package size={48} className="text-[#3a3f4b]" strokeWidth={1.5} />
                       </div>
                     )}
                     {/* Hover Overlay - Gradient from bottom */}
@@ -426,9 +464,9 @@ export function HomeTab({
                   </div>
                   
                   {/* Content */}
-                  <div className="p-4 flex-1 flex flex-col">
+                  <div className="p-4 flex-1 flex flex-col relative z-0">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <h3 className="text-sm font-semibold text-[#e6edf3] truncate">
+                      <h3 className="text-sm font-semibold text-[#e6e6e6] truncate">
                         {cleanVersionName(snapshot.version)}
                       </h3>
                       {snapshot.date && (
@@ -482,6 +520,13 @@ export function HomeTab({
                 }
               },
             },
+            {
+              label: "Export",
+              icon: <FileArchive size={16} />,
+              onClick: () => {
+                setExportModalInstance(contextMenu.instance)
+              },
+            },
             { separator: true },
             {
               label: "Delete",
@@ -492,6 +537,14 @@ export function HomeTab({
               danger: true,
             },
           ]}
+        />
+      )}
+
+      {/* Export Modal */}
+      {exportModalInstance && (
+        <ExportModal
+          instanceName={exportModalInstance.name}
+          onClose={() => setExportModalInstance(null)}
         />
       )}
     </div>

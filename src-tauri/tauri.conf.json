@@ -16,7 +16,7 @@
         "title": "Atomic Launcher",
         "width": 1400,
         "height": 800,
-        "backgroundColor": "#0d0d0d",
+        "backgroundColor": "#181a1f",
         "decorations": false,
         "transparent": false,
         "visible": true,

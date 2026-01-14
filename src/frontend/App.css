@@ -13,21 +13,21 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #101010;
+  background: #1a1d23;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #404040;
+  background: #3d424d;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #606060;
+  background: #4d525d;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #404040 #101010;
+  scrollbar-color: #3d424d #1a1d23;
 }
 
 input[type="range"]::-webkit-slider-thumb {

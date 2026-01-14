@@ -231,7 +231,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "online": return "text-[#238636]"
+      case "online": return "text-[#16a34a]"
       case "offline": return "text-[#dc2626]"
       default: return "text-[#7d8590]"
     }
@@ -239,181 +239,243 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
   const getStatusBgColor = (status: string) => {
     switch (status) {
-      case "online": return "bg-[#238636]/10"
+      case "online": return "bg-[#16a34a]/10"
       case "offline": return "bg-[#dc2626]/10"
       default: return "bg-[#7d8590]/10"
     }
   }
 
   return (
-    <div className="p-6 space-y-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-[#e6edf3] tracking-tight">Servers</h1>
-            <p className="text-sm text-[#7d8590] mt-0.5">Manage your favorite Minecraft servers</p>
+    <>
+      <style>{`
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.14),
+            rgba(255, 255, 255, 0.08)
+          );
+        }
+
+        .blur-border-input::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+
+        .blur-border-input:focus-within::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.14),
+            rgba(255, 255, 255, 0.08)
+          );
+        }
+      `}</style>
+      <div className="p-6 space-y-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Servers</h1>
+              <p className="text-sm text-[#7d8590] mt-0.5">Manage your favorite Minecraft servers</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {servers.length > 0 && (
+                <div className="relative blur-border-input rounded-md bg-[#22252b]">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-56 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
+                  />
+                </div>
+              )}
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Plus size={16} />
+                Add Server
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-4 h-8 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <Plus size={16} />
-            Add Server
-          </button>
+
+          {servers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-14">
+              <Server size={48} className="text-[#7d8590] mb-3" strokeWidth={1.5} />
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No servers added</h3>
+              <p className="text-sm text-[#7d8590] mb-4">Add your first server to get started</p>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+              >
+                <Plus size={16} strokeWidth={2} />
+                <span>Add Server</span>
+              </button>
+            </div>
+          ) : filteredServers.length === 0 ? (
+            <div className="rounded-md p-8 flex flex-col items-center justify-center">
+              <Search size={48} className="text-[#e6e6e6] mb-3" strokeWidth={1.5} />
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No servers found</h3>
+              <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+              {filteredServers.map((server) => {
+                const displayAddress = server.port === 25565 
+                  ? server.address 
+                  : `${server.address}:${server.port}`
+                
+                const isLaunching = launchingServer === server.name
+                
+                return (
+                  <div
+                    key={server.name}
+                    onClick={() => setSelectedServer(server)}
+                    className="blur-border group bg-[#22252b] rounded-md p-4 cursor-pointer transition-all relative"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setServerToDelete(server.name)
+                      }}
+                      className="absolute top-4 right-4 px-3 py-2 bg-[#dc2626]/10 hover:bg-[#dc2626]/20 text-[#dc2626] rounded text-xs font-medium transition-all cursor-pointer z-20"
+                      title="Remove server"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+
+                    <div className="flex gap-3 mb-2 pr-10 relative z-0">
+                      {server.favicon ? (
+                        <img 
+                          src={server.favicon} 
+                          alt={server.name} 
+                          className="w-16 h-16 rounded object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-[#181a1f] rounded flex items-center justify-center flex-shrink-0">
+                          <Server size={28} className="text-[#3a3f4b]" strokeWidth={1.5} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base text-[#e6e6e6] truncate mb-0">
+                          {server.name}
+                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs text-[#7d8590] truncate">
+                            {displayAddress}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBgColor(server.status)} ${getStatusColor(server.status)}`}>
+                            {server.status}
+                          </span>
+                          {server.version && (
+                            <span className="text-xs text-[#7d8590] truncate">{server.version}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {server.motd && (
+                      <p className="text-xs text-[#7d8590] mb-2 truncate leading-relaxed relative z-0">
+                        {server.motd}
+                      </p>
+                    )}
+
+                    {server.status === "online" && server.players_online !== undefined && (
+                      <div className="flex items-center justify-between mb-3 relative z-0">
+                        <span className="text-xs text-[#7d8590]">Players</span>
+                        <span className="text-sm font-medium text-[#e6e6e6]">
+                          {server.players_online.toLocaleString()} / {server.players_max?.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={(e) => handleLaunchServer(server, e)}
+                      disabled={server.status !== "online" || isLaunching || isAnyInstanceRunning}
+                      className={`w-full py-2.5 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all relative z-20 ${
+                        isAnyInstanceRunning
+                          ? "bg-red-500/10 text-red-400 cursor-not-allowed"
+                          : isLaunching
+                          ? "bg-red-500/10 text-red-400 cursor-not-allowed"
+                          : server.status === "online"
+                          ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"
+                          : "bg-[#3a3f4b] text-[#7d8590] cursor-not-allowed"
+                      }`}
+                    >
+                      {isAnyInstanceRunning || isLaunching ? (
+                        <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                      ) : (
+                        <Play size={16} fill="currentColor" strokeWidth={0} />
+                      )}
+                      <span>
+                        {isAnyInstanceRunning ? "Instance Running" : isLaunching ? "Launching..." : "Play"}
+                      </span>
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
-        {servers.length > 0 && (
-          <div className="relative mb-4">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590]" strokeWidth={2} />
-            <input
-              type="text"
-              placeholder="Search servers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#141414] rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6edf3] placeholder-[#7d8590] border border-[#2a2a2a] focus:outline-none focus:ring-1 focus:ring-[#3a3a3a] transition-all"
-            />
-          </div>
+        {showAddModal && (
+          <CreateServerModal
+            servers={servers}
+            onClose={() => setShowAddModal(false)}
+            onSuccess={handleServerAdded}
+          />
         )}
 
-        {servers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
-            <Server size={64} className="text-[#238636] mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">No servers added</h3>
-            <p className="text-sm text-[#7d8590] mb-4">Add your first server to get started</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-[#238636] hover:bg-[#2ea043] text-white rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
-            >
-              <Plus size={16} strokeWidth={2} />
-              <span>Add Server</span>
-            </button>
-          </div>
-        ) : filteredServers.length === 0 ? (
-          <div className="p-12 flex flex-col items-center justify-center">
-            <Search size={64} className="text-[#238636] mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-semibold text-[#e6edf3] mb-1">No servers found</h3>
-            <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filteredServers.map((server) => {
-              const displayAddress = server.port === 25565 
-                ? server.address 
-                : `${server.address}:${server.port}`
-              
-              const isLaunching = launchingServer === server.name
-              
-              return (
-                <div
-                  key={server.name}
-                  onClick={() => setSelectedServer(server)}
-                  className="group bg-[#141414] rounded-md p-4 cursor-pointer transition-all hover:ring-1 hover:ring-[#2a2a2a] border border-[#2a2a2a] relative"
-                >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setServerToDelete(server.name)
-                    }}
-                    className="absolute top-4 right-4 px-3 py-2 bg-[#dc2626]/10 hover:bg-[#dc2626]/20 text-[#dc2626] rounded text-xs font-medium transition-all cursor-pointer"
-                    title="Remove server"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-
-                  <div className="flex gap-3 mb-2 pr-10">
-                    {server.favicon ? (
-                      <img 
-                        src={server.favicon} 
-                        alt={server.name} 
-                        className="w-16 h-16 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#238636]/10 to-[#2ea043]/10 rounded flex items-center justify-center flex-shrink-0">
-                        <Server size={28} className="text-[#238636]/60" strokeWidth={1.5} />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-base text-[#e6edf3] truncate mb-0">
-                        {server.name}
-                      </h3>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-[#7d8590] truncate">
-                          {displayAddress}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBgColor(server.status)} ${getStatusColor(server.status)}`}>
-                          {server.status}
-                        </span>
-                        {server.version && (
-                          <span className="text-xs text-[#7d8590] truncate">{server.version}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {server.motd && (
-                    <p className="text-xs text-[#7d8590] mb-2 truncate leading-relaxed">
-                      {server.motd}
-                    </p>
-                  )}
-
-                  {server.status === "online" && server.players_online !== undefined && (
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-[#7d8590]">Players</span>
-                      <span className="text-sm font-medium text-[#e6edf3]">
-                        {server.players_online.toLocaleString()} / {server.players_max?.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={(e) => handleLaunchServer(server, e)}
-                    disabled={server.status !== "online" || isLaunching || isAnyInstanceRunning}
-                    className={`w-full py-2.5 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all ${
-                      isAnyInstanceRunning
-                        ? "bg-red-500/10 text-red-400 cursor-not-allowed"
-                        : isLaunching
-                        ? "bg-red-500/10 text-red-400 cursor-not-allowed"
-                        : server.status === "online"
-                        ? "bg-[#238636]/10 hover:bg-[#238636]/20 text-[#238636] cursor-pointer"
-                        : "bg-[#2a2a2a] text-[#7d8590] cursor-not-allowed"
-                    }`}
-                  >
-                    {isAnyInstanceRunning || isLaunching ? (
-                      <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                    ) : (
-                      <Play size={16} fill="currentColor" strokeWidth={0} />
-                    )}
-                    <span>
-                      {isAnyInstanceRunning ? "Instance Running" : isLaunching ? "Launching..." : "Play"}
-                    </span>
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {showAddModal && (
-        <CreateServerModal
-          servers={servers}
-          onClose={() => setShowAddModal(false)}
-          onSuccess={handleServerAdded}
+        <ConfirmModal
+          isOpen={serverToDelete !== null}
+          title="Remove Server"
+          message={`Are you sure you want to remove "${serverToDelete}"? This action cannot be undone.`}
+          confirmText="Remove"
+          cancelText="Cancel"
+          type="danger"
+          onConfirm={handleDeleteServer}
+          onCancel={() => setServerToDelete(null)}
         />
-      )}
-
-      <ConfirmModal
-        isOpen={serverToDelete !== null}
-        title="Remove Server"
-        message={`Are you sure you want to remove "${serverToDelete}"? This action cannot be undone.`}
-        confirmText="Remove"
-        cancelText="Cancel"
-        type="danger"
-        onConfirm={handleDeleteServer}
-        onCancel={() => setServerToDelete(null)}
-      />
-    </div>
+      </div>
+    </>
   )
 }

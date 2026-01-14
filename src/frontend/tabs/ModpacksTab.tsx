@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Search, Download, Loader2, Package, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X } from "lucide-react"
+import { Search, Download, Loader2, Package, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, Check } from "lucide-react"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
 interface ModpacksTabProps {
@@ -40,18 +40,24 @@ export function ModpacksTab({
   const [modpackVersions, setModpackVersions] = useState<Record<string, ModrinthVersion[]>>({})
   const [loadingVersions, setLoadingVersions] = useState<Set<string>>(new Set())
   const [modpackGalleries, setModpackGalleries] = useState<Record<string, string[]>>({})
-  const [showInstalledOnly, setShowInstalledOnly] = useState(false)
   const [customModpack, setCustomModpack] = useState<ModrinthProject | null>(null)
   
   const [selectedModpack, setSelectedModpack] = useState<ModrinthProject | null>(null)
   const [selectedModpackVersion, setSelectedModpackVersion] = useState<string>("")
   const [isModalClosing, setIsModalClosing] = useState(false)
+  const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false)
 
   useEffect(() => {
     loadCustomModpack()
     loadPopularModpacks()
     loadAvailableVersions()
   }, [])
+
+  useEffect(() => {
+    if (!selectedModpack) {
+      setIsVersionDropdownOpen(false)
+    }
+  }, [selectedModpack])
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -184,33 +190,10 @@ export function ModpacksTab({
     setTimeout(() => handleSearch(newPage), 100)
   }
 
-  const isModpackInstalled = (modpackTitle: string): boolean => {
-    if (!selectedVersion) {
-      return instances.some(instance => instance.name === modpackTitle)
-    }
-    
-    return instances.some(instance => {
-      if (instance.name !== modpackTitle) return false
-
-      let instanceMcVersion = instance.version
-      if (instance.loader === "fabric") {
-        const parts = instance.version.split('-')
-        instanceMcVersion = parts[parts.length - 1]
-      } else if (instance.loader === "forge") {
-        const parts = instance.version.split('-')
-        instanceMcVersion = parts[0]
-      }
-      
-      return instanceMcVersion === selectedVersion
-    })
-  }
-
   const getFilteredModpacks = () => {
     if (!searchResults) return []
     
-    const modpacks = showInstalledOnly 
-      ? searchResults.hits.filter(modpack => isModpackInstalled(modpack.title))
-      : searchResults.hits
+    const modpacks = searchResults.hits
 
     const shouldShowCustomModpack = currentPage === 1 && !searchQuery.trim() && customModpack
     
@@ -224,15 +207,11 @@ export function ModpacksTab({
 
   const getPaginatedModpacks = () => {
     const filtered = getFilteredModpacks()
-    if (!showInstalledOnly && !searchQuery.trim() && currentPage === 1 && customModpack) {
+    if (!searchQuery.trim() && currentPage === 1 && customModpack) {
       return filtered.slice(0, itemsPerPage)
     }
     
-    if (!showInstalledOnly) return filtered
-    
-    const startIndex = (currentPage - 1) * itemsPerPage
-    const endIndex = startIndex + itemsPerPage
-    return filtered.slice(startIndex, endIndex)
+    return filtered
   }
 
   const openModpackModal = async (modpack: ModrinthProject) => {
@@ -399,46 +378,127 @@ export function ModpacksTab({
     }, 150)
   }
 
-  const filteredModpacks = getFilteredModpacks()
-  const totalPages = showInstalledOnly 
-    ? Math.ceil(filteredModpacks.length / itemsPerPage)
-    : searchResults ? Math.ceil(searchResults.total_hits / itemsPerPage) : 1
-  const showPagination = showInstalledOnly 
-    ? filteredModpacks.length > itemsPerPage
-    : searchResults && searchResults.total_hits > itemsPerPage
+  const totalPages = searchResults ? Math.ceil(searchResults.total_hits / itemsPerPage) : 1
+  const showPagination = searchResults && searchResults.total_hits > itemsPerPage
 
   return (
     <div className="max-w-7xl mx-auto">
+      <style>{`
+        .blur-border-input::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+
+        .blur-border-input:focus-within::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.14),
+            rgba(255, 255, 255, 0.08)
+          );
+        }
+
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.14),
+            rgba(255, 255, 255, 0.08)
+          );
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes scaleIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes scaleOut {
+          from { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          to { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+        }
+        .modal-backdrop {
+          animation: fadeIn 0.15s ease-out forwards;
+        }
+        .modal-backdrop.closing {
+          animation: fadeOut 0.15s ease-in forwards;
+        }
+        .modal-content {
+          animation: scaleIn 0.15s ease-out forwards;
+        }
+        .modal-content.closing {
+          animation: scaleOut 0.15s ease-in forwards;
+        }
+      `}</style>
       <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590]" strokeWidth={2} />
+        <div className="relative flex-1 blur-border-input rounded-md bg-[#22252b]">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
           <input
             type="text"
             placeholder="Search modpacks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#141414] rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6edf3] placeholder-[#7d8590] border border-[#2a2a2a] focus:outline-none focus:ring-1 focus:ring-[#3a3a3a] transition-all"
+            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
           />
           {isSearching && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <Loader2 size={16} className="animate-spin text-[#238636]" />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
+              <Loader2 size={16} className="animate-spin text-[#16a34a]" />
             </div>
           )}
         </div>
-
-        <button
-          onClick={() => {
-            setShowInstalledOnly(!showInstalledOnly)
-            setCurrentPage(1)
-          }}
-          className={`px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer whitespace-nowrap border ${
-            showInstalledOnly
-              ? "bg-[#238636] text-white border-[#238636]"
-              : "bg-[#141414] text-[#7d8590] hover:bg-[#1a1a1a] hover:text-[#e6edf3] border-[#2a2a2a]"
-          }`}
-        >
-          {showInstalledOnly ? "Show All" : "Installed Only"}
-        </button>
       </div>
 
       {searchResults && (
@@ -449,14 +509,13 @@ export function ModpacksTab({
               const status = installationStatus[modpack.project_id]
               const gallery = modpackGalleries[modpack.project_id] || []
               const backgroundImage = gallery.length > 0 ? gallery[0] : null
-              const installed = isModpackInstalled(modpack.title)
               
               return (
                 <div
                   key={modpack.project_id}
-                  className="relative bg-[#141414] rounded-md overflow-hidden transition-all group border border-[#2a2a2a]"
+                  className="blur-border relative bg-[#22252b] rounded-md overflow-hidden transition-all group"
                 >
-                  <div className="relative h-48 overflow-hidden">
+                  <div className="relative h-48 overflow-hidden z-0">
                     {backgroundImage ? (
                       <img
                         src={backgroundImage}
@@ -464,14 +523,14 @@ export function ModpacksTab({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-[#141414] via-[#0f0f0f] to-[#0a0a0a] flex items-center justify-center">
-                        <Package size={64} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                      <div className="w-full h-full bg-gradient-to-br from-[#22252b] via-[#181a1f] to-[#141414] flex items-center justify-center">
+                        <Package size={64} className="text-[#3a3f4b]" strokeWidth={1.5} />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   </div>
 
-                  <div className="relative bg-[#141414] p-4 flex items-center gap-4">
+                  <div className="relative bg-[#22252b] p-4 flex items-center gap-4 z-0">
                     <div className="w-14 h-14 rounded overflow-hidden flex-shrink-0">
                       {modpack.icon_url ? (
                         <img
@@ -480,33 +539,26 @@ export function ModpacksTab({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full bg-[#0f0f0f] flex items-center justify-center">
+                        <div className="w-full h-full bg-[#181a1f] flex items-center justify-center">
                           <Package size={28} className="text-[#7d8590]" strokeWidth={1.5} />
                         </div>
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-[#e6edf3] leading-tight truncate">
+                      <h3 className="text-lg font-bold text-[#e6e6e6] leading-tight truncate">
                         {modpack.title}
                       </h3>
                       <p className="text-sm text-[#7d8590] leading-tight">
                         by {modpack.author}
                       </p>
-                      <p className="text-sm text-[#3a3a3a] leading-tight">
+                      <p className="text-sm text-[#3a3f4b] leading-tight">
                         {formatDownloads(modpack.downloads)} downloads
                       </p>
                     </div>
 
-                    {installed ? (
-                      <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#238636] text-white">
-                        <span className="flex items-center gap-1.5">
-                          <CheckCircle size={16} />
-                          Installed
-                        </span>
-                      </div>
-                    ) : status === 'success' ? (
-                      <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#238636] text-white">
+                    {status === 'success' ? (
+                      <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#16a34a] text-white">
                         <span className="flex items-center gap-1.5">
                           <CheckCircle size={16} />
                           Success
@@ -520,7 +572,7 @@ export function ModpacksTab({
                         </span>
                       </div>
                     ) : isInstalling ? (
-                      <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#0f0f0f] text-[#7d8590] border border-[#2a2a2a]">
+                      <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#181a1f] text-[#7d8590] border border-[#3a3f4b]">
                         <span className="flex items-center gap-1.5">
                           <Loader2 size={16} className="animate-spin" />
                           Installing
@@ -532,7 +584,7 @@ export function ModpacksTab({
                           e.stopPropagation()
                           openModpackModal(modpack)
                         }}
-                        className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#238636] hover:bg-[#2ea043] text-white transition-colors cursor-pointer shadow-sm"
+                        className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-[#4572e3] hover:bg-[#3461d1] text-white transition-colors cursor-pointer shadow-sm"
                       >
                         <span className="flex items-center gap-1.5">
                           <Download size={16} />
@@ -554,7 +606,7 @@ export function ModpacksTab({
                   handlePageChange(currentPage - 1)
                 }}
                 disabled={currentPage === 1}
-                className="flex items-center gap-1 px-3 py-2 bg-[#141414] hover:bg-[#1a1a1a] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6edf3] rounded-md text-sm transition-colors cursor-pointer border border-[#2a2a2a]"
+                className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
                 <ChevronLeft size={16} />
                 Previous
@@ -568,12 +620,12 @@ export function ModpacksTab({
                         e.preventDefault()
                         handlePageChange(1)
                       }}
-                      className="px-3 py-2 bg-[#141414] hover:bg-[#1a1a1a] text-[#e6edf3] rounded-md text-sm transition-colors cursor-pointer border border-[#2a2a2a]"
+                      className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
                     >
                       1
                     </button>
                     {currentPage > 3 && (
-                      <span className="px-2 text-[#3a3a3a]">...</span>
+                      <span className="px-2 text-[#3a3f4b]">...</span>
                     )}
                   </>
                 )}
@@ -584,14 +636,14 @@ export function ModpacksTab({
                       e.preventDefault()
                       handlePageChange(currentPage - 1)
                     }}
-                    className="px-3 py-2 bg-[#141414] hover:bg-[#1a1a1a] text-[#e6edf3] rounded-md text-sm transition-colors cursor-pointer border border-[#2a2a2a]"
+                    className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
                   >
                     {currentPage - 1}
                   </button>
                 )}
 
                 <button
-                  className="px-3 py-2 bg-[#238636] text-white rounded-md text-sm font-medium"
+                  className="px-3 py-2 bg-[#16a34a] text-white rounded-md text-sm font-medium"
                 >
                   {currentPage}
                 </button>
@@ -602,7 +654,7 @@ export function ModpacksTab({
                       e.preventDefault()
                       handlePageChange(currentPage + 1)
                     }}
-                    className="px-3 py-2 bg-[#141414] hover:bg-[#1a1a1a] text-[#e6edf3] rounded-md text-sm transition-colors cursor-pointer border border-[#2a2a2a]"
+                    className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
                   >
                     {currentPage + 1}
                   </button>
@@ -611,14 +663,14 @@ export function ModpacksTab({
                 {currentPage < totalPages - 1 && (
                   <>
                     {currentPage < totalPages - 2 && (
-                      <span className="px-2 text-[#3a3a3a]">...</span>
+                      <span className="px-2 text-[#3a3f4b]">...</span>
                     )}
                     <button
                       onClick={(e) => {
                         e.preventDefault()
                         handlePageChange(totalPages)
                       }}
-                      className="px-3 py-2 bg-[#141414] hover:bg-[#1a1a1a] text-[#e6edf3] rounded-md text-sm transition-colors cursor-pointer border border-[#2a2a2a]"
+                      className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
                     >
                       {totalPages}
                     </button>
@@ -632,7 +684,7 @@ export function ModpacksTab({
                   handlePageChange(currentPage + 1)
                 }}
                 disabled={currentPage === totalPages}
-                className="flex items-center gap-1 px-3 py-2 bg-[#141414] hover:bg-[#1a1a1a] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6edf3] rounded-md text-sm transition-colors cursor-pointer border border-[#2a2a2a]"
+                className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
                 Next
                 <ChevronRight size={16} />
@@ -685,110 +737,185 @@ export function ModpacksTab({
             .modal-content.closing {
               animation: scaleOut 0.15s ease-in forwards;
             }
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: #3a3f4b;
+              border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: #454a58;
+            }
+            
+            .blur-border {
+              position: relative;
+            }
+
+            .blur-border::before {
+              content: '';
+              position: absolute;
+              inset: 0;
+              border-radius: inherit;
+              padding: 2px;
+              background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.08),
+                rgba(255, 255, 255, 0.04)
+              );
+              -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+              -webkit-mask-composite: xor;
+              mask-composite: exclude;
+              pointer-events: none;
+              backdrop-filter: blur(8px);
+              z-index: 10;
+              transition: none !important;
+            }
+            
+            .blur-border:hover::before {
+              background: linear-gradient(
+                180deg,
+                rgba(255, 255, 255, 0.08),
+                rgba(255, 255, 255, 0.04)
+              );
+            }
           `}</style>
           <div 
             className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isModalClosing ? 'closing' : ''}`} 
             onClick={handleCloseModal}
           >
             <div 
-              className={`bg-[#141414] rounded-md w-full max-w-2xl overflow-hidden border border-[#2a2a2a] modal-content ${isModalClosing ? 'closing' : ''}`} 
+              className={`blur-border bg-[#181a1f] rounded-md w-full max-w-2xl border border-[#3a3f4b] modal-content ${isModalClosing ? 'closing' : ''}`} 
               onClick={(e) => e.stopPropagation()}
+              style={{ pointerEvents: 'auto' }}
             >
-            <div className="relative h-64">
-              {modpackGalleries[selectedModpack.project_id]?.[0] ? (
-                <img
-                  src={modpackGalleries[selectedModpack.project_id][0]}
-                  alt={selectedModpack.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#141414] via-[#0f0f0f] to-[#0a0a0a] flex items-center justify-center">
-                  <Package size={80} className="text-[#3a3a3a]" strokeWidth={1.5} />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-              <button
-                onClick={handleCloseModal}
-                className="absolute top-4 right-4 w-8 h-8 bg-black/50 hover:bg-black/70 rounded flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <X size={20} className="text-white" />
-              </button>
-            </div>
+              <div className="relative h-64 overflow-hidden rounded-t-md">
+                {modpackGalleries[selectedModpack.project_id]?.[0] ? (
+                  <img
+                    src={modpackGalleries[selectedModpack.project_id][0]}
+                    alt={selectedModpack.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[#22252b] via-[#181a1f] to-[#141414] flex items-center justify-center">
+                    <Package size={80} className="text-[#3a3f4b]" strokeWidth={1.5} />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                <button
+                  onClick={handleCloseModal}
+                  className="absolute top-4 right-4 p-1.5 bg-[#22252b]/80 hover:bg-[#3a3f4b] backdrop-blur-sm border border-[#3a3f4b] rounded transition-colors cursor-pointer"
+                >
+                  <X size={20} className="text-[#e6e6e6]" strokeWidth={2} />
+                </button>
+              </div>
 
-            <div className="p-6 space-y-4">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                  {selectedModpack.icon_url ? (
-                    <img src={selectedModpack.icon_url} alt={selectedModpack.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-[#0f0f0f] flex items-center justify-center">
-                      <Package size={32} className="text-[#7d8590]" strokeWidth={1.5} />
+              <div className="p-6 space-y-4 overflow-visible">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                    {selectedModpack.icon_url ? (
+                      <img src={selectedModpack.icon_url} alt={selectedModpack.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-[#22252b] flex items-center justify-center">
+                        <Package size={32} className="text-[#7d8590]" strokeWidth={1.5} />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xl font-bold text-[#e6e6e6] leading-tight">{selectedModpack.title}</h2>
+                    <p className="text-sm text-[#7d8590] leading-tight">by {selectedModpack.author}</p>
+                    <p className="text-sm text-[#3a3f4b] leading-tight">
+                      {formatDownloads(selectedModpack.downloads)} downloads
+                    </p>
+                  </div>
+                </div>
+
+                {selectedModpack.description && (
+                  <p className="text-sm text-[#7d8590] leading-relaxed">{selectedModpack.description}</p>
+                )}
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-[#e6e6e6]">Select Version</label>
+                  {loadingVersions.has(selectedModpack.project_id) ? (
+                    <div className="flex items-center gap-2 text-[#7d8590] text-sm py-3.5 px-4 bg-[#22252b] rounded">
+                      <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                      <span>Loading versions...</span>
                     </div>
+                  ) : modpackVersions[selectedModpack.project_id]?.length > 0 ? (
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
+                        className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
+                          isVersionDropdownOpen ? 'rounded-t' : 'rounded'
+                        }`}
+                      >
+                        {(() => {
+                          const version = modpackVersions[selectedModpack.project_id].find(v => v.id === selectedModpackVersion);
+                          return version ? `${version.name} - ${version.game_versions?.join(', ') || ''}` : selectedModpackVersion;
+                        })()}
+                      </button>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                        {isVersionDropdownOpen ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                          </svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        )}
+                      </div>
+                      
+                      {isVersionDropdownOpen && (
+                        <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                          {modpackVersions[selectedModpack.project_id].map((version) => (
+                            <button
+                              key={version.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedModpackVersion(version.id);
+                                setIsVersionDropdownOpen(false);
+                              }}
+                              className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                            >
+                              <span>{version.name} - {version.game_versions?.join(', ')}</span>
+                              {selectedModpackVersion === version.id && (
+                                <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-[#7d8590] py-3">No versions available</p>
                   )}
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-bold text-[#e6edf3] leading-tight">{selectedModpack.title}</h2>
-                  <p className="text-sm text-[#7d8590] leading-tight">by {selectedModpack.author}</p>
-                  <p className="text-sm text-[#3a3a3a] leading-tight">
-                    {formatDownloads(selectedModpack.downloads)} downloads
-                  </p>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    onClick={handleCloseModal}
+                    className="px-5 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleInstallModpack}
+                    disabled={!selectedModpackVersion || loadingVersions.has(selectedModpack.project_id)}
+                    className="px-5 py-2.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:bg-[#22252b] disabled:cursor-not-allowed disabled:text-[#3a3f4b] text-white rounded font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <Download size={16} />
+                    Install
+                  </button>
                 </div>
-              </div>
-
-              {selectedModpack.description && (
-                <p className="text-sm text-[#7d8590] leading-relaxed">{selectedModpack.description}</p>
-              )}
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-[#e6edf3]">Select Version</label>
-                {loadingVersions.has(selectedModpack.project_id) ? (
-                  <div className="flex items-center justify-center py-2">
-                    <Loader2 size={24} className="animate-spin text-[#238636]" />
-                  </div>
-                ) : modpackVersions[selectedModpack.project_id]?.length > 0 ? (
-                  <div className="relative">
-                    <select
-                      value={selectedModpackVersion}
-                      onChange={(e) => setSelectedModpackVersion(e.target.value)}
-                      className="w-full bg-[#0f0f0f] text-[#e6edf3] rounded-md px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-[#3a3a3a] cursor-pointer appearance-none border border-[#2a2a2a]"
-                    >
-                      {modpackVersions[selectedModpack.project_id].map((version) => (
-                        <option key={version.id} value={version.id}>
-                          {version.name} - {version.game_versions?.join(', ')}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7d8590" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-[#7d8590] py-3">No versions available</p>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  onClick={handleCloseModal}
-                  className="px-8 py-2.5 bg-[#0f0f0f] hover:bg-[#1a1a1a] text-[#e6edf3] rounded-md font-medium text-sm transition-colors cursor-pointer border border-[#2a2a2a]"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleInstallModpack}
-                  disabled={!selectedModpackVersion || loadingVersions.has(selectedModpack.project_id)}
-                  className="px-8 py-2.5 bg-[#238636] hover:bg-[#2ea043] disabled:bg-[#0f0f0f] disabled:cursor-not-allowed disabled:text-[#3a3a3a] disabled:border-[#2a2a2a] disabled:border text-white rounded-md font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                >
-                  <Download size={18} />
-                  Install
-                </button>
               </div>
             </div>
           </div>
-        </div>
         </>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Info, X } from "lucide-react"
+import { AlertCircle, X } from "lucide-react"
 import { useState } from "react"
 
 interface ConfirmModalProps {
@@ -55,10 +55,6 @@ export function ConfirmModal({
     switch (type) {
       case "danger":
         return <AlertCircle size={24} className="text-red-400" strokeWidth={2} />
-      case "success":
-        return <CheckCircle size={24} className="text-[#238636]" strokeWidth={2} />
-      case "info":
-        return <Info size={24} className="text-blue-400" strokeWidth={2} />
       default:
         return <AlertCircle size={24} className="text-yellow-400" strokeWidth={2} />
     }
@@ -67,11 +63,9 @@ export function ConfirmModal({
   const getConfirmButtonStyle = () => {
     switch (type) {
       case "danger":
-        return "bg-red-500/20 hover:bg-red-500/30 text-red-400"
-      case "success":
-        return "bg-[#238636] hover:bg-[#2ea043] text-white"
+        return "bg-red-500/10 hover:bg-red-500/20 text-red-400"
       default:
-        return "bg-[#238636] hover:bg-[#2ea043] text-white"
+        return "bg-[#4572e3] hover:bg-[#3461d1] text-white"
     }
   }
 
@@ -118,46 +112,81 @@ export function ConfirmModal({
         .modal-content.closing {
           animation: scaleOut 0.15s ease-in forwards;
         }
+        
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          ) !important;
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+        
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          ) !important;
+        }
       `}</style>
       <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
-        <div className={`bg-[#141414] border border-[#2a2a2a] rounded-md w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center">
-              {getIcon()}
+        <div 
+          className={`blur-border bg-[#181a1f] rounded w-full max-w-md modal-content ${isClosing ? 'closing' : ''}`} 
+          onClick={(e) => e.stopPropagation()}
+          style={{ pointerEvents: 'auto' }}
+        >
+          <div className="flex items-center justify-between px-6 pt-6 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center">
+                {getIcon()}
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{title}</h2>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-semibold text-[#e6edf3] tracking-tight">{title}</h2>
-            </div>
+            <button 
+              onClick={handleClose} 
+              className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
+            >
+              <X size={18} strokeWidth={2} />
+            </button>
           </div>
-          <button 
-            onClick={handleClose} 
-            className="p-1.5 hover:bg-[#1a1a1a] rounded transition-colors text-[#7d8590] hover:text-[#e6edf3] cursor-pointer"
-          >
-            <X size={16} strokeWidth={2} />
-          </button>
-        </div>
 
-        <div className="px-5 pb-5">
-          <p className="text-sm text-[#e6edf3] whitespace-pre-line leading-relaxed">{message}</p>
-        </div>
+          <div className="px-6 pb-5">
+            <p className="text-sm text-[#e6e6e6] whitespace-pre-line leading-snug">{message}</p>
+          </div>
 
-        <div className="flex gap-2 p-5 pt-0">
-          <button
-            onClick={handleClose}
-            className="flex-1 px-4 py-2.5 bg-[#0f0f0f] hover:bg-[#1a1a1a] text-[#e6edf3] rounded-md font-medium text-sm transition-all cursor-pointer border border-[#2a2a2a]"
-          >
-            {cancelText}
-          </button>
-          <button
-            onClick={handleConfirm}
-            className={`flex-1 px-4 py-2.5 rounded-md font-medium text-sm transition-all cursor-pointer ${type === 'danger' ? '' : 'shadow-sm'} ${getConfirmButtonStyle()}`}
-          >
-            {confirmText}
-          </button>
+          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">
+            <button
+              onClick={handleClose}
+              className="px-5 py-3 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors cursor-pointer"
+            >
+              {cancelText}
+            </button>
+            <button
+              onClick={handleConfirm}
+              className={`px-5 py-3 rounded font-medium text-sm transition-colors cursor-pointer ${getConfirmButtonStyle()}`}
+            >
+              {confirmText}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
     </>
   )
 }
@@ -186,10 +215,6 @@ export function AlertModal({
     switch (type) {
       case "danger":
         return <AlertCircle size={24} className="text-red-400" strokeWidth={2} />
-      case "success":
-        return <CheckCircle size={24} className="text-[#238636]" strokeWidth={2} />
-      case "info":
-        return <Info size={24} className="text-blue-400" strokeWidth={2} />
       default:
         return <AlertCircle size={24} className="text-yellow-400" strokeWidth={2} />
     }
@@ -198,11 +223,9 @@ export function AlertModal({
   const getConfirmButtonStyle = () => {
     switch (type) {
       case "danger":
-        return "bg-red-500/20 hover:bg-red-500/30 text-red-400"
-      case "success":
-        return "bg-[#238636] hover:bg-[#2ea043] text-white"
+        return "bg-red-500/10 hover:bg-red-500/20 text-red-400"
       default:
-        return "bg-[#238636] hover:bg-[#2ea043] text-white"
+        return "bg-[#4572e3] hover:bg-[#3461d1] text-white"
     }
   }
 
@@ -249,40 +272,75 @@ export function AlertModal({
         .modal-content.closing {
           animation: scaleOut 0.15s ease-in forwards;
         }
+        
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          ) !important;
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+        }
+        
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          ) !important;
+        }
       `}</style>
       <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
-        <div className={`bg-[#141414] border border-[#2a2a2a] rounded-md w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center">
-              {getIcon()}
+        <div 
+          className={`blur-border bg-[#181a1f] rounded w-full max-w-md modal-content ${isClosing ? 'closing' : ''}`} 
+          onClick={(e) => e.stopPropagation()}
+          style={{ pointerEvents: 'auto' }}
+        >
+          <div className="flex items-center justify-between px-6 pt-6 pb-5">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center">
+                {getIcon()}
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{title}</h2>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-semibold text-[#e6edf3] tracking-tight">{title}</h2>
-            </div>
+            <button 
+              onClick={handleClose} 
+              className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
+            >
+              <X size={18} strokeWidth={2} />
+            </button>
           </div>
-          <button 
-            onClick={handleClose} 
-            className="p-1.5 hover:bg-[#1a1a1a] rounded transition-colors text-[#7d8590] hover:text-[#e6edf3] cursor-pointer"
-          >
-            <X size={16} strokeWidth={2} />
-          </button>
-        </div>
 
-        <div className="px-5 pb-5">
-          <p className="text-sm text-[#e6edf3] whitespace-pre-line leading-relaxed">{message}</p>
-        </div>
+          <div className="px-6 pb-5">
+            <p className="text-sm text-[#e6e6e6] whitespace-pre-line leading-snug">{message}</p>
+          </div>
 
-        <div className="flex p-5 pt-0">
-          <button
-            onClick={handleClose}
-            className={`flex-1 px-4 py-2.5 rounded-md font-medium text-sm transition-all cursor-pointer ${type === 'danger' ? '' : 'shadow-sm'} ${getConfirmButtonStyle()}`}
-          >
-            {confirmText}
-          </button>
+          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">
+            <button
+              onClick={handleClose}
+              className={`px-5 py-3 rounded font-medium text-sm transition-colors cursor-pointer ${getConfirmButtonStyle()}`}
+            >
+              {confirmText}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
     </>
   )
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { LogIn, LogOut, ChevronUp, ChevronDown, Play, Package, FolderOpen, Copy, Trash2, UserPlus, Gamepad2, Bell, Check, X } from "lucide-react"
+import { LogIn, LogOut, ChevronUp, ChevronDown, Play, Package, FolderOpen, Copy, Trash2, UserPlus, Gamepad2, Mail, Check, X } from "lucide-react"
 import { ContextMenu } from "../modals/ContextMenu"
 import { ConfirmModal } from "../modals/ConfirmModal"
 import type { Instance } from "../../types"
@@ -367,7 +367,7 @@ export function Sidebar(props: SidebarProps) {
   return (
     <>
       <aside 
-        className="sidebar-bg w-58 bg-[#1a1a1a] flex flex-col relative"
+        className="sidebar-bg w-58 bg-[#22252b] flex flex-col relative"
         data-custom-bg={sidebarBackground ? "true" : undefined}
         style={{
           backgroundImage: sidebarBackground 
@@ -376,7 +376,7 @@ export function Sidebar(props: SidebarProps) {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: sidebarBackground ? 'repeat' : 'no-repeat',
-          backgroundColor: '#1a1a1a'
+          backgroundColor: '#22252b'
         }}
       >
         <div className="flex-shrink-0 p-2 pt-4 space-y-1">
@@ -386,7 +386,7 @@ export function Sidebar(props: SidebarProps) {
                 <button
                   ref={accountButtonRef}
                   onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                  className="w-full flex items-center gap-2.5 p-2 cursor-pointer hover:bg-[#171717] rounded transition-colors"
+                  className="w-full flex items-center gap-2.5 p-2 cursor-pointer hover:bg-[#181a1f] rounded transition-colors"
                 >
                   <div className="relative">
                     <img
@@ -397,7 +397,7 @@ export function Sidebar(props: SidebarProps) {
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="text-xs text-[#7d8590]">Welcome back,</div>
-                    <div className="text-sm font-medium text-[#e6edf3] truncate">{activeAccount.username}</div>
+                    <div className="text-sm font-medium text-[#e6e6e6] truncate">{activeAccount.username}</div>
                   </div>
                   <div className="flex flex-col text-[#7d8590]">
                     <ChevronUp size={14} strokeWidth={2.5} />
@@ -410,7 +410,7 @@ export function Sidebar(props: SidebarProps) {
             <button
               onClick={handleAddAccount}
               disabled={isLoggingIn}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717]"
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#181a1f]"
             >
               <LogIn size={20} className="text-[#16a34a]" strokeWidth={2} />
               <span>{isLoggingIn ? 'Authenticating...' : 'Sign In'}</span>
@@ -418,6 +418,15 @@ export function Sidebar(props: SidebarProps) {
           )}
         </div>
 
+      {!isAuthenticated ? (
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center">
+            <Gamepad2 size={40} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
+            <p className="text-sm text-[#7d8590] mb-1">Nothing here yet</p>
+            <p className="text-xs text-[#7d8590]/70">Sign in to get started!</p>
+          </div>
+        </div>
+      ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           {recentInstances.length > 0 && (
             <div className="flex-shrink-0 overflow-y-auto px-2 pb-3">
@@ -439,7 +448,7 @@ export function Sidebar(props: SidebarProps) {
                           setShowInstanceDetails(true)
                         }}
                         onContextMenu={(e) => handleSidebarContextMenu(e, instance)}
-                        className="group w-full flex items-center gap-2 rounded cursor-pointer transition-all text-[#7d8590] hover:text-[#e6edf3] hover:bg-[#171717] px-1.5 py-1.5 relative"
+                        className="group w-full flex items-center gap-2 rounded cursor-pointer transition-all text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#181a1f] px-1.5 py-1.5 relative"
                       >
                         {icon ? (
                           <img
@@ -448,14 +457,14 @@ export function Sidebar(props: SidebarProps) {
                             className="w-9 h-9 rounded object-cover flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#101010] rounded">
-                            <Package size={24} className="text-[#3a3a3a]" strokeWidth={1.5} />
+                          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#181a1f] rounded">
+                            <Package size={24} className="text-[#3a3f4b]" strokeWidth={1.5} />
                           </div>
                         )}
                         <div className={`flex-1 min-w-0 text-left transition-all ${
                           isRunning || isLaunching ? 'pr-10' : 'group-hover:pr-10'
                         }`}>
-                          <div className="text-sm font-medium text-[#e6edf3] truncate leading-tight">
+                          <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">
                             {instance.name}
                           </div>
                           <div className="text-xs text-[#7d8590] leading-tight mt-0.5 truncate">
@@ -508,10 +517,10 @@ export function Sidebar(props: SidebarProps) {
                     {friendRequests.length > 0 && (
                       <button
                         onClick={() => setShowRequests(!showRequests)}
-                        className="relative text-[#7d8590] hover:text-[#e6edf3] transition-colors cursor-pointer"
+                        className="relative text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
                         title="Friend Requests"
                       >
-                        <Bell size={14} strokeWidth={2} />
+                        <Mail size={14} strokeWidth={2} />
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold">
                           {friendRequests.length}
                         </div>
@@ -519,7 +528,7 @@ export function Sidebar(props: SidebarProps) {
                     )}
                     <button
                       onClick={() => setShowAddFriend(!showAddFriend)}
-                      className="text-[#7d8590] hover:text-[#e6edf3] transition-colors cursor-pointer"
+                      className="text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
                       title="Add Friend"
                     >
                       <UserPlus size={14} strokeWidth={2} />
@@ -530,14 +539,14 @@ export function Sidebar(props: SidebarProps) {
                 {showRequests && friendRequests.length > 0 && (
                   <div className="mb-2 space-y-1">
                     {friendRequests.map((request) => (
-                      <div key={request.id} className="rounded px-2 py-2 hover:bg-[#171717] transition-colors">
+                      <div key={request.id} className="rounded px-2 py-2 hover:bg-[#181a1f] transition-colors">
                         <div className="flex items-center gap-2 mb-2">
                           <img
                             src={`https://cravatar.eu/avatar/${request.from_username}/24`}
                             alt={request.from_username}
                             className="w-5 h-5 rounded"
                           />
-                          <span className="text-xs text-[#e6edf3] flex-1 truncate">
+                          <span className="text-xs text-[#e6e6e6] flex-1 truncate">
                             {request.from_username}
                           </span>
                         </div>
@@ -578,7 +587,7 @@ export function Sidebar(props: SidebarProps) {
                         value={friendUsername}
                         onChange={(e) => setFriendUsername(e.target.value)}
                         placeholder="Username..."
-                        className="flex-1 min-w-0 bg-[#101010] border border-[#2a2a2a] rounded px-2 py-1 text-xs text-[#e6edf3] placeholder-[#7d8590] focus:outline-none focus:border-[#3a3a3a]"
+                        className="flex-1 min-w-0 bg-[#181a1f] border border-[#3a3f4b] rounded px-2 py-1 text-xs text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none focus:border-[#3a3f4b]"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && friendUsername.trim()) {
                             handleSendFriendRequest()
@@ -611,7 +620,7 @@ export function Sidebar(props: SidebarProps) {
 
                 {friends.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                    <UserPlus size={32} className="text-[#3a3a3a] mb-3" strokeWidth={1.5} />
+                    <UserPlus size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
                     <p className="text-sm text-[#7d8590]">No friends yet</p>
                   </div>
                 ) : (
@@ -621,7 +630,7 @@ export function Sidebar(props: SidebarProps) {
                       return (
                         <div
                           key={statusKey}
-                          className="group relative flex items-center gap-2 px-1.5 py-1.5 rounded cursor-pointer hover:bg-[#171717] transition-all"
+                          className="group relative flex items-center gap-2 px-1.5 py-1.5 rounded cursor-pointer hover:bg-[#181a1f] transition-all"
                         >
                           <div className="relative flex-shrink-0">
                             <img
@@ -629,10 +638,10 @@ export function Sidebar(props: SidebarProps) {
                               alt={friend.username}
                               className="w-8 h-8 rounded"
                             />
-                            <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#1a1a1a] ${getStatusColor(friend.status)}`} />
+                            <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#22252b] ${getStatusColor(friend.status)}`} />
                           </div>
                           <div className="flex-1 min-w-0 group-hover:pr-6 transition-all">
-                            <div className="text-sm font-medium text-[#e6edf3] truncate leading-tight">
+                            <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">
                               {friend.username}
                             </div>
                             <div className="flex items-center gap-1 text-xs text-[#7d8590] truncate leading-tight">
@@ -648,7 +657,7 @@ export function Sidebar(props: SidebarProps) {
                           </div>
                           <button
                             onClick={() => handleRemoveFriend(friend.uuid, friend.username)}
-                            className="absolute right-1.5 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer bg-[#171717]"
+                            className="absolute right-1.5 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer bg-[#181a1f]"
                             title="Remove Friend"
                           >
                             <X size={14} className="text-red-400" />
@@ -662,6 +671,7 @@ export function Sidebar(props: SidebarProps) {
             </div>
           )}
         </div>
+        )}
       </aside>
 
       {showAccountDropdown && (
@@ -672,7 +682,7 @@ export function Sidebar(props: SidebarProps) {
           />
           
           <div 
-            className="fixed bg-[#1a1a1a] rounded shadow-xl z-[70] overflow-hidden border border-[#2a2a2a]"
+            className="fixed bg-[#22252b] rounded shadow-xl z-[70] overflow-hidden border border-[#3a3f4b]"
             style={{
               top: `${dropdownPosition.top}px`,
               left: `${dropdownPosition.left}px`,
@@ -681,7 +691,7 @@ export function Sidebar(props: SidebarProps) {
           >
             {/* Active Account */}
             {activeAccount && (
-              <div className="bg-[#0d0d0d] group">
+              <div className="bg-[#181a1f] group">
                 <div className="flex items-center gap-2 p-2.5">
                   <button
                     onClick={() => setShowAccountDropdown(false)}
@@ -693,7 +703,7 @@ export function Sidebar(props: SidebarProps) {
                       className="w-8 h-8 rounded"
                     />
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="text-sm font-medium text-[#e6edf3] truncate">
+                      <div className="text-sm font-medium text-[#e6e6e6] truncate">
                         {activeAccount.username}
                       </div>
                       <div className="text-xs text-[#7d8590]">
@@ -719,7 +729,7 @@ export function Sidebar(props: SidebarProps) {
                   .map((account) => (
                     <div
                       key={account.uuid}
-                      className="flex items-center gap-2 p-2.5 hover:bg-[#2a2a2a] transition-colors group"
+                      className="flex items-center gap-2 p-2.5 hover:bg-[#3a3f4b] transition-colors group"
                     >
                       <button
                         onClick={() => handleSwitchAccount(account.uuid)}
@@ -731,7 +741,7 @@ export function Sidebar(props: SidebarProps) {
                           className="w-8 h-8 rounded"
                         />
                         <div className="flex-1 min-w-0 text-left">
-                          <div className="text-sm font-medium text-[#e6edf3] truncate">
+                          <div className="text-sm font-medium text-[#e6e6e6] truncate">
                             {account.username}
                           </div>
                           <div className="text-xs text-[#7d8590]">
@@ -752,7 +762,7 @@ export function Sidebar(props: SidebarProps) {
             )}
 
             {/* Separator before Add Account */}
-            <div className="h-px bg-[#2a2a2a]" />
+            <div className="h-px bg-[#3a3f4b]" />
             
             {/* Add Another Account */}
             <button
@@ -761,7 +771,7 @@ export function Sidebar(props: SidebarProps) {
                 handleAddAccount()
               }}
               disabled={isLoggingIn}
-              className="w-full flex items-center gap-2 px-2.5 py-2.5 text-sm text-[#e6edf3] hover:bg-[#1f1f1f] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center gap-2 px-2.5 py-2.5 text-sm text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LogIn size={18} className="text-[#16a34a]" />
               <span>{isLoggingIn ? 'Authenticating...' : 'Add another account'}</span>
