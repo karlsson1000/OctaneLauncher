@@ -56,6 +56,7 @@ use commands::{
     delete_world,
     update_instance_fabric_loader,
     update_instance_minecraft_version,
+    export_instance,
     
     // Version commands
     get_minecraft_versions,
@@ -366,6 +367,7 @@ pub fn run() {
             delete_world,
             update_instance_fabric_loader,
             update_instance_minecraft_version,
+            export_instance,
             
             // Instance icons
             set_instance_icon,

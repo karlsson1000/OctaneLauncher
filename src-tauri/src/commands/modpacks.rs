@@ -1,3 +1,4 @@
+use crate::models::Instance;
 use crate::services::instance::InstanceManager;
 use crate::services::installer::MinecraftInstaller;
 use crate::services::fabric::FabricInstaller;
@@ -577,10 +578,37 @@ pub async fn install_modpack_from_file(
     }));
     
     let manifest_path = extract_dir.join("modrinth.index.json");
-    if !manifest_path.exists() {
-        return Err("Invalid modpack: modrinth.index.json not found".to_string());
-    }
+    let is_mrpack = manifest_path.exists();
+
+    let instance_json_path = extract_dir.join("instance.json");
+    let is_standard_zip = instance_json_path.exists();
     
+    if is_mrpack {
+        install_from_mrpack(
+            extract_dir,
+            safe_name,
+            preferred_game_version,
+            app_handle
+        ).await
+    } else if is_standard_zip {
+        install_from_standard_zip(
+            extract_dir,
+            safe_name,
+            preferred_game_version,
+            app_handle
+        ).await
+    } else {
+        Err("Invalid modpack format: missing modrinth.index.json or instance.json".to_string())
+    }
+}
+
+async fn install_from_mrpack(
+    extract_dir: std::path::PathBuf,
+    safe_name: String,
+    preferred_game_version: Option<String>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let manifest_path = extract_dir.join("modrinth.index.json");
     let manifest_content = std::fs::read_to_string(&manifest_path)
         .map_err(|e| e.to_string())?;
     
@@ -671,17 +699,12 @@ pub async fn install_modpack_from_file(
         "stage": "Setting modpack icon..."
     }));
     
-    let icon_candidates = vec!["icon.png", "icon.jpg", "pack.png"];
-    for icon_name in icon_candidates {
-        let icon_path = extract_dir.join(icon_name);
-        if icon_path.exists() {
-            if let Some(icon_path_str) = icon_path.to_str() {
-                let _ = crate::commands::set_instance_icon(
-                    safe_name.clone(),
-                    icon_path_str.to_string()
-                );
-                break;
-            }
+    let icon_path = extract_dir.join("icon.png");
+    if icon_path.exists() {
+        if let Ok(icon_bytes) = std::fs::read(&icon_path) {
+            use base64::{Engine as _, engine::general_purpose};
+            let icon_base64 = general_purpose::STANDARD.encode(&icon_bytes);
+            let _ = crate::commands::set_instance_icon(safe_name.clone(), icon_base64).await;
         }
     }
     
@@ -752,4 +775,145 @@ pub async fn install_modpack_from_file(
     }));
     
     Ok(())
+}
+
+async fn install_from_standard_zip(
+    extract_dir: std::path::PathBuf,
+    safe_name: String,
+    preferred_game_version: Option<String>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let instance_json_path = extract_dir.join("instance.json");
+    let instance_content = std::fs::read_to_string(&instance_json_path)
+        .map_err(|e| e.to_string())?;
+    
+    let instance: Instance = serde_json::from_str(&instance_content)
+        .map_err(|e| e.to_string())?;
+    
+    let game_version = if let Some(ref preferred) = preferred_game_version {
+        preferred.clone()
+    } else {
+        extract_minecraft_version_from_instance(&instance.version)
+    };
+    
+    let loader = instance.loader.clone();
+    let loader_version = instance.loader_version.clone();
+    
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 30,
+        "stage": format!("Installing Minecraft {}...", game_version)
+    }));
+    
+    let meta_dir = get_meta_dir();
+    let installer = MinecraftInstaller::new(meta_dir.clone());
+    installer
+        .install_version(&game_version)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    let final_version = if loader == Some("fabric".to_string()) {
+        let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+            "instance": safe_name,
+            "progress": 40,
+            "stage": "Installing Fabric loader..."
+        }));
+        
+        let fabric_installer = FabricInstaller::new(meta_dir);
+        
+        let fabric_ver = if let Some(ref ver) = loader_version {
+            ver.clone()
+        } else {
+            let fabric_versions = fabric_installer
+                .get_loader_versions()
+                .await
+                .map_err(|e| e.to_string())?;
+            
+            fabric_versions
+                .iter()
+                .find(|v| v.stable)
+                .or_else(|| fabric_versions.first())
+                .ok_or("No Fabric versions found")?
+                .version.clone()
+        };
+        
+        fabric_installer
+            .install_fabric(&game_version, &fabric_ver)
+            .await
+            .map_err(|e| e.to_string())?
+    } else {
+        game_version.clone()
+    };
+    
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 50,
+        "stage": "Creating instance..."
+    }));
+    
+    InstanceManager::create(
+        &safe_name,
+        &final_version,
+        loader,
+        loader_version,
+    )
+    .map_err(|e| e.to_string())?;
+    
+    let instance_dir = get_instance_dir(&safe_name);
+    
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 60,
+        "stage": "Copying instance data..."
+    }));
+
+    let entries_to_copy = vec!["saves", "resourcepacks", "shaderpacks", "mods", "config"];
+    
+    for entry_name in entries_to_copy {
+        let source_dir = extract_dir.join(entry_name);
+        if source_dir.exists() {
+            let dest_dir = instance_dir.join(entry_name);
+            copy_dir_recursive(&source_dir, &dest_dir)
+                .map_err(|e| e.to_string())?;
+        }
+    }
+
+    let options_files = vec!["options.txt", "optionsof.txt", "optionsshaders.txt"];
+    for file_name in options_files {
+        let source_file = extract_dir.join(file_name);
+        if source_file.exists() {
+            let dest_file = instance_dir.join(file_name);
+            std::fs::copy(&source_file, &dest_file)
+                .map_err(|e| e.to_string())?;
+        }
+    }
+
+    let icon_path = extract_dir.join("icon.png");
+    if icon_path.exists() {
+        if let Ok(icon_bytes) = std::fs::read(&icon_path) {
+            use base64::{Engine as _, engine::general_purpose};
+            let icon_base64 = general_purpose::STANDARD.encode(&icon_bytes);
+            let _ = crate::commands::set_instance_icon(safe_name.clone(), icon_base64).await;
+        }
+    }
+    
+    let _ = std::fs::remove_dir_all(&extract_dir);
+
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 100,
+        "stage": "Installation complete!"
+    }));
+    
+    Ok(())
+}
+
+fn extract_minecraft_version_from_instance(version_string: &str) -> String {
+    if version_string.contains("fabric-loader") {
+        let parts: Vec<&str> = version_string.split('-').collect();
+        if let Some(mc_version) = parts.last() {
+            return mc_version.to_string();
+        }
+    }
+    version_string.to_string()
 }

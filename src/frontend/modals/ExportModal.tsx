@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { save } from '@tauri-apps/plugin-dialog'
-import { X, AlertCircle, Download } from "lucide-react"
+import { X, Download } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
 
 interface ExportModalProps {
@@ -12,6 +12,7 @@ interface ExportModalProps {
 export function ExportModal({ instanceName, onClose }: ExportModalProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const [exportFormat, setExportFormat] = useState<'zip' | 'mrpack'>('mrpack')
   const [includeWorlds, setIncludeWorlds] = useState(true)
   const [includeResourcePacks, setIncludeResourcePacks] = useState(true)
   const [includeShaderPacks, setIncludeShaderPacks] = useState(true)
@@ -34,52 +35,54 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
 
   const handleExport = async () => {
     try {
-      const defaultFileName = `${instanceName}.zip`
+      const defaultExtension = exportFormat === 'mrpack' ? 'mrpack' : 'zip';
+      const defaultFileName = `${instanceName}.${defaultExtension}`;
       
       const savePath = await save({
         defaultPath: defaultFileName,
         filters: [{
-          name: 'ZIP Archive',
-          extensions: ['zip']
+          name: exportFormat === 'mrpack' ? 'Modrinth Modpack' : 'ZIP Archive',
+          extensions: [defaultExtension]
         }]
-      })
+      });
 
-      if (!savePath) return
+      if (!savePath) return;
 
-      setIsExporting(true)
+      setIsExporting(true);
 
       await invoke("export_instance", {
         instanceName: instanceName,
         outputPath: savePath,
+        exportFormat: exportFormat,
         includeWorlds: includeWorlds,
         includeResourcePacks: includeResourcePacks,
         includeShaderPacks: includeShaderPacks,
         includeMods: includeMods,
         includeConfig: includeConfig,
-      })
+      });
 
       setAlertModal({
         isOpen: true,
         title: "Success",
         message: `Instance exported successfully to ${savePath}`,
         type: "success"
-      })
+      });
 
       setTimeout(() => {
-        handleClose()
-      }, 1500)
+        handleClose();
+      }, 1500);
     } catch (error) {
-      console.error("Export error:", error)
+      console.error("Export error:", error);
       setAlertModal({
         isOpen: true,
         title: "Error",
         message: `Failed to export instance: ${error}`,
         type: "danger"
-      })
+      });
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
-  }
+  };
 
   return (
     <>
@@ -124,14 +127,47 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
         .modal-content.closing {
           animation: scaleOut 0.15s ease-in forwards;
         }
+        
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+          transition: none !important;
+        }
+        
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+        }
       `}</style>
       <div 
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
         onClick={handleClose}
       >
         <div 
-          className={`bg-[#181a1f] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border bg-[#181a1f] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
+          style={{ pointerEvents: 'auto' }}
         >
           <div className="flex items-center justify-between px-6 pt-6 pb-5">
             <div>
@@ -148,18 +184,57 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
 
           <div className="px-6 pb-4 space-y-4">
             <div>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Export Format</label>
+              <div className="bg-[#22252b] rounded p-4 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="radio"
+                    checked={exportFormat === 'mrpack'}
+                    onChange={() => setExportFormat('mrpack')}
+                    disabled={isExporting}
+                    className="w-4 h-4 text-[#4572e3] border-gray-500 focus:ring-[#4572e3] cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                      Modrinth Modpack (.mrpack)
+                    </span>
+                    <p className="text-xs text-[#7d8590] mt-0.5">
+                      Standard modpack format
+                    </p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="radio"
+                    checked={exportFormat === 'zip'}
+                    onChange={() => setExportFormat('zip')}
+                    disabled={isExporting}
+                    className="w-4 h-4 text-[#4572e3] border-gray-500 focus:ring-[#4572e3] cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                      Standard ZIP Archive (.zip)
+                    </span>
+                    <p className="text-xs text-[#7d8590] mt-0.5">
+                      Direct backup of instance folder structure
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Include in Export</label>
               <div className="bg-[#22252b] rounded p-4 space-y-3">
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="flex items-center h-5">
-                    <input
-                      type="checkbox"
-                      checked={includeWorlds}
-                      onChange={(e) => setIncludeWorlds(e.target.checked)}
-                      disabled={isExporting}
-                      className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer"
-                    />
-                  </div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={includeWorlds}
+                    onChange={(e) => setIncludeWorlds(e.target.checked)}
+                    disabled={isExporting}
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                  />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
                       Worlds (saves/)
@@ -170,16 +245,14 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="flex items-center h-5">
-                    <input
-                      type="checkbox"
-                      checked={includeResourcePacks}
-                      onChange={(e) => setIncludeResourcePacks(e.target.checked)}
-                      disabled={isExporting}
-                      className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer"
-                    />
-                  </div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={includeResourcePacks}
+                    onChange={(e) => setIncludeResourcePacks(e.target.checked)}
+                    disabled={isExporting}
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                  />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
                       Resource Packs
@@ -190,16 +263,14 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="flex items-center h-5">
-                    <input
-                      type="checkbox"
-                      checked={includeShaderPacks}
-                      onChange={(e) => setIncludeShaderPacks(e.target.checked)}
-                      disabled={isExporting}
-                      className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer"
-                    />
-                  </div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={includeShaderPacks}
+                    onChange={(e) => setIncludeShaderPacks(e.target.checked)}
+                    disabled={isExporting}
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                  />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
                       Shader Packs
@@ -210,16 +281,14 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="flex items-center h-5">
-                    <input
-                      type="checkbox"
-                      checked={includeMods}
-                      onChange={(e) => setIncludeMods(e.target.checked)}
-                      disabled={isExporting}
-                      className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer"
-                    />
-                  </div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={includeMods}
+                    onChange={(e) => setIncludeMods(e.target.checked)}
+                    disabled={isExporting}
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                  />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
                       Mods
@@ -230,16 +299,14 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                   </div>
                 </label>
 
-                <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="flex items-center h-5">
-                    <input
-                      type="checkbox"
-                      checked={includeConfig}
-                      onChange={(e) => setIncludeConfig(e.target.checked)}
-                      disabled={isExporting}
-                      className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer"
-                    />
-                  </div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={includeConfig}
+                    onChange={(e) => setIncludeConfig(e.target.checked)}
+                    disabled={isExporting}
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                  />
                   <div className="flex-1">
                     <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
                       Configuration
@@ -252,17 +319,6 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
               </div>
             </div>
 
-            <div className="bg-[#22252b] rounded p-4 border border-[#3a3f4b]">
-              <div className="flex items-start gap-2">
-                <AlertCircle size={16} className="text-[#3b82f6] flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-xs text-[#e6e6e6] font-medium mb-1">Standard ZIP Format</p>
-                  <p className="text-xs text-[#7d8590] leading-relaxed">
-                    Export creates a standard ZIP archive containing your selected instance data. This can be used for backups or sharing.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-3">
