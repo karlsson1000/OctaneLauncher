@@ -1,4 +1,4 @@
-import { AlertCircle, X } from "lucide-react"
+import { AlertCircle, X, CheckCircle, XCircle, Info } from "lucide-react"
 import { useState } from "react"
 
 interface ConfirmModalProps {
@@ -54,7 +54,12 @@ export function ConfirmModal({
   const getIcon = () => {
     switch (type) {
       case "danger":
-        return <AlertCircle size={24} className="text-red-400" strokeWidth={2} />
+        return <XCircle size={24} className="text-red-400" strokeWidth={2} />
+      case "success":
+        return <CheckCircle size={24} className="text-green-400" strokeWidth={2} />
+      case "info":
+        return <Info size={24} className="text-blue-400" strokeWidth={2} />
+      case "warning":
       default:
         return <AlertCircle size={24} className="text-yellow-400" strokeWidth={2} />
     }
@@ -64,6 +69,11 @@ export function ConfirmModal({
     switch (type) {
       case "danger":
         return "bg-red-500/10 hover:bg-red-500/20 text-red-400"
+      case "success":
+        return "bg-green-500/10 hover:bg-green-500/20 text-green-400"
+      case "info":
+        return "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
+      case "warning":
       default:
         return "bg-[#4572e3] hover:bg-[#3461d1] text-white"
     }
@@ -214,7 +224,12 @@ export function AlertModal({
   const getIcon = () => {
     switch (type) {
       case "danger":
-        return <AlertCircle size={24} className="text-red-400" strokeWidth={2} />
+        return <XCircle size={24} className="text-red-400" strokeWidth={2} />
+      case "success":
+        return <CheckCircle size={24} className="text-green-400" strokeWidth={2} />
+      case "info":
+        return <Info size={24} className="text-blue-400" strokeWidth={2} />
+      case "warning":
       default:
         return <AlertCircle size={24} className="text-yellow-400" strokeWidth={2} />
     }
@@ -224,6 +239,11 @@ export function AlertModal({
     switch (type) {
       case "danger":
         return "bg-red-500/10 hover:bg-red-500/20 text-red-400"
+      case "success":
+        return "bg-green-500/10 hover:bg-green-500/20 text-green-400"
+      case "info":
+        return "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
+      case "warning":
       default:
         return "bg-[#4572e3] hover:bg-[#3461d1] text-white"
     }
