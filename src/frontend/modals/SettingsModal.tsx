@@ -394,7 +394,7 @@ export function SettingsModal({
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 p-5">
+            <div className="flex-1 p-5 min-w-0 max-w-full">
               {activeTab === "game" && (
                 <div className="space-y-5">
                   {/* Memory */}
@@ -447,16 +447,16 @@ export function SettingsModal({
                   </div>
 
                   {/* Java */}
-                  <div className="space-y-3">
+                  <div className="space-y-3 min-w-0">
                     <div className="flex items-center gap-2 text-white">
                       <Coffee size={18} className="text-[#4572e3]" />
                       <span className="font-medium">Java Runtime</span>
                     </div>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1" ref={javaDropdownRef}>
+                    <div className="flex gap-2 min-w-0">
+                      <div className="relative flex-1 min-w-0" ref={javaDropdownRef}>
                         <button
                           onClick={() => setIsJavaDropdownOpen(!isJavaDropdownOpen)}
-                          className={`w-full bg-[#252932] px-4 py-2.5 text-sm text-white text-left flex items-center justify-between cursor-pointer ${
+                          className={`w-full bg-[#252932] px-4 py-2.5 text-sm text-white text-left flex items-center justify-between cursor-pointer min-w-0 ${
                             isJavaDropdownOpen ? 'rounded-t' : 'rounded'
                           }`}
                         >
@@ -528,7 +528,7 @@ export function SettingsModal({
                     {showCustomPath && (
                       <input
                         type="text"
-                        className="w-full bg-[#252932] rounded px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4572e3] font-mono"
+                        className="w-full bg-[#252932] rounded px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4572e3] font-mono min-w-0"
                         placeholder="C:\Program Files\Java\jdk-21\bin\javaw.exe"
                         value={customPathValue}
                         onChange={(e) => setCustomPathValue(e.target.value)}
