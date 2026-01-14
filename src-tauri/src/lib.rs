@@ -140,7 +140,9 @@ struct UpdateInfo {
 
 #[tauri::command]
 fn get_app_version() -> String {
-    include_str!("../commit_hash.txt").trim().to_string()
+    let version = env!("CARGO_PKG_VERSION");
+    let commit_hash = include_str!("../commit_hash.txt").trim();
+    format!("{}-{}", version, commit_hash)
 }
 
 #[tauri::command]
