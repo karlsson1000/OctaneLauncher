@@ -20,62 +20,55 @@ impl FriendsService {
         })
     }
 
-pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let url = format!("{}/rest/v1/users", self.supabase_url);
+    pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<dyn std::error::Error>> {
+        let url = format!("{}/rest/v1/users", self.supabase_url);
         
-    println!("Registering user: {} ({})", username, uuid);
+        let check_url = format!("{}/rest/v1/users?uuid=eq.{}", self.supabase_url, uuid);
+        let existing = self.client
+            .get(&check_url)
+            .header("apikey", &self.supabase_key)
+            .header("Authorization", format!("Bearer {}", self.supabase_key))
+            .send()
+            .await?;
         
-    // Check if user already exists and their current status
-    let check_url = format!("{}/rest/v1/users?uuid=eq.{}", self.supabase_url, uuid);
-    let existing = self.client
-        .get(&check_url)
-        .header("apikey", &self.supabase_key)
-        .header("Authorization", format!("Bearer {}", self.supabase_key))
-        .send()
-        .await?;
+        let existing_users: Vec<serde_json::Value> = existing.json().await?;
+
+        let payload = if existing_users.is_empty() {
+            json!({
+                "uuid": uuid,
+                "username": username,
+                "status": "online",
+                "last_seen": Utc::now()
+            })
+        } else {
+            json!({
+                "uuid": uuid,
+                "username": username,
+                "status": "online",
+                "last_seen": Utc::now()
+            })
+        };
+
+        let response = self.client
+            .post(&url)
+            .header("apikey", &self.supabase_key)
+            .header("Authorization", format!("Bearer {}", self.supabase_key))
+            .header("Content-Type", "application/json")
+            .header("Prefer", "resolution=merge-duplicates")
+            .json(&payload)
+            .send()
+            .await?;
+
+        let status = response.status();
         
-    let existing_users: Vec<serde_json::Value> = existing.json().await?;
-
-    let payload = if existing_users.is_empty() {
-        json!({
-            "uuid": uuid,
-            "username": username,
-            "status": "online",
-            "last_seen": Utc::now()
-        })
-    } else {
-        json!({
-            "uuid": uuid,
-            "username": username,
-            "status": "online",
-            "last_seen": Utc::now()
-        })
-    };
-
-    let response = self.client
-        .post(&url)
-        .header("apikey", &self.supabase_key)
-        .header("Authorization", format!("Bearer {}", self.supabase_key))
-        .header("Content-Type", "application/json")
-        .header("Prefer", "resolution=merge-duplicates")
-        .json(&payload)
-        .send()
-        .await?;
-
-    let status = response.status();
-    println!("Registration response status: {}", status);
-    
-    if !status.is_success() {
-        let error_text = response.text().await?;
-        println!("Registration error: {}", error_text);
-        return Err(format!("Failed to register user: {}", error_text).into());
+        if !status.is_success() {
+            let error_text = response.text().await?;
+            return Err(error_text.into());
+        }
+        
+        Ok(())
     }
-    
-    println!("User registered successfully!");
-    Ok(())
-}
 
-    // Update user status
     pub async fn update_status(&self, uuid: &str, status: FriendStatus, current_instance: Option<String>) -> Result<(), Box<dyn std::error::Error>> {
         let url = format!("{}/rest/v1/users?uuid=eq.{}", self.supabase_url, uuid);
         
@@ -103,13 +96,8 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         Ok(())
     }
 
-    // Send friend request
     pub async fn send_friend_request(&self, from_uuid: &str, to_username: &str) -> Result<(), Box<dyn std::error::Error>> {
-        // First, find the user by username
         let users_url = format!("{}/rest/v1/users?username=eq.{}", self.supabase_url, to_username);
-        
-        println!("Looking for user: {}", to_username);
-        println!("Query URL: {}", users_url);
         
         let response = self.client
             .get(&users_url)
@@ -118,22 +106,16 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
             .send()
             .await?;
 
-        let status = response.status();
-        println!("Response status: {}", status);
-        
         let response_text = response.text().await?;
-        println!("Response body: {}", response_text);
         
         let users: Vec<serde_json::Value> = serde_json::from_str(&response_text)?;
         
         if users.is_empty() {
-            println!("User '{}' not found in database. They need to log in first.", to_username);
             return Err(format!("User '{}' not found. They need to sign in to the launcher first.", to_username).into());
         }
 
         let to_uuid = users[0]["uuid"].as_str().ok_or("Invalid user data")?;
 
-        // Check if they're already friends
         let friendship_check = format!(
             "{}/rest/v1/friendships?or=(and(user_uuid.eq.{},friend_uuid.eq.{}),and(user_uuid.eq.{},friend_uuid.eq.{}))",
             self.supabase_url, from_uuid, to_uuid, to_uuid, from_uuid
@@ -152,7 +134,6 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
             return Err("Already friends".into());
         }
 
-        // Check if there's a pending request in either direction
         let request_check = format!(
             "{}/rest/v1/friend_requests?or=(and(from_uuid.eq.{},to_uuid.eq.{}),and(from_uuid.eq.{},to_uuid.eq.{}))&status=eq.pending",
             self.supabase_url, from_uuid, to_uuid, to_uuid, from_uuid
@@ -168,14 +149,12 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
             .await?;
 
         if !existing_request.is_empty() {
-            // Check if the existing request is TO us (we should accept it instead)
             if existing_request[0]["to_uuid"].as_str() == Some(from_uuid) {
                 return Err("This user has already sent you a friend request. Please accept it from your requests.".into());
             }
             return Err("Friend request already sent".into());
         }
 
-        // Delete any old rejected/accepted requests between these users to allow re-sending
         let cleanup_url = format!(
             "{}/rest/v1/friend_requests?or=(and(from_uuid.eq.{},to_uuid.eq.{}),and(from_uuid.eq.{},to_uuid.eq.{}))&status=neq.pending",
             self.supabase_url, from_uuid, to_uuid, to_uuid, from_uuid
@@ -188,7 +167,6 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
             .send()
             .await;
 
-        // Create friend request
         let url = format!("{}/rest/v1/friend_requests", self.supabase_url);
         
         let payload = json!({
@@ -209,7 +187,6 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         Ok(())
     }
 
-    // Get incoming friend requests
     pub async fn get_friend_requests(&self, user_uuid: &str) -> Result<Vec<FriendRequest>, Box<dyn std::error::Error>> {
         let url = format!(
             "{}/rest/v1/friend_requests?to_uuid=eq.{}&status=eq.pending&select=*,from_user:users!friend_requests_from_uuid_fkey(uuid,username)",
@@ -244,9 +221,7 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         Ok(requests)
     }
 
-    // Accept friend request
     pub async fn accept_friend_request(&self, request_id: &str) -> Result<(), Box<dyn std::error::Error>> {
-        // Get the request details
         let url = format!("{}/rest/v1/friend_requests?id=eq.{}", self.supabase_url, request_id);
         
         let response = self.client
@@ -266,7 +241,6 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         let from_uuid = request["from_uuid"].as_str().ok_or("Invalid request")?;
         let to_uuid = request["to_uuid"].as_str().ok_or("Invalid request")?;
 
-        // Create friendship (both directions)
         let friendship_url = format!("{}/rest/v1/friendships", self.supabase_url);
         
         let payload1 = json!({
@@ -297,7 +271,6 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
             .send()
             .await?;
 
-        // Update request status
         let update_url = format!("{}/rest/v1/friend_requests?id=eq.{}", self.supabase_url, request_id);
         
         let update_payload = json!({
@@ -316,12 +289,9 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         Ok(())
     }
 
-    // Reject friend request (deletes it to allow re-sending)
     pub async fn reject_friend_request(&self, request_id: &str) -> Result<(), Box<dyn std::error::Error>> {
         let url = format!("{}/rest/v1/friend_requests?id=eq.{}", self.supabase_url, request_id);
         
-        // Delete the request entirely instead of marking as rejected
-        // This allows users to send new requests after rejection
         self.client
             .delete(&url)
             .header("apikey", &self.supabase_key)
@@ -332,7 +302,6 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         Ok(())
     }
 
-    // Get friends list with status
     pub async fn get_friends(&self, user_uuid: &str) -> Result<Vec<Friend>, Box<dyn std::error::Error>> {
         let url = format!(
             "{}/rest/v1/friendships?user_uuid=eq.{}&select=friend:users!friendships_friend_uuid_fkey(uuid,username,status,last_seen,current_instance)",
@@ -373,9 +342,7 @@ pub async fn register_user(&self, uuid: &str, username: &str) -> Result<(), Box<
         Ok(friends)
     }
 
-    // Remove friend
     pub async fn remove_friend(&self, user_uuid: &str, friend_uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
-        // Delete both friendship entries
         let url1 = format!(
             "{}/rest/v1/friendships?user_uuid=eq.{}&friend_uuid=eq.{}",
             self.supabase_url, user_uuid, friend_uuid

@@ -188,7 +188,6 @@ impl TemplateManager {
         for line in content.lines() {
             if let Some((key, value)) = line.split_once(':') {
                 match key {
-                    // Video - Basic
                     "fov" => options.fov = value.parse().ok(),
                     "renderDistance" => options.render_distance = value.parse().ok(),
                     "simulationDistance" => options.simulation_distance = value.parse().ok(),
@@ -197,8 +196,6 @@ impl TemplateManager {
                     "enableVsync" => options.vsync = Some(value == "true"),
                     "guiScale" => options.gui_scale = value.parse().ok(),
                     "gamma" => options.brightness = value.parse().ok(),
-                    
-                    // Video - Quality
                     "entityShadows" => options.entity_shadows = Some(value == "true"),
                     "particles" => options.particles = Some(value.to_string()),
                     "graphicsMode" => options.graphics = Some(value.to_string()),
@@ -209,8 +206,6 @@ impl TemplateManager {
                     "prioritizeChunkUpdates" => options.chunk_updates_mode = value.parse().ok(),
                     "renderClouds" => options.cloud_rendering = Some(value.trim_matches('"').to_string()),
                     "vignette" => options.vignette = Some(value == "true"),
-                    
-                    // Audio
                     "soundCategory_master" => options.master_volume = value.parse().ok(),
                     "soundCategory_music" => options.music_volume = value.parse().ok(),
                     "soundCategory_record" => options.record_volume = value.parse().ok(),
@@ -221,20 +216,14 @@ impl TemplateManager {
                     "soundCategory_player" => options.players_volume = value.parse().ok(),
                     "soundCategory_ambient" => options.ambient_volume = value.parse().ok(),
                     "soundCategory_voice" => options.voice_volume = value.parse().ok(),
-                    
-                    // Controls - Mouse
                     "mouseSensitivity" => options.mouse_sensitivity = value.parse().ok(),
                     "invertYMouse" => options.invert_mouse = Some(value == "true"),
                     "rawMouseInput" => options.raw_input = Some(value == "true"),
                     "discrete_mouse_scroll" => options.discrete_mouse_scroll = Some(value == "true"),
                     "touchscreen" => options.touchscreen = Some(value == "true"),
-                    
-                    // Controls - Movement
                     "autoJump" => options.auto_jump = Some(value == "true"),
                     "toggleCrouch" => options.sneak_toggles = Some(value == "true"),
                     "toggleSprint" => options.sprint_toggles = Some(value == "true"),
-                    
-                    // Chat & Accessibility
                     "narrator" => options.narrator = value.parse().ok(),
                     "chatOpacity" => options.chat_opacity = value.parse().ok(),
                     "chatLineSpacing" => options.chat_line_spacing = value.parse().ok(),
@@ -243,7 +232,6 @@ impl TemplateManager {
                     "chatHeightUnfocused" => options.chat_height_unfocused = value.parse().ok(),
                     "chatWidth" => options.chat_width = value.parse().ok(),
                     "damageTiltStrength" => options.damage_tilt_strength = value.parse().ok(),
-                    
                     _ => {
                         if key.starts_with("key_") {
                             if let Some(ref mut keybinds) = options.keybinds {
@@ -269,10 +257,7 @@ impl TemplateManager {
             return Err(format!("Instance '{}' not found", instance_name).into());
         }
 
-        println!("Applying template '{}' to instance '{}'", template.name, instance_name);
-
         if let Some(launcher_settings) = template.launcher_settings {
-            println!("  → Applying launcher settings (RAM: {}MB)", launcher_settings.memory_mb);
             let instance_json = instance_dir.join("instance.json");
             let mut instance: crate::models::Instance =
                 serde_json::from_str(&fs::read_to_string(&instance_json)?)?;
@@ -281,11 +266,9 @@ impl TemplateManager {
 
             let json = serde_json::to_string_pretty(&instance)?;
             fs::write(&instance_json, json)?;
-            println!("  ✓ Launcher settings applied");
         }
 
         if let Some(minecraft_options) = template.minecraft_options {
-            println!("  → Applying game options");
             let options_path = instance_dir.join("options.txt");
             
             let mut existing_options = if options_path.exists() {
@@ -296,10 +279,8 @@ impl TemplateManager {
 
             Self::merge_options_txt(&mut existing_options, &minecraft_options)?;
             fs::write(&options_path, existing_options)?;
-            println!("  ✓ Game options applied");
         }
 
-        println!("✓ Template applied successfully to '{}'", instance_name);
         Ok(())
     }
 
@@ -317,7 +298,6 @@ impl TemplateManager {
             }
         };
 
-        // Video - Basic
         if let Some(fov) = options.fov {
             update_line(&mut lines, "fov", fov.to_string());
         }
@@ -342,8 +322,6 @@ impl TemplateManager {
         if let Some(brightness) = options.brightness {
             update_line(&mut lines, "gamma", brightness.to_string());
         }
-
-        // Video - Quality
         if let Some(entity_shadows) = options.entity_shadows {
             update_line(&mut lines, "entityShadows", entity_shadows.to_string());
         }
@@ -374,8 +352,6 @@ impl TemplateManager {
         if let Some(vignette) = options.vignette {
             update_line(&mut lines, "vignette", vignette.to_string());
         }
-
-        // Audio
         if let Some(master_volume) = options.master_volume {
             update_line(&mut lines, "soundCategory_master", master_volume.to_string());
         }
@@ -406,8 +382,6 @@ impl TemplateManager {
         if let Some(voice_volume) = options.voice_volume {
             update_line(&mut lines, "soundCategory_voice", voice_volume.to_string());
         }
-
-        // Controls - Mouse
         if let Some(mouse_sensitivity) = options.mouse_sensitivity {
             update_line(&mut lines, "mouseSensitivity", mouse_sensitivity.to_string());
         }
@@ -423,8 +397,6 @@ impl TemplateManager {
         if let Some(touchscreen) = options.touchscreen {
             update_line(&mut lines, "touchscreen", touchscreen.to_string());
         }
-
-        // Controls - Movement
         if let Some(auto_jump) = options.auto_jump {
             update_line(&mut lines, "autoJump", auto_jump.to_string());
         }
@@ -434,8 +406,6 @@ impl TemplateManager {
         if let Some(sprint_toggles) = options.sprint_toggles {
             update_line(&mut lines, "toggleSprint", sprint_toggles.to_string());
         }
-
-        // Chat & Accessibility
         if let Some(narrator) = options.narrator {
             update_line(&mut lines, "narrator", narrator.to_string());
         }
@@ -460,8 +430,6 @@ impl TemplateManager {
         if let Some(damage_tilt_strength) = options.damage_tilt_strength {
             update_line(&mut lines, "damageTiltStrength", damage_tilt_strength.to_string());
         }
-
-        // Keybinds
         if let Some(ref keybinds) = options.keybinds {
             for (key, value) in keybinds {
                 update_line(&mut lines, key, value.clone());

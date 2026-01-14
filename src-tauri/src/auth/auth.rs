@@ -63,7 +63,6 @@ impl Authenticator {
 
     pub async fn wait_for_callback(&self, expected_csrf: &str) -> Result<String, Box<dyn std::error::Error>> {
         let listener = tokio::net::TcpListener::bind(SERVER_ADDRESS).await?;
-        println!("Waiting for authentication callback...");
 
         let (mut stream, _) = listener.accept().await?;
         let mut buf = [0u8; 2048];
@@ -88,7 +87,6 @@ impl Authenticator {
         let received_state = state.ok_or("No state in callback")?;
         
         if received_state != expected_csrf {
-            // Send error response
             let error_response = b"HTTP/1.1 400 Bad Request\r\n\
     Content-Type: text/html; charset=utf-8\r\n\
     Connection: close\r\n\
@@ -101,10 +99,9 @@ impl Authenticator {
             stream.write_all(error_response).await?;
             stream.flush().await?;
             
-            return Err("CSRF token mismatch - possible attack detected!".into());
+            return Err("CSRF token mismatch".into());
         }
 
-        // Only proceed if CSRF token is valid
         let auth_code = code.ok_or("No code in callback")?;
 
         let success_response = b"HTTP/1.1 200 OK\r\n\
@@ -116,11 +113,9 @@ impl Authenticator {
         <p>Authentication complete. Please return to the Atomic Launcher to continue.</p>\
     </html>";
 
-        // Write response and flush
         stream.write_all(success_response).await?;
         stream.flush().await?;
 
-        // Give the browser time to receive and render the page
         tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
         Ok(auth_code)
@@ -164,7 +159,7 @@ impl Authenticator {
 
         if !response.status().is_success() {
             let error_text = response.text().await?;
-            return Err(format!("Xbox Live auth failed: {}", error_text).into());
+            return Err(error_text.into());
         }
 
         let xbl_response: XboxLiveAuthResponse = response.json().await?;
@@ -198,7 +193,7 @@ impl Authenticator {
 
         if !response.status().is_success() {
             let error_text = response.text().await?;
-            return Err(format!("XSTS auth failed: {}", error_text).into());
+            return Err(error_text.into());
         }
 
         let xsts_response: XstsAuthResponse = response.json().await?;
@@ -226,8 +221,6 @@ impl Authenticator {
         xsts_token: &str,
         userhash: &str,
     ) -> Result<TokenWithExpiry, Box<dyn std::error::Error>> {
-        println!("Sending request to: {}", MINECRAFT_LOGIN_URL);
-        
         let request = MinecraftLoginRequest {
             identity_token: &format!("XBL3.0 x={};{}", userhash, xsts_token),
         };
@@ -239,13 +232,9 @@ impl Authenticator {
             .send()
             .await?;
 
-        let status = response.status();
-        println!("Response status: {}", status);
-
         if !response.status().is_success() {
             let error_text = response.text().await?;
-            eprintln!("Error response body: {}", error_text);
-            return Err(format!("Minecraft auth failed with status {}: {}", status, error_text).into());
+            return Err(error_text.into());
         }
 
         let mc_response: MinecraftLoginResponse = response.json().await?;
@@ -260,8 +249,6 @@ impl Authenticator {
         &self,
         access_token: &str,
     ) -> Result<MinecraftProfile, Box<dyn std::error::Error>> {
-        println!("Fetching profile from: {}", MINECRAFT_PROFILE_URL);
-        
         let response = self
             .http_client
             .get(MINECRAFT_PROFILE_URL)
@@ -269,17 +256,13 @@ impl Authenticator {
             .send()
             .await?;
 
-        let status = response.status();
-        println!("Profile response status: {}", status);
-
         if response.status() == 404 {
             return Err("Account does not own Minecraft".into());
         }
 
         if !response.status().is_success() {
             let error_text = response.text().await?;
-            eprintln!("Profile error response: {}", error_text);
-            return Err(format!("Failed to get profile: {}", error_text).into());
+            return Err(error_text.into());
         }
 
         let profile: MinecraftProfile = response.json().await?;
@@ -287,64 +270,25 @@ impl Authenticator {
     }
 
     pub async fn authenticate(&self) -> Result<AuthResponse, Box<dyn std::error::Error>> {
-        println!("=== Starting Microsoft Login ===");
-
         let (auth_url, csrf_token, pkce_verifier) = self.create_authorization_url();
-
-        println!("Opening browser for authentication...");
 
         if let Err(e) = webbrowser::open(auth_url.as_str()) {
             println!("Could not open browser automatically: {}", e);
         }
 
         let code = self.wait_for_callback(csrf_token.secret()).await?;
-
-        println!("✓ Authorization code received and validated");
-
         let token_response = self.exchange_code(code, pkce_verifier).await?;
         let msa_token = token_response.access_token().secret();
         let refresh_token = token_response
             .refresh_token()
-            .ok_or("No refresh token received")?
+            .ok_or("No refresh token")?
             .secret()
             .to_string();
-        
-        println!("✓ Microsoft access token obtained");
 
         let xbl_token = self.authenticate_xbox(msa_token).await?;
-        println!("✓ Xbox Live token obtained");
-
         let (xsts_token, userhash) = self.obtain_xsts(&xbl_token.token).await?;
-        println!("✓ XSTS token obtained");
-
-        println!("Attempting Minecraft authentication...");
-
-        let mc_token = match self.authenticate_minecraft(&xsts_token.token, &userhash).await {
-            Ok(token) => {
-                println!("✓ Minecraft access token obtained");
-                token
-            }
-            Err(e) => {
-                eprintln!("✗ Minecraft authentication FAILED: {:?}", e);
-                return Err(e);
-            }
-        };
-
-        println!("Attempting to get profile...");
-        let profile = match self.get_minecraft_profile(&mc_token.token).await {
-            Ok(p) => {
-                println!("✓ Profile retrieved");
-                p
-            }
-            Err(e) => {
-                eprintln!("✗ Profile retrieval FAILED: {:?}", e);
-                return Err(e);
-            }
-        };
-
-        println!("✓ Authentication Complete");
-        println!("Username: {}", profile.name);
-        println!("UUID: {}", profile.id);
+        let mc_token = self.authenticate_minecraft(&xsts_token.token, &userhash).await?;
+        let profile = self.get_minecraft_profile(&mc_token.token).await?;
 
         Ok(AuthResponse {
             access_token: mc_token.token.to_string(),
@@ -359,8 +303,6 @@ impl Authenticator {
         &self,
         refresh_token: &str,
     ) -> Result<AuthResponse, Box<dyn std::error::Error>> {
-        println!("=== Refreshing Microsoft Token ===");
-        
         let token_response = self
             .oauth_client
             .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
@@ -370,24 +312,14 @@ impl Authenticator {
         let msa_token = token_response.access_token().secret();
         let new_refresh_token = token_response
             .refresh_token()
-            .ok_or("No refresh token in response")?
+            .ok_or("No refresh token")?
             .secret()
             .to_string();
-        
-        println!("✓ Microsoft token refreshed");
 
-        // Re-authenticate through the Xbox/XSTS/Minecraft chain
         let xbl_token = self.authenticate_xbox(msa_token).await?;
-        println!("✓ Xbox Live token obtained");
-
         let (xsts_token, userhash) = self.obtain_xsts(&xbl_token.token).await?;
-        println!("✓ XSTS token obtained");
-
         let mc_token = self.authenticate_minecraft(&xsts_token.token, &userhash).await?;
-        println!("✓ Minecraft access token refreshed");
-
         let profile = self.get_minecraft_profile(&mc_token.token).await?;
-        println!("✓ Profile retrieved");
 
         Ok(AuthResponse {
             access_token: mc_token.token.to_string(),

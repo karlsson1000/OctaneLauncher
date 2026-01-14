@@ -55,7 +55,6 @@ impl AccountManager {
 
         data.accounts.insert(uuid.clone(), account);
         
-        // Set as active if it's the first account
         if data.active_account_uuid.is_none() {
             data.active_account_uuid = Some(uuid);
         }
@@ -106,7 +105,6 @@ impl AccountManager {
 
         data.active_account_uuid = Some(uuid.to_string());
         
-        // Update last_used timestamp
         if let Some(account) = data.accounts.get_mut(uuid) {
             account.last_used = Some(Utc::now().to_rfc3339());
         }
@@ -120,7 +118,6 @@ impl AccountManager {
         
         data.accounts.remove(uuid);
         
-        // If removed account was active, clear active account
         if data.active_account_uuid.as_ref() == Some(&uuid.to_string()) {
             data.active_account_uuid = None;
         }
@@ -152,7 +149,6 @@ impl AccountManager {
     }
 
     pub async fn get_valid_token(uuid: &str) -> Result<String, Box<dyn std::error::Error>> {
-        // Load fresh data to check token status
         let data = Self::load_accounts()?;
         let account = data
             .accounts
@@ -163,20 +159,13 @@ impl AccountManager {
         let now = Utc::now();
         let buffer = chrono::Duration::minutes(5);
         
-        // Check if token is still valid (expires more than 5 minutes from now)
         if account.token_expiry > now + buffer {
-            let minutes_until_expiry = (account.token_expiry - now).num_minutes();
-            println!("Token still valid (expires in {} minutes)", minutes_until_expiry);
             return Ok(account.access_token);
         }
-        
-        // Token is expired or expiring soon, refresh it
-        println!("Token expired or expiring soon, refreshing...");
         
         let authenticator = crate::auth::Authenticator::new()?;
         let refreshed = authenticator.refresh_tokens(&account.refresh_token).await?;
         
-        // Update the account with new tokens
         Self::update_account_tokens(
             uuid,
             refreshed.access_token.clone(),
@@ -184,7 +173,6 @@ impl AccountManager {
             refreshed.token_expiry,
         )?;
         
-        println!("✓ Token refreshed successfully");
         Ok(refreshed.access_token)
     }
 }

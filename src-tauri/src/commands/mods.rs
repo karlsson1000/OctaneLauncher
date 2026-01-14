@@ -10,8 +10,6 @@ pub struct ModFile {
     pub size: u64,
 }
 
-// ===== MOD FILE MANAGEMENT =====
-
 #[tauri::command]
 pub async fn get_installed_mods(instance_name: String) -> Result<Vec<ModFile>, String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
@@ -49,7 +47,7 @@ pub async fn get_installed_mods(instance_name: String) -> Result<Vec<ModFile>, S
             }
         }
         Err(e) => {
-            return Err(format!("Failed to read mods directory: {}", e));
+            return Err(e.to_string());
         }
     }
     
@@ -59,7 +57,7 @@ pub async fn get_installed_mods(instance_name: String) -> Result<Vec<ModFile>, S
 }
 
 #[tauri::command]
-pub async fn delete_mod(instance_name: String, filename: String) -> Result<String, String> {
+pub async fn delete_mod(instance_name: String, filename: String) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     let safe_filename = sanitize_filename(&filename)?;
     
@@ -74,21 +72,19 @@ pub async fn delete_mod(instance_name: String, filename: String) -> Result<Strin
         .map_err(|_| "Mods directory not found".to_string())?;
     
     if !canonical_mod_path.starts_with(&canonical_mods_dir) {
-        return Err("Invalid mod path (path traversal detected)".to_string());
+        return Err("Invalid mod path".to_string());
     }
     
     if !canonical_mod_path.is_file() {
-        return Err(format!("Mod file '{}' not found or is not a file", safe_filename));
+        return Err(format!("Mod file '{}' not found", safe_filename));
     }
     
     std::fs::remove_file(&canonical_mod_path)
-        .map_err(|e| format!("Failed to delete mod: {}", e))?;
-    
-    Ok(format!("Successfully deleted {}", safe_filename))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn open_mods_folder(instance_name: String) -> Result<String, String> {
+pub fn open_mods_folder(instance_name: String) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     
     let instance_dir = get_instance_dir(&safe_name);
@@ -96,17 +92,15 @@ pub fn open_mods_folder(instance_name: String) -> Result<String, String> {
     
     if !mods_dir.exists() {
         std::fs::create_dir_all(&mods_dir)
-            .map_err(|e| format!("Failed to create mods directory: {}", e))?;
+            .map_err(|e| e.to_string())?;
     }
     
     open_folder(mods_dir)
-        .map_err(|e| format!("Failed to open mods folder: {}", e))?;
-    
-    Ok(format!("Opened mods folder for instance '{}'", safe_name))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn toggle_mod(instance_name: String, filename: String, disable: bool) -> Result<String, String> {
+pub async fn toggle_mod(instance_name: String, filename: String, disable: bool) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     
     let safe_filename = if filename.ends_with(".disabled") {
@@ -137,17 +131,12 @@ pub async fn toggle_mod(instance_name: String, filename: String, disable: bool) 
         .map_err(|_| "Mods directory not found".to_string())?;
     
     if !canonical_old.starts_with(&canonical_mods_dir) {
-        return Err("Invalid mod path (path traversal detected)".to_string());
+        return Err("Invalid mod path".to_string());
     }
     
     std::fs::rename(&old_path, &new_path)
-        .map_err(|e| format!("Failed to toggle mod: {}", e))?;
-    
-    let status = if disable { "disabled" } else { "enabled" };
-    Ok(format!("Successfully {} mod", status))
+        .map_err(|e| e.to_string())
 }
-
-// ===== MODRINTH API =====
 
 #[tauri::command]
 pub async fn search_mods(
@@ -173,7 +162,7 @@ pub async fn search_mods(
             Some(safe_limit),
         )
         .await
-        .map_err(|e| format!("Failed to search mods: {}", e))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -190,7 +179,7 @@ pub async fn get_mod_details(id_or_slug: String) -> Result<ModrinthProjectDetail
     client
         .get_project(&id_or_slug)
         .await
-        .map_err(|e| format!("Failed to get mod details: {}", e))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -207,7 +196,7 @@ pub async fn get_project_details(id_or_slug: String) -> Result<ModrinthProjectDe
     client
         .get_project(&id_or_slug)
         .await
-        .map_err(|e| format!("Failed to get project details: {}", e))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -244,7 +233,7 @@ pub async fn get_mod_versions(
     client
         .get_project_versions(&id_or_slug, loaders, game_versions)
         .await
-        .map_err(|e| format!("Failed to get mod versions: {}", e))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -252,7 +241,7 @@ pub async fn download_mod(
     instance_name: String,
     download_url: String,
     filename: String,
-) -> Result<String, String> {
+) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     let safe_filename = sanitize_filename(&filename)?;
     
@@ -263,7 +252,7 @@ pub async fn download_mod(
 
     if !mods_dir.exists() {
         std::fs::create_dir_all(&mods_dir)
-            .map_err(|e| format!("Failed to create mods directory: {}", e))?;
+            .map_err(|e| e.to_string())?;
     }
 
     let destination = mods_dir.join(&safe_filename);
@@ -276,7 +265,5 @@ pub async fn download_mod(
     client
         .download_mod_file(&download_url, &destination)
         .await
-        .map_err(|e| format!("Failed to download mod: {}", e))?;
-
-    Ok(format!("Successfully downloaded {}", safe_filename))
+        .map_err(|e| e.to_string())
 }

@@ -9,11 +9,11 @@ use std::path::PathBuf;
 #[tauri::command]
 pub async fn get_settings() -> Result<LauncherSettings, String> {
     SettingsManager::load()
-        .map_err(|e| format!("Failed to load settings: {}", e))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn save_settings(settings: LauncherSettings) -> Result<String, String> {
+pub async fn save_settings(settings: LauncherSettings) -> Result<(), String> {
     if let Some(ref java_path) = settings.java_path {
         validate_java_path(java_path)?;
     }
@@ -21,9 +21,7 @@ pub async fn save_settings(settings: LauncherSettings) -> Result<String, String>
     validate_memory_allocation(settings.memory_mb as u64)?;
     
     SettingsManager::save(&settings)
-        .map_err(|e| format!("Failed to save settings: {}", e))?;
-    
-    Ok("Settings saved successfully".to_string())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -38,10 +36,10 @@ pub async fn get_instance_settings(instance_name: String) -> Result<Option<Launc
     }
     
     let content = std::fs::read_to_string(&instance_json)
-        .map_err(|e| format!("Failed to read instance data: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let instance: Instance = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse instance data: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     Ok(instance.settings_override)
 }
@@ -50,7 +48,7 @@ pub async fn get_instance_settings(instance_name: String) -> Result<Option<Launc
 pub async fn save_instance_settings(
     instance_name: String,
     settings: Option<LauncherSettings>,
-) -> Result<String, String> {
+) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     
     if let Some(ref s) = settings {
@@ -68,20 +66,18 @@ pub async fn save_instance_settings(
     }
     
     let content = std::fs::read_to_string(&instance_json)
-        .map_err(|e| format!("Failed to read instance data: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let mut instance: Instance = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse instance data: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     instance.settings_override = settings;
     
     let updated_json = serde_json::to_string_pretty(&instance)
-        .map_err(|e| format!("Failed to serialize instance data: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     std::fs::write(&instance_json, updated_json)
-        .map_err(|e| format!("Failed to write instance data: {}", e))?;
-    
-    Ok("Instance settings saved successfully".to_string())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -230,26 +226,21 @@ fn get_sidebar_bg_path() -> PathBuf {
 }
 
 #[tauri::command]
-pub async fn set_sidebar_background(image_data: String) -> Result<String, String> {
+pub async fn set_sidebar_background(image_data: String) -> Result<(), String> {
     let sidebar_bg_path = get_sidebar_bg_path();
     
-    // Extract base64 data
     let base64_data = if let Some(comma_pos) = image_data.find(',') {
         &image_data[comma_pos + 1..]
     } else {
         &image_data
     };
     
-    // Decode base64
     let image_bytes = general_purpose::STANDARD
         .decode(base64_data)
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
-    // Save to file
     std::fs::write(&sidebar_bg_path, image_bytes)
-        .map_err(|e| format!("Failed to save image: {}", e))?;
-    
-    Ok("Background saved successfully".to_string())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -260,14 +251,11 @@ pub async fn get_sidebar_background() -> Result<Option<String>, String> {
         return Ok(None);
     }
     
-    // Read image file
     let image_bytes = std::fs::read(&sidebar_bg_path)
-        .map_err(|e| format!("Failed to read image: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
-    // Convert to base64
     let base64_data = general_purpose::STANDARD.encode(&image_bytes);
     
-    // Determine mime type based on file signature
     let mime_type = if image_bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
         "image/png"
     } else if image_bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
@@ -284,13 +272,13 @@ pub async fn get_sidebar_background() -> Result<Option<String>, String> {
 }
 
 #[tauri::command]
-pub async fn remove_sidebar_background() -> Result<String, String> {
+pub async fn remove_sidebar_background() -> Result<(), String> {
     let sidebar_bg_path = get_sidebar_bg_path();
     
     if sidebar_bg_path.exists() {
         std::fs::remove_file(&sidebar_bg_path)
-            .map_err(|e| format!("Failed to remove background: {}", e))?;
+            .map_err(|e| e.to_string())?;
     }
     
-    Ok("Background removed successfully".to_string())
+    Ok(())
 }

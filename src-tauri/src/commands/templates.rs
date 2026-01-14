@@ -84,7 +84,7 @@ pub async fn create_instance_from_template(
         return Err(format!("Instance '{}' already exists", instance_name));
     }
 
-    fs::create_dir_all(&instance_dir).map_err(|e| format!("Failed to create instance directory: {}", e))?;
+    fs::create_dir_all(&instance_dir).map_err(|e| e.to_string())?;
 
     let instance = Instance {
         name: instance_name.clone(),
@@ -99,30 +99,23 @@ pub async fn create_instance_from_template(
     };
 
     let instance_json = instance_dir.join("instance.json");
-    let json = serde_json::to_string_pretty(&instance)
-        .map_err(|e| format!("Failed to serialize instance: {}", e))?;
-    fs::write(&instance_json, json)
-        .map_err(|e| format!("Failed to write instance.json: {}", e))?;
+    let json = serde_json::to_string_pretty(&instance).map_err(|e| e.to_string())?;
+    fs::write(&instance_json, json).map_err(|e| e.to_string())?;
 
     if let Some(minecraft_options) = template.minecraft_options {
         let options_path = instance_dir.join("options.txt");
         let mut options_content = String::new();
         TemplateManager::merge_options_txt(&mut options_content, &minecraft_options)
-            .map_err(|e| format!("Failed to create options.txt: {}", e))?;
-        fs::write(&options_path, options_content)
-            .map_err(|e| format!("Failed to write options.txt: {}", e))?;
+            .map_err(|e| e.to_string())?;
+        fs::write(&options_path, options_content).map_err(|e| e.to_string())?;
     }
 
     Ok(instance)
 }
 
 #[command]
-pub async fn export_template(
-    template_id: String,
-    export_path: String,
-) -> Result<String, String> {
-    let template = TemplateManager::get_template(&template_id)
-        .map_err(|e| format!("Failed to get template: {}", e))?;
+pub async fn export_template(template_id: String, export_path: String) -> Result<String, String> {
+    let template = TemplateManager::get_template(&template_id).map_err(|e| e.to_string())?;
 
     let export = TemplateExport {
         version: "1.0.0".to_string(),
@@ -134,27 +127,22 @@ pub async fn export_template(
         },
     };
 
-    let json = serde_json::to_string_pretty(&export)
-        .map_err(|e| format!("Failed to serialize template: {}", e))?;
-
-    fs::write(&export_path, json)
-        .map_err(|e| format!("Failed to write template file: {}", e))?;
+    let json = serde_json::to_string_pretty(&export).map_err(|e| e.to_string())?;
+    fs::write(&export_path, json).map_err(|e| e.to_string())?;
 
     Ok(format!("Template exported successfully to {}", export_path))
 }
 
 #[command]
-pub async fn import_template(
-    import_path: String,
-) -> Result<InstanceTemplate, String> {
-    let content = fs::read_to_string(&import_path)
-        .map_err(|e| format!("Failed to read template file: {}", e))?;
-
-    let export: TemplateExport = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse template file: {}", e))?;
+pub async fn import_template(import_path: String) -> Result<InstanceTemplate, String> {
+    let content = fs::read_to_string(&import_path).map_err(|e| e.to_string())?;
+    let export: TemplateExport = serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
     if export.version != "1.0.0" {
-        return Err(format!("Unsupported template version: {}. Expected 1.0.0", export.version));
+        return Err(format!(
+            "Unsupported template version: {}. Expected 1.0.0",
+            export.version
+        ));
     }
 
     let template = TemplateManager::create_template(
@@ -163,7 +151,7 @@ pub async fn import_template(
         export.template.launcher_settings,
         export.template.minecraft_options,
     )
-    .map_err(|e| format!("Failed to create template: {}", e))?;
+    .map_err(|e| e.to_string())?;
 
     Ok(template)
 }

@@ -51,7 +51,7 @@ pub async fn get_modpack_versions(
             game_version.map(|v| vec![v]),
         )
         .await
-        .map_err(|e| format!("Failed to get modpack versions: {}", e))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -61,7 +61,7 @@ pub async fn install_modpack(
     version_id: String,
     preferred_game_version: Option<String>,
     app_handle: tauri::AppHandle,
-) -> Result<String, String> {
+) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     
     if !modpack_slug.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_') {
@@ -84,8 +84,6 @@ pub async fn install_modpack(
         "stage": "Starting modpack installation..."
     }));
     
-    println!("Installing modpack: {}", modpack_slug);
-    
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
         "progress": 5,
@@ -96,32 +94,30 @@ pub async fn install_modpack(
     let versions = client
         .get_project_versions(&modpack_slug, None, None)
         .await
-        .map_err(|e| format!("Failed to fetch modpack versions: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let version = versions
         .iter()
         .find(|v| v.id == version_id)
-        .ok_or_else(|| "Version not found".to_string())?;
+        .ok_or("Version not found")?;
     
     let game_version = if let Some(ref preferred) = preferred_game_version {
         if version.game_versions.contains(preferred) {
             preferred.clone()
         } else {
             version.game_versions.first()
-                .ok_or_else(|| "No game version found".to_string())?
+                .ok_or("No game version found")?
                 .clone()
         }
     } else {
         version.game_versions.first()
-            .ok_or_else(|| "No game version found".to_string())?
+            .ok_or("No game version found")?
             .clone()
     };
     
     let loader = version.loaders.first()
         .map(|l| l.to_lowercase())
         .unwrap_or_else(|| "vanilla".to_string());
-    
-    println!("Game version: {}, Loader: {}", game_version, loader);
     
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
@@ -134,7 +130,7 @@ pub async fn install_modpack(
     installer
         .install_version(&game_version)
         .await
-        .map_err(|e| format!("Failed to install Minecraft: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let final_version = if loader == "fabric" {
         let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
@@ -148,18 +144,18 @@ pub async fn install_modpack(
         let fabric_versions = fabric_installer
             .get_loader_versions()
             .await
-            .map_err(|e| format!("Failed to get Fabric versions: {}", e))?;
+            .map_err(|e| e.to_string())?;
         
         let fabric_version = fabric_versions
             .iter()
             .find(|v| v.stable)
             .or_else(|| fabric_versions.first())
-            .ok_or_else(|| "No Fabric versions found".to_string())?;
+            .ok_or("No Fabric versions found")?;
         
         fabric_installer
             .install_fabric(&game_version, &fabric_version.version)
             .await
-            .map_err(|e| format!("Failed to install Fabric: {}", e))?
+            .map_err(|e| e.to_string())?
     } else {
         game_version.clone()
     };
@@ -176,23 +172,11 @@ pub async fn install_modpack(
         if loader == "vanilla" { None } else { Some(loader.clone()) },
         None,
     )
-    .map_err(|e| format!("Failed to create instance: {}", e))?;
+    .map_err(|e| e.to_string())?;
     
-    // Fetch project details separately to avoid holding non-Send types across await
     let icon_url_opt = match client.get_project(&modpack_slug).await {
-        Ok(project) => {
-            println!("Successfully fetched project info for: {}", modpack_slug);
-            if let Some(ref url) = project.icon_url {
-                println!("Icon URL: {}", url);
-            } else {
-                println!("No icon URL found in project data");
-            }
-            project.icon_url
-        },
-        Err(e) => {
-            println!("Failed to fetch project info for {}: {}", modpack_slug, e);
-            None
-        }
+        Ok(project) => project.icon_url,
+        Err(_) => None,
     };
     
     if let Some(icon_url) = icon_url_opt {
@@ -202,16 +186,11 @@ pub async fn install_modpack(
         
         if validate_download_url(&icon_url).is_ok() {
             if client.download_mod_file(&icon_url, &icon_path).await.is_ok() {
-                println!("Icon downloaded successfully");
-                // Read the file and convert to base64
                 if let Ok(icon_bytes) = std::fs::read(&icon_path) {
                     use base64::{Engine as _, engine::general_purpose};
                     let icon_base64 = general_purpose::STANDARD.encode(&icon_bytes);
                     
-                    match crate::commands::set_instance_icon(safe_name.clone(), icon_base64).await {
-                        Ok(_) => println!("Icon set successfully for instance: {}", safe_name),
-                        Err(e) => println!("Failed to set icon: {}", e),
-                    }
+                    let _ = crate::commands::set_instance_icon(safe_name.clone(), icon_base64).await;
                 }
                 let _ = std::fs::remove_file(&icon_path);
             }
@@ -222,7 +201,7 @@ pub async fn install_modpack(
     let mods_dir = instance_dir.join("mods");
     
     std::fs::create_dir_all(&mods_dir)
-        .map_err(|e| format!("Failed to create mods directory: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
@@ -233,7 +212,7 @@ pub async fn install_modpack(
     let primary_file = version.files.iter()
         .find(|f| f.primary)
         .or_else(|| version.files.first())
-        .ok_or_else(|| "No modpack file found".to_string())?;
+        .ok_or("No modpack file found")?;
     
     let temp_dir = std::env::temp_dir();
     let modpack_file = temp_dir.join(&primary_file.filename);
@@ -243,7 +222,7 @@ pub async fn install_modpack(
     client
         .download_mod_file(&primary_file.url, &modpack_file)
         .await
-        .map_err(|e| format!("Failed to download modpack: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
@@ -256,10 +235,10 @@ pub async fn install_modpack(
         let _ = std::fs::remove_dir_all(&extract_dir);
     }
     std::fs::create_dir_all(&extract_dir)
-        .map_err(|e| format!("Failed to create extraction directory: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     extract_modpack(&modpack_file, &extract_dir)
-        .map_err(|e| format!("Failed to extract modpack: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
@@ -273,10 +252,10 @@ pub async fn install_modpack(
     }
     
     let manifest_content = std::fs::read_to_string(&manifest_path)
-        .map_err(|e| format!("Failed to read manifest: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let manifest: serde_json::Value = serde_json::from_str(&manifest_content)
-        .map_err(|e| format!("Failed to parse manifest: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let overrides_dir = extract_dir.join("overrides");
     if overrides_dir.exists() {
@@ -287,7 +266,7 @@ pub async fn install_modpack(
         }));
         
         copy_dir_recursive(&overrides_dir, &instance_dir)
-            .map_err(|e| format!("Failed to copy overrides: {}", e))?;
+            .map_err(|e| e.to_string())?;
     }
     
     if let Some(files) = manifest.get("files").and_then(|f| f.as_array()) {
@@ -301,27 +280,27 @@ pub async fn install_modpack(
         for (idx, file) in files.iter().enumerate() {
             let downloads = file.get("downloads")
                 .and_then(|d| d.as_array())
-                .ok_or_else(|| "Invalid file entry in manifest".to_string())?;
+                .ok_or("Invalid file entry in manifest")?;
             
             let download_url = downloads.first()
                 .and_then(|u| u.as_str())
-                .ok_or_else(|| "No download URL found".to_string())?;
+                .ok_or("No download URL found")?;
             
             let path = file.get("path")
                 .and_then(|p| p.as_str())
-                .ok_or_else(|| "No path found in file entry".to_string())?;
+                .ok_or("No path found in file entry")?;
             
             let dest_path = instance_dir.join(path);
             
             if let Some(parent) = dest_path.parent() {
                 std::fs::create_dir_all(parent)
-                    .map_err(|e| format!("Failed to create directory: {}", e))?;
+                    .map_err(|e| e.to_string())?;
             }
             
             validate_download_url(download_url)?;
             client.download_mod_file(download_url, &dest_path)
                 .await
-                .map_err(|e| format!("Failed to download mod: {}", e))?;
+                .map_err(|e| e.to_string())?;
             
             let progress = 70 + ((idx + 1) * 25 / total_files) as u32;
             let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
@@ -341,7 +320,7 @@ pub async fn install_modpack(
         "stage": "Installation complete!"
     }));
     
-    Ok(format!("Successfully installed modpack '{}'", safe_name))
+    Ok(())
 }
 
 fn copy_dir_recursive(
@@ -431,12 +410,12 @@ pub async fn get_modpack_manifest(
     let versions = client
         .get_project_versions(&modpack_slug, None, None)
         .await
-        .map_err(|e| format!("Failed to fetch versions: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let version = versions
         .iter()
         .find(|v| v.id == version_id)
-        .ok_or_else(|| "Version not found".to_string())?;
+        .ok_or("Version not found")?;
     
     Ok(serde_json::json!({
         "name": version.name,
@@ -481,7 +460,7 @@ pub async fn get_modpack_name_from_file(
     let extension = file_path_obj
         .extension()
         .and_then(|e| e.to_str())
-        .ok_or_else(|| "Invalid file extension".to_string())?;
+        .ok_or("Invalid file extension")?;
     
     if extension != "mrpack" && extension != "zip" {
         return Err("Invalid modpack file format. Expected .mrpack or .zip".to_string());
@@ -495,12 +474,12 @@ pub async fn get_modpack_name_from_file(
     let extract_dir = temp_dir.join(format!("modpack_preview_{}", timestamp));
     
     std::fs::create_dir_all(&extract_dir)
-        .map_err(|e| format!("Failed to create extraction directory: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let extract_result = extract_modpack(file_path_obj, &extract_dir);
     if let Err(e) = extract_result {
         let _ = std::fs::remove_dir_all(&extract_dir);
-        return Err(format!("Failed to extract modpack: {}", e));
+        return Err(e);
     }
     
     let manifest_path = extract_dir.join("modrinth.index.json");
@@ -512,13 +491,13 @@ pub async fn get_modpack_name_from_file(
     let manifest_content = std::fs::read_to_string(&manifest_path)
         .map_err(|e| {
             let _ = std::fs::remove_dir_all(&extract_dir);
-            format!("Failed to read manifest: {}", e)
+            e.to_string()
         })?;
     
     let manifest: serde_json::Value = serde_json::from_str(&manifest_content)
         .map_err(|e| {
             let _ = std::fs::remove_dir_all(&extract_dir);
-            format!("Failed to parse manifest: {}", e)
+            e.to_string()
         })?;
     
     let modpack_name = manifest.get("name")
@@ -537,7 +516,7 @@ pub async fn install_modpack_from_file(
     instance_name: String,
     preferred_game_version: Option<String>,
     app_handle: tauri::AppHandle,
-) -> Result<String, String> {
+) -> Result<(), String> {
     use std::path::Path;
     
     let safe_name = sanitize_instance_name(&instance_name)?;
@@ -550,7 +529,7 @@ pub async fn install_modpack_from_file(
     let extension = file_path_obj
         .extension()
         .and_then(|e| e.to_str())
-        .ok_or_else(|| "Invalid file extension".to_string())?;
+        .ok_or("Invalid file extension")?;
     
     if extension != "mrpack" && extension != "zip" {
         return Err("Invalid modpack file format. Expected .mrpack or .zip".to_string());
@@ -568,8 +547,6 @@ pub async fn install_modpack_from_file(
         "stage": "Starting modpack installation..."
     }));
     
-    println!("Installing modpack from file: {}", file_path);
-    
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
         "progress": 5,
@@ -582,7 +559,7 @@ pub async fn install_modpack_from_file(
         let _ = std::fs::remove_dir_all(&extract_dir);
     }
     std::fs::create_dir_all(&extract_dir)
-        .map_err(|e| format!("Failed to create extraction directory: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
@@ -591,7 +568,7 @@ pub async fn install_modpack_from_file(
     }));
     
     extract_modpack(file_path_obj, &extract_dir)
-        .map_err(|e| format!("Failed to extract modpack: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
@@ -605,21 +582,21 @@ pub async fn install_modpack_from_file(
     }
     
     let manifest_content = std::fs::read_to_string(&manifest_path)
-        .map_err(|e| format!("Failed to read manifest: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let manifest: serde_json::Value = serde_json::from_str(&manifest_content)
-        .map_err(|e| format!("Failed to parse manifest: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let dependencies = manifest.get("dependencies")
         .and_then(|d| d.as_object())
-        .ok_or_else(|| "Invalid manifest: missing dependencies".to_string())?;
+        .ok_or("Invalid manifest: missing dependencies")?;
     
     let game_version = if let Some(ref preferred) = preferred_game_version {
         preferred.clone()
     } else {
         dependencies.get("minecraft")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| "No Minecraft version found in manifest".to_string())?
+            .ok_or("No Minecraft version found in manifest")?
             .to_string()
     };
     
@@ -633,8 +610,6 @@ pub async fn install_modpack_from_file(
         "vanilla"
     };
     
-    println!("Game version: {}, Loader: {}", game_version, loader);
-    
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
         "progress": 30,
@@ -646,7 +621,7 @@ pub async fn install_modpack_from_file(
     installer
         .install_version(&game_version)
         .await
-        .map_err(|e| format!("Failed to install Minecraft: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let final_version = if loader == "fabric" {
         let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
@@ -660,18 +635,18 @@ pub async fn install_modpack_from_file(
         let fabric_versions = fabric_installer
             .get_loader_versions()
             .await
-            .map_err(|e| format!("Failed to get Fabric versions: {}", e))?;
+            .map_err(|e| e.to_string())?;
         
         let fabric_version = fabric_versions
             .iter()
             .find(|v| v.stable)
             .or_else(|| fabric_versions.first())
-            .ok_or_else(|| "No Fabric versions found".to_string())?;
+            .ok_or("No Fabric versions found")?;
         
         fabric_installer
             .install_fabric(&game_version, &fabric_version.version)
             .await
-            .map_err(|e| format!("Failed to install Fabric: {}", e))?
+            .map_err(|e| e.to_string())?
     } else {
         game_version.clone()
     };
@@ -688,7 +663,7 @@ pub async fn install_modpack_from_file(
         if loader == "vanilla" { None } else { Some(loader.to_string()) },
         None,
     )
-    .map_err(|e| format!("Failed to create instance: {}", e))?;
+    .map_err(|e| e.to_string())?;
 
     let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
         "instance": safe_name,
@@ -721,7 +696,7 @@ pub async fn install_modpack_from_file(
     let overrides_dir = extract_dir.join("overrides");
     if overrides_dir.exists() {
         copy_dir_recursive(&overrides_dir, &instance_dir)
-            .map_err(|e| format!("Failed to copy overrides: {}", e))?;
+            .map_err(|e| e.to_string())?;
     }
     
     if let Some(files) = manifest.get("files").and_then(|f| f.as_array()) {
@@ -737,27 +712,27 @@ pub async fn install_modpack_from_file(
         for (idx, file) in files.iter().enumerate() {
             let downloads = file.get("downloads")
                 .and_then(|d| d.as_array())
-                .ok_or_else(|| "Invalid file entry in manifest".to_string())?;
+                .ok_or("Invalid file entry in manifest")?;
             
             let download_url = downloads.first()
                 .and_then(|u| u.as_str())
-                .ok_or_else(|| "No download URL found".to_string())?;
+                .ok_or("No download URL found")?;
             
             let path = file.get("path")
                 .and_then(|p| p.as_str())
-                .ok_or_else(|| "No path found in file entry".to_string())?;
+                .ok_or("No path found in file entry")?;
             
             let dest_path = instance_dir.join(path);
             
             if let Some(parent) = dest_path.parent() {
                 std::fs::create_dir_all(parent)
-                    .map_err(|e| format!("Failed to create directory: {}", e))?;
+                    .map_err(|e| e.to_string())?;
             }
             
             validate_download_url(download_url)?;
             client.download_mod_file(download_url, &dest_path)
                 .await
-                .map_err(|e| format!("Failed to download mod: {}", e))?;
+                .map_err(|e| e.to_string())?;
             
             let progress = 70 + ((idx + 1) * 25 / total_files) as u32;
             let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
@@ -776,5 +751,5 @@ pub async fn install_modpack_from_file(
         "stage": "Installation complete!"
     }));
     
-    Ok(format!("Successfully installed modpack '{}'", safe_name))
+    Ok(())
 }

@@ -29,10 +29,10 @@ pub async fn get_servers() -> Result<Vec<ServerInfo>, String> {
     }
     
     let content = std::fs::read_to_string(&servers_file)
-        .map_err(|e| format!("Failed to read servers file: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let servers: Vec<ServerInfo> = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse servers file: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     Ok(servers)
 }
@@ -42,8 +42,7 @@ pub async fn add_server(
     name: String,
     address: String,
     port: u16,
-) -> Result<String, String> {
-    // Validate inputs
+) -> Result<(), String> {
     let safe_name = sanitize_server_name(&name)?;
     validate_server_address(&address)?;
     
@@ -51,15 +50,12 @@ pub async fn add_server(
         return Err("Port cannot be 0".to_string());
     }
     
-    // Load existing servers
     let mut servers = get_servers().await?;
     
-    // Check if server with same name already exists
     if servers.iter().any(|s| s.name.to_lowercase() == safe_name.to_lowercase()) {
         return Err(format!("Server '{}' already exists", safe_name));
     }
     
-    // Create new server entry
     let new_server = ServerInfo {
         name: safe_name.clone(),
         address,
@@ -75,19 +71,16 @@ pub async fn add_server(
     
     servers.push(new_server);
     
-    // Save to file
     let servers_file = get_launcher_dir().join("servers.json");
     let json = serde_json::to_string_pretty(&servers)
-        .map_err(|e| format!("Failed to serialize servers: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     std::fs::write(&servers_file, json)
-        .map_err(|e| format!("Failed to write servers file: {}", e))?;
-    
-    Ok(format!("Successfully added server '{}'", safe_name))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn delete_server(server_name: String) -> Result<String, String> {
+pub async fn delete_server(server_name: String) -> Result<(), String> {
     let safe_name = sanitize_server_name(&server_name)?;
     
     let mut servers = get_servers().await?;
@@ -99,32 +92,27 @@ pub async fn delete_server(server_name: String) -> Result<String, String> {
         return Err(format!("Server '{}' not found", safe_name));
     }
     
-    // Save updated list
     let servers_file = get_launcher_dir().join("servers.json");
     let json = serde_json::to_string_pretty(&servers)
-        .map_err(|e| format!("Failed to serialize servers: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     std::fs::write(&servers_file, json)
-        .map_err(|e| format!("Failed to write servers file: {}", e))?;
-    
-    Ok(format!("Successfully deleted server '{}'", safe_name))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn update_server_status(
     server_name: String,
     status: ServerInfo,
-) -> Result<String, String> {
+) -> Result<(), String> {
     let safe_name = sanitize_server_name(&server_name)?;
     
     let mut servers = get_servers().await?;
     
-    // Find and update the server
     let server = servers.iter_mut()
         .find(|s| s.name == safe_name)
-        .ok_or_else(|| format!("Server '{}' not found", safe_name))?;
+        .ok_or(format!("Server '{}' not found", safe_name))?;
     
-    // Update fields
     server.status = status.status;
     server.players_online = status.players_online;
     server.players_max = status.players_max;
@@ -133,15 +121,12 @@ pub async fn update_server_status(
     server.favicon = status.favicon;
     server.last_checked = Some(chrono::Utc::now().timestamp());
     
-    // Save updated list
     let servers_file = get_launcher_dir().join("servers.json");
     let json = serde_json::to_string_pretty(&servers)
-        .map_err(|e| format!("Failed to serialize servers: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     std::fs::write(&servers_file, json)
-        .map_err(|e| format!("Failed to write servers file: {}", e))?;
-    
-    Ok(format!("Successfully updated server '{}'", safe_name))
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -150,11 +135,7 @@ pub async fn launch_server(
     server_port: u16,
     server_name: String,
     app_handle: tauri::AppHandle,
-) -> Result<String, String> {
-    println!("=== Launching Server Connection ===");
-    println!("Server: {} ({}:{})", server_name, server_address, server_port);
-
-    // Validate inputs
+) -> Result<(), String> {
     let safe_name = sanitize_server_name(&server_name)?;
     validate_server_address(&server_address)?;
     
@@ -162,22 +143,16 @@ pub async fn launch_server(
         return Err("Invalid server port".to_string());
     }
 
-    // Get active account
     let active_account = AccountManager::get_active_account()
-        .map_err(|e| format!("Failed to get active account: {}", e))?
-        .ok_or_else(|| "No active account. Please sign in first.".to_string())?;
-
-    println!("Using account: {}", active_account.username);
+        .map_err(|e| e.to_string())?
+        .ok_or("No active account")?;
 
     let access_token = AccountManager::get_valid_token(&active_account.uuid)
         .await
-        .map_err(|e| format!("Failed to get valid token: {}", e))?;
+        .map_err(|e| e.to_string())?;
 
-    println!("✓ Token validated/refreshed");
-
-    // Try to find the most recently played instance
     let instances = InstanceManager::get_all()
-        .map_err(|e| format!("Failed to get instances: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     let most_recent_instance = instances
         .iter()
@@ -185,10 +160,9 @@ pub async fn launch_server(
         .max_by_key(|inst| inst.last_played.as_ref());
 
     let instance_name = if let Some(recent_inst) = most_recent_instance {
-        println!("Using most recently played instance: {}", recent_inst.name);
         recent_inst.name.clone()
     } else {
-        return Err("No instances found. Please create an instance first before connecting to a server.".to_string());
+        return Err("No instances found. Please create an instance first.".to_string());
     };
 
     let instance_dir = get_instance_dir(&instance_name);
@@ -197,24 +171,19 @@ pub async fn launch_server(
         return Err(format!("Instance '{}' not found", instance_name));
     }
 
-    // Add server to servers.dat in the instance directory
     add_server_to_instance(&instance_dir, &safe_name, &server_address, server_port)?;
 
-    // Format server address for command line argument
     let server_arg = if server_port == 25565 {
         server_address.clone()
     } else {
         format!("{}:{}", server_address, server_port)
     };
 
-    // Emit event that instance is launching for server connection
     let _ = app_handle.emit("server-instance-launching", serde_json::json!({
         "instance": instance_name,
         "server": safe_name
     }));
 
-    // Launch the instance with server connection arguments
-    println!("Launching Minecraft and connecting to server...");
     InstanceManager::launch_with_server(
         &instance_name,
         &active_account.username,
@@ -223,12 +192,7 @@ pub async fn launch_server(
         &server_arg,
         app_handle.clone(),
     )
-    .map_err(|e| format!("Failed to launch Minecraft: {}", e))?;
-
-    Ok(format!(
-        "Launching {} and connecting to {}",
-        instance_name, safe_name
-    ))
+    .map_err(|e| e.to_string())
 }
 
 fn add_server_to_instance(
@@ -237,39 +201,26 @@ fn add_server_to_instance(
     server_address: &str,
     server_port: u16,
 ) -> Result<(), String> {
-    // Minecraft reads servers.dat from the gameDir
     let servers_dat = instance_dir.join("servers.dat");
     
-    println!("Updating servers.dat at: {:?}", servers_dat);
-    
-    // Check if servers.dat already exists
     let existing_exists = servers_dat.exists();
     
     if existing_exists {
-        println!("Found existing servers.dat - will preserve existing servers");
-        println!("✓ Skipping servers.dat modification to preserve existing server list");
         return Ok(());
     }
     
-    // Only create servers.dat if it doesn't exist
-    println!("Creating new servers.dat with launch target");
-    
-    // Create NBT structure for servers.dat
     let nbt_data = create_servers_nbt(server_name, server_address, server_port);
     
     let mut file = std::fs::File::create(&servers_dat)
-        .map_err(|e| format!("Failed to create servers.dat: {}", e))?;
+        .map_err(|e| e.to_string())?;
     
     file.write_all(&nbt_data)
-        .map_err(|e| format!("Failed to write servers.dat: {}", e))?;
+        .map_err(|e| e.to_string())?;
 
-    println!("✓ servers.dat created with {} bytes", nbt_data.len());
-    println!("✓ Server entry: {} -> {}:{}", server_name, server_address, server_port);
     Ok(())
 }
 
 fn create_servers_nbt(server_name: &str, server_address: &str, server_port: u16) -> Vec<u8> {
-    
     let mut data = Vec::new();
     
     // TAG_Compound
