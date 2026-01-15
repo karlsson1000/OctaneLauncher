@@ -128,8 +128,6 @@ use commands::{
     
     // System commands
     get_system_info,
-    generate_debug_report,
-    save_debug_report,
     open_url,
 };
 
@@ -435,10 +433,6 @@ pub fn run() {
 
             // Open links
             open_url,
-
-            // Debug
-            generate_debug_report,
-            save_debug_report,
 
             // System Info
             get_system_info,

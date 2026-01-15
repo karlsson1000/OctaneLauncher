@@ -595,37 +595,6 @@ pub fn open_url(url: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn generate_debug_report(version: String) -> Result<String, String> {
-    if !version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
-        return Err("Invalid version format".to_string());
-    }
-    
-    Ok(crate::utils::generate_debug_report(&version))
-}
-
-#[tauri::command]
-pub async fn save_debug_report(version: String) -> Result<String, String> {
-    if !version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
-        return Err("Invalid version format".to_string());
-    }
-    
-    let report = crate::utils::generate_debug_report(&version);
-    let logs_dir = get_logs_dir();
-    
-    std::fs::create_dir_all(&logs_dir)
-        .map_err(|e| e.to_string())?;
-    
-    let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
-    let filename = format!("debug_report_{}.txt", timestamp);
-    let filepath = logs_dir.join(&filename);
-    
-    std::fs::write(&filepath, report)
-        .map_err(|e| e.to_string())?;
-    
-    Ok(filepath.to_string_lossy().to_string())
-}
-
-#[tauri::command]
 pub fn open_worlds_folder(instance_name: String) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     
