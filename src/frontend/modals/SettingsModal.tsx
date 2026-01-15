@@ -48,6 +48,7 @@ export function SettingsModal({
   const [isClosing, setIsClosing] = useState(false)
   const [isJavaDropdownOpen, setIsJavaDropdownOpen] = useState(false)
   const javaDropdownRef = useRef<HTMLDivElement>(null)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
     if (isOpen) {
@@ -56,6 +57,12 @@ export function SettingsModal({
       loadSidebarBackground()
       loadJavaInstallations()
       loadAppVersion()
+    }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
     }
   }, [isOpen])
 
@@ -144,6 +151,18 @@ export function SettingsModal({
         type: "danger"
       })
     }
+  }
+
+  const handleSettingChangeDebounced = (newSettings: LauncherSettings) => {
+    onSettingsChange(newSettings)
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      handleSettingChange(newSettings)
+    }, 500)
   }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -418,7 +437,7 @@ export function SettingsModal({
                         max={systemInfo?.total_memory_mb || 32768}
                         step="512"
                         value={settings.memory_mb}
-                        onChange={(e) => handleSettingChange({
+                        onChange={(e) => handleSettingChangeDebounced({
                           ...settings,
                           memory_mb: parseInt(e.target.value)
                         })}
