@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Upload, RotateCcw, Loader2, HatGlasses, ChevronDown } from "lucide-react"
+import { Upload, RotateCcw, Loader2, User, X, RotateCw } from "lucide-react"
 
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
@@ -38,9 +38,11 @@ export function SkinsTab(props: SkinsTabProps) {
   const [activeCape, setActiveCape] = useState<string | null>(null)
   const [loadingCapes, setLoadingCapes] = useState(false)
   const [recentSkins, setRecentSkins] = useState<RecentSkin[]>([])
-  const [capesExpanded, setCapesExpanded] = useState(false)
   const [currentSkinHash, setCurrentSkinHash] = useState<string | null>(null)
   const [showCape, setShowCape] = useState(true)
+  const [capeModalOpen, setCapeModalOpen] = useState(false)
+  const [isClosingModal, setIsClosingModal] = useState(false)
+  const [showBack, setShowBack] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const skinCacheRef = useRef<Map<string, CachedSkin>>(new Map())
   const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
@@ -206,6 +208,7 @@ export function SkinsTab(props: SkinsTabProps) {
       await invoke("equip_cape", { capeId })
       setActiveCape(capeId)
       setShowCape(true)
+      handleCloseCapeModal()
     } catch (err) {
       console.error("Failed to equip cape:", err)
       setError(`Failed to equip cape: ${err}`)
@@ -219,10 +222,23 @@ export function SkinsTab(props: SkinsTabProps) {
       await invoke("remove_cape")
       setActiveCape(null)
       setShowCape(false)
+      handleCloseCapeModal()
     } catch (err) {
       console.error("Failed to remove cape:", err)
       setError(`Failed to remove cape: ${err}`)
     }
+  }
+
+  const handleCloseCapeModal = () => {
+    setIsClosingModal(true)
+    setTimeout(() => {
+      setIsClosingModal(false)
+      setCapeModalOpen(false)
+    }, 150)
+  }
+
+  const handleRotate = () => {
+    setShowBack((prev) => !prev)
   }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -333,11 +349,13 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   const getSkinRenderUrl = () => {
-    if (!currentSkinHash) return null
+    if (!activeAccount) return null
     
     const variant = skinVariant === "slim" ? "slim" : "wide"
     const capeParam = showCape && activeCape ? "" : "&no=cape"
-    return `https://vzge.me/full/512/${currentSkinHash}?${variant}${capeParam}`
+    const angleParam = showBack ? "&y=180" : ""
+
+    return `https://vzge.me/full/512/${activeAccount.uuid}?${variant}${capeParam}${angleParam}`
   }
 
   if (!isAuthenticated) {
@@ -350,7 +368,7 @@ export function SkinsTab(props: SkinsTabProps) {
           </div>
           
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
-            <HatGlasses size={64} className="text-[#4572e3] mb-4" strokeWidth={1.5} />
+            <User size={64} className="text-[#4572e3] mb-4" strokeWidth={1.5} />
             <h3 className="text-lg font-semibold text-[#e6e6e6] mb-1">Sign In Required</h3>
             <p className="text-sm text-[#7d8590]">Please sign in with your Microsoft account to manage your skin</p>
           </div>
@@ -362,6 +380,47 @@ export function SkinsTab(props: SkinsTabProps) {
   return (
     <div className="p-6 space-y-4">
       <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes scaleIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to { 
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes scaleOut {
+          from { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          to { 
+            opacity: 0;
+            transform: scale(0.95);
+          }
+        }
+        .modal-backdrop {
+          animation: fadeIn 0.15s ease-out forwards;
+        }
+        .modal-backdrop.closing {
+          animation: fadeOut 0.15s ease-in forwards;
+        }
+        .modal-content {
+          animation: scaleIn 0.15s ease-out forwards;
+        }
+        .modal-content.closing {
+          animation: scaleOut 0.15s ease-in forwards;
+        }
+
         .blur-border {
           position: relative;
         }
@@ -384,14 +443,6 @@ export function SkinsTab(props: SkinsTabProps) {
           backdrop-filter: blur(8px);
           z-index: 10;
         }
-
-        .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
-        }
       `}</style>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
@@ -406,37 +457,55 @@ export function SkinsTab(props: SkinsTabProps) {
         <div className="flex gap-24 items-center justify-center">
           {/* Skin Viewer */}
           <div className="flex-shrink-0 self-start mt-8">
-            <div className="rounded-md overflow-hidden relative bg-[#181a1f] p-4">
-              {loading && (
-                <div className="w-[250px] h-[406px] flex items-center justify-center bg-[#181a1f] rounded-md">
-                  <div className="text-center">
-                    <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto mb-3" />
-                    <p className="text-sm text-[#7d8590]">Loading skin...</p>
+            <div className="flex flex-col items-center">
+              <div className="rounded-md overflow-hidden relative bg-[#181a1f] p-4">
+                {loading && (
+                  <div className="w-[250px] h-[406px] flex items-center justify-center bg-[#181a1f] rounded-md">
+                    <div className="text-center">
+                      <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto mb-3" />
+                      <p className="text-sm text-[#7d8590]">Loading skin...</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {!loading && currentSkinHash && (
-                <img
-                  src={getSkinRenderUrl() || ''}
-                  alt="Minecraft skin render"
-                  className="w-[250px] h-[406px]"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              )}
-              
-              {!loading && !currentSkinHash && (
-                <div className="w-[300px] h-[487px] flex items-center justify-center">
-                  <p className="text-sm text-[#7d8590]">No skin loaded</p>
-                </div>
-              )}
+                )}
+                
+                {!loading && currentSkinHash && (
+                  <img
+                    src={getSkinRenderUrl() || ''}
+                    alt="Minecraft skin render"
+                    className="w-[250px] h-[406px]"
+                    style={{ imageRendering: 'pixelated' }}
+                  />
+                )}
+                
+                {!loading && !currentSkinHash && (
+                  <div className="w-[250px] h-[406px] flex items-center justify-center">
+                    <p className="text-sm text-[#7d8590]">No skin loaded</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Capes Button */}
+              <button
+                onClick={() => setCapeModalOpen(true)}
+                className="mt-3 px-4 py-2 bg-[#22252b] hover:bg-[#2a2d35] text-[#e6e6e6] rounded-md text-sm font-medium transition-all cursor-pointer"
+              >
+                Manage Capes {capes.length > 0 && `(${capes.length})`}
+              </button>
             </div>
           </div>
 
           {/* Controls Panel */}
           <div className="flex-1 max-w-sm space-y-4">
             <div className="blur-border bg-[#22252b] rounded-md p-5">
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-4">Skin Model</h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-semibold text-[#e6e6e6]">Skin Model</h3>
+                <button
+                  onClick={handleRotate}
+                  className="p-2 hover:bg-[#1f2128] text-[#e6e6e6] rounded-md transition-all cursor-pointer"
+                >
+                  <RotateCw size={16} />
+                </button>
+              </div>
               
               <div className="flex gap-2 mb-6">
                 <button
@@ -473,7 +542,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading || loading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer shadow-sm"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer"
                 >
                   {uploading ? (
                     <>
@@ -544,73 +613,6 @@ export function SkinsTab(props: SkinsTabProps) {
                 </div>
               </div>
             )}
-
-            {/* Capes Section */}
-            <div className="blur-border bg-[#22252b] rounded-md p-5">
-              <button
-                onClick={() => setCapesExpanded(!capesExpanded)}
-                className="w-full flex items-center justify-between cursor-pointer group"
-              >
-                <h3 className="text-base font-semibold text-[#e6e6e6]">Capes</h3>
-                <ChevronDown 
-                  size={20}
-                  strokeWidth={3}
-                  className={`text-[#7d8590] group-hover:text-[#e6e6e6] transition-all ${
-                    capesExpanded ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-              
-              {capesExpanded && (
-                <div className="mt-4">
-                  {loadingCapes ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 size={24} className="animate-spin text-[#16a34a]" />
-                    </div>
-                  ) : capes.length > 0 ? (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-4 gap-2">
-                        {capes.map((cape) => (
-                          <button
-                            key={cape.id}
-                            onClick={() => handleCapeSelect(cape.id)}
-                            className={`w-20 h-32 bg-[#181a1f] rounded-md overflow-hidden flex items-center justify-center transition-all cursor-pointer hover:ring-2 hover:ring-[#4572e3] ${
-                              activeCape === cape.id
-                                ? "ring-2 ring-[#4572e3]"
-                                : ""
-                            }`}
-                            title={cape.alias}
-                          >
-                            <img 
-                              src={`/capes/${getCapeImageName(cape.alias)}.png`}
-                              alt={cape.alias}
-                              className="w-full h-full object-contain"
-                              style={{ imageRendering: 'pixelated' }}
-                              onError={(e) => {
-                                e.currentTarget.src = '/logo.png'
-                              }}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                      
-                      {activeCape && (
-                        <button
-                          onClick={handleCapeRemove}
-                          className="w-full px-3 py-2.5 bg-[#181a1f] hover:bg-[#1f2128] text-[#7d8590] hover:text-[#e6e6e6] rounded-md text-sm font-medium transition-all cursor-pointer"
-                        >
-                          Remove Cape
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-[#7d8590] text-center py-4">
-                      No capes available
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
             
             {error && (
               <div className="blur-border bg-[#22252b] rounded-md p-4">
@@ -620,6 +622,75 @@ export function SkinsTab(props: SkinsTabProps) {
           </div>
         </div>
       </div>
+
+      {/* Cape Modal */}
+      {capeModalOpen && (
+        <div 
+          className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 modal-backdrop ${isClosingModal ? 'closing' : ''}`}
+          onClick={handleCloseCapeModal}
+        >
+          <div 
+            className={`blur-border bg-[#181a1f] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto modal-content ${isClosingModal ? 'closing' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-[#e6e6e6]">Manage Capes</h2>
+              <button
+                onClick={handleCloseCapeModal}
+                className="p-1 hover:bg-[#22252b] rounded-md transition-colors cursor-pointer"
+              >
+                <X size={20} className="text-[#7d8590]" />
+              </button>
+            </div>
+
+            {loadingCapes ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 size={32} className="animate-spin text-[#16a34a]" />
+              </div>
+            ) : capes.length > 0 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-5 gap-3">
+                  {capes.map((cape) => (
+                    <button
+                      key={cape.id}
+                      onClick={() => handleCapeSelect(cape.id)}
+                      className={`aspect-[5/8] bg-[#181a1f] rounded-md overflow-hidden flex flex-col items-center justify-center transition-all cursor-pointer hover:ring-2 hover:ring-[#4572e3] ${
+                        activeCape === cape.id
+                          ? "ring-2 ring-[#4572e3]"
+                          : ""
+                      }`}
+                      title={cape.alias}
+                    >
+                      <img 
+                        src={`/capes/${getCapeImageName(cape.alias)}.png`}
+                        alt={cape.alias}
+                        className="w-full h-full object-contain"
+                        style={{ imageRendering: 'pixelated' }}
+                        onError={(e) => {
+                          e.currentTarget.src = '/logo.png'
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
+                
+                {activeCape && (
+                  <button
+                    onClick={handleCapeRemove}
+                    className="w-full px-4 py-3 bg-[#22252b] hover:bg-[#2a2d35] text-[#e6e6e6] rounded-md text-sm font-medium transition-all cursor-pointer"
+                  >
+                    Remove Cape
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-sm text-[#7d8590]">No capes available</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
