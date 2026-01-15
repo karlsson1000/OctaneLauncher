@@ -125,13 +125,18 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         setVersionFilter("release")
       }
       
-      if (!fabricSupportedVersions.includes(selectedVersion)) {
-        const firstSupported = allVersions.find(v => 
+      const currentVersion = allVersions.find(v => v.id === selectedVersion)
+      const isSnapshot = currentVersion?.type === "snapshot"
+      const isNotSupported = !fabricSupportedVersions.includes(selectedVersion)
+      
+      if ((isSnapshot || isNotSupported) && fabricSupportedVersions.length > 0 && allVersions.length > 0) {
+        const releaseVersions = allVersions.filter(v => 
           (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") && 
           fabricSupportedVersions.includes(v.id)
         )
-        if (firstSupported) {
-          setSelectedVersion(firstSupported.id)
+        
+        if (releaseVersions.length > 0) {
+          setSelectedVersion(releaseVersions[0].id)
         }
       }
       
@@ -139,7 +144,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         loadFabricVersions()
       }
     }
-  }, [loaderType, fabricSupportedVersions, allVersions, versionFilter])
+  }, [loaderType, fabricSupportedVersions, allVersions, selectedVersion])
 
   const loadFabricVersions = async () => {
     setIsLoadingFabric(true)
@@ -258,6 +263,22 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       })
     } finally {
       setIsCreating(false)
+    }
+  }
+
+  const handleVersionFilterChange = (filter: "release" | "snapshot") => {
+    setVersionFilter(filter)
+    const versions = filter === "snapshot" 
+      ? allVersions.filter(v => v.type === "snapshot")
+      : allVersions.filter(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+    
+    let availableVersions = versions
+    if (loaderType === "fabric" && filter === "release") {
+      availableVersions = versions.filter(v => fabricSupportedVersions.includes(v.id))
+    }
+    
+    if (availableVersions.length > 0) {
+      setSelectedVersion(availableVersions[0].id)
     }
   }
 
@@ -427,7 +448,38 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Minecraft Version</label>
+              <div className="flex items-center justify-between mb-2.5">
+                <label className="text-sm font-medium text-[#e6e6e6]">Minecraft Version</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleVersionFilterChange("release")}
+                    disabled={isCreating}
+                    className={`text-xs font-medium transition-colors cursor-pointer ${
+                      versionFilter === "release"
+                        ? "text-[#e6e6e6]"
+                        : "text-gray-500 hover:text-gray-400"
+                    }`}
+                  >
+                    Releases
+                  </button>
+                  <span className="text-gray-600">|</span>
+                  <button
+                    type="button"
+                    onClick={() => handleVersionFilterChange("snapshot")}
+                    disabled={isCreating || loaderType === "fabric"}
+                    className={`text-xs font-medium transition-colors ${
+                      loaderType === "fabric" 
+                        ? "text-gray-600 cursor-not-allowed"
+                        : versionFilter === "snapshot"
+                        ? "text-[#e6e6e6] cursor-pointer"
+                        : "text-gray-500 hover:text-gray-400 cursor-pointer"
+                    }`}
+                  >
+                    Snapshots
+                  </button>
+                </div>
+              </div>
               {isLoadingVersions ? (
                 <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                   <Loader2 size={16} className="animate-spin" />
