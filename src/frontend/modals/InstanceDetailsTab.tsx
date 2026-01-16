@@ -728,22 +728,34 @@ export function InstanceDetailsTab({
                               <p className="text-sm text-[#7d8590] truncate">{mod.filename}</p>
                               <p className="text-sm text-[#3a3f4b] mt-0.5">{formatFileSize(mod.size)}</p>
                             </div>
-                            <div className="flex flex-col items-end gap-1">
+                            <div className="flex flex-col items-center gap-1">
                               <button
                                 onClick={() => handleToggleMod(mod)}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                                  mod.disabled ? 'bg-red-500/80' : 'bg-[#16a34a]'
+                                className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
+                                  mod.disabled 
+                                    ? 'bg-[#3a3f4b] border-[#3a3f4b]' 
+                                    : 'bg-[#16a34a] border-[#16a34a]'
                                 }`}
                               >
-                                <span
-                                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                    mod.disabled ? 'translate-x-1' : 'translate-x-6'
-                                  }`}
-                                />
+                                <svg
+                                  width="12"
+                                  height="12"
+                                  viewBox="0 0 12 12"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M10 3L4.5 8.5L2 6"
+                                    stroke={mod.disabled ? '#7d8590' : '#0f1115'}
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
                               </button>
                               <button
                                 onClick={() => handleDeleteMod(mod.filename)}
-                                className="p-1.5 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer mt-1"
+                                className="p-1.5 mt-1 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer"
                               >
                                 <Trash2 size={16} />
                               </button>
