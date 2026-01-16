@@ -518,7 +518,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-medium text-[#e6e6e6] truncate">{version.name}</div>
                               <div className="text-xs text-[#3a3f4b] truncate mt-0.5">
-                                {version.loaders.join(', ')} • {version.game_versions[0]}
+                                {version.loaders.join(', ')} • {selectedInstance ? getMinecraftVersion(selectedInstance) : version.game_versions[0]}
                               </div>
                             </div>
                             <div className="flex gap-1">
