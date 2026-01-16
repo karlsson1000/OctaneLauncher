@@ -637,7 +637,7 @@ export function InstanceDetailsTab({
                         <button
                           onClick={updateAllMods}
                           disabled={isUpdatingMods}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-1 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors cursor-pointer"
                         >
                           {isUpdatingMods ? (
                             <>
@@ -655,7 +655,7 @@ export function InstanceDetailsTab({
                         <button
                           onClick={checkForUpdates}
                           disabled={isCheckingUpdates}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 px-3 py-1 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer"
                         >
                           {isCheckingUpdates ? (
                             <>

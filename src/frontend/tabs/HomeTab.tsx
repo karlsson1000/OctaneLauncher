@@ -360,13 +360,13 @@ export function HomeTab({
                         {/* Instance Info */}
                         <div className="flex-1 min-w-0 px-4 py-3 relative z-0">
                           <h3 className="text-base font-semibold text-[#e6e6e6] truncate mb-1">{instance.name}</h3>
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-[#7d8590]">{getMinecraftVersion(instance)}</span>
-                            <span className="text-[#3a3f4b]">•</span>
+                          <div className="flex items-center gap-2 text-sm min-w-0">
+                            <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
+                            <span className="text-[#3a3f4b] flex-shrink-0">•</span>
                             {instance.loader === "fabric" ? (
-                              <span className="text-[#3b82f6]">Fabric</span>
+                              <span className="text-[#3b82f6] flex-shrink-0">Fabric</span>
                             ) : (
-                              <span className="text-[#16a34a]">Vanilla</span>
+                              <span className="text-[#16a34a] flex-shrink-0">Vanilla</span>
                             )}
                           </div>
                         </div>
@@ -438,11 +438,7 @@ export function HomeTab({
                   className="blur-border bg-[#22252b] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col"
                 >
                   {/* External Link Icon */}
-                  <div className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center bg-[#22252b]/90 backdrop-blur-sm rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{
-                      boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.1)',
-                    }}
-                  >
+                  <div className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity">
                     <ExternalLink size={14} className="text-[#e6e6e6]" />
                   </div>
                   
@@ -459,8 +455,8 @@ export function HomeTab({
                         <Package size={48} className="text-[#3a3f4b]" strokeWidth={1.5} />
                       </div>
                     )}
-                    {/* Hover Overlay - Gradient from bottom */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                   
                   {/* Content */}
