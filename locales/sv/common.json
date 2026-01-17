@@ -19,7 +19,7 @@
       "close": "Stäng",
       "save": "Spara",
       "cancel": "Avbryt",
-      "delete": "Ta bort",
+      "delete": "Radera",
       "duplicate": "Duplicera",
       "export": "Exportera",
       "import": "Importera",
@@ -32,14 +32,14 @@
   },
   "home": {
     "title": "Hem",
-    "subtitle": "Senast spelade instanser",
+    "subtitle": "Nyligen spelade instanser",
     "newButton": "Ny",
     "viewMode": {
       "grid": "Rutnätsvy",
       "list": "Listvy"
     },
     "noInstances": {
-      "title": "Inga senast spelade instanser",
+      "title": "Inga nyligen spelade instanser",
       "description": "Starta en instans för att se den här",
       "createButton": "Skapa instans"
     },
@@ -48,24 +48,24 @@
       "stopTooltip": "Stoppa instans"
     },
     "snapshots": {
-      "title": "Senaste ögonblicksbilder",
-      "subtitle": "Senaste Java Edition ögonblicksbilder",
-      "unableToLoad": "Kan inte ladda ögonblicksbilder"
+      "title": "Senaste Snapshots",
+      "subtitle": "Senaste Java Edition Snapshots",
+      "unableToLoad": "Kunde inte ladda Snapshots"
     },
     "contextMenu": {
       "open": "Öppna",
       "openFolder": "Öppna mapp",
       "duplicate": "Duplicera",
       "export": "Exportera",
-      "delete": "Ta bort"
+      "delete": "Radera"
     }
   },
   "instances": {
     "title": "Instanser",
-    "subtitle": "Hantera dina Minecraft-installationer",
+    "subtitle": "Hantera dina Minecraft installationer",
     "newButton": "Ny instans",
     "noInstances": {
-      "title": "Inga instanser än",
+      "title": "Inga instanser ännu",
       "description": "Skapa din första instans för att komma igång",
       "createButton": "Skapa instans"
     },
@@ -86,38 +86,38 @@
     },
     "game": {
       "memory": {
-        "title": "Minnestilldelning",
+        "title": "Minnesallokering",
         "ofTotal": "av {{total}} GB totalt",
         "systemTotal": "System totalt",
         "available": "Tillgängligt"
       },
       "java": {
-        "title": "Java-körning",
-        "autoDetect": "Automatisk detektering (Rekommenderat)",
+        "title": "Java Runtime",
+        "autoDetect": "Auto-detektera (rekommenderas)",
         "customPath": "Anpassad sökväg...",
         "scanButton": "Skanna",
-        "placeholder": "C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
+        "placeholder": "C:\\Programfiler\\Java\\jdk-21\\bin\\javaw.exe"
       }
     },
     "appearance": {
       "sidebarBackground": {
-        "title": "Sidofältsbakgrund",
+        "title": "Sidofältets bakgrund",
         "uploadPrompt": "Klicka för att ladda upp bild",
-        "fileTypes": "PNG, JPG upp till 10MB",
+        "fileTypes": "PNG, JPG upp till 10 MB",
         "changeButton": "Ändra",
         "removeButton": "Ta bort"
       }
     },
     "language": {
       "title": "Visningsspråk",
-      "description": "Välj ditt föredragna språk för startprogrammets gränssnitt."
+      "description": "Välj önskat språk för launcher gränssnittet."
     },
     "integrations": {
       "discord": {
         "title": "Discord Rich Presence",
         "enabled": "Aktiverad",
         "disabled": "Inaktiverad",
-        "showStatus": "Visa Discord-status"
+        "showStatus": "Visa Discords Status"
       }
     },
     "system": {
@@ -125,25 +125,25 @@
         "title": "Spelkatalog"
       },
       "version": {
-        "title": "Versionsinformation",
-        "launcherVersion": "Startprogramversion"
+        "title": "Version Information",
+        "launcherVersion": "Launcher Version"
       }
     }
   },
   "navigation": {
     "home": "Hem",
     "instances": "Instanser",
-    "mods": "Moddar",
+    "mods": "Mods",
     "servers": "Servrar",
-    "skins": "Utseenden",
-    "serverMaps": "Serverkartor",
+    "skins": "Skins",
+    "serverMaps": "Server Kartor",
     "console": "Konsol"
   },
   "errors": {
     "generic": "Ett fel uppstod",
     "instanceNotFound": "Instansen hittades inte",
-    "failedToLaunch": "Misslyckades med att starta instans",
-    "failedToSave": "Misslyckades med att spara inställningar",
+    "failedToLaunch": "Det gick inte att starta instansen",
+    "failedToSave": "Kunde inte spara inställningar",
     "invalidFile": "Ogiltig fil",
     "fileTooLarge": "Filen är för stor"
   }
