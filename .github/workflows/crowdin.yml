@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'src/locales/en/**/*.json'
+      - 'locales/en/*.json'
       - 'crowdin.yml'
   workflow_dispatch:
 
