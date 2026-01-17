@@ -62,17 +62,75 @@
   },
   "instances": {
     "title": "Instances",
-    "subtitle": "Manage your Minecraft installations",
-    "newButton": "New Instance",
+    "subtitle": "Manage all your instances",
+    "newButton": "New",
+    "searchPlaceholder": "Search...",
     "noInstances": {
       "title": "No instances yet",
       "description": "Create your first instance to get started",
       "createButton": "Create Instance"
     },
-    "selectedInstance": {
-      "play": "Play",
-      "stop": "Stop",
-      "details": "Details"
+    "noSearchResults": {
+      "title": "No instances found",
+      "description": "Try adjusting your search query"
+    },
+    "instance": {
+      "launchTooltip": "Launch instance",
+      "stopTooltip": "Stop instance"
+    },
+    "contextMenu": {
+      "open": "Open",
+      "openFolder": "Open Folder",
+      "duplicate": "Duplicate",
+      "export": "Export",
+      "delete": "Delete"
+    },
+    "templates": {
+      "manager": {
+        "title": "Template Manager",
+        "description": "Create, apply, and manage templates"
+      },
+      "applyButton": "Apply Template to Instance",
+      "importButton": "Import Template",
+      "importFromFile": "From JSON file",
+      "createNew": "Create New Template",
+      "noTemplates": "No templates available",
+      "templatesAvailable": "{{count}} template available",
+      "templatesAvailable_plural": "{{count}} templates available",
+      "instanceCount": "{{count}} instance",
+      "instanceCount_plural": "{{count}} instances",
+      "templateCount": "{{count}} template",
+      "templateCount_plural": "{{count}} templates",
+      "noInstancesAvailable": "No instances available",
+      "availableTemplates": "Available Templates",
+      "applyTemplate": {
+        "title": "Apply Template",
+        "description": "Select a template and instance"
+      },
+      "applyToInstance": "Apply to Instance",
+      "exportTooltip": "Export Template",
+      "deleteTooltip": "Delete Template",
+      "createSuccess": {
+        "title": "Success",
+        "message": "Template created from \"{{name}}\" successfully!"
+      },
+      "createError": "Failed to create template: {{error}}",
+      "exportSuccess": {
+        "title": "Success",
+        "message": "Template \"{{name}}\" exported successfully!"
+      },
+      "exportError": "Failed to export template: {{error}}",
+      "importSuccess": {
+        "title": "Success",
+        "message": "Template imported successfully!"
+      },
+      "importError": "Failed to import template: {{error}}",
+      "deleteError": "Failed to delete template: {{error}}",
+      "applySuccess": {
+        "title": "Success",
+        "message": "Template applied to {{name}} successfully!"
+      },
+      "applyError": "Failed to apply template: {{error}}"
     }
   },
   "settings": {
@@ -110,7 +168,8 @@
     },
     "language": {
       "title": "Display Language",
-      "description": "Select your preferred language for the launcher interface."
+      "description": "Select your preferred language for the launcher interface.",
+      "helpTranslate": "Help translate at translate.atomiclauncher.com"
     },
     "integrations": {
       "discord": {

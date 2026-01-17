@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { invoke } from "@tauri-apps/api/core"
 import { open, save } from '@tauri-apps/plugin-dialog'
+import { useTranslation } from "react-i18next"
 import type { Instance } from "../../types"
 import { ContextMenu } from "../modals/ContextMenu"
 import { ConfirmModal, AlertModal } from "../modals/ConfirmModal"
@@ -72,6 +73,7 @@ export function InstancesTab({
   onDeleteInstance,
   onKillInstance,
 }: InstancesTabProps) {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
   const [contextMenu, setContextMenu] = useState<{
     x: number
@@ -195,16 +197,16 @@ export function InstancesTab({
 
       setAlertModal({
         isOpen: true,
-        title: "Success",
-        message: `Template created from "${instanceName}" successfully!`,
+        title: t('instances.templates.createSuccess.title'),
+        message: t('instances.templates.createSuccess.message', { name: instanceName }),
         type: "success"
       })
     } catch (error) {
       console.error("Failed to create template:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to create template: ${error}`,
+        title: t('common.errors.title'),
+        message: t('instances.templates.createError', { error: String(error) }),
         type: "danger"
       })
     }
@@ -227,8 +229,8 @@ export function InstancesTab({
         })
         setAlertModal({
           isOpen: true,
-          title: "Success",
-          message: `Template "${templateName}" exported successfully!`,
+          title: t('instances.templates.exportSuccess.title'),
+          message: t('instances.templates.exportSuccess.message', { name: templateName }),
           type: "success"
         })
       }
@@ -236,8 +238,8 @@ export function InstancesTab({
       console.error("Failed to export template:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to export template: ${error}`,
+        title: t('common.errors.title'),
+        message: t('instances.templates.exportError', { error: String(error) }),
         type: "danger"
       })
     }
@@ -258,8 +260,8 @@ export function InstancesTab({
         await loadTemplates()
         setAlertModal({
           isOpen: true,
-          title: "Success",
-          message: "Template imported successfully!",
+          title: t('instances.templates.importSuccess.title'),
+          message: t('instances.templates.importSuccess.message'),
           type: "success"
         })
       }
@@ -267,8 +269,8 @@ export function InstancesTab({
       console.error("Failed to import template:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to import template: ${error}`,
+        title: t('common.errors.title'),
+        message: t('instances.templates.importError', { error: String(error) }),
         type: "danger"
       })
     }
@@ -282,8 +284,8 @@ export function InstancesTab({
       console.error("Failed to delete template:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to delete template: ${error}`,
+        title: t('common.errors.title'),
+        message: t('instances.templates.deleteError', { error: String(error) }),
         type: "danger"
       })
     }
@@ -296,16 +298,16 @@ export function InstancesTab({
       setSelectedTemplateId(null)
       setAlertModal({
         isOpen: true,
-        title: "Success",
-        message: `Template applied to ${instanceName} successfully!`,
+        title: t('instances.templates.applySuccess.title'),
+        message: t('instances.templates.applySuccess.message', { name: instanceName }),
         type: "success"
       })
     } catch (error) {
       console.error("Failed to apply template:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to apply template: ${error}`,
+        title: t('common.errors.title'),
+        message: t('instances.templates.applyError', { error: String(error) }),
         type: "danger"
       })
     }
@@ -384,8 +386,8 @@ export function InstancesTab({
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Instances</h1>
-              <p className="text-sm text-[#7d8590] mt-0.5">Manage all your instances</p>
+              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">{t('instances.title')}</h1>
+              <p className="text-sm text-[#7d8590] mt-0.5">{t('instances.subtitle')}</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -403,7 +405,7 @@ export function InstancesTab({
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
                   <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder={t('instances.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-56 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
@@ -415,7 +417,7 @@ export function InstancesTab({
                 className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} />
-                New
+                {t('instances.newButton')}
               </button>
             </div>
           </div>
@@ -423,21 +425,21 @@ export function InstancesTab({
           {instances.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14">
               <Package size={48} className="text-[#7d8590] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No instances yet</h3>
-              <p className="text-sm text-[#7d8590] mb-4">Create your first instance to get started</p>
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('instances.noInstances.title')}</h3>
+              <p className="text-sm text-[#7d8590] mb-4">{t('instances.noInstances.description')}</p>
               <button
                 onClick={onCreateNew}
                 className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
-                <span>Create Instance</span>
+                <span>{t('instances.noInstances.createButton')}</span>
               </button>
             </div>
           ) : filteredInstances.length === 0 ? (
             <div className="rounded-md p-8 flex flex-col items-center justify-center">
               <Search size={48} className="text-[#e6e6e6] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No instances found</h3>
-              <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('instances.noSearchResults.title')}</h3>
+              <p className="text-sm text-[#7d8590]">{t('instances.noSearchResults.description')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
@@ -474,9 +476,9 @@ export function InstancesTab({
                           <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
                           <span className="text-[#3a3f4b] flex-shrink-0">•</span>
                           {instance.loader === "fabric" ? (
-                            <span className="text-[#3b82f6] flex-shrink-0">Fabric</span>
+                            <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
                           ) : (
-                            <span className="text-[#16a34a] flex-shrink-0">Vanilla</span>
+                            <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
                           )}
                         </div>
                       </div>
@@ -497,7 +499,7 @@ export function InstancesTab({
                               ? "bg-red-500/10 text-red-400 opacity-100"
                               : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                           } disabled:opacity-50`}
-                          title={isRunning ? "Stop instance" : "Launch instance"}
+                          title={isRunning ? t('instances.instance.stopTooltip') : t('instances.instance.launchTooltip')}
                         >
                           {isLaunching || isRunning ? (
                             <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
@@ -526,8 +528,8 @@ export function InstancesTab({
           }}
         >
           <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-[#e6e6e6]">Template Manager</h3>
-            <p className="text-xs text-[#7d8590] mt-1">Create, apply, and manage templates</p>
+            <h3 className="text-base font-semibold text-[#e6e6e6]">{t('instances.templates.manager.title')}</h3>
+            <p className="text-xs text-[#7d8590] mt-1">{t('instances.templates.manager.description')}</p>
           </div>
           <div className="h-px bg-[#3a3f4b]" />
 
@@ -544,9 +546,9 @@ export function InstancesTab({
                 <Download size={20} className="text-[#16a34a]" strokeWidth={2} />
               </div>
               <div>
-                <div className="text-sm font-medium text-[#e6e6e6]">Apply Template to Instance</div>
+                <div className="text-sm font-medium text-[#e6e6e6]">{t('instances.templates.applyButton')}</div>
                 <div className="text-xs text-[#7d8590] mt-0.5">
-                  {templates.length === 0 ? "No templates available" : `${templates.length} template${templates.length !== 1 ? 's' : ''} available`}
+                  {templates.length === 0 ? t('instances.templates.noTemplates') : t('instances.templates.templatesAvailable', { count: templates.length })}
                 </div>
               </div>
             </button>
@@ -559,8 +561,8 @@ export function InstancesTab({
                 <FileDown size={20} className="text-[#e6e6e6]" strokeWidth={2} />
               </div>
               <div>
-                <div className="text-sm font-medium text-[#e6e6e6]">Import Template</div>
-                <div className="text-xs text-[#7d8590] mt-0.5">From JSON file</div>
+                <div className="text-sm font-medium text-[#e6e6e6]">{t('instances.templates.importButton')}</div>
+                <div className="text-xs text-[#7d8590] mt-0.5">{t('instances.templates.importFromFile')}</div>
               </div>
             </button>
           </div>
@@ -569,8 +571,8 @@ export function InstancesTab({
 
           <div className="p-3 pb-2">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">Create New Template</h4>
-              <span className="text-xs text-[#3a3f4b]">{instances.length} instance{instances.length !== 1 ? 's' : ''}</span>
+              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">{t('instances.templates.createNew')}</h4>
+              <span className="text-xs text-[#3a3f4b]">{t('instances.templates.instanceCount', { count: instances.length })}</span>
             </div>
             
             <div className="bg-[#181a1f] rounded overflow-hidden">
@@ -578,7 +580,7 @@ export function InstancesTab({
                 {instances.length === 0 ? (
                   <div className="p-6 text-center">
                     <Package size={32} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
-                    <p className="text-xs text-[#7d8590]">No instances available</p>
+                    <p className="text-xs text-[#7d8590]">{t('instances.templates.noInstancesAvailable')}</p>
                   </div>
                 ) : (
                   instances.map((instance) => {
@@ -602,7 +604,7 @@ export function InstancesTab({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-[#e6e6e6] truncate">{instance.name}</div>
-                          <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
+                          <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? t('common.loaders.fabric') : t('common.loaders.vanilla')}</div>
                         </div>
                         <Plus size={16} className="text-[#3a3f4b] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
                       </button>
@@ -627,15 +629,15 @@ export function InstancesTab({
           }}
         >
           <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-[#e6e6e6]">Apply Template</h3>
-            <p className="text-xs text-[#7d8590] mt-1">Select a template and instance</p>
+            <h3 className="text-base font-semibold text-[#e6e6e6]">{t('instances.templates.applyTemplate.title')}</h3>
+            <p className="text-xs text-[#7d8590] mt-1">{t('instances.templates.applyTemplate.description')}</p>
           </div>
           <div className="h-px bg-[#3a3f4b]" />
           
           <div className="p-3 pb-2">
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">Available Templates</h4>
-              <span className="text-xs text-[#3a3f4b]">{templates.length} template{templates.length !== 1 ? 's' : ''}</span>
+              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">{t('instances.templates.availableTemplates')}</h4>
+              <span className="text-xs text-[#3a3f4b]">{t('instances.templates.templateCount', { count: templates.length })}</span>
             </div>
 
             <div className="bg-[#181a1f] rounded overflow-hidden">
@@ -643,7 +645,7 @@ export function InstancesTab({
                 {templates.length === 0 ? (
                   <div className="p-6 text-center">
                     <FileText size={32} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
-                    <p className="text-xs text-[#7d8590]">No templates available</p>
+                    <p className="text-xs text-[#7d8590]">{t('instances.templates.noTemplates')}</p>
                   </div>
                 ) : (
                   templates.map((template) => (
@@ -669,7 +671,7 @@ export function InstancesTab({
                                 handleExportTemplate(template.id, template.name)
                               }}
                               className="p-1.5 hover:bg-[#2a2f3b] text-[#7d8590] hover:text-[#16a34a] rounded transition-all cursor-pointer"
-                              title="Export Template"
+                              title={t('instances.templates.exportTooltip')}
                             >
                               <FileUp size={16} strokeWidth={2} />
                             </button>
@@ -679,7 +681,7 @@ export function InstancesTab({
                                 handleDeleteTemplate(template.id)
                               }}
                               className="p-1.5 hover:bg-[#2a2f3b] text-[#7d8590] hover:text-red-400 rounded transition-all cursor-pointer"
-                              title="Delete Template"
+                              title={t('instances.templates.deleteTooltip')}
                             >
                               <Trash2 size={16} strokeWidth={2} />
                             </button>
@@ -694,7 +696,7 @@ export function InstancesTab({
                       {selectedTemplateId === template.id && (
                         <div className="bg-[#181a1f]">
                           <div className="px-3 py-2">
-                            <h5 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide mb-2">Apply to Instance</h5>
+                            <h5 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide mb-2">{t('instances.templates.applyToInstance')}</h5>
                           </div>
                           {instances.map((instance) => {
                             const icon = instanceIcons[instance.name]
@@ -717,7 +719,7 @@ export function InstancesTab({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-sm font-medium text-[#e6e6e6] truncate">{instance.name}</div>
-                                  <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : "Vanilla"}</div>
+                                  <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? t('common.loaders.fabric') : t('common.loaders.vanilla')}</div>
                                 </div>
                                 <Download size={16} className="text-[#7d8590] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
                               </button>
@@ -743,7 +745,7 @@ export function InstancesTab({
           onClose={() => setContextMenu(null)}
           items={[
             {
-              label: "Open",
+              label: t('instances.contextMenu.open'),
               icon: <Package size={16} />,
               onClick: () => {
                 onSetSelectedInstance(contextMenu.instance)
@@ -751,7 +753,7 @@ export function InstancesTab({
               },
             },
             {
-              label: "Open Folder",
+              label: t('instances.contextMenu.openFolder'),
               icon: <FolderOpen size={16} />,
               onClick: () => {
                 if (onOpenFolder) {
@@ -760,7 +762,7 @@ export function InstancesTab({
               },
             },
             {
-              label: "Duplicate",
+              label: t('instances.contextMenu.duplicate'),
               icon: <Copy size={16} />,
               onClick: () => {
                 if (onDuplicateInstance) {
@@ -769,7 +771,7 @@ export function InstancesTab({
               },
             },
             {
-              label: "Export",
+              label: t('instances.contextMenu.export'),
               icon: <FileArchive size={16} />,
               onClick: () => {
                 setExportModalInstance(contextMenu.instance)
@@ -777,7 +779,7 @@ export function InstancesTab({
             },
             { separator: true },
             {
-              label: "Delete",
+              label: t('instances.contextMenu.delete'),
               icon: <Trash2 size={16} />,
               onClick: () => {
                 if (onDeleteInstance) {
@@ -797,7 +799,7 @@ export function InstancesTab({
           title={confirmModal.title}
           message={confirmModal.message}
           type={confirmModal.type}
-          confirmText="Delete"
+          confirmText={t('common.actions.delete')}
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal(null)}
         />
