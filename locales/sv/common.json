@@ -1,0 +1,150 @@
+{
+  "common": {
+    "loaders": {
+      "fabric": "Fabric",
+      "vanilla": "Vanilla",
+      "forge": "Forge",
+      "quilt": "Quilt"
+    },
+    "dates": {
+      "today": "Idag",
+      "yesterday": "Igår",
+      "daysAgo": "{{count}} dag sedan",
+      "daysAgo_plural": "{{count}} dagar sedan",
+      "weeksAgo": "{{count}} vecka sedan",
+      "weeksAgo_plural": "{{count}} veckor sedan"
+    },
+    "actions": {
+      "open": "Öppna",
+      "close": "Stäng",
+      "save": "Spara",
+      "cancel": "Avbryt",
+      "delete": "Ta bort",
+      "duplicate": "Duplicera",
+      "export": "Exportera",
+      "import": "Importera",
+      "create": "Skapa",
+      "edit": "Redigera",
+      "refresh": "Uppdatera",
+      "loading": "Laddar...",
+      "confirm": "Bekräfta"
+    }
+  },
+  "home": {
+    "title": "Hem",
+    "subtitle": "Senast spelade instanser",
+    "newButton": "Ny",
+    "viewMode": {
+      "grid": "Rutnätsvy",
+      "list": "Listvy"
+    },
+    "noInstances": {
+      "title": "Inga senast spelade instanser",
+      "description": "Starta en instans för att se den här",
+      "createButton": "Skapa instans"
+    },
+    "instance": {
+      "launchTooltip": "Starta instans",
+      "stopTooltip": "Stoppa instans"
+    },
+    "snapshots": {
+      "title": "Senaste ögonblicksbilder",
+      "subtitle": "Senaste Java Edition ögonblicksbilder",
+      "unableToLoad": "Kan inte ladda ögonblicksbilder"
+    },
+    "contextMenu": {
+      "open": "Öppna",
+      "openFolder": "Öppna mapp",
+      "duplicate": "Duplicera",
+      "export": "Exportera",
+      "delete": "Ta bort"
+    }
+  },
+  "instances": {
+    "title": "Instanser",
+    "subtitle": "Hantera dina Minecraft-installationer",
+    "newButton": "Ny instans",
+    "noInstances": {
+      "title": "Inga instanser än",
+      "description": "Skapa din första instans för att komma igång",
+      "createButton": "Skapa instans"
+    },
+    "selectedInstance": {
+      "play": "Spela",
+      "stop": "Stoppa",
+      "details": "Detaljer"
+    }
+  },
+  "settings": {
+    "title": "Inställningar",
+    "tabs": {
+      "game": "Spel",
+      "appearance": "Utseende",
+      "language": "Språk",
+      "integrations": "Integrationer",
+      "system": "System"
+    },
+    "game": {
+      "memory": {
+        "title": "Minnestilldelning",
+        "ofTotal": "av {{total}} GB totalt",
+        "systemTotal": "System totalt",
+        "available": "Tillgängligt"
+      },
+      "java": {
+        "title": "Java-körning",
+        "autoDetect": "Automatisk detektering (Rekommenderat)",
+        "customPath": "Anpassad sökväg...",
+        "scanButton": "Skanna",
+        "placeholder": "C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
+      }
+    },
+    "appearance": {
+      "sidebarBackground": {
+        "title": "Sidofältsbakgrund",
+        "uploadPrompt": "Klicka för att ladda upp bild",
+        "fileTypes": "PNG, JPG upp till 10MB",
+        "changeButton": "Ändra",
+        "removeButton": "Ta bort"
+      }
+    },
+    "language": {
+      "title": "Visningsspråk",
+      "description": "Välj ditt föredragna språk för startprogrammets gränssnitt."
+    },
+    "integrations": {
+      "discord": {
+        "title": "Discord Rich Presence",
+        "enabled": "Aktiverad",
+        "disabled": "Inaktiverad",
+        "showStatus": "Visa Discord-status"
+      }
+    },
+    "system": {
+      "gameDirectory": {
+        "title": "Spelkatalog"
+      },
+      "version": {
+        "title": "Versionsinformation",
+        "launcherVersion": "Startprogramversion"
+      }
+    }
+  },
+  "navigation": {
+    "home": "Hem",
+    "instances": "Instanser",
+    "mods": "Moddar",
+    "servers": "Servrar",
+    "skins": "Utseenden",
+    "serverMaps": "Serverkartor",
+    "console": "Konsol"
+  },
+  "errors": {
+    "generic": "Ett fel uppstod",
+    "instanceNotFound": "Instansen hittades inte",
+    "failedToLaunch": "Misslyckades med att starta instans",
+    "failedToSave": "Misslyckades med att spara inställningar",
+    "invalidFile": "Ogiltig fil",
+    "fileTooLarge": "Filen är för stor"
+  }
+}

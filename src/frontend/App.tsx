@@ -18,6 +18,7 @@ import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
 import { MapTab } from "./tabs/MapTab"
 import { Sidebar } from "./components/Sidebar"
 import type { Instance, LauncherSettings, ConsoleLog } from "../types"
+import '../i18n'
 
 interface AccountInfo {
   uuid: string

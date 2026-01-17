@@ -1,6 +1,7 @@
 import { Package, Plus, FolderOpen, Copy, Trash2, Play, ExternalLink, LayoutGrid, LayoutList, FileArchive } from "lucide-react"
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
+import { useTranslation } from "react-i18next"
 import type { Instance } from "../../types"
 import { ContextMenu } from "../modals/ContextMenu"
 import { ExportModal } from "../modals/ExportModal"
@@ -54,6 +55,7 @@ export function HomeTab({
   onDeleteInstance,
   onKillInstance,
 }: HomeTabProps) {
+  const { t } = useTranslation()
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
@@ -142,10 +144,10 @@ export function HomeTab({
       const diffTime = todayOnly.getTime() - dateOnly.getTime()
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 
-      if (diffDays === 0) return 'Today'
-      if (diffDays === 1) return 'Yesterday'
-      if (diffDays < 7) return `${diffDays} days ago`
-      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+      if (diffDays === 0) return t('common.dates.today')
+      if (diffDays === 1) return t('common.dates.yesterday')
+      if (diffDays < 7) return t('common.dates.daysAgo', { count: diffDays })
+      if (diffDays < 30) return t('common.dates.weeksAgo', { count: Math.floor(diffDays / 7) })
 
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
@@ -222,13 +224,14 @@ export function HomeTab({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Home</h1>
-            <p className="text-sm text-[#7d8590] mt-0.5">Recently played instances</p>
+            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">{t('home.title')}</h1>
+            <p className="text-sm text-[#7d8590] mt-0.5">{t('home.subtitle')}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
               className="w-8.5 h-8.5 hover:bg-[#22252b] text-[#7d8590] hover:text-[#e6e6e6] rounded flex items-center justify-center transition-colors cursor-pointer"
+              title={viewMode === "grid" ? t('home.viewMode.list') : t('home.viewMode.grid')}
             >
               {viewMode === "grid" ? <LayoutList size={22} /> : <LayoutGrid size={22} />}
             </button>
@@ -237,7 +240,7 @@ export function HomeTab({
               className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
             >
               <Plus size={16} />
-              New
+              {t('home.newButton')}
             </button>
           </div>
         </div>
@@ -247,14 +250,14 @@ export function HomeTab({
           {recentInstances.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14">
               <Package size={48} className="text-[#7d8590] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No recently played instances</h3>
-              <p className="text-sm text-[#7d8590] mb-4">Launch an instance to see it here</p>
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('home.noInstances.title')}</h3>
+              <p className="text-sm text-[#7d8590] mb-4">{t('home.noInstances.description')}</p>
               <button
                 onClick={onCreateNew}
                 className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
-                <span>Create Instance</span>
+                <span>{t('home.noInstances.createButton')}</span>
               </button>
             </div>
           ) : (
@@ -293,9 +296,9 @@ export function HomeTab({
                               <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
                               <span className="text-[#3a3f4b] flex-shrink-0">•</span>
                               {instance.loader === "fabric" ? (
-                                <span className="text-[#3b82f6] flex-shrink-0">Fabric</span>
+                                <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
                               ) : (
-                                <span className="text-[#16a34a] flex-shrink-0">Vanilla</span>
+                                <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
                               )}
                             </div>
                           </div>
@@ -317,7 +320,7 @@ export function HomeTab({
                                   ? "bg-red-500/10 text-red-400"
                                   : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                               } disabled:opacity-50`}
-                              title={isRunning ? "Stop instance" : "Launch instance"}
+                              title={isRunning ? t('home.instance.stopTooltip') : t('home.instance.launchTooltip')}
                             >
                               {isLaunching || isRunning ? (
                                 <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
@@ -364,9 +367,9 @@ export function HomeTab({
                             <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
                             <span className="text-[#3a3f4b] flex-shrink-0">•</span>
                             {instance.loader === "fabric" ? (
-                              <span className="text-[#3b82f6] flex-shrink-0">Fabric</span>
+                              <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
                             ) : (
-                              <span className="text-[#16a34a] flex-shrink-0">Vanilla</span>
+                              <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
                             )}
                           </div>
                         </div>
@@ -389,7 +392,7 @@ export function HomeTab({
                                   ? "bg-red-500/10 text-red-400"
                                   : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                               } disabled:opacity-50`}
-                              title={isRunning ? "Stop instance" : "Launch instance"}
+                              title={isRunning ? t('home.instance.stopTooltip') : t('home.instance.launchTooltip')}
                             >
                               {isLaunching || isRunning ? (
                                 <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
@@ -411,8 +414,8 @@ export function HomeTab({
         {/* Snapshots Section */}
         <div className="mt-auto">
           <div className="mb-4">
-            <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Latest Snapshots</h2>
-            <p className="text-sm text-[#7d8590] mt-0.5">Recent Java Edition snapshots</p>
+            <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{t('home.snapshots.title')}</h2>
+            <p className="text-sm text-[#7d8590] mt-0.5">{t('home.snapshots.subtitle')}</p>
           </div>
 
           {loadingSnapshots ? (
@@ -421,7 +424,7 @@ export function HomeTab({
             </div>
           ) : snapshots.length === 0 ? (
             <div className="bg-[#22252b] rounded-md p-8 text-center">
-              <p className="text-[#7d8590]">Unable to load snapshots</p>
+              <p className="text-[#7d8590]">{t('home.snapshots.unableToLoad')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -492,14 +495,14 @@ export function HomeTab({
           onClose={() => setContextMenu(null)}
           items={[
             {
-              label: "Open",
+              label: t('home.contextMenu.open'),
               icon: <Package size={16} />,
               onClick: () => {
                 onShowDetails(contextMenu.instance)
               },
             },
             {
-              label: "Open Folder",
+              label: t('home.contextMenu.openFolder'),
               icon: <FolderOpen size={16} />,
               onClick: () => {
                 if (onOpenFolderByInstance) {
@@ -508,7 +511,7 @@ export function HomeTab({
               },
             },
             {
-              label: "Duplicate",
+              label: t('home.contextMenu.duplicate'),
               icon: <Copy size={16} />,
               onClick: () => {
                 if (onDuplicateInstance) {
@@ -517,7 +520,7 @@ export function HomeTab({
               },
             },
             {
-              label: "Export",
+              label: t('home.contextMenu.export'),
               icon: <FileArchive size={16} />,
               onClick: () => {
                 setExportModalInstance(contextMenu.instance)
@@ -525,7 +528,7 @@ export function HomeTab({
             },
             { separator: true },
             {
-              label: "Delete",
+              label: t('home.contextMenu.delete'),
               icon: <Trash2 size={16} />,
               onClick: () => {
                 onDeleteInstance(contextMenu.instance.name)

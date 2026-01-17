@@ -1,0 +1,150 @@
+{
+  "common": {
+    "loaders": {
+      "fabric": "",
+      "vanilla": "",
+      "forge": "",
+      "quilt": ""
+    },
+    "dates": {
+      "today": "",
+      "yesterday": "",
+      "daysAgo": "",
+      "daysAgo_plural": "",
+      "weeksAgo": "",
+      "weeksAgo_plural": ""
+    },
+    "actions": {
+      "open": "",
+      "close": "",
+      "save": "",
+      "cancel": "",
+      "delete": "",
+      "duplicate": "",
+      "export": "",
+      "import": "",
+      "create": "",
+      "edit": "",
+      "refresh": "",
+      "loading": "",
+      "confirm": ""
+    }
+  },
+  "home": {
+    "title": "",
+    "subtitle": "",
+    "newButton": "",
+    "viewMode": {
+      "grid": "",
+      "list": ""
+    },
+    "noInstances": {
+      "title": "",
+      "description": "",
+      "createButton": ""
+    },
+    "instance": {
+      "launchTooltip": "",
+      "stopTooltip": ""
+    },
+    "snapshots": {
+      "title": "",
+      "subtitle": "",
+      "unableToLoad": ""
+    },
+    "contextMenu": {
+      "open": "",
+      "openFolder": "",
+      "duplicate": "",
+      "export": "",
+      "delete": ""
+    }
+  },
+  "instances": {
+    "title": "",
+    "subtitle": "",
+    "newButton": "",
+    "noInstances": {
+      "title": "",
+      "description": "",
+      "createButton": ""
+    },
+    "selectedInstance": {
+      "play": "",
+      "stop": "",
+      "details": ""
+    }
+  },
+  "settings": {
+    "title": "",
+    "tabs": {
+      "game": "",
+      "appearance": "",
+      "language": "",
+      "integrations": "",
+      "system": ""
+    },
+    "game": {
+      "memory": {
+        "title": "",
+        "ofTotal": "",
+        "systemTotal": "",
+        "available": ""
+      },
+      "java": {
+        "title": "",
+        "autoDetect": "",
+        "customPath": "",
+        "scanButton": "",
+        "placeholder": ""
+      }
+    },
+    "appearance": {
+      "sidebarBackground": {
+        "title": "",
+        "uploadPrompt": "",
+        "fileTypes": "",
+        "changeButton": "",
+        "removeButton": ""
+      }
+    },
+    "language": {
+      "title": "",
+      "description": ""
+    },
+    "integrations": {
+      "discord": {
+        "title": "",
+        "enabled": "",
+        "disabled": "",
+        "showStatus": ""
+      }
+    },
+    "system": {
+      "gameDirectory": {
+        "title": ""
+      },
+      "version": {
+        "title": "",
+        "launcherVersion": ""
+      }
+    }
+  },
+  "navigation": {
+    "home": "",
+    "instances": "",
+    "mods": "",
+    "servers": "",
+    "skins": "",
+    "serverMaps": "",
+    "console": ""
+  },
+  "errors": {
+    "generic": "",
+    "instanceNotFound": "",
+    "failedToLaunch": "",
+    "failedToSave": "",
+    "invalidFile": "",
+    "fileTooLarge": ""
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "common": {
+    "loaders": {
+      "fabric": "Fabric",
+      "vanilla": "Vanilla",
+      "forge": "Forge",
+      "quilt": "Quilt"
+    },
+    "dates": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "daysAgo": "{{count}} days ago",
+      "daysAgo_plural": "{{count}} days ago",
+      "weeksAgo": "{{count}} week ago",
+      "weeksAgo_plural": "{{count}} weeks ago"
+    },
+    "actions": {
+      "open": "Open",
+      "close": "Close",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "duplicate": "Duplicate",
+      "export": "Export",
+      "import": "Import",
+      "create": "Create",
+      "edit": "Edit",
+      "refresh": "Refresh",
+      "loading": "Loading...",
+      "confirm": "Confirm"
+    }
+  },
+  "home": {
+    "title": "Home",
+    "subtitle": "Recently played instances",
+    "newButton": "New",
+    "viewMode": {
+      "grid": "Grid View",
+      "list": "List View"
+    },
+    "noInstances": {
+      "title": "No recently played instances",
+      "description": "Launch an instance to see it here",
+      "createButton": "Create Instance"
+    },
+    "instance": {
+      "launchTooltip": "Launch instance",
+      "stopTooltip": "Stop instance"
+    },
+    "snapshots": {
+      "title": "Latest Snapshots",
+      "subtitle": "Recent Java Edition snapshots",
+      "unableToLoad": "Unable to load snapshots"
+    },
+    "contextMenu": {
+      "open": "Open",
+      "openFolder": "Open Folder",
+      "duplicate": "Duplicate",
+      "export": "Export",
+      "delete": "Delete"
+    }
+  },
+  "instances": {
+    "title": "Instances",
+    "subtitle": "Manage your Minecraft installations",
+    "newButton": "New Instance",
+    "noInstances": {
+      "title": "No instances yet",
+      "description": "Create your first instance to get started",
+      "createButton": "Create Instance"
+    },
+    "selectedInstance": {
+      "play": "Play",
+      "stop": "Stop",
+      "details": "Details"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "tabs": {
+      "game": "Game",
+      "appearance": "Appearance",
+      "language": "Language",
+      "integrations": "Integrations",
+      "system": "System"
+    },
+    "game": {
+      "memory": {
+        "title": "Memory Allocation",
+        "ofTotal": "of {{total}} GB total",
+        "systemTotal": "System Total",
+        "available": "Available"
+      },
+      "java": {
+        "title": "Java Runtime",
+        "autoDetect": "Auto-detect (Recommended)",
+        "customPath": "Custom Path...",
+        "scanButton": "Scan",
+        "placeholder": "C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
+      }
+    },
+    "appearance": {
+      "sidebarBackground": {
+        "title": "Sidebar Background",
+        "uploadPrompt": "Click to upload image",
+        "fileTypes": "PNG, JPG up to 10MB",
+        "changeButton": "Change",
+        "removeButton": "Remove"
+      }
+    },
+    "language": {
+      "title": "Display Language",
+      "description": "Select your preferred language for the launcher interface."
+    },
+    "integrations": {
+      "discord": {
+        "title": "Discord Rich Presence",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "showStatus": "Show Discord Status"
+      }
+    },
+    "system": {
+      "gameDirectory": {
+        "title": "Game Directory"
+      },
+      "version": {
+        "title": "Version Information",
+        "launcherVersion": "Launcher Version"
+      }
+    }
+  },
+  "navigation": {
+    "home": "Home",
+    "instances": "Instances",
+    "mods": "Mods",
+    "servers": "Servers",
+    "skins": "Skins",
+    "serverMaps": "Server Maps",
+    "console": "Console"
+  },
+  "errors": {
+    "generic": "An error occurred",
+    "instanceNotFound": "Instance not found",
+    "failedToLaunch": "Failed to launch instance",
+    "failedToSave": "Failed to save settings",
+    "invalidFile": "Invalid file",
+    "fileTooLarge": "File is too large"
+  }
+}
