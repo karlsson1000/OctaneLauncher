@@ -62,17 +62,75 @@
   },
   "instances": {
     "title": "Instanser",
-    "subtitle": "Hantera dina Minecraft installationer",
-    "newButton": "Ny instans",
+    "subtitle": "",
+    "newButton": "",
+    "searchPlaceholder": "",
     "noInstances": {
       "title": "Inga instanser ännu",
       "description": "Skapa din första instans för att komma igång",
       "createButton": "Skapa instans"
     },
-    "selectedInstance": {
-      "play": "Spela",
-      "stop": "Stoppa",
-      "details": "Detaljer"
+    "noSearchResults": {
+      "title": "",
+      "description": ""
+    },
+    "instance": {
+      "launchTooltip": "",
+      "stopTooltip": ""
+    },
+    "contextMenu": {
+      "open": "",
+      "openFolder": "",
+      "duplicate": "",
+      "export": "",
+      "delete": ""
+    },
+    "templates": {
+      "manager": {
+        "title": "",
+        "description": ""
+      },
+      "applyButton": "",
+      "importButton": "",
+      "importFromFile": "",
+      "createNew": "",
+      "noTemplates": "",
+      "templatesAvailable": "",
+      "templatesAvailable_plural": "",
+      "instanceCount": "",
+      "instanceCount_plural": "",
+      "templateCount": "",
+      "templateCount_plural": "",
+      "noInstancesAvailable": "",
+      "availableTemplates": "",
+      "applyTemplate": {
+        "title": "",
+        "description": ""
+      },
+      "applyToInstance": "",
+      "exportTooltip": "",
+      "deleteTooltip": "",
+      "createSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "createError": "",
+      "exportSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "exportError": "",
+      "importSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "importError": "",
+      "deleteError": "",
+      "applySuccess": {
+        "title": "",
+        "message": ""
+      },
+      "applyError": ""
     }
   },
   "settings": {
@@ -110,7 +168,8 @@
     },
     "language": {
       "title": "Visningsspråk",
-      "description": "Välj önskat språk för launcher gränssnittet."
+      "description": "Välj önskat språk för launcher gränssnittet.",
+      "helpTranslate": ""
     },
     "integrations": {
       "discord": {

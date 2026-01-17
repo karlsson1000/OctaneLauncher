@@ -64,15 +64,73 @@
     "title": "",
     "subtitle": "",
     "newButton": "",
+    "searchPlaceholder": "",
     "noInstances": {
       "title": "",
       "description": "",
       "createButton": ""
     },
-    "selectedInstance": {
-      "play": "",
-      "stop": "",
-      "details": ""
+    "noSearchResults": {
+      "title": "",
+      "description": ""
+    },
+    "instance": {
+      "launchTooltip": "",
+      "stopTooltip": ""
+    },
+    "contextMenu": {
+      "open": "",
+      "openFolder": "",
+      "duplicate": "",
+      "export": "",
+      "delete": ""
+    },
+    "templates": {
+      "manager": {
+        "title": "",
+        "description": ""
+      },
+      "applyButton": "",
+      "importButton": "",
+      "importFromFile": "",
+      "createNew": "",
+      "noTemplates": "",
+      "templatesAvailable": "",
+      "templatesAvailable_plural": "",
+      "instanceCount": "",
+      "instanceCount_plural": "",
+      "templateCount": "",
+      "templateCount_plural": "",
+      "noInstancesAvailable": "",
+      "availableTemplates": "",
+      "applyTemplate": {
+        "title": "",
+        "description": ""
+      },
+      "applyToInstance": "",
+      "exportTooltip": "",
+      "deleteTooltip": "",
+      "createSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "createError": "",
+      "exportSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "exportError": "",
+      "importSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "importError": "",
+      "deleteError": "",
+      "applySuccess": {
+        "title": "",
+        "message": ""
+      },
+      "applyError": ""
     }
   },
   "settings": {
@@ -110,7 +168,8 @@
     },
     "language": {
       "title": "",
-      "description": ""
+      "description": "",
+      "helpTranslate": ""
     },
     "integrations": {
       "discord": {
