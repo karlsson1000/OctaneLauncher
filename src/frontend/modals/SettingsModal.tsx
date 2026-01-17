@@ -638,7 +638,7 @@ export function SettingsModal({
                   <p className="text-sm text-gray-400 mb-4">
                     Select your preferred language for the launcher interface.
                   </p>
-                  <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto custom-scrollbar pr-2">
+                  <div className="grid grid-cols-3 gap-2 max-h-[270px] overflow-y-auto custom-scrollbar pr-2">
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
@@ -666,6 +666,21 @@ export function SettingsModal({
                         </div>
                       </button>
                     ))}
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-[#252932]">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await invoke('open_url', { url: 'https://translate.atomiclauncher.com' })
+                        } catch (error) {
+                          console.error('Failed to open translation link:', error)
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-[#4572e3] transition-colors cursor-pointer"
+                    >
+                      <Globe size={16} />
+                      <span>Help translate at translate.atomiclauncher.com</span>
+                    </button>
                   </div>
                 </div>
               )}
