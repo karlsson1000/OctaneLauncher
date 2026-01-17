@@ -6,3 +6,14 @@
 [![Release](https://img.shields.io/github/v/release/karlsson1000/AtomicLauncher?color=4572e3&style=for-the-badge)](https://github.com/karlsson1000/AtomicLauncher/releases)
 
 </div>
+
+### Disclaimer
+This is a hobby project, things might change and things might break. Not affiliated with Mojang or Microsoft.
+
+<div align="center">
+
+![Atomic Launcher](https://atomiclauncher.com/atomiclauncher.png)
+
+</div>
+
+[MIT License](LICENSE)
