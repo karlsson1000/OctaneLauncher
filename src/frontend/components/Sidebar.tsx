@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { LogIn, LogOut, ChevronUp, ChevronDown, Play, Package, FolderOpen, Copy, Trash2, UserPlus, Gamepad2, Mail, Check, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import { ContextMenu } from "../modals/ContextMenu"
 import { ConfirmModal } from "../modals/ConfirmModal"
 import type { Instance } from "../../types"
@@ -56,6 +57,7 @@ interface SidebarProps {
 }
 
 export function Sidebar(props: SidebarProps) {
+  const { t } = useTranslation()
   const {
     instances,
     instanceIcons,
@@ -171,7 +173,7 @@ export function Sidebar(props: SidebarProps) {
     
     // Check if user is trying to add themselves
     if (activeAccount && friendUsername.trim().toLowerCase() === activeAccount.username.toLowerCase()) {
-      setRequestStatus({ type: 'error', message: "Can't add yourself" })
+      setRequestStatus({ type: 'error', message: t('sidebar.friendRequest.cantAddSelf') })
       setTimeout(() => setRequestStatus(null), 3000)
       return
     }
@@ -180,7 +182,7 @@ export function Sidebar(props: SidebarProps) {
     setRequestStatus(null)
     try {
       await invoke("send_friend_request", { username: friendUsername.trim() })
-      setRequestStatus({ type: 'success', message: 'Request sent!' })
+      setRequestStatus({ type: 'success', message: t('sidebar.friendRequest.requestSent') })
       setFriendUsername("")
       setTimeout(() => {
         setShowAddFriend(false)
@@ -191,13 +193,13 @@ export function Sidebar(props: SidebarProps) {
       // Clean up the error message for better display
       let displayMsg = errorMsg
       if (errorMsg.includes("Friend request already sent")) {
-        displayMsg = "Already sent friend request"
+        displayMsg = t('sidebar.friendRequest.alreadySent')
       } else if (errorMsg.includes("already sent you a friend request")) {
-        displayMsg = "Check your friend requests!"
+        displayMsg = t('sidebar.friendRequest.checkRequests')
       } else if (errorMsg.includes("User") && errorMsg.includes("not found")) {
-        displayMsg = "User not found"
+        displayMsg = t('sidebar.friendRequest.userNotFound')
       } else if (errorMsg.includes("Already friends")) {
-        displayMsg = "Already friends"
+        displayMsg = t('sidebar.friendRequest.alreadyFriends')
       }
       
       setRequestStatus({ type: 'error', message: displayMsg })
@@ -274,10 +276,10 @@ export function Sidebar(props: SidebarProps) {
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
 
-    if (days > 0) return `${days}d ago`
+    if (days > 0) return t('common.dates.daysAgo', { count: days })
     if (hours > 0) return `${hours}h ago`
     if (minutes > 0) return `${minutes}m ago`
-    return 'Just now'
+    return t('common.dates.today')
   }
 
   const formatLastUsed = (timestamp: string | null): string => {
@@ -288,10 +290,10 @@ export function Sidebar(props: SidebarProps) {
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
 
-    if (days > 0) return `${days}d ago`
+    if (days > 0) return t('common.dates.daysAgo', { count: days })
     if (hours > 0) return `${hours}h ago`
     if (minutes > 0) return `${minutes}m ago`
-    return 'Just now'
+    return t('common.dates.today')
   }
 
   const handleSidebarContextMenu = (e: React.MouseEvent, instance: Instance) => {
@@ -356,11 +358,13 @@ export function Sidebar(props: SidebarProps) {
   const getStatusText = (friend: Friend) => {
     switch (friend.status) {
       case "online":
-        return "Online"
+        return t('sidebar.friendStatus.online')
       case "ingame":
-        return friend.current_instance ? `Playing ${friend.current_instance}` : "In Game"
+        return friend.current_instance 
+          ? t('sidebar.friendStatus.playing', { instance: friend.current_instance })
+          : t('sidebar.friendStatus.inGame')
       case "offline":
-        return "Offline"
+        return t('sidebar.friendStatus.offline')
     }
   }
 
@@ -396,7 +400,7 @@ export function Sidebar(props: SidebarProps) {
                     />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <div className="text-xs text-[#7d8590]">Welcome back,</div>
+                    <div className="text-xs text-[#7d8590]">{t('sidebar.welcome')}</div>
                     <div className="text-sm font-medium text-[#e6e6e6] truncate">{activeAccount.username}</div>
                   </div>
                   <div className="flex flex-col text-[#7d8590]">
@@ -413,7 +417,7 @@ export function Sidebar(props: SidebarProps) {
               className="w-full flex items-center gap-3 px-4 py-2.5 rounded text-base font-medium transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#181a1f]"
             >
               <LogIn size={20} className="text-[#16a34a]" strokeWidth={2} />
-              <span>{isLoggingIn ? 'Authenticating...' : 'Sign In'}</span>
+              <span>{isLoggingIn ? t('sidebar.authenticating') : t('sidebar.signIn')}</span>
             </button>
           )}
         </div>
@@ -422,8 +426,8 @@ export function Sidebar(props: SidebarProps) {
         <div className="flex-1 flex items-center justify-center px-4">
           <div className="text-center">
             <Gamepad2 size={40} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
-            <p className="text-sm text-[#7d8590] mb-1">Nothing here yet</p>
-            <p className="text-xs text-[#7d8590]/70">Sign in to get started!</p>
+            <p className="text-sm text-[#7d8590] mb-1">{t('sidebar.nothingHere')}</p>
+            <p className="text-xs text-[#7d8590]/70">{t('sidebar.signInToStart')}</p>
           </div>
         </div>
       ) : (
@@ -432,7 +436,7 @@ export function Sidebar(props: SidebarProps) {
             <div className="flex-shrink-0 overflow-y-auto px-2 pb-3">
               <div className="py-2">
                 <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider mb-2 px-2">
-                  Recently Played
+                  {t('sidebar.recentlyPlayed')}
                 </h3>
                 <div className="space-y-1">
                   {recentInstances.map((instance) => {
@@ -487,7 +491,7 @@ export function Sidebar(props: SidebarProps) {
                                 ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20"
                                 : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                             } disabled:opacity-50`}
-                            title={isRunning ? "Stop instance" : "Launch instance"}
+                            title={isRunning ? t('sidebar.instance.stopTooltip') : t('sidebar.instance.launchTooltip')}
                           >
                             {isLaunching ? (
                               <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
@@ -511,14 +515,14 @@ export function Sidebar(props: SidebarProps) {
               <div className="py-2">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider px-2">
-                    Friends
+                    {t('sidebar.friends')}
                   </h3>
                   <div className="flex items-center gap-1 px-2">
                     {friendRequests.length > 0 && (
                       <button
                         onClick={() => setShowRequests(!showRequests)}
                         className="relative text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
-                        title="Friend Requests"
+                        title={t('sidebar.friendRequests')}
                       >
                         <Mail size={14} strokeWidth={2} />
                         <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold">
@@ -529,7 +533,7 @@ export function Sidebar(props: SidebarProps) {
                     <button
                       onClick={() => setShowAddFriend(!showAddFriend)}
                       className="text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
-                      title="Add Friend"
+                      title={t('sidebar.addFriend')}
                     >
                       <UserPlus size={14} strokeWidth={2} />
                     </button>
@@ -561,7 +565,7 @@ export function Sidebar(props: SidebarProps) {
                             ) : (
                               <>
                                 <Check size={12} />
-                                Accept
+                                {t('sidebar.friendRequest.accept')}
                               </>
                             )}
                           </button>
@@ -571,7 +575,7 @@ export function Sidebar(props: SidebarProps) {
                             className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <X size={12} />
-                            Reject
+                            {t('sidebar.friendRequest.reject')}
                           </button>
                         </div>
                       </div>
@@ -586,7 +590,7 @@ export function Sidebar(props: SidebarProps) {
                         type="text"
                         value={friendUsername}
                         onChange={(e) => setFriendUsername(e.target.value)}
-                        placeholder="Username..."
+                        placeholder={t('sidebar.friendRequest.usernamePlaceholder')}
                         className="flex-1 min-w-0 bg-[#181a1f] border border-[#3a3f4b] rounded px-2 py-1 text-xs text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none focus:border-[#3a3f4b]"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && friendUsername.trim()) {
@@ -602,7 +606,7 @@ export function Sidebar(props: SidebarProps) {
                         {sendingRequest ? (
                           <div className="w-3 h-3 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
                         ) : (
-                          "Add"
+                          t('sidebar.friendRequest.add')
                         )}
                       </button>
                     </div>
@@ -621,7 +625,7 @@ export function Sidebar(props: SidebarProps) {
                 {friends.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
                     <UserPlus size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
-                    <p className="text-sm text-[#7d8590]">No friends yet</p>
+                    <p className="text-sm text-[#7d8590]">{t('sidebar.noFriendsYet')}</p>
                   </div>
                 ) : (
                   <div className="space-y-1" key={friendsUpdateKey}>
@@ -649,16 +653,14 @@ export function Sidebar(props: SidebarProps) {
                                 <Gamepad2 size={14} className="flex-shrink-0 text-green-400" />
                               )}
                               <span className="truncate">
-                                {friend.status === "online" ? "Online" : 
-                                 friend.status === "ingame" ? (friend.current_instance || "In Game") :
-                                 "Offline"}
+                                {getStatusText(friend)}
                               </span>
                             </div>
                           </div>
                           <button
                             onClick={() => handleRemoveFriend(friend.uuid, friend.username)}
                             className="absolute right-1.5 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer bg-[#181a1f]"
-                            title="Remove Friend"
+                            title={t('sidebar.removeFriend')}
                           >
                             <X size={14} className="text-red-400" />
                           </button>
@@ -707,7 +709,7 @@ export function Sidebar(props: SidebarProps) {
                         {activeAccount.username}
                       </div>
                       <div className="text-xs text-[#7d8590]">
-                        Active Account
+                        {t('sidebar.accountDropdown.activeAccount')}
                       </div>
                     </div>
                   </button>
@@ -774,7 +776,7 @@ export function Sidebar(props: SidebarProps) {
               className="w-full flex items-center gap-2 px-2.5 py-2.5 text-sm text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <LogIn size={18} className="text-[#16a34a]" />
-              <span>{isLoggingIn ? 'Authenticating...' : 'Add another account'}</span>
+              <span>{isLoggingIn ? t('sidebar.authenticating') : t('sidebar.accountDropdown.addAnother')}</span>
             </button>
           </div>
         </>
@@ -787,7 +789,7 @@ export function Sidebar(props: SidebarProps) {
           onClose={() => setSidebarContextMenu(null)}
           items={[
             {
-              label: "Open",
+              label: t('sidebar.contextMenu.open'),
               icon: <Package size={16} />,
               onClick: () => {
                 setSelectedInstance(sidebarContextMenu.instance)
@@ -796,14 +798,14 @@ export function Sidebar(props: SidebarProps) {
               },
             },
             {
-              label: "Open Folder",
+              label: t('sidebar.contextMenu.openFolder'),
               icon: <FolderOpen size={16} />,
               onClick: () => {
                 onOpenInstanceFolder(sidebarContextMenu.instance)
               },
             },
             {
-              label: "Duplicate",
+              label: t('sidebar.contextMenu.duplicate'),
               icon: <Copy size={16} />,
               onClick: () => {
                 onDuplicateInstance(sidebarContextMenu.instance)
@@ -811,7 +813,7 @@ export function Sidebar(props: SidebarProps) {
             },
             { separator: true },
             {
-              label: "Delete",
+              label: t('sidebar.contextMenu.delete'),
               icon: <Trash2 size={16} />,
               onClick: () => {
                 onDeleteInstance(sidebarContextMenu.instance.name)
@@ -824,10 +826,10 @@ export function Sidebar(props: SidebarProps) {
 
       <ConfirmModal
         isOpen={confirmRemoveFriend !== null}
-        title="Remove Friend"
-        message={`Are you sure you want to remove ${confirmRemoveFriend?.username || 'this friend'}? You can send them a friend request again later.`}
-        confirmText="Remove"
-        cancelText="Cancel"
+        title={t('sidebar.confirmRemove.title')}
+        message={t('sidebar.confirmRemove.message', { username: confirmRemoveFriend?.username || 'this friend' })}
+        confirmText={t('sidebar.removeFriend')}
+        cancelText={t('common.actions.cancel')}
         type="danger"
         onConfirm={confirmRemove}
         onCancel={() => setConfirmRemoveFriend(null)}

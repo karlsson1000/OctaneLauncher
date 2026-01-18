@@ -3,8 +3,7 @@
     "loaders": {
       "fabric": "Fabric",
       "vanilla": "Vanilla",
-      "forge": "Forge",
-      "quilt": "Quilt"
+      "neoforge": "NeoForge"
     },
     "dates": {
       "today": "Today",
@@ -291,5 +290,54 @@
   "modal": {
     "confirm": "Confirm",
     "ok": "OK"
+  },
+  "sidebar": {
+    "welcome": "Welcome back,",
+    "signIn": "Sign In",
+    "authenticating": "Authenticating...",
+    "recentlyPlayed": "Recently Played",
+    "friends": "Friends",
+    "addFriend": "Add Friend",
+    "friendRequests": "Friend Requests",
+    "removeFriend": "Remove Friend",
+    "noFriendsYet": "No friends yet",
+    "nothingHere": "Nothing here yet",
+    "signInToStart": "Sign in to get started!",
+    "accountDropdown": {
+      "activeAccount": "Active Account",
+      "addAnother": "Add another account"
+    },
+    "friendStatus": {
+      "online": "Online",
+      "offline": "Offline",
+      "inGame": "In Game",
+      "playing": "{{instance}}"
+    },
+    "friendRequest": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "add": "Add",
+      "usernamePlaceholder": "Username...",
+      "requestSent": "Request sent!",
+      "alreadySent": "Already sent friend request",
+      "checkRequests": "Check your friend requests!",
+      "userNotFound": "User not found",
+      "alreadyFriends": "Already friends",
+      "cantAddSelf": "Can't add yourself"
+    },
+    "confirmRemove": {
+      "title": "Remove Friend",
+      "message": "Are you sure you want to remove {{username}}? You can send them a friend request again later."
+    },
+    "instance": {
+      "launchTooltip": "Launch instance",
+      "stopTooltip": "Stop instance"
+    },
+    "contextMenu": {
+      "open": "Open",
+      "openFolder": "Open Folder",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    }
   }
 }
