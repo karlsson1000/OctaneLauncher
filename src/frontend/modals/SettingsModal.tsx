@@ -652,7 +652,7 @@ export function SettingsModal({
                           })
                         }}
                         className={`p-3 rounded text-left transition-colors cursor-pointer ${
-                          settings.language === lang.code
+                          (settings.language || 'en') === lang.code
                             ? 'bg-[#4572e3] text-white'
                             : 'bg-[#252932] text-gray-300 hover:bg-[#2d3139]'
                         }`}
@@ -662,7 +662,7 @@ export function SettingsModal({
                             <div className="text-sm font-medium">{lang.nativeName}</div>
                             <div className="text-xs opacity-75">{lang.name}</div>
                           </div>
-                          {settings.language === lang.code && (
+                          {(settings.language || 'en') === lang.code && (
                             <Check size={16} className="flex-shrink-0" />
                           )}
                         </div>
