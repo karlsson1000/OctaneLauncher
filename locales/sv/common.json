@@ -62,17 +62,75 @@
   },
   "instances": {
     "title": "Instanser",
-    "subtitle": "Hantera dina Minecraft installationer",
-    "newButton": "Ny instans",
+    "subtitle": "Hantera alla dina instanser",
+    "newButton": "Ny",
+    "searchPlaceholder": "Sök...",
     "noInstances": {
       "title": "Inga instanser ännu",
       "description": "Skapa din första instans för att komma igång",
       "createButton": "Skapa instans"
     },
-    "selectedInstance": {
-      "play": "Spela",
-      "stop": "Stoppa",
-      "details": "Detaljer"
+    "noSearchResults": {
+      "title": "Inga instanser hittades",
+      "description": "Försök att justera din sökning"
+    },
+    "instance": {
+      "launchTooltip": "Starta instans",
+      "stopTooltip": "Stoppa instans"
+    },
+    "contextMenu": {
+      "open": "Öppna",
+      "openFolder": "Öppna mapp",
+      "duplicate": "Duplicera",
+      "export": "Exportera",
+      "delete": "Radera"
+    },
+    "templates": {
+      "manager": {
+        "title": "Mallhanterare",
+        "description": "Skapa, applicera och hantera mallar"
+      },
+      "applyButton": "Tillämpa mall på instans",
+      "importButton": "Importera mall",
+      "importFromFile": "Från JSON fil",
+      "createNew": "Skapa ny mall",
+      "noTemplates": "Ingen mall tillgänglig",
+      "templatesAvailable": "{{count}} mall tillgänglig",
+      "templatesAvailable_plural": "{{count}} tillgängliga mallar",
+      "instanceCount": "{{count}} instans",
+      "instanceCount_plural": "{{count}} instanser",
+      "templateCount": "{{count}} mall",
+      "templateCount_plural": "{{count}} mallar",
+      "noInstancesAvailable": "Inga instanser tillgängliga",
+      "availableTemplates": "Tillgängliga mallar",
+      "applyTemplate": {
+        "title": "Använd mall",
+        "description": "Välj en mall och instans"
+      },
+      "applyToInstance": "Applicera på instans",
+      "exportTooltip": "Exportera mall",
+      "deleteTooltip": "Radera mall",
+      "createSuccess": {
+        "title": "Lyckades",
+        "message": "Mall skapad från \"{{name}}\" lyckades!"
+      },
+      "createError": "Kunde inte skapa mall: {{error}}",
+      "exportSuccess": {
+        "title": "Lyckades",
+        "message": "Mall \"{{name}}\" exporterades framgångsrikt!"
+      },
+      "exportError": "Kunde inte exportera mall: {{error}}",
+      "importSuccess": {
+        "title": "Lyckades",
+        "message": "Mallen har importerats!"
+      },
+      "importError": "Det gick inte att importera mall: {{error}}",
+      "deleteError": "Kunde inte ta bort mall: {{error}}",
+      "applySuccess": {
+        "title": "Lyckades",
+        "message": "Mall tillämpad på {{name}} lyckades!"
+      },
+      "applyError": "Det gick inte att tillämpa mall: {{error}}"
     }
   },
   "settings": {
@@ -110,7 +168,8 @@
     },
     "language": {
       "title": "Visningsspråk",
-      "description": "Välj önskat språk för launcher gränssnittet."
+      "description": "Välj önskat språk för launcher gränssnittet.",
+      "helpTranslate": "Hjälp med att översätta på translate.atomiclauncher.com"
     },
     "integrations": {
       "discord": {
@@ -146,5 +205,91 @@
     "failedToSave": "Kunde inte spara inställningar",
     "invalidFile": "Ogiltig fil",
     "fileTooLarge": "Filen är för stor"
+  },
+  "createInstance": {
+    "title": "",
+    "instanceName": {
+      "label": "",
+      "placeholder": "",
+      "existsError": ""
+    },
+    "minecraftVersion": {
+      "label": "",
+      "releases": "",
+      "snapshots": "",
+      "loadingVersions": "",
+      "noCompatibleVersions": ""
+    },
+    "modloader": {
+      "label": "",
+      "vanilla": "",
+      "fabric": "",
+      "fabricVersion": "",
+      "stable": "",
+      "loadingFabricVersions": ""
+    },
+    "buttons": {
+      "custom": "",
+      "importFile": "",
+      "cancel": "",
+      "create": "",
+      "creating": ""
+    },
+    "errors": {
+      "failedToLoadVersions": "",
+      "failedToLoadFabricVersions": "",
+      "failedToImport": "",
+      "failedToCreate": ""
+    },
+    "import": {
+      "dialogTitle": "",
+      "fileExtensions": ""
+    }
+  },
+  "settingsModal": {
+    "loadingSettings": "",
+    "buildLabel": "",
+    "tabs": {
+      "game": "",
+      "appearance": "",
+      "language": "",
+      "integrations": "",
+      "about": ""
+    },
+    "java": {
+      "autoDetect": "",
+      "customPath": "",
+      "scan": ""
+    },
+    "sidebarBackground": {
+      "change": "",
+      "remove": "",
+      "clickToUpload": "",
+      "fileTypes": ""
+    },
+    "language": {
+      "description": "",
+      "helpTranslate": ""
+    },
+    "discord": {
+      "title": "",
+      "showStatus": "",
+      "enabled": "",
+      "disabled": ""
+    },
+    "errors": {
+      "invalidFile": "",
+      "selectImage": "",
+      "fileTooLarge": "",
+      "imageTooLarge": "",
+      "failedToSave": "",
+      "failedToSaveBackground": "",
+      "failedToRemoveBackground": "",
+      "failedToReadFile": ""
+    }
+  },
+  "modal": {
+    "confirm": "",
+    "ok": ""
   }
 }
