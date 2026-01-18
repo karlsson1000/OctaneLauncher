@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { open } from '@tauri-apps/plugin-dialog'
 import { X, Loader2, Package, AlertCircle, FileDown, Check } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
+import { useTranslation } from "react-i18next"
 import type { FabricVersion, Instance } from "../../types"
 
 interface MinecraftVersion {
@@ -22,6 +23,7 @@ interface CreateInstanceModalProps {
 }
 
 export function CreateInstanceModal({ versions, instances, onClose, onSuccess, onStartCreating }: CreateInstanceModalProps) {
+  const { t } = useTranslation()
   const [isCreating, setIsCreating] = useState(false)
   const [selectedVersion, setSelectedVersion] = useState(versions[0] || "1.21.11")
   const [newInstanceName, setNewInstanceName] = useState("")
@@ -83,8 +85,8 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       console.error("Failed to load versions:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to load versions: ${error}`,
+        title: t('errors.generic'),
+        message: t('createInstance.errors.failedToLoadVersions') + `: ${error}`,
         type: "danger"
       })
     } finally {
@@ -161,8 +163,8 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       console.error("Failed to load Fabric versions:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to load Fabric versions: ${error}`,
+        title: t('errors.generic'),
+        message: t('createInstance.errors.failedToLoadFabricVersions') + `: ${error}`,
         type: "danger"
       })
     } finally {
@@ -183,7 +185,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       const selected = await open({
         multiple: false,
         filters: [{
-          name: 'Instance Files',
+          name: t('createInstance.import.dialogTitle'),
           extensions: ['mrpack', 'zip']
         }]
       })
@@ -226,8 +228,8 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       console.error("Import error:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to import instance: ${error}`,
+        title: t('errors.generic'),
+        message: t('createInstance.errors.failedToImport') + `: ${error}`,
         type: "danger"
       })
     } finally {
@@ -257,8 +259,8 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       console.error("Create instance error:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to create instance: ${error}`,
+        title: t('errors.generic'),
+        message: t('createInstance.errors.failedToCreate') + `: ${error}`,
         type: "danger"
       })
     } finally {
@@ -389,7 +391,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         >
           <div className="flex items-center justify-between px-6 pt-6 pb-5">
             <div>
-              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">New Instance</h2>
+              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{t('createInstance.title')}</h2>
             </div>
             <button 
               onClick={handleClose} 
@@ -409,7 +411,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
               >
                 <div className="flex items-center justify-center gap-2">
                   <Package size={18} className="text-white" strokeWidth={2} />
-                  <span>Custom</span>
+                  <span>{t('createInstance.buttons.custom')}</span>
                 </div>
               </button>
               <button
@@ -420,18 +422,20 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
               >
                 <div className="flex items-center justify-center gap-2">
                   <FileDown size={18} className="text-gray-400" strokeWidth={2} />
-                  <span>Import File</span>
+                  <span>{t('createInstance.buttons.importFile')}</span>
                 </div>
               </button>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Name</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">
+                {t('createInstance.instanceName.label')}
+              </label>
               <input
                 type="text"
                 value={newInstanceName}
                 onChange={(e) => setNewInstanceName(e.target.value)}
-                placeholder="My Minecraft Instance"
+                placeholder={t('createInstance.instanceName.placeholder')}
                 className={`w-full bg-[#22252b] rounded px-4 py-3.5 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all ${
                   instanceExists && newInstanceName.trim()
                     ? 'ring-2 ring-red-500'
@@ -442,14 +446,16 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
               {instanceExists && newInstanceName.trim() && (
                 <div className="flex items-center gap-1.5 mt-2 text-xs text-red-400">
                   <AlertCircle size={12} strokeWidth={2} />
-                  <span>An instance with this name already exists</span>
+                  <span>{t('createInstance.instanceName.existsError')}</span>
                 </div>
               )}
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2.5">
-                <label className="text-sm font-medium text-[#e6e6e6]">Minecraft Version</label>
+                <label className="text-sm font-medium text-[#e6e6e6]">
+                  {t('createInstance.minecraftVersion.label')}
+                </label>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -461,7 +467,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                         : "text-gray-500 hover:text-gray-400"
                     }`}
                   >
-                    Releases
+                    {t('createInstance.minecraftVersion.releases')}
                   </button>
                   <span className="text-gray-600">|</span>
                   <button
@@ -476,19 +482,19 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                         : "text-gray-500 hover:text-gray-400 cursor-pointer"
                     }`}
                   >
-                    Snapshots
+                    {t('createInstance.minecraftVersion.snapshots')}
                   </button>
                 </div>
               </div>
               {isLoadingVersions ? (
                 <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Loading versions...</span>
+                  <span>{t('createInstance.minecraftVersion.loadingVersions')}</span>
                 </div>
               ) : filteredVersions.length === 0 ? (
                 <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                   <AlertCircle size={16} />
-                  <span>No compatible versions available</span>
+                  <span>{t('createInstance.minecraftVersion.noCompatibleVersions')}</span>
                 </div>
               ) : (
                 <div className="relative" ref={versionDropdownRef}>
@@ -539,7 +545,9 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Modloader</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">
+                {t('createInstance.modloader.label')}
+              </label>
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -558,7 +566,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                       <div className="w-2 h-2 rounded-full bg-white"></div>
                     )}
                   </div>
-                  <span>Vanilla</span>
+                  <span>{t('createInstance.modloader.vanilla')}</span>
                 </button>
                 <button
                   type="button"
@@ -577,18 +585,20 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                       <div className="w-2 h-2 rounded-full bg-white"></div>
                     )}
                   </div>
-                  <span>Fabric</span>
+                  <span>{t('createInstance.modloader.fabric')}</span>
                 </button>
               </div>
             </div>
 
             {loaderType === "fabric" && (
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Fabric Loader Version</label>
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">
+                  {t('createInstance.modloader.fabricVersion')}
+                </label>
                 {isLoadingFabric ? (
                   <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                     <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                    <span>Loading versions...</span>
+                    <span>{t('createInstance.modloader.loadingFabricVersions')}</span>
                   </div>
                 ) : (
                   <div className="relative" ref={fabricDropdownRef}>
@@ -600,7 +610,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                       }`}
                       disabled={isCreating}
                     >
-                      {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
+                      {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? `(${t('createInstance.modloader.stable')})` : ""}
                     </button>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                       {isFabricDropdownOpen ? (
@@ -626,7 +636,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                             }}
                             className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
                           >
-                            <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
+                            <span>{version.version} {version.stable ? `(${t('createInstance.modloader.stable')})` : ""}</span>
                             {selectedFabricVersion === version.version && (
                               <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
                             )}
@@ -646,7 +656,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
               disabled={isCreating}
               className="px-5 py-3 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
-              Cancel
+              {t('createInstance.buttons.cancel')}
             </button>
             <button
               onClick={handleCreateInstance}
@@ -656,10 +666,10 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
               {isCreating ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Creating...</span>
+                  <span>{t('createInstance.buttons.creating')}</span>
                 </>
               ) : (
-                <span>Create Instance</span>
+                <span>{t('createInstance.buttons.create')}</span>
               )}
             </button>
           </div>

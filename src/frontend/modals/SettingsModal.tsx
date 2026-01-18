@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Globe } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
+import { useTranslation } from "react-i18next"
 import type { LauncherSettings } from "../../types"
 import i18n from '../../i18n'
 
@@ -30,6 +31,7 @@ export function SettingsModal({
   onSettingsChange, 
   onBackgroundChanged 
 }: SettingsModalProps) {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<SettingsTab>("game")
   const [javaInstallations, setJavaInstallations] = useState<string[]>([])
   const [isLoadingJava, setIsLoadingJava] = useState(false)
@@ -166,8 +168,8 @@ export function SettingsModal({
       console.error("Failed to save settings:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to save settings: ${error}`,
+        title: t('errors.generic'),
+        message: t('settingsModal.errors.failedToSave') + `: ${error}`,
         type: "danger"
       })
     }
@@ -192,8 +194,8 @@ export function SettingsModal({
     if (!file.type.startsWith('image/')) {
       setAlertModal({
         isOpen: true,
-        title: "Invalid File",
-        message: "Please select an image file (PNG, JPG, etc.)",
+        title: t('settingsModal.errors.invalidFile'),
+        message: t('settingsModal.errors.selectImage'),
         type: "warning"
       })
       return
@@ -202,8 +204,8 @@ export function SettingsModal({
     if (file.size > 10 * 1024 * 1024) {
       setAlertModal({
         isOpen: true,
-        title: "File Too Large",
-        message: "Image must be smaller than 10MB",
+        title: t('settingsModal.errors.fileTooLarge'),
+        message: t('settingsModal.errors.imageTooLarge'),
         type: "warning"
       })
       return
@@ -222,8 +224,8 @@ export function SettingsModal({
           console.error("Failed to save sidebar background:", error)
           setAlertModal({
             isOpen: true,
-            title: "Error",
-            message: `Failed to save background: ${error}`,
+            title: t('errors.generic'),
+            message: t('settingsModal.errors.failedToSaveBackground') + `: ${error}`,
             type: "danger"
           })
         }
@@ -233,8 +235,8 @@ export function SettingsModal({
       console.error("Failed to read file:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: "Failed to read image file",
+        title: t('errors.generic'),
+        message: t('settingsModal.errors.failedToReadFile'),
         type: "danger"
       })
     }
@@ -253,8 +255,8 @@ export function SettingsModal({
       console.error("Failed to remove sidebar background:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to remove background: ${error}`,
+        title: t('errors.generic'),
+        message: t('settingsModal.errors.failedToRemoveBackground') + `: ${error}`,
         type: "danger"
       })
     }
@@ -276,7 +278,7 @@ export function SettingsModal({
         <div className="bg-[#1a1d23] rounded p-8">
           <div className="flex items-center gap-2 text-gray-400 text-base">
             <Loader2 size={20} className="animate-spin" />
-            <span>Loading settings...</span>
+            <span>{t('settingsModal.loadingSettings')}</span>
           </div>
         </div>
       </div>
@@ -284,15 +286,15 @@ export function SettingsModal({
   }
 
   const tabs = [
-    { id: "game" as const, label: "Game", icon: Cpu },
-    { id: "appearance" as const, label: "Appearance", icon: ImagePlus },
-    { id: "language" as const, label: "Language", icon: Globe },
-    { id: "integrations" as const, label: "Integrations", icon: () => (
+    { id: "game" as const, label: t('settings.tabs.game'), icon: Cpu },
+    { id: "appearance" as const, label: t('settings.tabs.appearance'), icon: ImagePlus },
+    { id: "language" as const, label: t('settings.tabs.language'), icon: Globe },
+    { id: "integrations" as const, label: t('settings.tabs.integrations'), icon: () => (
       <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="currentColor">
         <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
       </svg>
     )},
-    { id: "about" as const, label: "System", icon: FolderOpen }
+    { id: "about" as const, label: t('settings.tabs.system'), icon: FolderOpen }
   ]
 
   return (
@@ -394,11 +396,11 @@ export function SettingsModal({
         >
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-[#252932]">
-            <h2 className="text-xl font-semibold text-white">Settings</h2>
+            <h2 className="text-xl font-semibold text-white">{t('settings.title')}</h2>
             <div className="flex items-center gap-3">
               {appVersion && (
                 <span className="bg-[#252932] px-2.5 py-1 rounded text-xs text-gray-400">
-                  Build {appVersion.split('-')[1] || appVersion}
+                  {t('settingsModal.buildLabel')} {appVersion.split('-')[1] || appVersion}
                 </span>
               )}
               <button
@@ -441,7 +443,7 @@ export function SettingsModal({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-white">
                       <Cpu size={18} className="text-[#4572e3]" />
-                      <span className="font-medium">Memory Allocation</span>
+                      <span className="font-medium">{t('settings.game.memory.title')}</span>
                     </div>
                     <div className="bg-[#252932] rounded p-4 space-y-3">
                       <div className="flex items-baseline justify-between">
@@ -449,7 +451,7 @@ export function SettingsModal({
                           {(settings.memory_mb / 1024).toFixed(1)} GB
                         </span>
                         <span className="text-xs text-gray-400">
-                          of {systemInfo ? (systemInfo.total_memory_mb / 1024).toFixed(0) : '16'} GB total
+                          {t('settings.game.memory.ofTotal', { total: systemInfo ? (systemInfo.total_memory_mb / 1024).toFixed(0) : '16' })}
                         </span>
                       </div>
                       <input
@@ -470,13 +472,13 @@ export function SettingsModal({
                       {systemInfo && (
                         <div className="pt-2 border-t border-[#1a1d23] space-y-1">
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">System Total</span>
+                            <span className="text-gray-400">{t('settings.game.memory.systemTotal')}</span>
                             <span className="text-white font-medium">
                               {(systemInfo.total_memory_mb / 1024).toFixed(1)} GB
                             </span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">Available</span>
+                            <span className="text-gray-400">{t('settings.game.memory.available')}</span>
                             <span className="text-white font-medium">
                               {(systemInfo.available_memory_mb / 1024).toFixed(1)} GB
                             </span>
@@ -490,7 +492,7 @@ export function SettingsModal({
                   <div className="space-y-3 min-w-0">
                     <div className="flex items-center gap-2 text-white">
                       <Coffee size={18} className="text-[#4572e3]" />
-                      <span className="font-medium">Java Runtime</span>
+                      <span className="font-medium">{t('settings.game.java.title')}</span>
                     </div>
                     <div className="flex gap-2 min-w-0">
                       <div className="relative flex-1 min-w-0" ref={javaDropdownRef}>
@@ -501,7 +503,7 @@ export function SettingsModal({
                           }`}
                         >
                           <span className="truncate">
-                            {showCustomPath ? "Custom Path..." : (settings.java_path || "Auto-detect (Recommended)")}
+                            {showCustomPath ? t('settingsModal.java.customPath') : (settings.java_path || t('settingsModal.java.autoDetect'))}
                           </span>
                           <ChevronDown size={16} className={`flex-shrink-0 ml-2 transition-transform ${isJavaDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -517,7 +519,7 @@ export function SettingsModal({
                               }}
                               className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
                             >
-                              <span>Auto-detect (Recommended)</span>
+                              <span>{t('settingsModal.java.autoDetect')}</span>
                               {!settings.java_path && !showCustomPath && (
                                 <Check size={16} className="text-white" />
                               )}
@@ -547,7 +549,7 @@ export function SettingsModal({
                               }}
                               className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
                             >
-                              <span>Custom Path...</span>
+                              <span>{t('settingsModal.java.customPath')}</span>
                               {showCustomPath && (
                                 <Check size={16} className="text-white" />
                               )}
@@ -561,7 +563,7 @@ export function SettingsModal({
                         disabled={isLoadingJava}
                         className="px-4 py-2.5 bg-[#252932] hover:bg-[#2d3139] disabled:opacity-50 rounded text-sm font-medium text-white cursor-pointer disabled:cursor-not-allowed"
                       >
-                        {isLoadingJava ? <Loader2 size={16} className="animate-spin" /> : "Scan"}
+                        {isLoadingJava ? <Loader2 size={16} className="animate-spin" /> : t('settingsModal.java.scan')}
                       </button>
                     </div>
 
@@ -569,7 +571,7 @@ export function SettingsModal({
                       <input
                         type="text"
                         className="w-full bg-[#252932] rounded px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4572e3] font-mono min-w-0"
-                        placeholder="C:\Program Files\Java\jdk-21\bin\javaw.exe"
+                        placeholder={t('settings.game.java.placeholder')}
                         value={customPathValue}
                         onChange={(e) => setCustomPathValue(e.target.value)}
                         onBlur={() => {
@@ -593,7 +595,7 @@ export function SettingsModal({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-white">
                     <ImagePlus size={18} className="text-[#4572e3]" />
-                    <span className="font-medium">Sidebar Background</span>
+                    <span className="font-medium">{t('settings.appearance.sidebarBackground.title')}</span>
                   </div>
                   {sidebarBgPreview ? (
                     <div className="relative group">
@@ -605,13 +607,13 @@ export function SettingsModal({
                           onClick={() => fileInputRef.current?.click()}
                           className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded text-sm font-medium cursor-pointer"
                         >
-                          Change
+                          {t('settingsModal.sidebarBackground.change')}
                         </button>
                         <button
                           onClick={handleRemoveBackground}
                           className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-medium cursor-pointer"
                         >
-                          Remove
+                          {t('settingsModal.sidebarBackground.remove')}
                         </button>
                       </div>
                     </div>
@@ -621,8 +623,8 @@ export function SettingsModal({
                       className="w-full h-48 bg-[#252932] hover:bg-[#2d3139] border-2 border-dashed border-[#2a2e36] hover:border-[#4572e3] rounded transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
                     >
                       <ImagePlus size={32} className="text-gray-500" />
-                      <span className="text-sm text-gray-400">Click to upload image</span>
-                      <span className="text-xs text-gray-500">PNG, JPG up to 10MB</span>
+                      <span className="text-sm text-gray-400">{t('settingsModal.sidebarBackground.clickToUpload')}</span>
+                      <span className="text-xs text-gray-500">{t('settingsModal.sidebarBackground.fileTypes')}</span>
                     </button>
                   )}
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
@@ -633,10 +635,10 @@ export function SettingsModal({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-white mb-2">
                     <Globe size={18} className="text-[#4572e3]" />
-                    <span className="font-medium">Display Language</span>
+                    <span className="font-medium">{t('settings.language.title')}</span>
                   </div>
                   <p className="text-sm text-gray-400 mb-4">
-                    Select your preferred language for the launcher interface.
+                    {t('settingsModal.language.description')}
                   </p>
                   <div className="grid grid-cols-3 gap-2 max-h-[270px] overflow-y-auto custom-scrollbar pr-2">
                     {languages.map((lang) => (
@@ -679,7 +681,7 @@ export function SettingsModal({
                       className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-[#4572e3] transition-colors cursor-pointer"
                     >
                       <Globe size={16} />
-                      <span>Help translate at translate.atomiclauncher.com</span>
+                      <span>{t('settingsModal.language.helpTranslate')}</span>
                     </button>
                   </div>
                 </div>
@@ -691,7 +693,7 @@ export function SettingsModal({
                     <svg className="w-[18px] h-[18px] text-[#4572e3]" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
                     </svg>
-                    <span className="font-medium">Discord Rich Presence</span>
+                    <span className="font-medium">{t('settingsModal.discord.title')}</span>
                   </div>
                   <div className="flex items-center justify-between bg-[#252932] rounded p-4">
                     <div className="flex items-center gap-3">
@@ -699,11 +701,11 @@ export function SettingsModal({
                         <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
                       </svg>
                       <div>
-                        <span className="text-sm font-medium text-white">Show Discord Status</span>
+                        <span className="text-sm font-medium text-white">{t('settingsModal.discord.showStatus')}</span>
                         <p className="text-xs text-gray-400">
                           {settings.discord_rpc_enabled
-                            ? "Enabled"
-                            : "Disabled"}
+                            ? t('settingsModal.discord.enabled')
+                            : t('settingsModal.discord.disabled')}
                         </p>
                       </div>
                     </div>
@@ -729,11 +731,11 @@ export function SettingsModal({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-white">
                       <FolderOpen size={18} className="text-[#4572e3]" />
-                      <span className="font-medium">Game Directory</span>
+                      <span className="font-medium">{t('settings.system.gameDirectory.title')}</span>
                     </div>
                     <div className="bg-[#252932] rounded p-4">
                       <p className="text-xs text-gray-400 font-mono break-all">
-                        {launcherDirectory || 'Loading...'}
+                        {launcherDirectory || t('common.actions.loading')}
                       </p>
                     </div>
                   </div>
@@ -741,12 +743,12 @@ export function SettingsModal({
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-white">
                       <Info size={18} className="text-[#4572e3]" />
-                      <span className="font-medium">Version Information</span>
+                      <span className="font-medium">{t('settings.system.version.title')}</span>
                     </div>
                     <div className="bg-[#252932] rounded p-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Launcher Version</span>
-                        <span className="text-white font-medium">{semanticVersion || 'Loading...'}</span>
+                        <span className="text-gray-400">{t('settings.system.version.launcherVersion')}</span>
+                        <span className="text-white font-medium">{semanticVersion || t('common.actions.loading')}</span>
                       </div>
                     </div>
                   </div>

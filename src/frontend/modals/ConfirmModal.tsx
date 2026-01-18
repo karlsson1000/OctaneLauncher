@@ -1,5 +1,6 @@
 import { AlertCircle, X, CheckCircle, XCircle, Info } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -25,12 +26,13 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
   type = "warning",
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useTranslation()
   const [isClosing, setIsClosing] = useState(false)
 
   if (!isOpen) return null
@@ -186,13 +188,13 @@ export function ConfirmModal({
               onClick={handleClose}
               className="px-5 py-3 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors cursor-pointer"
             >
-              {cancelText}
+              {cancelText || t('common.actions.cancel')}
             </button>
             <button
               onClick={handleConfirm}
               className={`px-5 py-3 rounded font-medium text-sm transition-colors cursor-pointer ${getConfirmButtonStyle()}`}
             >
-              {confirmText}
+              {confirmText || t('modal.confirm')}
             </button>
           </div>
         </div>
@@ -205,10 +207,11 @@ export function AlertModal({
   isOpen,
   title,
   message,
-  confirmText = "OK",
+  confirmText,
   type = "info",
   onClose,
 }: AlertModalProps) {
+  const { t } = useTranslation()
   const [isClosing, setIsClosing] = useState(false)
 
   if (!isOpen) return null
@@ -356,7 +359,7 @@ export function AlertModal({
               onClick={handleClose}
               className={`px-5 py-3 rounded font-medium text-sm transition-colors cursor-pointer ${getConfirmButtonStyle()}`}
             >
-              {confirmText}
+              {confirmText || t('modal.ok')}
             </button>
           </div>
         </div>

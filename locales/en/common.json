@@ -205,5 +205,91 @@
     "failedToSave": "Failed to save settings",
     "invalidFile": "Invalid file",
     "fileTooLarge": "File is too large"
+  },
+  "createInstance": {
+    "title": "New Instance",
+    "instanceName": {
+      "label": "Instance Name",
+      "placeholder": "My Minecraft Instance",
+      "existsError": "An instance with this name already exists"
+    },
+    "minecraftVersion": {
+      "label": "Minecraft Version",
+      "releases": "Releases",
+      "snapshots": "Snapshots",
+      "loadingVersions": "Loading versions...",
+      "noCompatibleVersions": "No compatible versions available"
+    },
+    "modloader": {
+      "label": "Modloader",
+      "vanilla": "Vanilla",
+      "fabric": "Fabric",
+      "fabricVersion": "Fabric Loader Version",
+      "stable": "Stable",
+      "loadingFabricVersions": "Loading versions..."
+    },
+    "buttons": {
+      "custom": "Custom",
+      "importFile": "Import File",
+      "cancel": "Cancel",
+      "create": "Create Instance",
+      "creating": "Creating..."
+    },
+    "errors": {
+      "failedToLoadVersions": "Failed to load versions",
+      "failedToLoadFabricVersions": "Failed to load Fabric versions",
+      "failedToImport": "Failed to import instance",
+      "failedToCreate": "Failed to create instance"
+    },
+    "import": {
+      "dialogTitle": "Instance Files",
+      "fileExtensions": "mrpack, zip"
+    }
+  },
+  "settingsModal": {
+    "loadingSettings": "Loading settings...",
+    "buildLabel": "Build",
+    "tabs": {
+      "game": "Game",
+      "appearance": "Appearance", 
+      "language": "Language",
+      "integrations": "Integrations",
+      "about": "System"
+    },
+    "java": {
+      "autoDetect": "Auto-detect (Recommended)",
+      "customPath": "Custom Path...",
+      "scan": "Scan"
+    },
+    "sidebarBackground": {
+      "change": "Change",
+      "remove": "Remove",
+      "clickToUpload": "Click to upload image",
+      "fileTypes": "PNG, JPG up to 10MB"
+    },
+    "language": {
+      "description": "Select your preferred language for the launcher interface.",
+      "helpTranslate": "Help translate at translate.atomiclauncher.com"
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "showStatus": "Show Discord Status",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "errors": {
+      "invalidFile": "Invalid File",
+      "selectImage": "Please select an image file (PNG, JPG, etc.)",
+      "fileTooLarge": "File Too Large",
+      "imageTooLarge": "Image must be smaller than 10MB",
+      "failedToSave": "Failed to save settings",
+      "failedToSaveBackground": "Failed to save background",
+      "failedToRemoveBackground": "Failed to remove background",
+      "failedToReadFile": "Failed to read image file"
+    }
+  },
+  "modal": {
+    "confirm": "Confirm",
+    "ok": "OK"
   }
 }
