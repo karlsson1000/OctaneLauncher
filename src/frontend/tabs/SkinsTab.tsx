@@ -349,13 +349,13 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   const getSkinRenderUrl = () => {
-    if (!activeAccount) return null
+    if (!currentSkinHash) return null
     
     const variant = skinVariant === "slim" ? "slim" : "wide"
     const capeParam = showCape && activeCape ? "" : "&no=cape"
     const angleParam = showBack ? "&y=180" : ""
 
-    return `https://vzge.me/full/512/${activeAccount.uuid}?${variant}${capeParam}${angleParam}`
+    return `https://vzge.me/full/512/${currentSkinHash}?${variant}${capeParam}${angleParam}`
   }
 
   if (!isAuthenticated) {
