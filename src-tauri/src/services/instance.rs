@@ -339,6 +339,8 @@ impl InstanceManager {
 
         let current_os = get_current_os();
 
+        let is_neoforge = version.starts_with("neoforge-");
+
         let (main_class, base_version_id, all_libraries, assets_id) = if is_fabric {
             let fabric_profile: FabricProfileJson = match serde_json::from_str(&json_content) {
                 Ok(profile) => profile,
@@ -439,6 +441,114 @@ impl InstanceManager {
             (
                 fabric_profile.main_class,
                 fabric_profile.inherits_from,
+                combined_libs,
+                base_version.assets,
+            )
+        } else if is_neoforge {
+            let neoforge_profile: crate::models::NeoForgeProfileJson = match serde_json::from_str(&json_content) {
+                Ok(profile) => profile,
+                Err(e) => {
+                    let err_msg = format!("Failed to parse NeoForge profile: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            };
+            
+            let base_version_dir = meta_dir.join("versions").join(&neoforge_profile.inherits_from);
+            let base_json_path = base_version_dir.join(format!("{}.json", neoforge_profile.inherits_from));
+            
+            if !base_json_path.exists() {
+                let err_msg = format!(
+                    "Base Minecraft version {} not found! Please install it first.",
+                    neoforge_profile.inherits_from
+                );
+                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                return Err(err_msg.into());
+            }
+            
+            let base_json_content = match fs::read_to_string(&base_json_path) {
+                Ok(content) => content,
+                Err(e) => {
+                    let err_msg = format!("Failed to read base version JSON: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            };
+            
+            let base_version: VersionDetails = match serde_json::from_str(&base_json_content) {
+                Ok(version) => version,
+                Err(e) => {
+                    let err_msg = format!("Failed to parse base version: {}", e);
+                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    return Err(err_msg.into());
+                }
+            };
+            
+            let mut combined_libs = Vec::new();
+            let mut base_lib_names = std::collections::HashSet::new();
+            
+            for lib in &base_version.libraries {
+                if lib.name.contains(":natives-") {
+                    continue;
+                }
+                
+                if let Some(rules) = &lib.rules {
+                    if !should_include_library(rules, &current_os) {
+                        continue;
+                    }
+                }
+
+                let parts: Vec<&str> = lib.name.split(':').collect();
+                if parts.len() >= 2 {
+                    let lib_key = format!("{}:{}", parts[0], parts[1]);
+                    base_lib_names.insert(lib_key);
+                }
+            }
+
+            for lib in &neoforge_profile.libraries {
+                let parts: Vec<&str> = lib.name.split(':').collect();
+                if parts.len() >= 2 {
+                    let lib_key = format!("{}:{}", parts[0], parts[1]);
+
+                    if base_lib_names.contains(&lib_key) {
+                        continue;
+                    }
+                }
+                
+                combined_libs.push((
+                    lib.name.clone(), 
+                    lib.url.clone().unwrap_or_default(), 
+                    None
+                ));
+            }
+
+            for lib in &base_version.libraries {
+                if lib.name.contains(":natives-") {
+                    continue;
+                }
+                
+                if let Some(rules) = &lib.rules {
+                    if !should_include_library(rules, &current_os) {
+                        continue;
+                    }
+                }
+                
+                if let Some(downloads) = &lib.downloads {
+                    if let Some(artifact) = &downloads.artifact {
+                        combined_libs.push((
+                            lib.name.clone(),
+                            String::new(),
+                            Some(artifact.path.clone())
+                        ));
+                    }
+                } else {
+                    combined_libs.push((lib.name.clone(), String::new(), None));
+                }
+            }
+            
+            (
+                neoforge_profile.main_class,
+                neoforge_profile.inherits_from,
                 combined_libs,
                 base_version.assets,
             )
@@ -627,17 +737,25 @@ impl InstanceManager {
         
         for (lib_name, _lib_url, artifact_path) in all_libraries {
             let parts: Vec<&str> = lib_name.split(':').collect();
-            if parts.len() != 3 {
+
+            if parts.len() < 3 || parts.len() > 4 {
                 continue;
             }
             
             let (group, artifact, lib_version) = (parts[0], parts[1], parts[2]);
+            let classifier = if parts.len() == 4 { Some(parts[3]) } else { None };
             
             let lib_path = if let Some(path) = artifact_path {
                 libraries_dir.join(path)
             } else {
-                let group_path = group.replace('.', "/");
-                let jar_name = format!("{}-{}.jar", artifact, lib_version);
+                let group_path = group.replace('.', std::path::MAIN_SEPARATOR_STR);
+
+                let jar_name = if let Some(cls) = classifier {
+                    format!("{}-{}-{}.jar", artifact, lib_version, cls)
+                } else {
+                    format!("{}-{}.jar", artifact, lib_version)
+                };
+                
                 libraries_dir
                     .join(&group_path)
                     .join(artifact)
@@ -675,28 +793,91 @@ impl InstanceManager {
 
         let mut cmd = Command::new(&java_path);
         cmd.arg(format!("-Xmx{}M", effective_settings.memory_mb))
-            .arg(format!("-Xms{}M", effective_settings.memory_mb))
-            .arg(format!("-Djava.library.path={}", natives_dir.display()))
-            .arg("-cp")
-            .arg(&classpath_str);
+            .arg(format!("-Xms{}M", effective_settings.memory_mb));
 
-        cmd.arg(&main_class)
-            .arg("--username")
-            .arg(username)
-            .arg("--uuid")
-            .arg(uuid)
-            .arg("--accessToken")
-            .arg(access_token)
-            .arg("--version")
-            .arg(&version)
-            .arg("--gameDir")
-            .arg(&instance_dir)
-            .arg("--assetsDir")
-            .arg(meta_dir.join("assets"))
-            .arg("--assetIndex")
-            .arg(&assets_id);
+        if is_neoforge {
+            cmd.arg("--add-opens").arg("java.base/java.lang=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.lang.invoke=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.lang.reflect=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.io=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.nio=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.nio.file=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.util=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.util.jar=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/java.util.zip=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/sun.nio.ch=ALL-UNNAMED")
+                .arg("--add-opens").arg("jdk.zipfs/jdk.nio.zipfs=ALL-UNNAMED")
+                .arg("--add-opens").arg("java.base/sun.security.util=ALL-UNNAMED")
+                .arg("--add-exports").arg("java.base/sun.security.util=ALL-UNNAMED")
+                .arg("--add-exports").arg("jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED,java.naming")
+                .arg("--enable-native-access=ALL-UNNAMED");
+        }
+
+        cmd.arg(format!("-Djava.library.path={}", natives_dir.display()));
+
+        if is_neoforge {
+            cmd.arg(format!("-DlibraryDirectory={}", libraries_dir.display()))
+                .arg(format!("-Dminecraft.client.jar={}", client_jar.display()))
+                .arg("-Dfml.earlyprogresswindow=false");
+        }
+
+        cmd.arg("-cp").arg(&classpath_str)
+            .arg(&main_class)
+            .arg("--username").arg(username)
+            .arg("--uuid").arg(uuid)
+            .arg("--accessToken").arg(access_token)
+            .arg("--version").arg(&version)
+            .arg("--gameDir").arg(&instance_dir)
+            .arg("--assetsDir").arg(meta_dir.join("assets"))
+            .arg("--assetIndex").arg(&assets_id);
+
+        if is_neoforge {
+            let neoforge_version_string = version.trim_start_matches("neoforge-");
+            cmd.arg("--fml.mcVersion").arg(&base_version_id)
+                .arg("--fml.neoFormVersion").arg(neoforge_version_string)
+                .arg("--fml.neoForgeVersion").arg(neoforge_version_string);
+        }
 
         if let Some(server) = server_address {
+            fn should_use_quickplay(version: &str) -> bool {
+                let base_version = if version.contains("fabric-loader") {
+                    version.split('-').last().unwrap_or(version)
+                } else if version.contains('-') {
+                    version.split('-').next().unwrap_or(version)
+                } else {
+                    version
+                };
+                
+                let parts: Vec<&str> = base_version.split('.').collect();
+                
+                if parts.len() >= 3 {
+                    if let (Ok(major), Ok(minor), Ok(patch)) = 
+                        (parts[0].parse::<u32>(), parts[1].parse::<u32>(), parts[2].parse::<u32>()) 
+                    {
+                        if major == 1 && minor == 20 && patch >= 5 {
+                            return true;
+                        }
+                        if major == 1 && minor > 20 {
+                            return true;
+                        }
+                        if major > 1 {
+                            return true;
+                        }
+                    }
+                } else if parts.len() == 2 {
+                    if let (Ok(major), Ok(minor)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                        if major == 1 && minor > 20 {
+                            return true;
+                        }
+                        if major > 1 {
+                            return true;
+                        }
+                    }
+                }
+                
+                false
+            }
+
             let use_quickplay = should_use_quickplay(&base_version_id);
             
             if use_quickplay {
@@ -706,48 +887,9 @@ impl InstanceManager {
             }
         }
 
-        fn should_use_quickplay(version: &str) -> bool {
-            let base_version = if version.contains("fabric-loader") {
-                version.split('-').last().unwrap_or(version)
-            } else if version.contains('-') {
-                version.split('-').next().unwrap_or(version)
-            } else {
-                version
-            };
-            
-            let parts: Vec<&str> = base_version.split('.').collect();
-            
-            if parts.len() >= 3 {
-                if let (Ok(major), Ok(minor), Ok(patch)) = 
-                    (parts[0].parse::<u32>(), parts[1].parse::<u32>(), parts[2].parse::<u32>()) 
-                {
-                    if major == 1 && minor == 20 && patch >= 5 {
-                        return true;
-                    }
-                    if major == 1 && minor > 20 {
-                        return true;
-                    }
-                    if major > 1 {
-                        return true;
-                    }
-                }
-            } else if parts.len() == 2 {
-                if let (Ok(major), Ok(minor)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
-                    if major == 1 && minor > 20 {
-                        return true;
-                    }
-                    if major > 1 {
-                        return true;
-                    }
-                }
-            }
-            
-            false
-        }
-
         cmd.current_dir(&instance_dir)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
 
         #[cfg(target_os = "windows")]
         {

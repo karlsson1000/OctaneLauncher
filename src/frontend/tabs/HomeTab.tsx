@@ -131,7 +131,38 @@ export function HomeTab({
       const parts = instance.version.split('-')
       return parts[parts.length - 1]
     }
+    if (instance.loader === "neoforge") {
+      const versionPart = instance.version.replace('neoforge-', '')
+      const parts = versionPart.split('-')
+      if (parts[0].startsWith('1.')) {
+        return parts[0]
+      }
+      
+      const versionNumbers = parts[0].split('.')
+      if (versionNumbers.length >= 2) {
+        const major = versionNumbers[0]
+        const minor = versionNumbers[1]
+        const patch = versionNumbers[2] || '0'
+        const majorNum = parseInt(major)
+        if (majorNum >= 20) {
+          if (patch === '0') {
+            return `1.${major}`
+          }
+          return `1.${major}.${minor}`
+        }
+      }
+    }
     return instance.version
+  }
+
+  const getLoaderBadge = (instance: Instance) => {
+    if (instance.loader === "fabric") {
+      return <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
+    }
+    if (instance.loader === "neoforge") {
+      return <span className="text-[#f97316] flex-shrink-0">{t('common.loaders.neoforge')}</span>
+    }
+    return <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
   }
 
   const formatDate = (dateString: string): string => {
@@ -295,11 +326,7 @@ export function HomeTab({
                             <div className="flex items-center gap-1.5 text-xs min-w-0">
                               <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
                               <span className="text-[#3a3f4b] flex-shrink-0">•</span>
-                              {instance.loader === "fabric" ? (
-                                <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
-                              ) : (
-                                <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
-                              )}
+                              {getLoaderBadge(instance)}
                             </div>
                           </div>
                           
@@ -366,11 +393,7 @@ export function HomeTab({
                           <div className="flex items-center gap-2 text-sm min-w-0">
                             <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
                             <span className="text-[#3a3f4b] flex-shrink-0">•</span>
-                            {instance.loader === "fabric" ? (
-                              <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
-                            ) : (
-                              <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
-                            )}
+                            {getLoaderBadge(instance)}
                           </div>
                         </div>
                         

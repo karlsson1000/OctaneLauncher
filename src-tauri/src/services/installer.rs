@@ -32,6 +32,37 @@ impl MinecraftInstaller {
         }
     }
 
+    // Ensure launcher_profiles.json exists
+    fn ensure_launcher_profile(&self) -> Result<(), DownloadError> {
+        let launcher_profiles_path = self.launcher_dir.join("launcher_profiles.json");
+        
+        // Only create if it doesn't exist
+        if !launcher_profiles_path.exists() {
+            let minimal_profile = serde_json::json!({
+                "profiles": {},
+                "settings": {
+                    "enableSnapshots": false,
+                    "enableAdvanced": false,
+                    "crashAssistance": true,
+                    "enableHistorical": false,
+                    "enableReleases": true,
+                    "keepLauncherOpen": false,
+                    "showGameLog": false,
+                    "showMenu": false,
+                    "soundOn": false
+                },
+                "version": 3
+            });
+            
+            fs::write(
+                &launcher_profiles_path,
+                serde_json::to_string_pretty(&minimal_profile)?
+            )?;
+        }
+        
+        Ok(())
+    }
+
     async fn download_file(&self, url: &str, path: &PathBuf) -> Result<(), DownloadError> {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
@@ -120,6 +151,9 @@ impl MinecraftInstaller {
     }
 
     pub async fn install_version(&self, version_id: &str) -> Result<(), DownloadError> {
+        // Ensure launcher profile exists
+        self.ensure_launcher_profile()?;
+
         let manifest_response = self.http_client.get(VERSION_MANIFEST_URL).send().await?;
         let manifest: VersionManifest = manifest_response.json().await?;
 

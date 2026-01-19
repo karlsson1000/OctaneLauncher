@@ -63,12 +63,45 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
       const parts = instance.version.split('-')
       return parts[parts.length - 1]
     }
+    if (instance.loader === "neoforge") {
+      const versionPart = instance.version.replace('neoforge-', '')
+      const parts = versionPart.split('-')
+      if (parts[0].startsWith('1.')) {
+        return parts[0]
+      }
+      
+      const versionNumbers = parts[0].split('.')
+      if (versionNumbers.length >= 2) {
+        const major = versionNumbers[0]
+        const minor = versionNumbers[1]
+        const patch = versionNumbers[2] || '0'
+        const majorNum = parseInt(major)
+        if (majorNum >= 20) {
+          if (patch === '0') {
+            return `1.${major}`
+          }
+          return `1.${major}.${minor}`
+        }
+      }
+    }
     return instance.version
   }
 
-  if (!selectedInstance || selectedInstance.loader !== "fabric") {
+  const getLoaderDisplay = (instance: Instance): { name: string; color: string } => {
+    if (instance.loader === "fabric") {
+      return { name: "Fabric", color: "text-[#3b82f6]" }
+    }
+    if (instance.loader === "neoforge") {
+      return { name: "NeoForge", color: "text-[#f97316]" }
+    }
+    return { name: "Vanilla", color: "text-[#16a34a]" }
+  }
+
+  if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) {
     return null
   }
+
+  const loaderInfo = getLoaderDisplay(selectedInstance)
 
   return (
     <div className="relative self-center" ref={instanceSelectorRef}>
@@ -92,23 +125,24 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
           <div className="flex items-center gap-1 text-xs leading-tight mt-0.5">
             <span className="text-[#7d8590]">{getMinecraftVersion(selectedInstance)}</span>
             <span className="text-[#3a3f4b]">•</span>
-            <span className="text-[#3b82f6]">Fabric</span>
+            <span className={loaderInfo.color}>{loaderInfo.name}</span>
           </div>
         </div>
         <ChevronDown size={16} className={`text-[#7d8590] ml-auto transition-transform ${showInstanceSelector ? 'rotate-180' : ''}`} strokeWidth={2} />
       </button>
       {showInstanceSelector && (
         <div className="absolute top-full mt-1 right-0 bg-[#22252b] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto border border-[#3a3f4b]">
-          {instances.filter(instance => instance.loader === "fabric").length === 0 ? (
+          {instances.filter(instance => instance.loader === "fabric" || instance.loader === "neoforge").length === 0 ? (
             <div className="px-3 py-4 text-center bg-[#22252b]">
-              <p className="text-sm text-[#7d8590] mb-1">No Fabric instances</p>
-              <p className="text-xs text-[#3a3f4b]">Create a Fabric instance to install mods</p>
+              <p className="text-sm text-[#7d8590] mb-1">No modded instances</p>
+              <p className="text-xs text-[#3a3f4b]">Create a Fabric or NeoForge instance to install mods</p>
             </div>
           ) : (
             instances
-              .filter(instance => instance.loader === "fabric")
+              .filter(instance => instance.loader === "fabric" || instance.loader === "neoforge")
               .map((instance) => {
                 const icon = instanceIcons[instance.name]
+                const loader = getLoaderDisplay(instance)
                 return (
                   <button
                     key={instance.name}
@@ -138,7 +172,7 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
                       <div className="flex items-center gap-1 text-xs">
                         <span>{getMinecraftVersion(instance)}</span>
                         <span>•</span>
-                        <span className="text-[#3b82f6]">Fabric</span>
+                        <span className={loader.color}>{loader.name}</span>
                       </div>
                     </div>
                     {selectedInstance.name === instance.name && (
@@ -179,16 +213,16 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
   }, [])
 
   useEffect(() => {
-    if (!selectedInstance || selectedInstance.loader !== "fabric") {
-      const fabricInstances = instances.filter(instance => instance.loader === "fabric")
-      if (fabricInstances.length > 0) {
-        onSetSelectedInstance(fabricInstances[0])
+    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) {
+      const moddedInstances = instances.filter(instance => instance.loader === "fabric" || instance.loader === "neoforge")
+      if (moddedInstances.length > 0) {
+        onSetSelectedInstance(moddedInstances[0])
       }
     }
   }, [instances, selectedInstance])
 
   useEffect(() => {
-    if (selectedInstance && selectedInstance.loader === "fabric") {
+    if (selectedInstance && (selectedInstance.loader === "fabric" || selectedInstance.loader === "neoforge")) {
       loadInstalledMods()
     }
   }, [selectedInstance])
@@ -279,11 +313,32 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
       const parts = instance.version.split('-')
       return parts[parts.length - 1]
     }
+    if (instance.loader === "neoforge") {
+      const versionPart = instance.version.replace('neoforge-', '')
+      const parts = versionPart.split('-')
+      if (parts[0].startsWith('1.')) {
+        return parts[0]
+      }
+      
+      const versionNumbers = parts[0].split('.')
+      if (versionNumbers.length >= 2) {
+        const major = versionNumbers[0]
+        const minor = versionNumbers[1]
+        const patch = versionNumbers[2] || '0'
+        const majorNum = parseInt(major)
+        if (majorNum >= 20) {
+          if (patch === '0') {
+            return `1.${major}`
+          }
+          return `1.${major}.${minor}`
+        }
+      }
+    }
     return instance.version
   }
 
   const handleModSelect = async (mod: ModrinthProject) => {
-    if (!selectedInstance || selectedInstance.loader !== "fabric") return
+    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) return
     
     setSelectedMod(mod)
     setIsLoadingVersions(true)
@@ -309,7 +364,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
   }
 
   const handleDownloadMod = async (version: ModrinthVersion) => {
-    if (!selectedInstance || selectedInstance.loader !== "fabric") return
+    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) return
 
     const primaryFile = version.files.find(f => f.primary) || version.files[0]
     if (!primaryFile) return

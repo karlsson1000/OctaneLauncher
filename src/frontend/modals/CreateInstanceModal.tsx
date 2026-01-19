@@ -4,7 +4,7 @@ import { open } from '@tauri-apps/plugin-dialog'
 import { X, Loader2, Package, AlertCircle, FileDown, Check } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
 import { useTranslation } from "react-i18next"
-import type { FabricVersion, Instance } from "../../types"
+import type { FabricVersion, NeoForgeVersion, Instance } from "../../types"
 
 interface MinecraftVersion {
   id: string
@@ -27,10 +27,13 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   const [isCreating, setIsCreating] = useState(false)
   const [selectedVersion, setSelectedVersion] = useState(versions[0] || "1.21.11")
   const [newInstanceName, setNewInstanceName] = useState("")
-  const [loaderType, setLoaderType] = useState<"vanilla" | "fabric">("vanilla")
+  const [loaderType, setLoaderType] = useState<"vanilla" | "fabric" | "neoforge">("vanilla")
   const [fabricVersions, setFabricVersions] = useState<FabricVersion[]>([])
   const [selectedFabricVersion, setSelectedFabricVersion] = useState<string>("")
+  const [neoforgeVersions, setNeoforgeVersions] = useState<NeoForgeVersion[]>([])
+  const [selectedNeoforgeVersion, setSelectedNeoforgeVersion] = useState<string>("")
   const [isLoadingFabric, setIsLoadingFabric] = useState(false)
+  const [isLoadingNeoforge, setIsLoadingNeoforge] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean
@@ -43,10 +46,13 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   const [allVersions, setAllVersions] = useState<MinecraftVersion[]>([])
   const [isLoadingVersions, setIsLoadingVersions] = useState(false)
   const [fabricSupportedVersions, setFabricSupportedVersions] = useState<string[]>([])
+  const [neoforgeSupportedVersions, setNeoforgeSupportedVersions] = useState<string[]>([])
   const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false)
   const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false)
+  const [isNeoforgeDropdownOpen, setIsNeoforgeDropdownOpen] = useState(false)
   const versionDropdownRef = useRef<HTMLDivElement>(null)
   const fabricDropdownRef = useRef<HTMLDivElement>(null)
+  const neoforgeDropdownRef = useRef<HTMLDivElement>(null)
 
   const instanceExists = instances.some(
     instance => instance.name.toLowerCase() === newInstanceName.trim().toLowerCase()
@@ -55,6 +61,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   useEffect(() => {
     loadVersionsWithMetadata()
     loadFabricSupportedVersions()
+    loadNeoforgeSupportedVersions()
   }, [])
 
   useEffect(() => {
@@ -64,6 +71,9 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       }
       if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) {
         setIsFabricDropdownOpen(false)
+      }
+      if (neoforgeDropdownRef.current && !neoforgeDropdownRef.current.contains(event.target as Node)) {
+        setIsNeoforgeDropdownOpen(false)
       }
     }
 
@@ -103,6 +113,15 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     }
   }
 
+  const loadNeoforgeSupportedVersions = async () => {
+    try {
+      const supported = await invoke<string[]>("get_neoforge_supported_game_versions")
+      setNeoforgeSupportedVersions(supported)
+    } catch (error) {
+      console.error("Failed to load NeoForge supported versions:", error)
+    }
+  }
+
   const getFilteredVersions = () => {
     let filtered: MinecraftVersion[]
     
@@ -114,6 +133,10 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
     if (loaderType === "fabric" && versionFilter === "release") {
       filtered = filtered.filter(v => fabricSupportedVersions.includes(v.id))
+    }
+
+    if (loaderType === "neoforge" && versionFilter === "release") {
+      filtered = filtered.filter(v => neoforgeSupportedVersions.includes(v.id))
     }
 
     return filtered
@@ -146,7 +169,32 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         loadFabricVersions()
       }
     }
-  }, [loaderType, fabricSupportedVersions, allVersions, selectedVersion])
+
+    if (loaderType === "neoforge") {
+      if (versionFilter === "snapshot") {
+        setVersionFilter("release")
+      }
+      
+      const currentVersion = allVersions.find(v => v.id === selectedVersion)
+      const isSnapshot = currentVersion?.type === "snapshot"
+      const isNotSupported = !neoforgeSupportedVersions.includes(selectedVersion)
+      
+      if ((isSnapshot || isNotSupported) && neoforgeSupportedVersions.length > 0 && allVersions.length > 0) {
+        const releaseVersions = allVersions.filter(v => 
+          (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") && 
+          neoforgeSupportedVersions.includes(v.id)
+        )
+        
+        if (releaseVersions.length > 0) {
+          setSelectedVersion(releaseVersions[0].id)
+        }
+      }
+      
+      if (neoforgeVersions.length === 0 || !neoforgeVersions.some(v => v.minecraft_version === selectedVersion)) {
+        loadNeoforgeVersions()
+      }
+    }
+  }, [loaderType, fabricSupportedVersions, neoforgeSupportedVersions, allVersions, selectedVersion])
 
   const loadFabricVersions = async () => {
     setIsLoadingFabric(true)
@@ -171,6 +219,34 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       setIsLoadingFabric(false)
     }
   }
+
+  const loadNeoforgeVersions = async () => {
+    setIsLoadingNeoforge(true)
+    try {
+      const versions = await invoke<NeoForgeVersion[]>("get_neoforge_versions")
+      const filteredVersions = versions.filter(v => v.minecraft_version === selectedVersion)
+      setNeoforgeVersions(filteredVersions)
+      if (filteredVersions.length > 0) {
+        setSelectedNeoforgeVersion(filteredVersions[0].neoforge_version)
+      }
+    } catch (error) {
+      console.error("Failed to load NeoForge versions:", error)
+      setAlertModal({
+        isOpen: true,
+        title: t('errors.generic'),
+        message: "Failed to load NeoForge versions" + `: ${error}`,
+        type: "danger"
+      })
+    } finally {
+      setIsLoadingNeoforge(false)
+    }
+  }
+
+  useEffect(() => {
+    if (loaderType === "neoforge" && selectedVersion) {
+      loadNeoforgeVersions()
+    }
+  }, [selectedVersion, loaderType])
 
   const handleClose = () => {
     setIsClosing(true)
@@ -251,7 +327,11 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         instanceName: finalName,
         version: selectedVersion,
         loader: loaderType === "vanilla" ? null : loaderType,
-        loaderVersion: loaderType === "fabric" ? selectedFabricVersion : null,
+        loaderVersion: loaderType === "fabric" 
+          ? selectedFabricVersion 
+          : loaderType === "neoforge" 
+          ? selectedNeoforgeVersion 
+          : null,
       })
 
       onSuccess()
@@ -278,6 +358,9 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     if (loaderType === "fabric" && filter === "release") {
       availableVersions = versions.filter(v => fabricSupportedVersions.includes(v.id))
     }
+    if (loaderType === "neoforge" && filter === "release") {
+      availableVersions = versions.filter(v => neoforgeSupportedVersions.includes(v.id))
+    }
     
     if (availableVersions.length > 0) {
       setSelectedVersion(availableVersions[0].id)
@@ -288,6 +371,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     !newInstanceName.trim() || 
     instanceExists ||
     (loaderType === "fabric" && !selectedFabricVersion) ||
+    (loaderType === "neoforge" && !selectedNeoforgeVersion) ||
     isLoadingVersions ||
     filteredVersions.length === 0
 
@@ -473,9 +557,9 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   <button
                     type="button"
                     onClick={() => handleVersionFilterChange("snapshot")}
-                    disabled={isCreating || loaderType === "fabric"}
+                    disabled={isCreating || loaderType === "fabric" || loaderType === "neoforge"}
                     className={`text-xs font-medium transition-colors ${
-                      loaderType === "fabric" 
+                      loaderType === "fabric" || loaderType === "neoforge"
                         ? "text-gray-600 cursor-not-allowed"
                         : versionFilter === "snapshot"
                         ? "text-[#e6e6e6] cursor-pointer"
@@ -587,6 +671,25 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   </div>
                   <span>{t('createInstance.modloader.fabric')}</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setLoaderType("neoforge")}
+                  disabled={isCreating}
+                  className={`flex-1 px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    loaderType === "neoforge"
+                      ? "bg-[#4572e3] text-white"
+                      : "bg-[#22252b] text-gray-400 hover:bg-[#3a3f4b]"
+                  }`}
+                >
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                    loaderType === "neoforge" ? "border-white" : "border-gray-500"
+                  }`}>
+                    {loaderType === "neoforge" && (
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                  <span>NeoForge</span>
+                </button>
               </div>
             </div>
 
@@ -638,6 +741,70 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                           >
                             <span>{version.version} {version.stable ? `(${t('createInstance.modloader.stable')})` : ""}</span>
                             {selectedFabricVersion === version.version && (
+                              <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {loaderType === "neoforge" && (
+              <div>
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">
+                  NeoForge Version
+                </label>
+                {isLoadingNeoforge ? (
+                  <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
+                    <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                    <span>Loading NeoForge versions...</span>
+                  </div>
+                ) : neoforgeVersions.length === 0 ? (
+                  <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
+                    <AlertCircle size={16} />
+                    <span>No NeoForge versions available for Minecraft {selectedVersion}</span>
+                  </div>
+                ) : (
+                  <div className="relative" ref={neoforgeDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsNeoforgeDropdownOpen(!isNeoforgeDropdownOpen)}
+                      className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
+                        isNeoforgeDropdownOpen ? 'rounded-t' : 'rounded'
+                      }`}
+                      disabled={isCreating}
+                    >
+                      {selectedNeoforgeVersion}
+                    </button>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      {isNeoforgeDropdownOpen ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      )}
+                    </div>
+                    
+                    {isNeoforgeDropdownOpen && (
+                      <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                        {neoforgeVersions.map((version) => (
+                          <button
+                            key={version.neoforge_version}
+                            type="button"
+                            onClick={() => {
+                              setSelectedNeoforgeVersion(version.neoforge_version)
+                              setIsNeoforgeDropdownOpen(false)
+                            }}
+                            className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                          >
+                            <span>{version.neoforge_version}</span>
+                            {selectedNeoforgeVersion === version.neoforge_version && (
                               <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
                             )}
                           </button>

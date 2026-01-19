@@ -67,6 +67,9 @@ use commands::{
     check_version_installed,
     get_fabric_versions,
     install_fabric,
+    get_neoforge_versions,
+    get_neoforge_supported_game_versions,
+    install_neoforge,
     
     // Mod commands
     get_installed_mods,
@@ -366,6 +369,9 @@ pub fn run() {
             update_instance_fabric_loader,
             update_instance_minecraft_version,
             export_instance,
+            get_neoforge_versions,
+            get_neoforge_supported_game_versions,
+            install_neoforge,
             
             // Instance icons
             set_instance_icon,

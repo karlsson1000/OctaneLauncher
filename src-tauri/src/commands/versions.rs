@@ -1,6 +1,7 @@
 use crate::services::installer::MinecraftInstaller;
 use crate::services::fabric::FabricInstaller;
-use crate::models::FabricLoaderVersion;
+use crate::services::neoforge::NeoForgeInstaller;
+use crate::models::{FabricLoaderVersion, NeoForgeVersion};
 use crate::utils::get_meta_dir;
 
 #[tauri::command]
@@ -45,6 +46,15 @@ pub async fn get_supported_game_versions() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub async fn get_neoforge_supported_game_versions() -> Result<Vec<String>, String> {
+    let installer = NeoForgeInstaller::new(get_meta_dir());
+    installer
+        .get_supported_game_versions()
+        .await
+        .map_err(|e| format!("Failed to fetch NeoForge supported versions: {}", e))
+}
+
+#[tauri::command]
 pub async fn install_minecraft(version: String) -> Result<String, String> {
     if !version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
         return Err("Invalid version format".to_string());
@@ -82,6 +92,15 @@ pub async fn get_fabric_versions() -> Result<Vec<FabricLoaderVersion>, String> {
 }
 
 #[tauri::command]
+pub async fn get_neoforge_versions() -> Result<Vec<NeoForgeVersion>, String> {
+    let installer = NeoForgeInstaller::new(get_meta_dir());
+    installer
+        .get_loader_versions()
+        .await
+        .map_err(|e| format!("Failed to fetch NeoForge versions: {}", e))
+}
+
+#[tauri::command]
 pub async fn install_fabric(minecraft_version: String, loader_version: String) -> Result<String, String> {
     if !minecraft_version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
         return Err("Invalid Minecraft version format".to_string());
@@ -97,4 +116,22 @@ pub async fn install_fabric(minecraft_version: String, loader_version: String) -
         .install_fabric(&minecraft_version, &loader_version)
         .await
         .map_err(|e| format!("Fabric installation failed: {}", e))
+}
+
+#[tauri::command]
+pub async fn install_neoforge(minecraft_version: String, loader_version: String) -> Result<String, String> {
+    if !minecraft_version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
+        return Err("Invalid Minecraft version format".to_string());
+    }
+    if !loader_version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
+        return Err("Invalid loader version format".to_string());
+    }
+    
+    let meta_dir = get_meta_dir();
+    let installer = NeoForgeInstaller::new(meta_dir);
+
+    installer
+        .install_neoforge(&minecraft_version, &loader_version)
+        .await
+        .map_err(|e| format!("NeoForge installation failed: {}", e))
 }

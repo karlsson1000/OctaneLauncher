@@ -25,7 +25,7 @@ pub async fn create_instance(
     }
     
     if let Some(ref loader_type) = loader {
-        if loader_type != "fabric" && loader_type != "vanilla" {
+        if loader_type != "fabric" && loader_type != "vanilla" && loader_type != "neoforge" {
             return Err("Invalid loader type".to_string());
         }
     }
@@ -81,7 +81,7 @@ pub async fn create_instance(
                     "stage": format!("Installing Fabric {}...", fabric_version)
                 }));
 
-                let fabric_installer = FabricInstaller::new(meta_dir);
+                let fabric_installer = FabricInstaller::new(meta_dir.clone());
                 
                 fabric_installer
                     .install_fabric(&version, fabric_version)
@@ -90,7 +90,48 @@ pub async fn create_instance(
             } else {
                 return Err("Fabric loader version not specified".to_string());
             }
-        } else {
+        } else if loader_type == "neoforge" {
+    if let Some(neoforge_version) = &loader_version {
+        let _ = app_handle.emit("creation-progress", serde_json::json!({
+            "instance": safe_name,
+            "progress": 70,
+            "stage": format!("Downloading NeoForge installer {}...", neoforge_version)
+        }));
+
+        let neoforge_installer = crate::services::neoforge::NeoForgeInstaller::new(meta_dir.clone());
+
+        let app_handle_clone = app_handle.clone();
+        let safe_name_clone = safe_name.clone();
+        let progress_task = tauri::async_runtime::spawn(async move {
+            for i in 0..20 {
+                tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                let progress = 75 + (i * 1).min(10);
+                let _ = app_handle_clone.emit("creation-progress", serde_json::json!({
+                    "instance": safe_name_clone,
+                    "progress": progress,
+                    "stage": "Running NeoForge installer (this may take a minute)..."
+                }));
+            }
+        });
+        
+        let version_id = neoforge_installer
+            .install_neoforge(&version, neoforge_version)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        progress_task.abort();
+            
+        let _ = app_handle.emit("creation-progress", serde_json::json!({
+            "instance": safe_name,
+            "progress": 85,
+            "stage": "NeoForge installation complete"
+        }));
+        
+        version_id
+    } else {
+        return Err("NeoForge loader version not specified".to_string());
+    }
+} else {
             version.clone()
         }
     } else {

@@ -226,7 +226,7 @@ export function InstanceDetailsTab({
   }
 
   const checkForUpdates = async () => {
-    if (!instance || instance.loader !== "fabric") return
+    if (!instance || (instance.loader !== "fabric" && instance.loader !== "neoforge")) return
     
     setIsCheckingUpdates(true)
     const updates: ModUpdate[] = []
@@ -369,6 +369,27 @@ export function InstanceDetailsTab({
       const parts = instance.version.split('-')
       return parts[parts.length - 1]
     }
+    if (instance.loader === "neoforge") {
+      const versionPart = instance.version.replace('neoforge-', '')
+      const parts = versionPart.split('-')
+      if (parts[0].startsWith('1.')) {
+        return parts[0]
+      }
+      
+      const versionNumbers = parts[0].split('.')
+      if (versionNumbers.length >= 2) {
+        const major = versionNumbers[0]
+        const minor = versionNumbers[1]
+        const patch = versionNumbers[2] || '0'
+        const majorNum = parseInt(major)
+        if (majorNum >= 20) {
+          if (patch === '0') {
+            return `1.${major}`
+          }
+          return `1.${major}.${minor}`
+        }
+      }
+    }
     return instance.version
   }
 
@@ -377,6 +398,21 @@ export function InstanceDetailsTab({
       const parts = instance.version.split('-')
       if (parts.length >= 2) {
         return parts[parts.length - 2]
+      }
+    }
+    return null
+  }
+
+  const getNeoForgeVersion = (instance: Instance): string | null => {
+    if (instance.loader === "neoforge") {
+      const versionPart = instance.version.replace('neoforge-', '')
+      const parts = versionPart.split('-')
+
+      const mcVersion = getMinecraftVersion(instance)
+      const neoforgeVersionParts = parts.filter(part => part !== mcVersion)
+      
+      if (neoforgeVersionParts.length > 0) {
+        return neoforgeVersionParts.join('-')
       }
     }
     return null
@@ -497,6 +533,7 @@ export function InstanceDetailsTab({
   }
 
   const fabricLoaderVersion = getFabricLoaderVersion(instance)
+  const neoforgeVersion = getNeoForgeVersion(instance)
   const modsWithProjectId = installedMods.filter(mod => mod.project_id && !mod.disabled).length
 
   return (
@@ -573,6 +610,13 @@ export function InstanceDetailsTab({
                           <span className="text-[#7d8590]"> {fabricLoaderVersion}</span>
                         )}
                       </>
+                    ) : instance.loader === "neoforge" ? (
+                      <>
+                        <span className="text-[#f97316]">NeoForge</span>
+                        {neoforgeVersion && (
+                          <span className="text-[#7d8590]"> {neoforgeVersion}</span>
+                        )}
+                      </>
                     ) : (
                       <span className="text-[#16a34a]">Vanilla</span>
                     )}
@@ -631,7 +675,7 @@ export function InstanceDetailsTab({
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {instance.loader === "fabric" && modsWithProjectId > 0 && (
+                  {(instance.loader === "fabric" || instance.loader === "neoforge") && modsWithProjectId > 0 && (
                     <>
                       {availableUpdates.length > 0 ? (
                         <button

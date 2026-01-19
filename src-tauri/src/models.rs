@@ -441,3 +441,44 @@ pub struct FabricLoaderVersion {
     pub version: String,
     pub stable: bool,
 }
+
+// ===== NEOFORGE LOADER MODELS =====
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NeoForgeVersion {
+    pub minecraft_version: String,
+    pub neoforge_version: String,
+    pub full_version: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NeoForgeProfileJson {
+    pub id: String,
+    #[serde(rename = "inheritsFrom")]
+    pub inherits_from: String,
+    #[serde(rename = "releaseTime")]
+    pub release_time: String,
+    pub time: String,
+    #[serde(rename = "type")]
+    pub profile_type: String,
+    #[serde(rename = "mainClass")]
+    pub main_class: String,
+    pub arguments: Option<NeoForgeArguments>,
+    pub libraries: Vec<NeoForgeProfileLibrary>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NeoForgeArguments {
+    pub game: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub jvm: Vec<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct NeoForgeProfileLibrary {
+    pub name: String,
+    #[serde(default)]
+    pub url: Option<String>,
+    #[serde(default)]
+    pub downloads: Option<serde_json::Value>,
+}

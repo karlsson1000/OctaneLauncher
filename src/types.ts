@@ -27,6 +27,13 @@ export interface FabricVersion {
   stable: boolean
 }
 
+export interface NeoForgeVersion {
+  minecraft_version: string
+  neoforge_version: string
+  full_version: string
+  version: string
+}
+
 export interface LauncherSettings {
   memory_mb: number
   java_path: string | null
