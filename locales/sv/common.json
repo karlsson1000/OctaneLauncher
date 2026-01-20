@@ -3,8 +3,7 @@
     "loaders": {
       "fabric": "Fabric",
       "vanilla": "Vanilla",
-      "forge": "Forge",
-      "quilt": "Quilt"
+      "neoforge": "NeoForge"
     },
     "dates": {
       "today": "Idag",
@@ -62,17 +61,75 @@
   },
   "instances": {
     "title": "Instanser",
-    "subtitle": "Hantera dina Minecraft installationer",
-    "newButton": "Ny instans",
+    "subtitle": "Hantera alla dina instanser",
+    "newButton": "Ny",
+    "searchPlaceholder": "Sök...",
     "noInstances": {
       "title": "Inga instanser ännu",
       "description": "Skapa din första instans för att komma igång",
       "createButton": "Skapa instans"
     },
-    "selectedInstance": {
-      "play": "Spela",
-      "stop": "Stoppa",
-      "details": "Detaljer"
+    "noSearchResults": {
+      "title": "Inga instanser hittades",
+      "description": "Försök att justera din sökning"
+    },
+    "instance": {
+      "launchTooltip": "Starta instans",
+      "stopTooltip": "Stoppa instans"
+    },
+    "contextMenu": {
+      "open": "Öppna",
+      "openFolder": "Öppna mapp",
+      "duplicate": "Duplicera",
+      "export": "Exportera",
+      "delete": "Radera"
+    },
+    "templates": {
+      "manager": {
+        "title": "Mallhanterare",
+        "description": "Skapa, applicera och hantera mallar"
+      },
+      "applyButton": "Tillämpa mall på instans",
+      "importButton": "Importera mall",
+      "importFromFile": "Från JSON fil",
+      "createNew": "Skapa ny mall",
+      "noTemplates": "Ingen mall tillgänglig",
+      "templatesAvailable": "{{count}} mall tillgänglig",
+      "templatesAvailable_plural": "{{count}} tillgängliga mallar",
+      "instanceCount": "{{count}} instans",
+      "instanceCount_plural": "{{count}} instanser",
+      "templateCount": "{{count}} mall",
+      "templateCount_plural": "{{count}} mallar",
+      "noInstancesAvailable": "Inga instanser tillgängliga",
+      "availableTemplates": "Tillgängliga mallar",
+      "applyTemplate": {
+        "title": "Använd mall",
+        "description": "Välj en mall och instans"
+      },
+      "applyToInstance": "Applicera på instans",
+      "exportTooltip": "Exportera mall",
+      "deleteTooltip": "Radera mall",
+      "createSuccess": {
+        "title": "Lyckades",
+        "message": "Mall skapad från \"{{name}}\" lyckades!"
+      },
+      "createError": "Kunde inte skapa mall: {{error}}",
+      "exportSuccess": {
+        "title": "Lyckades",
+        "message": "Mall \"{{name}}\" exporterades framgångsrikt!"
+      },
+      "exportError": "Kunde inte exportera mall: {{error}}",
+      "importSuccess": {
+        "title": "Lyckades",
+        "message": "Mallen har importerats!"
+      },
+      "importError": "Det gick inte att importera mall: {{error}}",
+      "deleteError": "Kunde inte ta bort mall: {{error}}",
+      "applySuccess": {
+        "title": "Lyckades",
+        "message": "Mall tillämpad på {{name}} lyckades!"
+      },
+      "applyError": "Det gick inte att tillämpa mall: {{error}}"
     }
   },
   "settings": {
@@ -110,7 +167,8 @@
     },
     "language": {
       "title": "Visningsspråk",
-      "description": "Välj önskat språk för launcher gränssnittet."
+      "description": "Välj önskat språk för launcher gränssnittet.",
+      "helpTranslate": "Hjälp med att översätta på translate.atomiclauncher.com"
     },
     "integrations": {
       "discord": {
@@ -146,5 +204,140 @@
     "failedToSave": "Kunde inte spara inställningar",
     "invalidFile": "Ogiltig fil",
     "fileTooLarge": "Filen är för stor"
+  },
+  "createInstance": {
+    "title": "Ny instans",
+    "instanceName": {
+      "label": "Instansnamn",
+      "placeholder": "Min Minecraft instans",
+      "existsError": "En instans med detta namn finns redan"
+    },
+    "minecraftVersion": {
+      "label": "Minecraft Version",
+      "releases": "Utgåvor",
+      "snapshots": "Snapshots",
+      "loadingVersions": "Laddar versioner...",
+      "noCompatibleVersions": "Ingen kompatibel version tillgänglig"
+    },
+    "modloader": {
+      "label": "Modloader",
+      "vanilla": "Vanilla",
+      "fabric": "Fabric",
+      "fabricVersion": "Fabric Loader Version",
+      "stable": "Stabil",
+      "loadingFabricVersions": "Laddar versioner..."
+    },
+    "buttons": {
+      "custom": "Anpassad",
+      "importFile": "Importera fil",
+      "cancel": "Avbryt",
+      "create": "Skapa instans",
+      "creating": "Skapar..."
+    },
+    "errors": {
+      "failedToLoadVersions": "Det gick inte att ladda versioner",
+      "failedToLoadFabricVersions": "Det gick inte att ladda Fabric versioner",
+      "failedToImport": "Det gick inte att importera instans",
+      "failedToCreate": "Det gick inte att skapa instans"
+    },
+    "import": {
+      "dialogTitle": "Instans filer",
+      "fileExtensions": "mrpack, zip"
+    }
+  },
+  "settingsModal": {
+    "loadingSettings": "Laddar inställningar...",
+    "buildLabel": "Byggnad",
+    "tabs": {
+      "game": "Spel",
+      "appearance": "Utseende",
+      "language": "Språk",
+      "integrations": "Integrationer",
+      "about": "System"
+    },
+    "java": {
+      "autoDetect": "Auto-detektera (rekommenderas)",
+      "customPath": "Anpassad sökväg...",
+      "scan": "Skanna"
+    },
+    "sidebarBackground": {
+      "change": "Ändra",
+      "remove": "Ta bort",
+      "clickToUpload": "Klicka för att ladda upp bild",
+      "fileTypes": "PNG, JPG upp till 10 MB"
+    },
+    "language": {
+      "description": "Välj önskat språk för launcher gränssnittet.",
+      "helpTranslate": "Hjälp med att översätta på translate.atomiclauncher.com"
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "showStatus": "Visa Discords Status",
+      "enabled": "Aktiverad",
+      "disabled": "Inaktiverad"
+    },
+    "errors": {
+      "invalidFile": "Ogiltig fil",
+      "selectImage": "Vänligen välj en bildfil (PNG, JPG, etc.)",
+      "fileTooLarge": "Filen är för stor",
+      "imageTooLarge": "Bilden måste vara mindre än 10MB",
+      "failedToSave": "Kunde inte spara inställningar",
+      "failedToSaveBackground": "Det gick inte att spara bakgrunden",
+      "failedToRemoveBackground": "Det gick inte att ta bort bakgrunden",
+      "failedToReadFile": "Det gick inte att läsa bildfilen"
+    }
+  },
+  "modal": {
+    "confirm": "Bekräfta",
+    "ok": "OK"
+  },
+  "sidebar": {
+    "welcome": "Välkommen tillbaka,",
+    "signIn": "Logga in",
+    "authenticating": "Autentiserar...",
+    "recentlyPlayed": "Nyligen spelat",
+    "friends": "Vänner",
+    "addFriend": "Lägg till vän",
+    "friendRequests": "Vänförfrågningar",
+    "removeFriend": "Ta bort vän",
+    "noFriendsYet": "Inga vänner än",
+    "nothingHere": "Inget här ännu",
+    "signInToStart": "Logga in för att komma igång!",
+    "accountDropdown": {
+      "activeAccount": "Aktivt konto",
+      "addAnother": "Lägg till ett annat konto"
+    },
+    "friendStatus": {
+      "online": "Online",
+      "offline": "Offline",
+      "inGame": "I Spel",
+      "playing": "{{instance}}"
+    },
+    "friendRequest": {
+      "accept": "Acceptera",
+      "reject": "Avböj",
+      "add": "Lägg till",
+      "usernamePlaceholder": "Användarnamn...",
+      "requestSent": "Förfrågan skickad!",
+      "alreadySent": "Vänförfrågan har redan skickats",
+      "checkRequests": "Kolla dina vänförfrågningar!",
+      "userNotFound": "Användaren hittades inte",
+      "alreadyFriends": "Redan vänner",
+      "cantAddSelf": "Kan inte lägga till dig själv"
+    },
+    "confirmRemove": {
+      "title": "Ta bort vän",
+      "message": "Är du säker på att du vill ta bort {{username}}? Du kan skicka en vänförfrågan igen senare."
+    },
+    "instance": {
+      "launchTooltip": "Starta instans",
+      "stopTooltip": "Stoppa instans"
+    },
+    "contextMenu": {
+      "open": "Öppna",
+      "openFolder": "Öppna mapp",
+      "duplicate": "Duplicera",
+      "delete": "Radera"
+    }
   }
 }

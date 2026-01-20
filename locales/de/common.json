@@ -1,150 +1,343 @@
 {
   "common": {
     "loaders": {
-      "fabric": "",
-      "vanilla": "",
-      "forge": "",
-      "quilt": ""
+      "fabric": "Fabric",
+      "vanilla": "Basisspiel",
+      "neoforge": "NeoForge"
     },
     "dates": {
-      "today": "",
-      "yesterday": "",
-      "daysAgo": "",
-      "daysAgo_plural": "",
-      "weeksAgo": "",
-      "weeksAgo_plural": ""
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "daysAgo": "Vor {{count}} Tag",
+      "daysAgo_plural": "Vor {{count}} Tagen",
+      "weeksAgo": "Vor {{count}} Woche",
+      "weeksAgo_plural": "Vor {{count}} Wochen"
     },
     "actions": {
-      "open": "",
-      "close": "",
-      "save": "",
-      "cancel": "",
-      "delete": "",
-      "duplicate": "",
-      "export": "",
-      "import": "",
-      "create": "",
-      "edit": "",
-      "refresh": "",
-      "loading": "",
-      "confirm": ""
+      "open": "Öffnen",
+      "close": "Schließen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "delete": "Löschen",
+      "duplicate": "Klonen",
+      "export": "Exportieren",
+      "import": "Importieren",
+      "create": "Erstellen",
+      "edit": "Bearbeiten",
+      "refresh": "Neuladen",
+      "loading": "Wird geladen...",
+      "confirm": "Bestätigen"
     }
   },
   "home": {
-    "title": "",
-    "subtitle": "",
-    "newButton": "",
+    "title": "Hauptseite",
+    "subtitle": "Kürzlich gespielte Instanzen",
+    "newButton": "Neu",
     "viewMode": {
-      "grid": "",
-      "list": ""
+      "grid": "Rasteransicht",
+      "list": "Listenansicht"
     },
     "noInstances": {
-      "title": "",
-      "description": "",
-      "createButton": ""
+      "title": "Keine kürzlich gespielten Instanzen",
+      "description": "Starte eine Instanz, um sie hier zu sehen",
+      "createButton": "Instanz erstellen"
     },
     "instance": {
-      "launchTooltip": "",
-      "stopTooltip": ""
+      "launchTooltip": "Instanz öffnen",
+      "stopTooltip": "Instanz beenden"
     },
     "snapshots": {
-      "title": "",
-      "subtitle": "",
-      "unableToLoad": ""
+      "title": "Neueste Snapshots",
+      "subtitle": "Aktuelle Java Edition Snapshots",
+      "unableToLoad": "Snapshots konnten nicht geladen werden"
     },
     "contextMenu": {
-      "open": "",
-      "openFolder": "",
-      "duplicate": "",
-      "export": "",
-      "delete": ""
+      "open": "Öffnen",
+      "openFolder": "Ordner öffnen",
+      "duplicate": "Klonen",
+      "export": "Exportieren",
+      "delete": "Löschen"
     }
   },
   "instances": {
-    "title": "",
-    "subtitle": "",
-    "newButton": "",
+    "title": "Instanzen",
+    "subtitle": "Alle Instanzen verwalten",
+    "newButton": "Neu",
+    "searchPlaceholder": "Suchen...",
     "noInstances": {
-      "title": "",
-      "description": "",
-      "createButton": ""
+      "title": "Noch keine Instanzen",
+      "description": "Erstelle deine erste Instanz um loszulegen",
+      "createButton": "Instanz erstellen"
     },
-    "selectedInstance": {
-      "play": "",
-      "stop": "",
-      "details": ""
+    "noSearchResults": {
+      "title": "Keine Instanzen gefunden",
+      "description": "Versuchen Sie, Ihre Suchanfrage anzupassen"
+    },
+    "instance": {
+      "launchTooltip": "Instanz starten",
+      "stopTooltip": "Instanz stoppen"
+    },
+    "contextMenu": {
+      "open": "Öffnen",
+      "openFolder": "Ordner öffnen",
+      "duplicate": "Klonen",
+      "export": "Exportieren",
+      "delete": "Löschen"
+    },
+    "templates": {
+      "manager": {
+        "title": "Vorlagenmanager",
+        "description": "Vorlagen erstellen, anwenden und verwalten"
+      },
+      "applyButton": "Vorlage auf Instanz anwenden",
+      "importButton": "Vorlage importieren",
+      "importFromFile": "Aus JSON-Datei",
+      "createNew": "Neue Vorlage erstellen",
+      "noTemplates": "Keine Vorlagen vorhanden",
+      "templatesAvailable": "{{count}} Vorlage verfügbar",
+      "templatesAvailable_plural": "{{count}} Vorlagen verfügbar",
+      "instanceCount": "{{count}} Instanz",
+      "instanceCount_plural": "{{count}} Instanzen",
+      "templateCount": "{{count}} Vorlage",
+      "templateCount_plural": "{{count}} Vorlagen",
+      "noInstancesAvailable": "Keine Instanzen verfügbar",
+      "availableTemplates": "Verfügbare Vorlagen",
+      "applyTemplate": {
+        "title": "Vorlage anwenden",
+        "description": "Wählen Sie eine Vorlage und Instanz"
+      },
+      "applyToInstance": "Auf Instanz anwenden",
+      "exportTooltip": "Vorlage exportieren",
+      "deleteTooltip": "Vorlage löschen",
+      "createSuccess": {
+        "title": "Erfolg",
+        "message": "Vorlage von \"{{name}}\" erfolgreich erstellt!"
+      },
+      "createError": "Fehler beim Erstellen der Vorlage: {{error}}",
+      "exportSuccess": {
+        "title": "Erfolg",
+        "message": "Vorlage \"{{name}}\" erfolgreich exportiert!"
+      },
+      "exportError": "Fehler beim Exportieren der Vorlage: {{error}}",
+      "importSuccess": {
+        "title": "Erfolg",
+        "message": "Template erfolgreich importiert!"
+      },
+      "importError": "Fehler beim Importieren der Vorlage: {{error}}",
+      "deleteError": "Fehler beim Löschen der Vorlage: {{error}}",
+      "applySuccess": {
+        "title": "Erfolg",
+        "message": "Vorlage erfolgreich auf {{name}} angewendet!"
+      },
+      "applyError": "Fehler beim Anwenden der Vorlage: {{error}}"
     }
   },
   "settings": {
-    "title": "",
+    "title": "Einstellungen",
     "tabs": {
-      "game": "",
-      "appearance": "",
-      "language": "",
-      "integrations": "",
-      "system": ""
+      "game": "Spiel",
+      "appearance": "Aussehen",
+      "language": "Sprache",
+      "integrations": "Integrationen",
+      "system": "System"
     },
     "game": {
       "memory": {
-        "title": "",
-        "ofTotal": "",
-        "systemTotal": "",
-        "available": ""
+        "title": "Speicherzuweisung",
+        "ofTotal": "von {{total}} GB gesamt",
+        "systemTotal": "Systemsumme",
+        "available": "Verfügbar"
       },
       "java": {
-        "title": "",
-        "autoDetect": "",
-        "customPath": "",
-        "scanButton": "",
-        "placeholder": ""
+        "title": "Java Runtime",
+        "autoDetect": "Auto-Erkennung (empfohlen)",
+        "customPath": "Benutzerdefinierter Pfad...",
+        "scanButton": "Scannen",
+        "placeholder": "C:\\Programme\\Java\\jdk-21\\bin\\javaw.exe"
       }
     },
     "appearance": {
       "sidebarBackground": {
-        "title": "",
-        "uploadPrompt": "",
-        "fileTypes": "",
-        "changeButton": "",
-        "removeButton": ""
+        "title": "Sidebar Hintergrund",
+        "uploadPrompt": "Zum Bild hochladen, klicken",
+        "fileTypes": "PNG, JPG bis zu 10 MB",
+        "changeButton": "Ändern",
+        "removeButton": "Entfernen"
       }
     },
     "language": {
-      "title": "",
-      "description": ""
+      "title": "Anzeigesprache",
+      "description": "Wählen Sie Ihre bevorzugte Sprache für das Launcher-Interface.",
+      "helpTranslate": "Hilf bei der Übersetzung auf translate.atomiclauncher.com"
     },
     "integrations": {
       "discord": {
-        "title": "",
-        "enabled": "",
-        "disabled": "",
-        "showStatus": ""
+        "title": "Discord Rich Presence",
+        "enabled": "Aktiviert",
+        "disabled": "Deaktiviert",
+        "showStatus": "Discord Status anzeigen"
       }
     },
     "system": {
       "gameDirectory": {
-        "title": ""
+        "title": "Spielverzeichnis"
       },
       "version": {
-        "title": "",
-        "launcherVersion": ""
+        "title": "Versionsinformation",
+        "launcherVersion": "Launcherversion"
       }
     }
   },
   "navigation": {
-    "home": "",
-    "instances": "",
-    "mods": "",
-    "servers": "",
-    "skins": "",
-    "serverMaps": "",
-    "console": ""
+    "home": "Startseite",
+    "instances": "Instanzen",
+    "mods": "Mods",
+    "servers": "Server",
+    "skins": "Skins",
+    "serverMaps": "Serverkarten",
+    "console": "Konsole"
   },
   "errors": {
-    "generic": "",
-    "instanceNotFound": "",
-    "failedToLaunch": "",
-    "failedToSave": "",
-    "invalidFile": "",
-    "fileTooLarge": ""
+    "generic": "Ein Fehler ist aufgetreten",
+    "instanceNotFound": "Instanz nicht gefunden",
+    "failedToLaunch": "Fehler beim Starten der Instanz",
+    "failedToSave": "Fehler beim Speichern der Einstellungen",
+    "invalidFile": "Ungültige Datei",
+    "fileTooLarge": "Datei ist zu groß"
+  },
+  "createInstance": {
+    "title": "Neue Instanz",
+    "instanceName": {
+      "label": "Instanzname",
+      "placeholder": "Meine Minecraft-Instanz",
+      "existsError": "Eine Instanz mit diesem Namen existiert bereits"
+    },
+    "minecraftVersion": {
+      "label": "Minecraft-Version",
+      "releases": "Freigaben",
+      "snapshots": "Snapshots",
+      "loadingVersions": "Versionen werden geladen...",
+      "noCompatibleVersions": "Keine kompatiblen Versionen verfügbar"
+    },
+    "modloader": {
+      "label": "Modloader",
+      "vanilla": "Vanilla",
+      "fabric": "Fabric",
+      "fabricVersion": "Fabric-Loader-Version",
+      "stable": "Stabil",
+      "loadingFabricVersions": "Versionen werden geladen..."
+    },
+    "buttons": {
+      "custom": "Benutzerdefiniert",
+      "importFile": "Datei importieren",
+      "cancel": "Abbrechen",
+      "create": "Instanz erstellen",
+      "creating": "Wird erstellt..."
+    },
+    "errors": {
+      "failedToLoadVersions": "Fehler beim Laden der Versionen",
+      "failedToLoadFabricVersions": "Fehler beim Laden der Fabric-Versionen",
+      "failedToImport": "Fehler beim Importieren der Instanz",
+      "failedToCreate": "Fehler beim Erstellen der Instanz"
+    },
+    "import": {
+      "dialogTitle": "Instanzdateien",
+      "fileExtensions": "mrpack, zip"
+    }
+  },
+  "settingsModal": {
+    "loadingSettings": "Einstellungen werden geladen...",
+    "buildLabel": "Version",
+    "tabs": {
+      "game": "Spiel",
+      "appearance": "Aussehen",
+      "language": "Sprache",
+      "integrations": "Integrationen",
+      "about": "System"
+    },
+    "java": {
+      "autoDetect": "Auto-Erkennung (empfohlen)",
+      "customPath": "Benutzerdefinierter Pfad...",
+      "scan": "Scannen"
+    },
+    "sidebarBackground": {
+      "change": "Ändern",
+      "remove": "Entfernen",
+      "clickToUpload": "Zum Bild hochladen, klicken",
+      "fileTypes": "PNG, JPG bis zu 10 MB"
+    },
+    "language": {
+      "description": "Wählen Sie Ihre bevorzugte Sprache für das Launcher-Interface.",
+      "helpTranslate": "Hilf bei der Übersetzung auf translate.atomiclauncher.com"
+    },
+    "discord": {
+      "title": "Discord Rich Presence",
+      "showStatus": "Discord Status anzeigen",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert"
+    },
+    "errors": {
+      "invalidFile": "Ungültige Datei",
+      "selectImage": "Bitte wählen Sie eine Bilddatei (PNG, JPG, etc.)",
+      "fileTooLarge": "Datei ist zu groß",
+      "imageTooLarge": "Bild muss kleiner als 10MB sein",
+      "failedToSave": "Fehler beim Speichern der Einstellungen",
+      "failedToSaveBackground": "Fehler beim Speichern des Hintergrunds",
+      "failedToRemoveBackground": "Fehler beim entfernen des Hintergrunds",
+      "failedToReadFile": "Fehler beim Lesen der Bilddatei"
+    }
+  },
+  "modal": {
+    "confirm": "Bestätigen",
+    "ok": "OK"
+  },
+  "sidebar": {
+    "welcome": "Willkommen zurück,",
+    "signIn": "Einloggen",
+    "authenticating": "Authentifizierung...",
+    "recentlyPlayed": "Kürzlich gespielt",
+    "friends": "Freunde",
+    "addFriend": "Freund hinzufügen",
+    "friendRequests": "Freundschaftsanfragen",
+    "removeFriend": "Freund entfernen",
+    "noFriendsYet": "Noch keine Freunde",
+    "nothingHere": "Hier gibts noch nichts",
+    "signInToStart": "Melden Sie sich an, um loszulegen!",
+    "accountDropdown": {
+      "activeAccount": "Aktiver Account",
+      "addAnother": "Weiteren Account hinzufügen"
+    },
+    "friendStatus": {
+      "online": "Online",
+      "offline": "Offline",
+      "inGame": "Ingame",
+      "playing": "{{instance}}"
+    },
+    "friendRequest": {
+      "accept": "Akzeptieren",
+      "reject": "Ablehnen",
+      "add": "Hinzufügen",
+      "usernamePlaceholder": "Benutzername...",
+      "requestSent": "Anfrage gesendet!",
+      "alreadySent": "Freundschaftsanfrage bereits gesendet",
+      "checkRequests": "Überprüfen Sie Ihre Freundschaftsanfragen!",
+      "userNotFound": "Benutzer nicht gefunden",
+      "alreadyFriends": "Bereits Freunde",
+      "cantAddSelf": "Kann sich nicht selbst hinzufügen"
+    },
+    "confirmRemove": {
+      "title": "Freund entfernen",
+      "message": "Sind Sie sicher, dass Sie {{username}}entfernen möchten? Sie können eine Freundschaftsanfrage später erneut senden."
+    },
+    "instance": {
+      "launchTooltip": "Instanz öffnen",
+      "stopTooltip": "Instanz beenden"
+    },
+    "contextMenu": {
+      "open": "Öffnen",
+      "openFolder": "Ordner öffnen",
+      "duplicate": "Klonen",
+      "delete": "Löschen"
+    }
   }
 }
