@@ -3,8 +3,7 @@
     "loaders": {
       "fabric": "",
       "vanilla": "",
-      "forge": "",
-      "quilt": ""
+      "neoforge": ""
     },
     "dates": {
       "today": "",
@@ -64,15 +63,73 @@
     "title": "",
     "subtitle": "",
     "newButton": "",
+    "searchPlaceholder": "",
     "noInstances": {
       "title": "",
       "description": "",
       "createButton": ""
     },
-    "selectedInstance": {
-      "play": "",
-      "stop": "",
-      "details": ""
+    "noSearchResults": {
+      "title": "",
+      "description": ""
+    },
+    "instance": {
+      "launchTooltip": "",
+      "stopTooltip": ""
+    },
+    "contextMenu": {
+      "open": "",
+      "openFolder": "",
+      "duplicate": "",
+      "export": "",
+      "delete": ""
+    },
+    "templates": {
+      "manager": {
+        "title": "",
+        "description": ""
+      },
+      "applyButton": "",
+      "importButton": "",
+      "importFromFile": "",
+      "createNew": "",
+      "noTemplates": "",
+      "templatesAvailable": "",
+      "templatesAvailable_plural": "",
+      "instanceCount": "",
+      "instanceCount_plural": "",
+      "templateCount": "",
+      "templateCount_plural": "",
+      "noInstancesAvailable": "",
+      "availableTemplates": "",
+      "applyTemplate": {
+        "title": "",
+        "description": ""
+      },
+      "applyToInstance": "",
+      "exportTooltip": "",
+      "deleteTooltip": "",
+      "createSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "createError": "",
+      "exportSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "exportError": "",
+      "importSuccess": {
+        "title": "",
+        "message": ""
+      },
+      "importError": "",
+      "deleteError": "",
+      "applySuccess": {
+        "title": "",
+        "message": ""
+      },
+      "applyError": ""
     }
   },
   "settings": {
@@ -110,7 +167,8 @@
     },
     "language": {
       "title": "",
-      "description": ""
+      "description": "",
+      "helpTranslate": ""
     },
     "integrations": {
       "discord": {
@@ -146,5 +204,140 @@
     "failedToSave": "",
     "invalidFile": "",
     "fileTooLarge": ""
+  },
+  "createInstance": {
+    "title": "",
+    "instanceName": {
+      "label": "",
+      "placeholder": "",
+      "existsError": ""
+    },
+    "minecraftVersion": {
+      "label": "",
+      "releases": "",
+      "snapshots": "",
+      "loadingVersions": "",
+      "noCompatibleVersions": ""
+    },
+    "modloader": {
+      "label": "",
+      "vanilla": "",
+      "fabric": "",
+      "fabricVersion": "",
+      "stable": "",
+      "loadingFabricVersions": ""
+    },
+    "buttons": {
+      "custom": "",
+      "importFile": "",
+      "cancel": "",
+      "create": "",
+      "creating": ""
+    },
+    "errors": {
+      "failedToLoadVersions": "",
+      "failedToLoadFabricVersions": "",
+      "failedToImport": "",
+      "failedToCreate": ""
+    },
+    "import": {
+      "dialogTitle": "",
+      "fileExtensions": ""
+    }
+  },
+  "settingsModal": {
+    "loadingSettings": "",
+    "buildLabel": "",
+    "tabs": {
+      "game": "",
+      "appearance": "",
+      "language": "",
+      "integrations": "",
+      "about": ""
+    },
+    "java": {
+      "autoDetect": "",
+      "customPath": "",
+      "scan": ""
+    },
+    "sidebarBackground": {
+      "change": "",
+      "remove": "",
+      "clickToUpload": "",
+      "fileTypes": ""
+    },
+    "language": {
+      "description": "",
+      "helpTranslate": ""
+    },
+    "discord": {
+      "title": "",
+      "showStatus": "",
+      "enabled": "",
+      "disabled": ""
+    },
+    "errors": {
+      "invalidFile": "",
+      "selectImage": "",
+      "fileTooLarge": "",
+      "imageTooLarge": "",
+      "failedToSave": "",
+      "failedToSaveBackground": "",
+      "failedToRemoveBackground": "",
+      "failedToReadFile": ""
+    }
+  },
+  "modal": {
+    "confirm": "",
+    "ok": ""
+  },
+  "sidebar": {
+    "welcome": "",
+    "signIn": "",
+    "authenticating": "",
+    "recentlyPlayed": "",
+    "friends": "",
+    "addFriend": "",
+    "friendRequests": "",
+    "removeFriend": "",
+    "noFriendsYet": "",
+    "nothingHere": "",
+    "signInToStart": "",
+    "accountDropdown": {
+      "activeAccount": "",
+      "addAnother": ""
+    },
+    "friendStatus": {
+      "online": "",
+      "offline": "",
+      "inGame": "",
+      "playing": ""
+    },
+    "friendRequest": {
+      "accept": "",
+      "reject": "",
+      "add": "",
+      "usernamePlaceholder": "",
+      "requestSent": "",
+      "alreadySent": "",
+      "checkRequests": "",
+      "userNotFound": "",
+      "alreadyFriends": "",
+      "cantAddSelf": ""
+    },
+    "confirmRemove": {
+      "title": "",
+      "message": ""
+    },
+    "instance": {
+      "launchTooltip": "",
+      "stopTooltip": ""
+    },
+    "contextMenu": {
+      "open": "",
+      "openFolder": "",
+      "duplicate": "",
+      "delete": ""
+    }
   }
 }
