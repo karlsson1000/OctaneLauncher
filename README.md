@@ -16,4 +16,16 @@ This is a hobby project, things might change and things might break. Not affilia
 
 </div>
 
+### Translation Contributors
+Thanks to all the translators who have helped make Atomic Launcher available in multiple languages on [Crowdin](https://crowdin.com/project/atomic-launcher)!
+
+- **Swedish** - karlsson1000
+- **German** - Ellvie
+
+---
+
+<div align="center">
+
 [MIT License](LICENSE)
+
+</div>
