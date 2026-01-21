@@ -436,7 +436,7 @@ export function SettingsModal({
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 p-5 min-w-0 max-w-full overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-5 min-w-0 max-w-full">
               {activeTab === "game" && (
                 <div className="space-y-5">
                   {/* Memory */}
