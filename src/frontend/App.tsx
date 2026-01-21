@@ -684,7 +684,7 @@ function App() {
                   launchingInstanceName={launchingInstanceName}
                   runningInstances={runningInstances}
                   onSetSelectedInstance={setSelectedInstance}
-                  onLaunch={() => selectedInstance && handleLaunch(selectedInstance)}
+                  onLaunch={(instance: Instance) => { handleLaunch(instance) }}
                   onCreateNew={() => setShowCreateModal(true)}
                   onShowDetails={handleShowDetails}
                   onOpenFolder={handleOpenInstanceFolderByInstance}

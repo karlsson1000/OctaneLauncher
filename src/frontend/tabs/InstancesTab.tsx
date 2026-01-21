@@ -50,7 +50,7 @@ interface InstancesTabProps {
   launchingInstanceName: string | null
   runningInstances: Set<string>
   onSetSelectedInstance: (instance: Instance) => void
-  onLaunch: () => void
+  onLaunch: (instance: Instance) => void | Promise<void>
   onCreateNew: () => void
   onShowDetails: (instance: Instance) => void
   onOpenFolder?: (instance: Instance) => void
@@ -145,7 +145,7 @@ export function InstancesTab({
 
   const handleQuickLaunch = (instance: Instance) => {
     onSetSelectedInstance(instance)
-    onLaunch()
+    onLaunch(instance)
   }
 
   useEffect(() => {
