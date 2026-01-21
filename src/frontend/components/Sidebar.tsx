@@ -260,7 +260,7 @@ export function Sidebar(props: SidebarProps) {
       const timeB = b.last_played ? new Date(b.last_played).getTime() : 0
       return timeB - timeA
     })
-    .slice(0, 5)
+    .slice(0, 3)
 
   const getMinecraftVersion = (instance: Instance): string => {
     if (instance.loader === "fabric") {
@@ -506,12 +506,14 @@ export function Sidebar(props: SidebarProps) {
                                 onQuickLaunch(instance)
                               }
                             }}
-                            disabled={launchingInstanceName !== null}
-                            className={`absolute right-1.5 opacity-0 group-hover:opacity-100 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all cursor-pointer ${
+                            disabled={launchingInstanceName !== null && !isLaunching && !isRunning}
+                            className={`absolute right-1.5 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all ${
                               isRunning || isLaunching
-                                ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20"
-                                : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
-                            } disabled:opacity-50`}
+                                ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20 cursor-pointer"
+                                : launchingInstanceName !== null
+                                ? "opacity-0 pointer-events-none"
+                                : "opacity-0 group-hover:opacity-100 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"
+                            }`}
                             title={isRunning ? t('sidebar.instance.stopTooltip') : t('sidebar.instance.launchTooltip')}
                           >
                             {isLaunching ? (
