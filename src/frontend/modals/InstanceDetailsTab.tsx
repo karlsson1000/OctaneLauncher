@@ -584,7 +584,7 @@ export function InstanceDetailsTab({
                 </div>
               ) : (
                 <div className="w-16 h-16 rounded-md flex items-center justify-center bg-[#181a1f]">
-                  <Package size={24} className="text-[#3a3f4b]" strokeWidth={1.5} />
+                  <Package size={48} className="text-[#3a3f4b]" strokeWidth={1.5} />
                 </div>
               )}
             </div>
