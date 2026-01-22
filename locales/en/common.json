@@ -8,10 +8,14 @@
     "dates": {
       "today": "Today",
       "yesterday": "Yesterday",
-      "daysAgo": "{{count}} days ago",
-      "daysAgo_plural": "{{count}} days ago",
-      "weeksAgo": "{{count}} week ago",
-      "weeksAgo_plural": "{{count}} weeks ago"
+      "dayAgo": "{{count}} day ago",
+      "dayAgo_plural": "{{count}} days ago",
+      "weekAgo": "{{count}} week ago",
+      "weekAgo_plural": "{{count}} weeks ago",
+      "hourAgo": "{{count}}h ago",
+      "hourAgo_plural": "{{count}}h ago",
+      "minuteAgo": "{{count}}m ago",
+      "minuteAgo_plural": "{{count}}m ago"
     },
     "actions": {
       "open": "Open",
@@ -241,8 +245,7 @@
       "failedToCreate": "Failed to create instance"
     },
     "import": {
-      "dialogTitle": "Instance Files",
-      "fileExtensions": "mrpack, zip"
+      "dialogTitle": "Instance Files"
     }
   },
   "settingsModal": {
@@ -338,6 +341,113 @@
       "openFolder": "Open Folder",
       "duplicate": "Duplicate",
       "delete": "Delete"
+    }
+  },
+  "instanceDetails": {
+    "minecraftVersion": "Minecraft {{version}}",
+    "fabricLoader": "Fabric Loader",
+    "running": "Running...",
+    "play": "Play",
+    "openFolder": "Open Folder",
+    "instanceSettings": "Instance Settings",
+    "installedMods": "Installed Mods",
+    "modCount": "{{count}} mod",
+    "modCount_plural": "{{count}} mods",
+    "updating": "Updating...",
+    "updateAll": "Update All ({{count}})",
+    "checking": "Checking...",
+    "checkForUpdates": "Check for Updates",
+    "noMods": {
+      "title": "No mods installed",
+      "description": "Browse the mods tab to add mods"
+    },
+    "updateBadge": "Update",
+    "worlds": "Worlds",
+    "worldCount": "{{count}} world",
+    "worldCount_plural": "{{count}} worlds",
+    "noWorlds": {
+      "title": "No worlds yet",
+      "description": "Launch the game to create a world"
+    },
+    "created": "Created {{date}}",
+    "deleteWorld": "Delete world",
+    "playtime": {
+      "hoursMinutes": "{{hours}}h {{minutes}}m played",
+      "minutes": "{{minutes}}m played",
+      "seconds": "{{seconds}}s played"
+    },
+    "date": {
+      "unknown": "Unknown"
+    },
+    "confirmDeleteWorld": {
+      "title": "Delete World",
+      "message": "Are you sure you want to delete \"{{name}}\"?\n\nThis action cannot be undone."
+    },
+    "errors": {
+      "checkUpdatesTitle": "Error",
+      "checkUpdatesFailed": "Failed to check for updates: {{error}}",
+      "deleteModTitle": "Error",
+      "deleteModFailed": "Failed to delete mod: {{error}}",
+      "deleteWorldTitle": "Error",
+      "deleteWorldFailed": "Failed to delete world: {{error}}",
+      "toggleModTitle": "Error",
+      "toggleModFailed": "Failed to {{action}} mod: {{error}}",
+      "openWorldsFolderTitle": "Error",
+      "openWorldsFolderFailed": "Failed to open worlds folder: {{error}}",
+      "openWorldFolderTitle": "Error",
+      "openWorldFolderFailed": "Failed to open world folder: {{error}}"
+    }
+  },
+  "instanceSettings": {
+    "title": "Instance Settings",
+    "instanceIcon": {
+      "label": "Instance Icon",
+      "uploadButton": "Upload Icon",
+      "changeButton": "Change Icon",
+      "removeButton": "Remove Icon"
+    },
+    "instanceName": {
+      "label": "Instance Name",
+      "placeholder": "Enter instance name"
+    },
+    "minecraftVersion": {
+      "label": "Minecraft Version"
+    },
+    "fabricLoader": {
+      "label": "Fabric Loader Version",
+      "stable": "(Stable)"
+    },
+    "neoforgeLoader": {
+      "label": "NeoForge Loader Version",
+      "noVersions": "No versions available"
+    },
+    "deleteInstance": {
+      "title": "Delete Instance",
+      "message": "Are you sure you want to delete \"{{name}}\"?\n\nThis action cannot be undone.",
+      "button": "Delete Instance",
+      "deleting": "Deleting..."
+    },
+    "removeIcon": {
+      "title": "Remove Icon",
+      "message": "Are you sure you want to remove this instance icon?"
+    },
+    "updateMinecraftVersion": {
+      "title": "Update Minecraft Version",
+      "message": "Are you sure you want to update this instance to Minecraft {{version}}?\n\nThis will download the new version and update the instance. Your worlds and settings will be preserved."
+    },
+    "errors": {
+      "emptyName": "Instance name cannot be empty",
+      "invalidImageFile": "Please select an image file (PNG, JPEG, or WebP)",
+      "imageTooLarge": "Image must be smaller than 5MB",
+      "setIconFailed": "Failed to set icon: {{error}}",
+      "removeIconFailed": "Failed to remove icon: {{error}}",
+      "deleteInstanceFailed": "Failed to delete instance: {{error}}",
+      "loadVersionsFailed": "Failed to load Minecraft versions: {{error}}",
+      "loadFabricVersionsFailed": "Failed to load Fabric versions: {{error}}",
+      "loadNeoforgeVersionsFailed": "Failed to load NeoForge versions: {{error}}",
+      "updateVersionFailed": "Failed to update Minecraft version: {{error}}",
+      "updateFabricFailed": "Failed to update Fabric loader: {{error}}",
+      "updateNeoforgeFailed": "Failed to update NeoForge loader: {{error}}"
     }
   }
 }

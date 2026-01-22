@@ -297,9 +297,9 @@ export function Sidebar(props: SidebarProps) {
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
 
-    if (days > 0) return t('common.dates.daysAgo', { count: days })
-    if (hours > 0) return `${hours}h ago`
-    if (minutes > 0) return `${minutes}m ago`
+    if (days > 0) return t('common.dates.dayAgo', { count: days })
+    if (hours > 0) return t('common.dates.hourAgo', { count: hours })
+    if (minutes > 0) return t('common.dates.minuteAgo', { count: minutes })
     return t('common.dates.today')
   }
 
@@ -311,9 +311,9 @@ export function Sidebar(props: SidebarProps) {
     const hours = Math.floor(minutes / 60)
     const days = Math.floor(hours / 24)
 
-    if (days > 0) return t('common.dates.daysAgo', { count: days })
-    if (hours > 0) return `${hours}h ago`
-    if (minutes > 0) return `${minutes}m ago`
+    if (days > 0) return t('common.dates.dayAgo', { count: days })
+    if (hours > 0) return t('common.dates.hourAgo', { count: hours })
+    if (minutes > 0) return t('common.dates.minuteAgo', { count: minutes })
     return t('common.dates.today')
   }
 

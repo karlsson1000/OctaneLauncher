@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import { X, Trash2, Camera, ImagePlus, Loader2, Check } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
+import { useTranslation } from "react-i18next"
 import { ConfirmModal, AlertModal } from "./ConfirmModal"
 import type { Instance, FabricVersion, NeoForgeVersion } from "../../types"
 
@@ -21,6 +22,7 @@ export function InstanceSettingsModal({
   onInstanceUpdated,
   onInstanceDeleted,
 }: InstanceSettingsModalProps) {
+  const { t } = useTranslation()
   const [isDeleting, setIsDeleting] = useState(false)
   const [newName, setNewName] = useState(instance.name)
   const [renameError, setRenameError] = useState<string | null>(null)
@@ -147,8 +149,8 @@ export function InstanceSettingsModal({
       console.error("Failed to load Minecraft versions:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to load Minecraft versions: ${error}`,
+        title: t('errors.generic'),
+        message: t('instanceSettings.errors.loadVersionsFailed', { error: String(error) }),
         type: "danger"
       })
     } finally {
@@ -165,8 +167,8 @@ export function InstanceSettingsModal({
       console.error("Failed to load Fabric versions:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to load Fabric versions: ${error}`,
+        title: t('errors.generic'),
+        message: t('instanceSettings.errors.loadFabricVersionsFailed', { error: String(error) }),
         type: "danger"
       })
     } finally {
@@ -186,8 +188,8 @@ export function InstanceSettingsModal({
       console.error("Failed to load NeoForge versions:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to load NeoForge versions: ${error}`,
+        title: t('errors.generic'),
+        message: t('instanceSettings.errors.loadNeoforgeVersionsFailed', { error: String(error) }),
         type: "danger"
       })
     } finally {
@@ -202,8 +204,8 @@ export function InstanceSettingsModal({
 
     setConfirmModal({
       isOpen: true,
-      title: "Update Minecraft Version",
-      message: `Are you sure you want to update this instance to Minecraft ${newVersion}?\n\nThis will download the new version and update the instance. Your worlds and settings will be preserved.`,
+      title: t('instanceSettings.updateMinecraftVersion.title'),
+      message: t('instanceSettings.updateMinecraftVersion.message', { version: newVersion }),
       type: "warning",
       onConfirm: async () => {
         setConfirmModal(null)
@@ -223,8 +225,8 @@ export function InstanceSettingsModal({
           console.error("Failed to update Minecraft version:", error)
           setAlertModal({
             isOpen: true,
-            title: "Error",
-            message: `Failed to update Minecraft version: ${error}`,
+            title: t('errors.generic'),
+            message: t('instanceSettings.errors.updateVersionFailed', { error: String(error) }),
             type: "danger"
           })
           setSelectedMinecraftVersion(getMinecraftVersion(instance.version))
@@ -252,8 +254,8 @@ export function InstanceSettingsModal({
       console.error("Failed to update Fabric loader:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to update Fabric loader: ${error}`,
+        title: t('errors.generic'),
+        message: t('instanceSettings.errors.updateFabricFailed', { error: String(error) }),
         type: "danger"
       })
       setSelectedFabricVersion(instance.loader_version || "")
@@ -279,8 +281,8 @@ export function InstanceSettingsModal({
       console.error("Failed to update NeoForge loader:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to update NeoForge loader: ${error}`,
+        title: t('errors.generic'),
+        message: t('instanceSettings.errors.updateNeoforgeFailed', { error: String(error) }),
         type: "danger"
       })
       setSelectedNeoforgeVersion(instance.loader_version || "")
@@ -302,8 +304,8 @@ export function InstanceSettingsModal({
     if (!file.type.startsWith('image/')) {
       setAlertModal({
         isOpen: true,
-        title: "Invalid File",
-        message: "Please select an image file (PNG, JPEG, or WebP)",
+        title: t('errors.invalidFile'),
+        message: t('instanceSettings.errors.invalidImageFile'),
         type: "danger"
       })
       return
@@ -312,8 +314,8 @@ export function InstanceSettingsModal({
     if (file.size > 5 * 1024 * 1024) {
       setAlertModal({
         isOpen: true,
-        title: "File Too Large",
-        message: "Image must be smaller than 5MB",
+        title: t('errors.fileTooLarge'),
+        message: t('instanceSettings.errors.imageTooLarge'),
         type: "danger"
       })
       return
@@ -341,8 +343,8 @@ export function InstanceSettingsModal({
           console.error("Failed to set icon:", error)
           setAlertModal({
             isOpen: true,
-            title: "Error",
-            message: `Failed to set icon: ${error}`,
+            title: t('errors.generic'),
+            message: t('instanceSettings.errors.setIconFailed', { error: String(error) }),
             type: "danger"
           })
         } finally {
@@ -363,8 +365,8 @@ export function InstanceSettingsModal({
   const handleRemoveIcon = async () => {
     setConfirmModal({
       isOpen: true,
-      title: "Remove Icon",
-      message: "Are you sure you want to remove this instance icon?",
+      title: t('instanceSettings.removeIcon.title'),
+      message: t('instanceSettings.removeIcon.message'),
       type: "warning",
       onConfirm: async () => {
         setConfirmModal(null)
@@ -378,8 +380,8 @@ export function InstanceSettingsModal({
           console.error("Failed to remove icon:", error)
           setAlertModal({
             isOpen: true,
-            title: "Error",
-            message: `Failed to remove icon: ${error}`,
+            title: t('errors.generic'),
+            message: t('instanceSettings.errors.removeIconFailed', { error: String(error) }),
             type: "danger"
           })
         }
@@ -397,7 +399,7 @@ export function InstanceSettingsModal({
 
   const handleRename = async (trimmedName: string) => {
     if (!trimmedName) {
-      setRenameError("Instance name cannot be empty")
+      setRenameError(t('instanceSettings.errors.emptyName'))
       return
     }
 
@@ -426,8 +428,8 @@ export function InstanceSettingsModal({
   const handleDelete = async () => {
     setConfirmModal({
       isOpen: true,
-      title: "Delete Instance",
-      message: `Are you sure you want to delete "${instance.name}"?\n\nThis action cannot be undone.`,
+      title: t('instanceSettings.deleteInstance.title'),
+      message: t('instanceSettings.deleteInstance.message', { name: instance.name }),
       type: "danger",
       onConfirm: async () => {
         setIsDeleting(true)
@@ -440,8 +442,8 @@ export function InstanceSettingsModal({
           console.error("Failed to delete instance:", error)
           setAlertModal({
             isOpen: true,
-            title: "Error",
-            message: `Failed to delete instance: ${error}`,
+            title: t('errors.generic'),
+            message: t('instanceSettings.errors.deleteInstanceFailed', { error: String(error) }),
             type: "danger"
           })
         } finally {
@@ -552,7 +554,7 @@ export function InstanceSettingsModal({
           >
           <div className="flex items-center justify-between px-6 pt-6 pb-5">
             <div>
-              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Instance Settings</h2>
+              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{t('instanceSettings.title')}</h2>
             </div>
             <button
               onClick={handleClose}
@@ -564,7 +566,7 @@ export function InstanceSettingsModal({
 
           <div className="px-6 pb-4 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Icon</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.instanceIcon.label')}</label>
               <div className="flex items-center gap-4">
                 <input
                   ref={fileInputRef}
@@ -611,7 +613,7 @@ export function InstanceSettingsModal({
                     disabled={isUploadingIcon}
                     className="flex-1 w-full px-4 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                   >
-                    {localIcon ? "Change Icon" : "Upload Icon"}
+                    {localIcon ? t('instanceSettings.instanceIcon.changeButton') : t('instanceSettings.instanceIcon.uploadButton')}
                   </button>
                   {localIcon && (
                     <button
@@ -619,7 +621,7 @@ export function InstanceSettingsModal({
                       disabled={isUploadingIcon}
                       className="flex-1 w-full px-4 bg-[#22252b] hover:bg-red-500/10 text-[#e6e6e6] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
                     >
-                      Remove Icon
+                      {t('instanceSettings.instanceIcon.removeButton')}
                     </button>
                   )}
                 </div>
@@ -627,7 +629,7 @@ export function InstanceSettingsModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Name</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.instanceName.label')}</label>
               <div className="relative">
                 <input
                   type="text"
@@ -648,7 +650,7 @@ export function InstanceSettingsModal({
                     }
                   }}
                   className="w-full bg-[#22252b] rounded px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all"
-                  placeholder="Enter instance name"
+                  placeholder={t('instanceSettings.instanceName.placeholder')}
                   disabled={isRenamingInstance}
                 />
                 {isRenamingInstance && (
@@ -663,11 +665,11 @@ export function InstanceSettingsModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Minecraft Version</label>
+              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.minecraftVersion.label')}</label>
               {isLoadingVersions ? (
                 <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                   <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                  <span>Loading versions...</span>
+                  <span>{t('common.actions.loading')}</span>
                 </div>
               ) : (
                 <div className="relative" ref={versionDropdownRef}>
@@ -722,11 +724,11 @@ export function InstanceSettingsModal({
 
             {isFabricInstance && (
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Fabric Loader Version</label>
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.fabricLoader.label')}</label>
                 {isLoadingFabric ? (
                   <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                     <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                    <span>Loading versions...</span>
+                    <span>{t('common.actions.loading')}</span>
                   </div>
                 ) : (
                   <div className="relative" ref={fabricDropdownRef}>
@@ -738,7 +740,7 @@ export function InstanceSettingsModal({
                       }`}
                       disabled={isUpdatingFabric}
                     >
-                      {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
+                      {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? t('instanceSettings.fabricLoader.stable') : ""}
                     </button>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                       {isUpdatingFabric ? (
@@ -767,7 +769,7 @@ export function InstanceSettingsModal({
                             }}
                             className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
                           >
-                            <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
+                            <span>{version.version} {version.stable ? t('instanceSettings.fabricLoader.stable') : ""}</span>
                             {selectedFabricVersion === version.version && (
                               <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
                             )}
@@ -782,11 +784,11 @@ export function InstanceSettingsModal({
 
             {isNeoforgeInstance && false && (
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">NeoForge Loader Version</label>
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.neoforgeLoader.label')}</label>
                 {isLoadingNeoforge ? (
                   <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                     <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                    <span>Loading versions...</span>
+                    <span>{t('common.actions.loading')}</span>
                   </div>
                 ) : (
                   <div className="relative" ref={neoforgeDropdownRef}>
@@ -818,7 +820,7 @@ export function InstanceSettingsModal({
                       <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
                         {neoforgeVersions.length === 0 ? (
                           <div className="px-4 py-3 text-sm text-[#7d8590]">
-                            No versions available
+                            {t('instanceSettings.neoforgeLoader.noVersions')}
                           </div>
                         ) : (
                           neoforgeVersions.map((version) => (
@@ -855,12 +857,12 @@ export function InstanceSettingsModal({
                 {isDeleting ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    <span>Deleting...</span>
+                    <span>{t('instanceSettings.deleteInstance.deleting')}</span>
                   </>
                 ) : (
                   <>
                     <Trash2 size={16} />
-                    <span>Delete Instance</span>
+                    <span>{t('instanceSettings.deleteInstance.button')}</span>
                   </>
                 )}
               </button>
@@ -875,7 +877,7 @@ export function InstanceSettingsModal({
           title={confirmModal.title}
           message={confirmModal.message}
           type={confirmModal.type}
-          confirmText={confirmModal.type === "danger" ? "Delete" : "Confirm"}
+          confirmText={confirmModal.type === "danger" ? t('common.actions.delete') : t('common.actions.confirm')}
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal(null)}
         />

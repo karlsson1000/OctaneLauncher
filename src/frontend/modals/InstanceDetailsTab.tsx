@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2, RefreshCw } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
+import { useTranslation } from "react-i18next"
 import { ConfirmModal, AlertModal } from "./ConfirmModal"
 import { InstanceSettingsModal } from "./InstanceSettingsModal"
 import type { Instance } from "../../types"
@@ -61,6 +62,7 @@ export function InstanceDetailsTab({
   onBack,
   onInstanceUpdated,
 }: InstanceDetailsTabProps) {
+  const { t } = useTranslation()
   const [installedMods, setInstalledMods] = useState<InstalledMod[]>([])
   const [worlds, setWorlds] = useState<World[]>([])
   const [isLoadingMods, setIsLoadingMods] = useState(true)
@@ -276,8 +278,8 @@ export function InstanceDetailsTab({
       console.error("Failed to check for updates:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to check for updates: ${error}`,
+        title: t('instanceDetails.errors.checkUpdatesTitle'),
+        message: t('instanceDetails.errors.checkUpdatesFailed', { error: String(error) }),
         type: "danger"
       })
     } finally {
@@ -339,16 +341,16 @@ export function InstanceDetailsTab({
     const minutes = Math.floor((seconds % 3600) / 60)
     
     if (hours > 0) {
-      return `${hours}h ${minutes}m played`
+      return t('instanceDetails.playtime.hoursMinutes', { hours, minutes })
     }
     if (minutes > 0) {
-      return `${minutes}m played`
+      return t('instanceDetails.playtime.minutes', { minutes })
     }
-    return `${seconds}s played`
+    return t('instanceDetails.playtime.seconds', { seconds })
   }
 
   const formatDate = (timestamp?: number): string => {
-    if (!timestamp) return "Unknown"
+    if (!timestamp) return t('instanceDetails.date.unknown')
     const date = new Date(timestamp * 1000)
     
     const year = date.getFullYear()
@@ -438,8 +440,8 @@ export function InstanceDetailsTab({
       console.error("Failed to delete mod:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to delete mod: ${error}`,
+        title: t('instanceDetails.errors.deleteModTitle'),
+        message: t('instanceDetails.errors.deleteModFailed', { error: String(error) }),
         type: "danger"
       })
     }
@@ -448,8 +450,8 @@ export function InstanceDetailsTab({
   const handleDeleteWorld = async (folderName: string, worldName: string) => {
     setConfirmModal({
       isOpen: true,
-      title: "Delete World",
-      message: `Are you sure you want to delete "${worldName}"?\n\nThis action cannot be undone.`,
+      title: t('instanceDetails.confirmDeleteWorld.title'),
+      message: t('instanceDetails.confirmDeleteWorld.message', { name: worldName }),
       type: "danger",
       onConfirm: async () => {
         setConfirmModal(null)
@@ -463,8 +465,8 @@ export function InstanceDetailsTab({
           console.error("Failed to delete world:", error)
           setAlertModal({
             isOpen: true,
-            title: "Error",
-            message: `Failed to delete world: ${error}`,
+            title: t('instanceDetails.errors.deleteWorldTitle'),
+            message: t('instanceDetails.errors.deleteWorldFailed', { error: String(error) }),
             type: "danger"
           })
         }
@@ -484,8 +486,11 @@ export function InstanceDetailsTab({
       console.error("Failed to toggle mod:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to ${mod.disabled ? 'enable' : 'disable'} mod: ${error}`,
+        title: t('instanceDetails.errors.toggleModTitle'),
+        message: t('instanceDetails.errors.toggleModFailed', { 
+          action: mod.disabled ? 'enable' : 'disable',
+          error: String(error) 
+        }),
         type: "danger"
       })
     }
@@ -498,8 +503,8 @@ export function InstanceDetailsTab({
       console.error("Failed to open worlds folder:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to open worlds folder: ${error}`,
+        title: t('instanceDetails.errors.openWorldsFolderTitle'),
+        message: t('instanceDetails.errors.openWorldsFolderFailed', { error: String(error) }),
         type: "danger"
       })
     }
@@ -515,8 +520,8 @@ export function InstanceDetailsTab({
       console.error("Failed to open world folder:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to open world folder: ${error}`,
+        title: t('instanceDetails.errors.openWorldFolderTitle'),
+        message: t('instanceDetails.errors.openWorldFolderFailed', { error: String(error) }),
         type: "danger"
       })
     }
@@ -601,24 +606,24 @@ export function InstanceDetailsTab({
                     )}
                   </div>
                   <p className="text-sm text-[#7d8590] mt-1">
-                    Minecraft {getMinecraftVersion(instance)}
+                    {t('instanceDetails.minecraftVersion', { version: getMinecraftVersion(instance) })}
                     {" • "}
                     {instance.loader === "fabric" ? (
                       <>
-                        <span className="text-[#3b82f6]">Fabric Loader</span>
+                        <span className="text-[#3b82f6]">{t('instanceDetails.fabricLoader')}</span>
                         {fabricLoaderVersion && (
                           <span className="text-[#7d8590]"> {fabricLoaderVersion}</span>
                         )}
                       </>
                     ) : instance.loader === "neoforge" ? (
                       <>
-                        <span className="text-[#f97316]">NeoForge</span>
+                        <span className="text-[#f97316]">{t('common.loaders.neoforge')}</span>
                         {neoforgeVersion && (
                           <span className="text-[#7d8590]"> {neoforgeVersion}</span>
                         )}
                       </>
                     ) : (
-                      <span className="text-[#16a34a]">Vanilla</span>
+                      <span className="text-[#16a34a]">{t('common.loaders.vanilla')}</span>
                     )}
                   </p>
                 </div>
@@ -635,12 +640,12 @@ export function InstanceDetailsTab({
                     {isLaunching || isRunning ? (
                       <>
                         <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                        <span>Running...</span>
+                        <span>{t('instanceDetails.running')}</span>
                       </>
                     ) : (
                       <>
                         <Play size={18} fill="currentColor" strokeWidth={0} />
-                        <span>Play</span>
+                        <span>{t('instanceDetails.play')}</span>
                       </>
                     )}
                   </button>
@@ -649,12 +654,12 @@ export function InstanceDetailsTab({
                     className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
                   >
                     <FolderOpen size={16} />
-                    <span>Open Folder</span>
+                    <span>{t('instanceDetails.openFolder')}</span>
                   </button>
                   <button
                     onClick={() => setIsSettingsOpen(true)}
                     className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
-                    title="Instance Settings"
+                    title={t('instanceDetails.instanceSettings')}
                   >
                     <Settings size={18} />
                   </button>
@@ -669,9 +674,9 @@ export function InstanceDetailsTab({
             <div className="pr-6 border-r border-[#3a3f4b]">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Installed Mods</h2>
+                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">{t('instanceDetails.installedMods')}</h2>
                   <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
-                    {installedMods.length} {installedMods.length === 1 ? 'mod' : 'mods'}
+                    {t('instanceDetails.modCount', { count: installedMods.length })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -686,12 +691,12 @@ export function InstanceDetailsTab({
                           {isUpdatingMods ? (
                             <>
                               <Loader2 size={14} className="animate-spin" />
-                              <span>Updating...</span>
+                              <span>{t('instanceDetails.updating')}</span>
                             </>
                           ) : (
                             <>
                               <RefreshCw size={14} />
-                              <span>Update All ({availableUpdates.length})</span>
+                              <span>{t('instanceDetails.updateAll', { count: availableUpdates.length })}</span>
                             </>
                           )}
                         </button>
@@ -704,12 +709,12 @@ export function InstanceDetailsTab({
                           {isCheckingUpdates ? (
                             <>
                               <Loader2 size={14} className="animate-spin" />
-                              <span>Checking...</span>
+                              <span>{t('instanceDetails.checking')}</span>
                             </>
                           ) : (
                             <>
                               <RefreshCw size={14} />
-                              <span>Check for Updates</span>
+                              <span>{t('instanceDetails.checkForUpdates')}</span>
                             </>
                           )}
                         </button>
@@ -726,8 +731,8 @@ export function InstanceDetailsTab({
               ) : installedMods.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
-                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No mods installed</h3>
-                  <p className="text-sm text-[#7d8590]">Browse the mods tab to add mods</p>
+                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('instanceDetails.noMods.title')}</h3>
+                  <p className="text-sm text-[#7d8590]">{t('instanceDetails.noMods.description')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -765,7 +770,7 @@ export function InstanceDetailsTab({
                                 </h3>
                                 {hasUpdate && (
                                   <span className="px-1.5 py-0.5 bg-[#4572e3] text-white text-xs rounded font-medium">
-                                    Update
+                                    {t('instanceDetails.updateBadge')}
                                   </span>
                                 )}
                               </div>
@@ -816,9 +821,9 @@ export function InstanceDetailsTab({
             <div className="pl-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Worlds</h2>
+                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">{t('instanceDetails.worlds')}</h2>
                   <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
-                    {worlds.length} {worlds.length === 1 ? 'world' : 'worlds'}
+                    {t('instanceDetails.worldCount', { count: worlds.length })}
                   </span>
                 </div>
                 <button
@@ -826,7 +831,7 @@ export function InstanceDetailsTab({
                   className="flex items-center gap-1.5 text-sm text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
                 >
                   <ExternalLink size={14} />
-                  <span>Open Folder</span>
+                  <span>{t('instanceDetails.openFolder')}</span>
                 </button>
               </div>
               
@@ -837,8 +842,8 @@ export function InstanceDetailsTab({
               ) : worlds.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
-                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No worlds yet</h3>
-                  <p className="text-sm text-[#7d8590]">Launch the game to create a world</p>
+                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('instanceDetails.noWorlds.title')}</h3>
+                  <p className="text-sm text-[#7d8590]">{t('instanceDetails.noWorlds.description')}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -867,7 +872,7 @@ export function InstanceDetailsTab({
                               {world.name}
                             </h3>
                             <p className="text-xs text-[#7d8590] mt-0.5">
-                              Created {formatDate(world.created)}
+                              {t('instanceDetails.created', { date: formatDate(world.created) })}
                             </p>
                             <div className="flex items-center gap-2 text-sm text-[#7d8590] mt-0.5">
                               <span>{formatFileSize(world.size)}</span>
@@ -889,7 +894,7 @@ export function InstanceDetailsTab({
                             <button
                               onClick={() => handleDeleteWorld(world.folder_name, world.name)}
                               className="p-1.5 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer"
-                              title="Delete world"
+                              title={t('instanceDetails.deleteWorld')}
                             >
                               <Trash2 size={16} />
                             </button>
@@ -920,7 +925,7 @@ export function InstanceDetailsTab({
           title={confirmModal.title}
           message={confirmModal.message}
           type={confirmModal.type}
-          confirmText={confirmModal.type === "danger" ? "Delete" : "Confirm"}
+          confirmText={confirmModal.type === "danger" ? t('common.actions.delete') : t('common.actions.confirm')}
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal(null)}
         />

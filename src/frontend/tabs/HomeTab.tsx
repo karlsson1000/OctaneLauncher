@@ -177,8 +177,8 @@ export function HomeTab({
 
       if (diffDays === 0) return t('common.dates.today')
       if (diffDays === 1) return t('common.dates.yesterday')
-      if (diffDays < 7) return t('common.dates.daysAgo', { count: diffDays })
-      if (diffDays < 30) return t('common.dates.weeksAgo', { count: Math.floor(diffDays / 7) })
+      if (diffDays < 7) return t('common.dates.dayAgo', { count: diffDays })
+      if (diffDays < 30) return t('common.dates.weekAgo', { count: Math.floor(diffDays / 7) })
 
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     }
