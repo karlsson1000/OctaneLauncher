@@ -8,14 +8,12 @@
     "dates": {
       "today": "Today",
       "yesterday": "Yesterday",
-      "dayAgo": "{{count}} day ago",
-      "dayAgo_plural": "{{count}} days ago",
-      "weekAgo": "{{count}} week ago",
-      "weekAgo_plural": "{{count}} weeks ago",
+      "dayAgo_one": "{{count}} day ago",
+      "dayAgo_other": "{{count}} days ago",
+      "weekAgo_one": "{{count}} week ago",
+      "weekAgo_other": "{{count}} weeks ago",
       "hourAgo": "{{count}}h ago",
-      "hourAgo_plural": "{{count}}h ago",
-      "minuteAgo": "{{count}}m ago",
-      "minuteAgo_plural": "{{count}}m ago"
+      "minuteAgo": "{{count}}m ago"
     },
     "actions": {
       "open": "Open",
