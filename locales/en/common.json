@@ -138,6 +138,8 @@
   },
   "settings": {
     "title": "Settings",
+    "loadingSettings": "Loading settings...",
+    "buildLabel": "Build",
     "tabs": {
       "game": "Game",
       "appearance": "Appearance",
@@ -156,31 +158,29 @@
         "title": "Java Runtime",
         "autoDetect": "Auto-detect (Recommended)",
         "customPath": "Custom Path...",
-        "scanButton": "Scan",
+        "scan": "Scan",
         "placeholder": "C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
       }
     },
     "appearance": {
       "sidebarBackground": {
         "title": "Sidebar Background",
-        "uploadPrompt": "Click to upload image",
-        "fileTypes": "PNG, JPG up to 10MB",
-        "changeButton": "Change",
-        "removeButton": "Remove"
+        "change": "Change",
+        "remove": "Remove",
+        "clickToUpload": "Click to upload image",
+        "fileTypes": "PNG, JPG up to 10MB"
       }
     },
     "language": {
       "title": "Display Language",
       "description": "Select your preferred language for the launcher interface.",
-      "helpTranslate": "Help translate at translate.atomiclauncher.com"
+      "helpTranslate": "Help translate at "
     },
-    "integrations": {
-      "discord": {
-        "title": "Discord Rich Presence",
-        "enabled": "Enabled",
-        "disabled": "Disabled",
-        "showStatus": "Show Discord Status"
-      }
+    "discord": {
+      "title": "Discord Rich Presence",
+      "showStatus": "Show Discord Status",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
     },
     "system": {
       "gameDirectory": {
@@ -190,6 +190,16 @@
         "title": "Version Information",
         "launcherVersion": "Launcher Version"
       }
+    },
+    "errors": {
+      "invalidFile": "Invalid File",
+      "selectImage": "Please select an image file (PNG, JPG, etc.)",
+      "fileTooLarge": "File Too Large",
+      "imageTooLarge": "Image must be smaller than 10MB",
+      "failedToSave": "Failed to save settings",
+      "failedToSaveBackground": "Failed to save background",
+      "failedToRemoveBackground": "Failed to remove background",
+      "failedToReadFile": "Failed to read image file"
     }
   },
   "navigation": {
@@ -246,48 +256,6 @@
     },
     "import": {
       "dialogTitle": "Instance Files"
-    }
-  },
-  "settingsModal": {
-    "loadingSettings": "Loading settings...",
-    "buildLabel": "Build",
-    "tabs": {
-      "game": "Game",
-      "appearance": "Appearance", 
-      "language": "Language",
-      "integrations": "Integrations",
-      "about": "System"
-    },
-    "java": {
-      "autoDetect": "Auto-detect (Recommended)",
-      "customPath": "Custom Path...",
-      "scan": "Scan"
-    },
-    "sidebarBackground": {
-      "change": "Change",
-      "remove": "Remove",
-      "clickToUpload": "Click to upload image",
-      "fileTypes": "PNG, JPG up to 10MB"
-    },
-    "language": {
-      "description": "Select your preferred language for the launcher interface.",
-      "helpTranslate": "Help translate at translate.atomiclauncher.com"
-    },
-    "discord": {
-      "title": "Discord Rich Presence",
-      "showStatus": "Show Discord Status",
-      "enabled": "Enabled",
-      "disabled": "Disabled"
-    },
-    "errors": {
-      "invalidFile": "Invalid File",
-      "selectImage": "Please select an image file (PNG, JPG, etc.)",
-      "fileTooLarge": "File Too Large",
-      "imageTooLarge": "Image must be smaller than 10MB",
-      "failedToSave": "Failed to save settings",
-      "failedToSaveBackground": "Failed to save background",
-      "failedToRemoveBackground": "Failed to remove background",
-      "failedToReadFile": "Failed to read image file"
     }
   },
   "modal": {
