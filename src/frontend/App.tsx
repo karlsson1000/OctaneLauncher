@@ -491,7 +491,7 @@ function App() {
       <div 
         data-tauri-drag-region
         style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
-        className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4 border-b border-[#3a3f4b]"
+        className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4"
       >
         <div className="flex items-center gap-2 mr-4">
           <img src="/logo.png" alt="Atomic Launcher" className="h-5 w-5" />
