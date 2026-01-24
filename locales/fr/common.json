@@ -8,10 +8,12 @@
     "dates": {
       "today": "",
       "yesterday": "",
-      "daysAgo": "",
-      "daysAgo_plural": "",
-      "weeksAgo": "",
-      "weeksAgo_plural": ""
+      "dayAgo_one": "",
+      "dayAgo_other": "",
+      "weekAgo_one": "",
+      "weekAgo_other": "",
+      "hourAgo": "",
+      "minuteAgo": ""
     },
     "actions": {
       "open": "",
@@ -134,6 +136,8 @@
   },
   "settings": {
     "title": "",
+    "loadingSettings": "",
+    "buildLabel": "",
     "tabs": {
       "game": "",
       "appearance": "",
@@ -152,17 +156,17 @@
         "title": "",
         "autoDetect": "",
         "customPath": "",
-        "scanButton": "",
+        "scan": "",
         "placeholder": ""
       }
     },
     "appearance": {
       "sidebarBackground": {
         "title": "",
-        "uploadPrompt": "",
-        "fileTypes": "",
-        "changeButton": "",
-        "removeButton": ""
+        "change": "",
+        "remove": "",
+        "clickToUpload": "",
+        "fileTypes": ""
       }
     },
     "language": {
@@ -170,13 +174,11 @@
       "description": "",
       "helpTranslate": ""
     },
-    "integrations": {
-      "discord": {
-        "title": "",
-        "enabled": "",
-        "disabled": "",
-        "showStatus": ""
-      }
+    "discord": {
+      "title": "",
+      "showStatus": "",
+      "enabled": "",
+      "disabled": ""
     },
     "system": {
       "gameDirectory": {
@@ -186,6 +188,16 @@
         "title": "",
         "launcherVersion": ""
       }
+    },
+    "errors": {
+      "invalidFile": "",
+      "selectImage": "",
+      "fileTooLarge": "",
+      "imageTooLarge": "",
+      "failedToSave": "",
+      "failedToSaveBackground": "",
+      "failedToRemoveBackground": "",
+      "failedToReadFile": ""
     }
   },
   "navigation": {
@@ -241,50 +253,7 @@
       "failedToCreate": ""
     },
     "import": {
-      "dialogTitle": "",
-      "fileExtensions": ""
-    }
-  },
-  "settingsModal": {
-    "loadingSettings": "",
-    "buildLabel": "",
-    "tabs": {
-      "game": "",
-      "appearance": "",
-      "language": "",
-      "integrations": "",
-      "about": ""
-    },
-    "java": {
-      "autoDetect": "",
-      "customPath": "",
-      "scan": ""
-    },
-    "sidebarBackground": {
-      "change": "",
-      "remove": "",
-      "clickToUpload": "",
-      "fileTypes": ""
-    },
-    "language": {
-      "description": "",
-      "helpTranslate": ""
-    },
-    "discord": {
-      "title": "",
-      "showStatus": "",
-      "enabled": "",
-      "disabled": ""
-    },
-    "errors": {
-      "invalidFile": "",
-      "selectImage": "",
-      "fileTooLarge": "",
-      "imageTooLarge": "",
-      "failedToSave": "",
-      "failedToSaveBackground": "",
-      "failedToRemoveBackground": "",
-      "failedToReadFile": ""
+      "dialogTitle": ""
     }
   },
   "modal": {
@@ -338,6 +307,113 @@
       "openFolder": "",
       "duplicate": "",
       "delete": ""
+    }
+  },
+  "instanceDetails": {
+    "minecraftVersion": "",
+    "fabricLoader": "",
+    "running": "",
+    "play": "",
+    "openFolder": "",
+    "instanceSettings": "",
+    "installedMods": "",
+    "modCount": "",
+    "modCount_plural": "",
+    "updating": "",
+    "updateAll": "",
+    "checking": "",
+    "checkForUpdates": "",
+    "noMods": {
+      "title": "",
+      "description": ""
+    },
+    "updateBadge": "",
+    "worlds": "",
+    "worldCount": "",
+    "worldCount_plural": "",
+    "noWorlds": {
+      "title": "",
+      "description": ""
+    },
+    "created": "",
+    "deleteWorld": "",
+    "playtime": {
+      "hoursMinutes": "",
+      "minutes": "",
+      "seconds": ""
+    },
+    "date": {
+      "unknown": ""
+    },
+    "confirmDeleteWorld": {
+      "title": "",
+      "message": ""
+    },
+    "errors": {
+      "checkUpdatesTitle": "",
+      "checkUpdatesFailed": "",
+      "deleteModTitle": "",
+      "deleteModFailed": "",
+      "deleteWorldTitle": "",
+      "deleteWorldFailed": "",
+      "toggleModTitle": "",
+      "toggleModFailed": "",
+      "openWorldsFolderTitle": "",
+      "openWorldsFolderFailed": "",
+      "openWorldFolderTitle": "",
+      "openWorldFolderFailed": ""
+    }
+  },
+  "instanceSettings": {
+    "title": "",
+    "instanceIcon": {
+      "label": "",
+      "uploadButton": "",
+      "changeButton": "",
+      "removeButton": ""
+    },
+    "instanceName": {
+      "label": "",
+      "placeholder": ""
+    },
+    "minecraftVersion": {
+      "label": ""
+    },
+    "fabricLoader": {
+      "label": "",
+      "stable": ""
+    },
+    "neoforgeLoader": {
+      "label": "",
+      "noVersions": ""
+    },
+    "deleteInstance": {
+      "title": "",
+      "message": "",
+      "button": "",
+      "deleting": ""
+    },
+    "removeIcon": {
+      "title": "",
+      "message": ""
+    },
+    "updateMinecraftVersion": {
+      "title": "",
+      "message": ""
+    },
+    "errors": {
+      "emptyName": "",
+      "invalidImageFile": "",
+      "imageTooLarge": "",
+      "setIconFailed": "",
+      "removeIconFailed": "",
+      "deleteInstanceFailed": "",
+      "loadVersionsFailed": "",
+      "loadFabricVersionsFailed": "",
+      "loadNeoforgeVersionsFailed": "",
+      "updateVersionFailed": "",
+      "updateFabricFailed": "",
+      "updateNeoforgeFailed": ""
     }
   }
 }

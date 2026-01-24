@@ -8,10 +8,12 @@
     "dates": {
       "today": "Idag",
       "yesterday": "Igår",
-      "daysAgo": "{{count}} dag sedan",
-      "daysAgo_plural": "{{count}} dagar sedan",
-      "weeksAgo": "{{count}} vecka sedan",
-      "weeksAgo_plural": "{{count}} veckor sedan"
+      "dayAgo_one": "{{count}} dag sedan",
+      "dayAgo_other": "{{count}} dagar sedan",
+      "weekAgo_one": "{{count}} vecka sedan",
+      "weekAgo_other": "{{count}} veckor sedan",
+      "hourAgo": "{{count}}t sedan",
+      "minuteAgo": "{{count}}m sedan"
     },
     "actions": {
       "open": "Öppna",
@@ -134,6 +136,8 @@
   },
   "settings": {
     "title": "Inställningar",
+    "loadingSettings": "Laddar inställningar...",
+    "buildLabel": "Byggnad",
     "tabs": {
       "game": "Spel",
       "appearance": "Utseende",
@@ -152,31 +156,29 @@
         "title": "Java Runtime",
         "autoDetect": "Auto-detektera (rekommenderas)",
         "customPath": "Anpassad sökväg...",
-        "scanButton": "Skanna",
+        "scan": "Skanna",
         "placeholder": "C:\\Programfiler\\Java\\jdk-21\\bin\\javaw.exe"
       }
     },
     "appearance": {
       "sidebarBackground": {
         "title": "Sidofältets bakgrund",
-        "uploadPrompt": "Klicka för att ladda upp bild",
-        "fileTypes": "PNG, JPG upp till 10 MB",
-        "changeButton": "Ändra",
-        "removeButton": "Ta bort"
+        "change": "Ändra",
+        "remove": "Ta bort",
+        "clickToUpload": "Klicka för att ladda upp bild",
+        "fileTypes": "PNG, JPG upp till 10 MB"
       }
     },
     "language": {
       "title": "Visningsspråk",
       "description": "Välj önskat språk för launcher gränssnittet.",
-      "helpTranslate": "Hjälp med att översätta på translate.atomiclauncher.com"
+      "helpTranslate": "Hjälp att översätta på "
     },
-    "integrations": {
-      "discord": {
-        "title": "Discord Rich Presence",
-        "enabled": "Aktiverad",
-        "disabled": "Inaktiverad",
-        "showStatus": "Visa Discords Status"
-      }
+    "discord": {
+      "title": "Discord Rich Presence",
+      "showStatus": "Visa Discords Status",
+      "enabled": "Aktiverad",
+      "disabled": "Inaktiverad"
     },
     "system": {
       "gameDirectory": {
@@ -186,6 +188,16 @@
         "title": "Version Information",
         "launcherVersion": "Launcher Version"
       }
+    },
+    "errors": {
+      "invalidFile": "Ogiltig fil",
+      "selectImage": "Vänligen välj en bildfil (PNG, JPG, etc.)",
+      "fileTooLarge": "Filen är för stor",
+      "imageTooLarge": "Bilden måste vara mindre än 10MB",
+      "failedToSave": "Kunde inte spara inställningar",
+      "failedToSaveBackground": "Det gick inte att spara bakgrunden",
+      "failedToRemoveBackground": "Det gick inte att ta bort bakgrunden",
+      "failedToReadFile": "Det gick inte att läsa bildfilen"
     }
   },
   "navigation": {
@@ -241,50 +253,7 @@
       "failedToCreate": "Det gick inte att skapa instans"
     },
     "import": {
-      "dialogTitle": "Instans filer",
-      "fileExtensions": "mrpack, zip"
-    }
-  },
-  "settingsModal": {
-    "loadingSettings": "Laddar inställningar...",
-    "buildLabel": "Byggnad",
-    "tabs": {
-      "game": "Spel",
-      "appearance": "Utseende",
-      "language": "Språk",
-      "integrations": "Integrationer",
-      "about": "System"
-    },
-    "java": {
-      "autoDetect": "Auto-detektera (rekommenderas)",
-      "customPath": "Anpassad sökväg...",
-      "scan": "Skanna"
-    },
-    "sidebarBackground": {
-      "change": "Ändra",
-      "remove": "Ta bort",
-      "clickToUpload": "Klicka för att ladda upp bild",
-      "fileTypes": "PNG, JPG upp till 10 MB"
-    },
-    "language": {
-      "description": "Välj önskat språk för launcher gränssnittet.",
-      "helpTranslate": "Hjälp med att översätta på translate.atomiclauncher.com"
-    },
-    "discord": {
-      "title": "Discord Rich Presence",
-      "showStatus": "Visa Discords Status",
-      "enabled": "Aktiverad",
-      "disabled": "Inaktiverad"
-    },
-    "errors": {
-      "invalidFile": "Ogiltig fil",
-      "selectImage": "Vänligen välj en bildfil (PNG, JPG, etc.)",
-      "fileTooLarge": "Filen är för stor",
-      "imageTooLarge": "Bilden måste vara mindre än 10MB",
-      "failedToSave": "Kunde inte spara inställningar",
-      "failedToSaveBackground": "Det gick inte att spara bakgrunden",
-      "failedToRemoveBackground": "Det gick inte att ta bort bakgrunden",
-      "failedToReadFile": "Det gick inte att läsa bildfilen"
+      "dialogTitle": "Instans filer"
     }
   },
   "modal": {
@@ -338,6 +307,113 @@
       "openFolder": "Öppna mapp",
       "duplicate": "Duplicera",
       "delete": "Radera"
+    }
+  },
+  "instanceDetails": {
+    "minecraftVersion": "Minecraft Version",
+    "fabricLoader": "Fabric Loader",
+    "running": "Igång...",
+    "play": "Spela",
+    "openFolder": "Öppna mapp",
+    "instanceSettings": "Instans inställningar",
+    "installedMods": "Installerade mods",
+    "modCount": "{{count}} mod",
+    "modCount_plural": "{{count}} mods",
+    "updating": "Uppdaterar...",
+    "updateAll": "Uppdatera alla ({{count}})",
+    "checking": "Kontrollerar...",
+    "checkForUpdates": "Sök efter uppdateringar",
+    "noMods": {
+      "title": "Inga mods installerade",
+      "description": "Bläddra i mods fliken för att lägga till mods"
+    },
+    "updateBadge": "Uppdatera",
+    "worlds": "Världar",
+    "worldCount": "{{count}} värld",
+    "worldCount_plural": "{{count}} världar",
+    "noWorlds": {
+      "title": "Inga världar ännu",
+      "description": "Starta spelet för att skapa en värld"
+    },
+    "created": "Skapad {{date}}",
+    "deleteWorld": "Radera värld",
+    "playtime": {
+      "hoursMinutes": "{{hours}}h {{minutes}}m spelade",
+      "minutes": "{{minutes}}m spelade",
+      "seconds": "{{seconds}}s spelade"
+    },
+    "date": {
+      "unknown": "Okänd"
+    },
+    "confirmDeleteWorld": {
+      "title": "Radera värld",
+      "message": "Är du säker på att du vill radera \"{{name}}\"?\n\nDetta kan inte ångras."
+    },
+    "errors": {
+      "checkUpdatesTitle": "Fel",
+      "checkUpdatesFailed": "Det gick inte att söka efter uppdateringar: {{error}}",
+      "deleteModTitle": "Fel",
+      "deleteModFailed": "Det gick inte att ta bort mod: {{error}}",
+      "deleteWorldTitle": "Fel",
+      "deleteWorldFailed": "Det gick inte att ta bort världen: {{error}}",
+      "toggleModTitle": "Fel",
+      "toggleModFailed": "Misslyckades med {{action}} mod: {{error}}",
+      "openWorldsFolderTitle": "Fel",
+      "openWorldsFolderFailed": "Det gick inte att öppna världsmappen: {{error}}",
+      "openWorldFolderTitle": "Fel",
+      "openWorldFolderFailed": "Det gick inte att öppna världsmappen: {{error}}"
+    }
+  },
+  "instanceSettings": {
+    "title": "Instansinställningar",
+    "instanceIcon": {
+      "label": "Instans Ikon",
+      "uploadButton": "Ladda upp ikon",
+      "changeButton": "Ändra ikon",
+      "removeButton": "Ta bort ikon"
+    },
+    "instanceName": {
+      "label": "Instansnamn",
+      "placeholder": "Ange instansnamn"
+    },
+    "minecraftVersion": {
+      "label": "Minecraft Version"
+    },
+    "fabricLoader": {
+      "label": "Fabric Loader Version",
+      "stable": "(Stabil)"
+    },
+    "neoforgeLoader": {
+      "label": "NeoForge Loader Version",
+      "noVersions": "Ingen version tillgänglig"
+    },
+    "deleteInstance": {
+      "title": "Radera instans",
+      "message": "Är du säker på att du vill radera \"{{name}}\"?\n\nDetta kan inte ångras.",
+      "button": "Radera instans",
+      "deleting": "Tar bort..."
+    },
+    "removeIcon": {
+      "title": "Ta bort ikon",
+      "message": "Är du säker på att du vill ta bort den här instans ikonen?"
+    },
+    "updateMinecraftVersion": {
+      "title": "Uppdatera Minecraft versionen",
+      "message": "Är du säker på att du vill uppdatera denna instans till Minecraft {{version}}?\n\nDetta kommer att ladda ner den nya versionen och uppdatera instansen. Dina världar och inställningar kommer att bevaras."
+    },
+    "errors": {
+      "emptyName": "Instansnamnet kan inte vara tomt",
+      "invalidImageFile": "Vänligen välj en bildfil (PNG, JPG, etc)",
+      "imageTooLarge": "Bilden måste vara mindre än 5 MB",
+      "setIconFailed": "Det gick inte att ange ikon: {{error}}",
+      "removeIconFailed": "Misslyckades att ta bort ikonen: {{error}}",
+      "deleteInstanceFailed": "Det gick inte att ta bort instansen: {{error}}",
+      "loadVersionsFailed": "Det gick inte att ladda Minecraft versionerna: {{error}}",
+      "loadFabricVersionsFailed": "Det gick inte att ladda Fabric versioner: {{error}}",
+      "loadNeoforgeVersionsFailed": "Det gick inte att ladda NeoForge versioner: {{error}}",
+      "updateVersionFailed": "Det gick inte att uppdatera Minecraft version: {{error}}",
+      "updateFabricFailed": "Det gick inte att uppdatera Fabric loader: {{error}}",
+      "updateNeoforgeFailed": "Det gick inte att uppdatera NeoForge loader: {{error}}"
     }
   }
 }

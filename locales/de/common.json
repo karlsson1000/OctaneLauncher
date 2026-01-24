@@ -8,10 +8,12 @@
     "dates": {
       "today": "Heute",
       "yesterday": "Gestern",
-      "daysAgo": "Vor {{count}} Tag",
-      "daysAgo_plural": "Vor {{count}} Tagen",
-      "weeksAgo": "Vor {{count}} Woche",
-      "weeksAgo_plural": "Vor {{count}} Wochen"
+      "dayAgo_one": "Vor {{count}} Tag",
+      "dayAgo_other": "Vor {{count}} Tagen",
+      "weekAgo_one": "Vor {{count}} Woche",
+      "weekAgo_other": "Vor {{count}} Wochen",
+      "hourAgo": "Vor {{count}}Std",
+      "minuteAgo": "Vor {{count}}m"
     },
     "actions": {
       "open": "Öffnen",
@@ -134,6 +136,8 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "loadingSettings": "Einstellungen werden geladen...",
+    "buildLabel": "Version",
     "tabs": {
       "game": "Spiel",
       "appearance": "Aussehen",
@@ -152,31 +156,29 @@
         "title": "Java Runtime",
         "autoDetect": "Auto-Erkennung (empfohlen)",
         "customPath": "Benutzerdefinierter Pfad...",
-        "scanButton": "Scannen",
+        "scan": "Scannen",
         "placeholder": "C:\\Programme\\Java\\jdk-21\\bin\\javaw.exe"
       }
     },
     "appearance": {
       "sidebarBackground": {
         "title": "Sidebar Hintergrund",
-        "uploadPrompt": "Zum Bild hochladen, klicken",
-        "fileTypes": "PNG, JPG bis zu 10 MB",
-        "changeButton": "Ändern",
-        "removeButton": "Entfernen"
+        "change": "Ändern",
+        "remove": "Entfernen",
+        "clickToUpload": "Zum Bild hochladen, klicken",
+        "fileTypes": "PNG, JPG bis zu 10 MB"
       }
     },
     "language": {
       "title": "Anzeigesprache",
       "description": "Wählen Sie Ihre bevorzugte Sprache für das Launcher-Interface.",
-      "helpTranslate": "Hilf bei der Übersetzung auf translate.atomiclauncher.com"
+      "helpTranslate": "Hilf bei der Übersetzung bei "
     },
-    "integrations": {
-      "discord": {
-        "title": "Discord Rich Presence",
-        "enabled": "Aktiviert",
-        "disabled": "Deaktiviert",
-        "showStatus": "Discord Status anzeigen"
-      }
+    "discord": {
+      "title": "Discord Rich Presence",
+      "showStatus": "Discord Status anzeigen",
+      "enabled": "Aktiviert",
+      "disabled": "Deaktiviert"
     },
     "system": {
       "gameDirectory": {
@@ -186,6 +188,16 @@
         "title": "Versionsinformation",
         "launcherVersion": "Launcherversion"
       }
+    },
+    "errors": {
+      "invalidFile": "Ungültige Datei",
+      "selectImage": "Bitte wählen Sie eine Bilddatei (PNG, JPG, etc.)",
+      "fileTooLarge": "Datei ist zu groß",
+      "imageTooLarge": "Bild muss kleiner als 10MB sein",
+      "failedToSave": "Fehler beim Speichern der Einstellungen",
+      "failedToSaveBackground": "Fehler beim Speichern des Hintergrunds",
+      "failedToRemoveBackground": "Fehler beim entfernen des Hintergrunds",
+      "failedToReadFile": "Fehler beim Lesen der Bilddatei"
     }
   },
   "navigation": {
@@ -241,50 +253,7 @@
       "failedToCreate": "Fehler beim Erstellen der Instanz"
     },
     "import": {
-      "dialogTitle": "Instanzdateien",
-      "fileExtensions": "mrpack, zip"
-    }
-  },
-  "settingsModal": {
-    "loadingSettings": "Einstellungen werden geladen...",
-    "buildLabel": "Version",
-    "tabs": {
-      "game": "Spiel",
-      "appearance": "Aussehen",
-      "language": "Sprache",
-      "integrations": "Integrationen",
-      "about": "System"
-    },
-    "java": {
-      "autoDetect": "Auto-Erkennung (empfohlen)",
-      "customPath": "Benutzerdefinierter Pfad...",
-      "scan": "Scannen"
-    },
-    "sidebarBackground": {
-      "change": "Ändern",
-      "remove": "Entfernen",
-      "clickToUpload": "Zum Bild hochladen, klicken",
-      "fileTypes": "PNG, JPG bis zu 10 MB"
-    },
-    "language": {
-      "description": "Wählen Sie Ihre bevorzugte Sprache für das Launcher-Interface.",
-      "helpTranslate": "Hilf bei der Übersetzung auf translate.atomiclauncher.com"
-    },
-    "discord": {
-      "title": "Discord Rich Presence",
-      "showStatus": "Discord Status anzeigen",
-      "enabled": "Aktiviert",
-      "disabled": "Deaktiviert"
-    },
-    "errors": {
-      "invalidFile": "Ungültige Datei",
-      "selectImage": "Bitte wählen Sie eine Bilddatei (PNG, JPG, etc.)",
-      "fileTooLarge": "Datei ist zu groß",
-      "imageTooLarge": "Bild muss kleiner als 10MB sein",
-      "failedToSave": "Fehler beim Speichern der Einstellungen",
-      "failedToSaveBackground": "Fehler beim Speichern des Hintergrunds",
-      "failedToRemoveBackground": "Fehler beim entfernen des Hintergrunds",
-      "failedToReadFile": "Fehler beim Lesen der Bilddatei"
+      "dialogTitle": "Instanzdateien"
     }
   },
   "modal": {
@@ -338,6 +307,113 @@
       "openFolder": "Ordner öffnen",
       "duplicate": "Klonen",
       "delete": "Löschen"
+    }
+  },
+  "instanceDetails": {
+    "minecraftVersion": "Minecraft-Version",
+    "fabricLoader": "Fabric Loader",
+    "running": "Läuft...",
+    "play": "Spielen",
+    "openFolder": "Ordner öffnen",
+    "instanceSettings": "Instanzeinstellungen",
+    "installedMods": "Installierte Mods",
+    "modCount": "{{count}} Mod",
+    "modCount_plural": "{{count}} Mods",
+    "updating": "Aktualisieren...",
+    "updateAll": "Alle aktualisieren ({{count}})",
+    "checking": "Überprüfen...",
+    "checkForUpdates": "Auf Updates prüfen",
+    "noMods": {
+      "title": "Keine Mods installiert",
+      "description": "Mods Tab durchsuchen, um Mods hinzuzufügen"
+    },
+    "updateBadge": "Aktualisieren",
+    "worlds": "Welten",
+    "worldCount": "{{count}} Welt",
+    "worldCount_plural": "{{count}} Welten",
+    "noWorlds": {
+      "title": "Noch keine Welten",
+      "description": "Starte das Spiel, um eine Welt zu erstellen"
+    },
+    "created": "{{date}} erstellt",
+    "deleteWorld": "Welt löschen",
+    "playtime": {
+      "hoursMinutes": "{{hours}}Std {{minutes}}m gespielt",
+      "minutes": "{{minutes}}m gespielt",
+      "seconds": "{{seconds}}s gespielt"
+    },
+    "date": {
+      "unknown": "Unbekannt"
+    },
+    "confirmDeleteWorld": {
+      "title": "Welt löschen",
+      "message": "Sind Sie sicher, dass Sie \"{{name}}\" löschen wollen?\n\nDiese Aktion kann nicht rückgängig gemacht werden."
+    },
+    "errors": {
+      "checkUpdatesTitle": "Fehler",
+      "checkUpdatesFailed": "Fehler beim Prüfen auf Updates: {{error}}",
+      "deleteModTitle": "Fehler",
+      "deleteModFailed": "Fehler beim Löschen von Mod: {{error}}",
+      "deleteWorldTitle": "Fehler",
+      "deleteWorldFailed": "Fehler beim Löschen der Welt: {{error}}",
+      "toggleModTitle": "Fehler",
+      "toggleModFailed": "Fehler beim {{action}} Mod: {{error}}",
+      "openWorldsFolderTitle": "Fehler",
+      "openWorldsFolderFailed": "Fehler beim Öffnen des Welten-Ordners: {{error}}",
+      "openWorldFolderTitle": "Fehler",
+      "openWorldFolderFailed": "Fehler beim Öffnen des Welt-Ordners: {{error}}"
+    }
+  },
+  "instanceSettings": {
+    "title": "Instanzeinstellungen",
+    "instanceIcon": {
+      "label": "Instanzsymbol",
+      "uploadButton": "Symbol hochladen",
+      "changeButton": "Symbol ändern",
+      "removeButton": "Symbol entfernen"
+    },
+    "instanceName": {
+      "label": "Instanzname",
+      "placeholder": "Instanzname eingeben"
+    },
+    "minecraftVersion": {
+      "label": "Minecraft-Version"
+    },
+    "fabricLoader": {
+      "label": "Fabric-Loader-Version",
+      "stable": "(Stabil)"
+    },
+    "neoforgeLoader": {
+      "label": "NeoForge Loader Version",
+      "noVersions": "Keine Versionen verfügbar"
+    },
+    "deleteInstance": {
+      "title": "Instanz löschen",
+      "message": "Sind Sie sicher, dass Sie \"{{name}}\"löschen wollen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
+      "button": "Instanz löschen",
+      "deleting": "Löschen..."
+    },
+    "removeIcon": {
+      "title": "Symbol entfernen",
+      "message": "Sind Sie sicher, dass Sie dieses Instanzsymbol entfernen möchten?"
+    },
+    "updateMinecraftVersion": {
+      "title": "Minecraft-Version aktualisieren",
+      "message": "Sind Sie sicher, dass Sie diese Instanz auf Minecraft {{version}}aktualisieren möchten?\n\nDies wird die neue Version herunterladen und die Instanz aktualisieren. Deine Welten und Einstellungen werden beibehalten."
+    },
+    "errors": {
+      "emptyName": "Instanzname darf nicht leer sein",
+      "invalidImageFile": "Bitte wählen Sie eine Bilddatei (PNG, JPG, oder WebP)",
+      "imageTooLarge": "Bild muss kleiner als 5MB sein",
+      "setIconFailed": "Fehler beim Setzen des Symbols: {{error}}",
+      "removeIconFailed": "Fehler beim Entfernen des Symbols: {{error}}",
+      "deleteInstanceFailed": "Fehler beim Löschen der Instanz: {{error}}",
+      "loadVersionsFailed": "Fehler beim Laden der Minecraft-Versionen: {{error}}",
+      "loadFabricVersionsFailed": "Fehler beim Laden der Fabric-Versionen: {{error}}",
+      "loadNeoforgeVersionsFailed": "Fehler beim Laden der NeoForge-Versionen: {{error}}",
+      "updateVersionFailed": "Fehler beim Aktualisieren der Minecraft-Version: {{error}}",
+      "updateFabricFailed": "Fehler beim Aktualisieren des Fabric-Loaders: {{error}}",
+      "updateNeoforgeFailed": "Fehler beim Aktualisieren des NeoForge Loaders: {{error}}"
     }
   }
 }
