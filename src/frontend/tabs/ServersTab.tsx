@@ -1,6 +1,7 @@
 import { Server, Plus, Search, Trash2, Play } from "lucide-react"
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
+import { useTranslation } from "react-i18next"
 import { CreateServerModal } from "../modals/CreateServerModal"
 import { ConfirmModal } from "../modals/ConfirmModal"
 
@@ -43,6 +44,7 @@ interface ServersTabProps {
 }
 
 export function ServersTab({ runningInstances }: ServersTabProps) {
+  const { t } = useTranslation()
   const [servers, setServers] = useState<ServerInfo[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedServer, setSelectedServer] = useState<ServerInfo | null>(null)
@@ -201,7 +203,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
     e.stopPropagation()
     
     if (server.status !== "online") {
-      alert("Server is not online!")
+      alert(t('servers.errors.serverNotOnline'))
       return
     }
 
@@ -219,7 +221,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
       }, 1000)
     } catch (error) {
       console.error("Failed to launch server:", error)
-      alert(`Failed to launch: ${error}`)
+      alert(`${t('servers.errors.launchFailed')}: ${error}`)
       setLaunchingServer(null)
     }
   }
@@ -242,6 +244,14 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
       case "online": return "bg-[#16a34a]/10"
       case "offline": return "bg-[#dc2626]/10"
       default: return "bg-[#7d8590]/10"
+    }
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "online": return t('servers.status.online')
+      case "offline": return t('servers.status.offline')
+      default: return t('servers.status.unknown')
     }
   }
 
@@ -310,8 +320,8 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Servers</h1>
-              <p className="text-sm text-[#7d8590] mt-0.5">Manage your favorite Minecraft servers</p>
+              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">{t('servers.title')}</h1>
+              <p className="text-sm text-[#7d8590] mt-0.5">{t('servers.subtitle')}</p>
             </div>
             <div className="flex items-center gap-2">
               {servers.length > 0 && (
@@ -319,7 +329,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
                   <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder={t('servers.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-56 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
@@ -331,7 +341,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                 className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} />
-                Add Server
+                {t('servers.addButton')}
               </button>
             </div>
           </div>
@@ -339,21 +349,21 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
           {servers.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14">
               <Server size={48} className="text-[#7d8590] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No servers added</h3>
-              <p className="text-sm text-[#7d8590] mb-4">Add your first server to get started</p>
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('servers.noServers.title')}</h3>
+              <p className="text-sm text-[#7d8590] mb-4">{t('servers.noServers.description')}</p>
               <button
                 onClick={() => setShowAddModal(true)}
                 className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
-                <span>Add Server</span>
+                <span>{t('servers.noServers.addButton')}</span>
               </button>
             </div>
           ) : filteredServers.length === 0 ? (
             <div className="rounded-md p-8 flex flex-col items-center justify-center">
               <Search size={48} className="text-[#e6e6e6] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No servers found</h3>
-              <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
+              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('servers.noSearchResults.title')}</h3>
+              <p className="text-sm text-[#7d8590]">{t('servers.noSearchResults.description')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -376,7 +386,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                         setServerToDelete(server.name)
                       }}
                       className="absolute top-4 right-4 px-3 py-2 bg-[#dc2626]/10 hover:bg-[#dc2626]/20 text-[#dc2626] rounded text-xs font-medium transition-all cursor-pointer z-20"
-                      title="Remove server"
+                      title={t('servers.removeTooltip')}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -404,7 +414,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBgColor(server.status)} ${getStatusColor(server.status)}`}>
-                            {server.status}
+                            {getStatusText(server.status)}
                           </span>
                           {server.version && (
                             <span className="text-xs text-[#7d8590] truncate">{server.version}</span>
@@ -421,7 +431,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
                     {server.status === "online" && server.players_online !== undefined && (
                       <div className="flex items-center justify-between mb-3 relative z-0">
-                        <span className="text-xs text-[#7d8590]">Players</span>
+                        <span className="text-xs text-[#7d8590]">{t('servers.players')}</span>
                         <span className="text-sm font-medium text-[#e6e6e6]">
                           {server.players_online.toLocaleString()} / {server.players_max?.toLocaleString()}
                         </span>
@@ -447,7 +457,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                         <Play size={16} fill="currentColor" strokeWidth={0} />
                       )}
                       <span>
-                        {isAnyInstanceRunning ? "Instance Running" : isLaunching ? "Launching..." : "Play"}
+                        {isAnyInstanceRunning ? t('servers.instanceRunning') : isLaunching ? t('servers.launching') : t('servers.play')}
                       </span>
                     </button>
                   </div>
@@ -467,10 +477,10 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
         <ConfirmModal
           isOpen={serverToDelete !== null}
-          title="Remove Server"
-          message={`Are you sure you want to remove "${serverToDelete}"? This action cannot be undone.`}
-          confirmText="Remove"
-          cancelText="Cancel"
+          title={t('servers.confirmRemove.title')}
+          message={t('servers.confirmRemove.message', { name: serverToDelete })}
+          confirmText={t('servers.confirmRemove.confirm')}
+          cancelText={t('common.actions.cancel')}
           type="danger"
           onConfirm={handleDeleteServer}
           onCancel={() => setServerToDelete(null)}

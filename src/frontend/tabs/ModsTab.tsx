@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Search, Download, Loader2, Package, ChevronDown, ChevronLeft, ChevronRight, Check } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
 interface ModFile {
@@ -16,6 +17,7 @@ interface ModsSelectorProps {
 }
 
 export function ModsSelector({ instances, selectedInstance, onSetSelectedInstance }: ModsSelectorProps) {
+  const { t } = useTranslation()
   const [showInstanceSelector, setShowInstanceSelector] = useState(false)
   const instanceSelectorRef = useRef<HTMLDivElement>(null)
   const [instanceIcons, setInstanceIcons] = useState<Record<string, string | null>>({})
@@ -89,12 +91,12 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
 
   const getLoaderDisplay = (instance: Instance): { name: string; color: string } => {
     if (instance.loader === "fabric") {
-      return { name: "Fabric", color: "text-[#3b82f6]" }
+      return { name: t('common.loaders.fabric'), color: "text-[#3b82f6]" }
     }
     if (instance.loader === "neoforge") {
-      return { name: "NeoForge", color: "text-[#f97316]" }
+      return { name: t('common.loaders.neoforge'), color: "text-[#f97316]" }
     }
-    return { name: "Vanilla", color: "text-[#16a34a]" }
+    return { name: t('common.loaders.vanilla'), color: "text-[#16a34a]" }
   }
 
   if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) {
@@ -134,8 +136,8 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
         <div className="absolute top-full mt-1 right-0 bg-[#22252b] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto border border-[#3a3f4b]">
           {instances.filter(instance => instance.loader === "fabric" || instance.loader === "neoforge").length === 0 ? (
             <div className="px-3 py-4 text-center bg-[#22252b]">
-              <p className="text-sm text-[#7d8590] mb-1">No modded instances</p>
-              <p className="text-xs text-[#3a3f4b]">Create a Fabric or NeoForge instance to install mods</p>
+              <p className="text-sm text-[#7d8590] mb-1">{t('mods.noModdedInstances')}</p>
+              <p className="text-xs text-[#3a3f4b]">{t('mods.createModdedInstance')}</p>
             </div>
           ) : (
             instances
@@ -196,6 +198,7 @@ interface ModsTabProps {
 }
 
 export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, scrollContainerRef }: ModsTabProps) {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ModrinthSearchResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -465,7 +468,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
           <input
             type="text"
-            placeholder="Search mods..."
+            placeholder={t('mods.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
@@ -548,17 +551,17 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
                     <Download size={12} />
                     {formatDownloads(selectedMod.downloads)}
                   </span>
-                  <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{selectedMod.follows.toLocaleString()} followers</span>
+                  <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{selectedMod.follows.toLocaleString()} {t('mods.followers')}</span>
                 </div>
 
                 <div className="border-t border-[#3a3f4b] pt-4">
-                  <h3 className="font-semibold text-sm text-[#e6e6e6] mb-3">Versions</h3>
+                  <h3 className="font-semibold text-sm text-[#e6e6e6] mb-3">{t('mods.versions')}</h3>
                   {isLoadingVersions ? (
                     <div className="text-center py-6">
                       <Loader2 size={20} className="animate-spin text-[#16a34a] mx-auto" />
                     </div>
                   ) : modVersions.length === 0 ? (
-                    <p className="text-sm text-[#3a3f4b] text-center py-3">No compatible versions</p>
+                    <p className="text-sm text-[#3a3f4b] text-center py-3">{t('mods.noCompatibleVersions')}</p>
                   ) : (
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {modVersions.map((version) => {
@@ -585,11 +588,11 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
                                 {downloading ? (
                                   <Loader2 size={14} className="animate-spin" />
                                 ) : installed ? (
-                                  "Installed"
+                                  t('mods.installed')
                                 ) : (
                                   <>
                                     <Download size={14} />
-                                    Install
+                                    {t('mods.install')}
                                   </>
                                 )}
                               </button>
@@ -615,7 +618,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
                 className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
                 <ChevronLeft size={16} />
-                Previous
+                {t('mods.pagination.previous')}
               </button>
 
               <div className="flex items-center gap-1">
@@ -692,7 +695,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
                 disabled={currentPage === totalPages}
                 className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
-                Next
+                {t('mods.pagination.next')}
                 <ChevronRight size={16} />
               </button>
             </div>

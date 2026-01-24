@@ -134,6 +134,40 @@
       "applyError": "Failed to apply template: {{error}}"
     }
   },
+  "servers": {
+    "title": "Servers",
+    "subtitle": "Manage your favorite Minecraft servers",
+    "addButton": "Add Server",
+    "searchPlaceholder": "Search...",
+    "noServers": {
+      "title": "No servers added",
+      "description": "Add your first server to get started",
+      "addButton": "Add Server"
+    },
+    "noSearchResults": {
+      "title": "No servers found",
+      "description": "Try adjusting your search query"
+    },
+    "status": {
+      "online": "online",
+      "offline": "offline",
+      "unknown": "unknown"
+    },
+    "players": "Players",
+    "play": "Play",
+    "launching": "Launching...",
+    "instanceRunning": "Instance Running",
+    "removeTooltip": "Remove server",
+    "confirmRemove": {
+      "title": "Remove Server",
+      "message": "Are you sure you want to remove \"{{name}}\"? This action cannot be undone.",
+      "confirm": "Remove"
+    },
+    "errors": {
+      "serverNotOnline": "Server is not online!",
+      "launchFailed": "Failed to launch"
+    }
+  },
   "settings": {
     "title": "Settings",
     "loadingSettings": "Loading settings...",
@@ -414,6 +448,112 @@
       "updateVersionFailed": "Failed to update Minecraft version: {{error}}",
       "updateFabricFailed": "Failed to update Fabric loader: {{error}}",
       "updateNeoforgeFailed": "Failed to update NeoForge loader: {{error}}"
+    }
+  },
+  "mods": {
+    "searchPlaceholder": "Search mods...",
+    "noModdedInstances": "No modded instances",
+    "createModdedInstance": "Create a Fabric or NeoForge instance to install mods",
+    "followers": "followers",
+    "versions": "Versions",
+    "noCompatibleVersions": "No compatible versions",
+    "installed": "Installed",
+    "install": "Install",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "browse": {
+    "tabs": {
+      "mods": "Mods",
+      "modpacks": "Modpacks"
+    },
+    "subtitle": {
+      "mods": "Browse and install mods from Modrinth",
+      "modpacks": "Browse and install modpacks from Modrinth"
+    }
+  },
+  "modpacks": {
+    "searchPlaceholder": "Search modpacks...",
+    "downloads": "downloads",
+    "status": {
+      "success": "Success",
+      "error": "Error",
+      "installing": "Installing"
+    },
+    "selectVersion": "Select Version",
+    "loadingVersions": "Loading versions...",
+    "noVersionsAvailable": "No versions available"
+  },
+  "skins": {
+    "title": "Skins",
+    "subtitle": "Manage your Minecraft skin",
+    "viewingFor": "Viewing skin for {{username}}",
+    "signInRequired": {
+      "title": "Sign In Required",
+      "description": "Please sign in with your Microsoft account to manage your skin"
+    },
+    "loadingSkin": "Loading skin...",
+    "skinRenderAlt": "Minecraft skin render",
+    "noSkinLoaded": "No skin loaded",
+    "manageCapes": "Manage Capes",
+    "skinModel": "Skin Model",
+    "rotateTooltip": "Rotate view",
+    "variants": {
+      "classic": "Classic",
+      "slim": "Slim"
+    },
+    "uploadButton": "Upload New Skin",
+    "uploading": "Uploading...",
+    "resetButton": "Reset to Default",
+    "resetting": "Resetting...",
+    "recentSkins": "Recent Skins",
+    "recentSkinTooltip": "Click to apply this skin",
+    "recentSkinAlt": "Recent skin",
+    "removeCape": "Remove Cape",
+    "noCapesAvailable": "No capes available",
+    "errors": {
+      "signInRequired": "Please sign in to view your skin",
+      "loadFailed": "Failed to load skin",
+      "equipCapeFailed": "Failed to equip cape",
+      "removeCapeFailed": "Failed to remove cape",
+      "uploadFailed": "Upload failed",
+      "resetFailed": "Reset failed",
+      "applyFailed": "Failed to apply skin"
+    }
+  },
+  "maps": {
+    "title": "Server Maps",
+    "subtitle": "Explore a server world",
+    "iframeTitle": "Server Maps",
+    "changeUrl": "Change URL",
+    "errors": {
+      "urlEmpty": "URL cannot be empty",
+      "invalidUrl": "URL must have a 'map.' subdomain"
+    }
+  },
+  "console": {
+    "title": "Console",
+    "subtitle": "View game output and logs",
+    "console": "Console",
+    "noOutput": {
+      "title": "No console output yet",
+      "description": "Launch an instance to see logs"
+    },
+    "noInstanceSelected": {
+      "title": "No instance selected",
+      "description": "Select an instance tab above"
+    },
+    "uploadTooltip": "Upload logs to mclo.gs",
+    "uploadButton": "Upload to mclo.gs",
+    "uploading": "Uploading...",
+    "uploadSuccess": "Uploaded & Copied!",
+    "clearButton": "Clear {{instance}}",
+    "errors": {
+      "noLogs": "No logs to upload",
+      "uploadFailed": "Upload failed",
+      "networkError": "Network error occurred"
     }
   }
 }

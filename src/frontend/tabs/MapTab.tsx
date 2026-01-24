@@ -1,7 +1,9 @@
 import { useState } from "react"
 import { Globe, Check, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 export function MapTab() {
+  const { t } = useTranslation()
   const [mapUrl, setMapUrl] = useState("https://map.stellarmc.gg")
   const [isEditing, setIsEditing] = useState(false)
   const [inputUrl, setInputUrl] = useState("")
@@ -27,12 +29,12 @@ export function MapTab() {
 
   const handleSave = () => {
     if (!inputUrl.trim()) {
-      setError("URL cannot be empty")
+      setError(t('maps.errors.urlEmpty'))
       return
     }
 
     if (!validateUrl(inputUrl)) {
-      setError("URL must have a 'map.' subdomain")
+      setError(t('maps.errors.invalidUrl'))
       return
     }
 
@@ -75,15 +77,15 @@ export function MapTab() {
       `}</style>
       <div className="max-w-7xl mx-auto">
         <div className="mb-4">
-          <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Server Maps</h1>
-          <p className="text-sm text-[#7d8590] mt-0.5">Explore a server world</p>
+          <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">{t('maps.title')}</h1>
+          <p className="text-sm text-[#7d8590] mt-0.5">{t('maps.subtitle')}</p>
         </div>
 
         <div className="console-border bg-[#22252b] rounded-md overflow-hidden" style={{ height: 'calc(100vh - 225px)' }}>
           <iframe
             src={mapUrl}
             className="w-full h-full"
-            title="Server Maps"
+            title={t('maps.iframeTitle')}
             style={{ border: 'none' }}
           />
         </div>
@@ -117,14 +119,14 @@ export function MapTab() {
                   className="px-4 py-2 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
                 >
                   <Check size={16} strokeWidth={2} />
-                  <span>Save</span>
+                  <span>{t('common.actions.save')}</span>
                 </button>
                 <button
                   onClick={handleCancel}
                   className="px-4 py-2 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
                 >
                   <X size={16} strokeWidth={2} />
-                  <span>Cancel</span>
+                  <span>{t('common.actions.cancel')}</span>
                 </button>
               </>
             ) : (
@@ -133,7 +135,7 @@ export function MapTab() {
                 className="px-4 py-2 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Globe size={16} strokeWidth={2} />
-                <span>Change URL</span>
+                <span>{t('maps.changeUrl')}</span>
               </button>
             )}
           </div>

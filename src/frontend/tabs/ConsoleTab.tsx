@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react"
 import { Terminal, Trash2, Upload, ExternalLink, Loader2, X } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { ConsoleLog } from "../../types"
 
 interface ConsoleTabProps {
@@ -8,6 +9,7 @@ interface ConsoleTabProps {
 }
 
 export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
+  const { t } = useTranslation()
   const consoleEndRef = useRef<HTMLDivElement>(null)
   const [uploadState, setUploadState] = useState<{
     loading: boolean
@@ -87,7 +89,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
       const logContent = formatLogs()
       
       if (!logContent.trim()) {
-        setUploadState({ loading: false, url: null, error: 'No logs to upload' })
+        setUploadState({ loading: false, url: null, error: t('console.errors.noLogs') })
         setTimeout(() => setUploadState({ loading: false, url: null, error: null }), 3000)
         return
       }
@@ -114,12 +116,12 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
         // Clear success message after 3 seconds
         setTimeout(() => setUploadState({ loading: false, url: null, error: null }), 3000)
       } else {
-        setUploadState({ loading: false, url: null, error: data.error || 'Upload failed' })
+        setUploadState({ loading: false, url: null, error: data.error || t('console.errors.uploadFailed') })
         setTimeout(() => setUploadState({ loading: false, url: null, error: null }), 3000)
       }
     } catch (err) {
       console.error('Failed to upload logs:', err)
-      setUploadState({ loading: false, url: null, error: 'Network error occurred' })
+      setUploadState({ loading: false, url: null, error: t('console.errors.networkError') })
       setTimeout(() => setUploadState({ loading: false, url: null, error: null }), 3000)
     }
   }
@@ -192,8 +194,8 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
         <div className="mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Console</h1>
-              <p className="text-sm text-[#7d8590] mt-0.5">View game output and logs</p>
+              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">{t('console.title')}</h1>
+              <p className="text-sm text-[#7d8590] mt-0.5">{t('console.subtitle')}</p>
             </div>
             
             {/* Instance Tabs */}
@@ -223,16 +225,16 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
                 <Terminal size={48} className="text-[#4572e3] mx-auto mb-3" strokeWidth={1.5} />
-                <p className="text-base text-[#e6e6e6] mb-1">No console output yet</p>
-                <p className="text-sm text-[#7d8590]">Launch an instance to see logs</p>
+                <p className="text-base text-[#e6e6e6] mb-1">{t('console.noOutput.title')}</p>
+                <p className="text-sm text-[#7d8590]">{t('console.noOutput.description')}</p>
               </div>
             </div>
           ) : !activeInstance ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
                 <Terminal size={48} className="text-[#7d8590] mx-auto mb-3" strokeWidth={1.5} />
-                <p className="text-base text-[#e6e6e6] mb-1">No instance selected</p>
-                <p className="text-sm text-[#7d8590]">Select an instance tab above</p>
+                <p className="text-base text-[#e6e6e6] mb-1">{t('console.noInstanceSelected.title')}</p>
+                <p className="text-sm text-[#7d8590]">{t('console.noInstanceSelected.description')}</p>
               </div>
             </div>
           ) : (
@@ -275,7 +277,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
                 ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
                 : "bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6]"
             }`}
-            title="Upload logs to mclo.gs"
+            title={t('console.uploadTooltip')}
           >
             {uploadState.loading ? (
               <Loader2 size={16} strokeWidth={2} className="animate-spin" />
@@ -288,12 +290,12 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
             )}
             <span>
               {uploadState.loading 
-                ? 'Uploading...' 
+                ? t('console.uploading')
                 : uploadState.url
-                ? 'Uploaded & Copied!'
+                ? t('console.uploadSuccess')
                 : uploadState.error
                 ? uploadState.error
-                : 'Upload to mclo.gs'}
+                : t('console.uploadButton')}
             </span>
           </button>
           <button
@@ -302,7 +304,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
             className="px-4 py-2 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 size={16} strokeWidth={2} />
-            <span>Clear {activeInstance || 'Console'}</span>
+            <span>{t('console.clearButton', { instance: activeInstance || t('console.console') })}</span>
           </button>
         </div>
       </div>

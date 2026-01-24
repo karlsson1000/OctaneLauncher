@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Search, Download, Loader2, Package, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, Check } from "lucide-react"
+import { useTranslation } from "react-i18next"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
 interface ModpacksTabProps {
@@ -28,6 +29,7 @@ export function ModpacksTab({
   onShowCreationToast,
   scrollContainerRef
 }: ModpacksTabProps) {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ModrinthSearchResult | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -296,7 +298,7 @@ export function ModpacksTab({
       const versions = modpackVersions[projectId]
 
       if (!versions || versions.length === 0) {
-        alert("No versions available for this modpack")
+        alert(t('modpacks.noVersionsAvailable'))
         return
       }
 
@@ -488,7 +490,7 @@ export function ModpacksTab({
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
           <input
             type="text"
-            placeholder="Search modpacks..."
+            placeholder={t('modpacks.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
@@ -553,7 +555,7 @@ export function ModpacksTab({
                         by {modpack.author}
                       </p>
                       <p className="text-sm text-[#3a3f4b] leading-tight">
-                        {formatDownloads(modpack.downloads)} downloads
+                        {formatDownloads(modpack.downloads)} {t('modpacks.downloads')}
                       </p>
                     </div>
 
@@ -561,21 +563,21 @@ export function ModpacksTab({
                       <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#16a34a] text-white">
                         <span className="flex items-center gap-1.5">
                           <CheckCircle size={16} />
-                          Success
+                          {t('modpacks.status.success')}
                         </span>
                       </div>
                     ) : status === 'error' ? (
                       <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-red-600 text-white">
                         <span className="flex items-center gap-1.5">
                           <AlertCircle size={16} />
-                          Error
+                          {t('modpacks.status.error')}
                         </span>
                       </div>
                     ) : isInstalling ? (
                       <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#181a1f] text-[#7d8590] border border-[#3a3f4b]">
                         <span className="flex items-center gap-1.5">
                           <Loader2 size={16} className="animate-spin" />
-                          Installing
+                          {t('modpacks.status.installing')}
                         </span>
                       </div>
                     ) : (
@@ -588,7 +590,7 @@ export function ModpacksTab({
                       >
                         <span className="flex items-center gap-1.5">
                           <Download size={16} />
-                          Install
+                          {t('mods.install')}
                         </span>
                       </button>
                     )}
@@ -609,7 +611,7 @@ export function ModpacksTab({
                 className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
                 <ChevronLeft size={16} />
-                Previous
+                {t('mods.pagination.previous')}
               </button>
 
               <div className="flex items-center gap-1">
@@ -686,7 +688,7 @@ export function ModpacksTab({
                 disabled={currentPage === totalPages}
                 className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
-                Next
+                {t('mods.pagination.next')}
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -829,7 +831,7 @@ export function ModpacksTab({
                     <h2 className="text-xl font-bold text-[#e6e6e6] leading-tight">{selectedModpack.title}</h2>
                     <p className="text-sm text-[#7d8590] leading-tight">by {selectedModpack.author}</p>
                     <p className="text-sm text-[#3a3f4b] leading-tight">
-                      {formatDownloads(selectedModpack.downloads)} downloads
+                      {formatDownloads(selectedModpack.downloads)} {t('modpacks.downloads')}
                     </p>
                   </div>
                 </div>
@@ -839,11 +841,11 @@ export function ModpacksTab({
                 )}
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium text-[#e6e6e6]">Select Version</label>
+                  <label className="block text-sm font-medium text-[#e6e6e6]">{t('modpacks.selectVersion')}</label>
                   {loadingVersions.has(selectedModpack.project_id) ? (
                     <div className="flex items-center gap-2 text-[#7d8590] text-sm py-3.5 px-4 bg-[#22252b] rounded">
                       <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                      <span>Loading versions...</span>
+                      <span>{t('modpacks.loadingVersions')}</span>
                     </div>
                   ) : modpackVersions[selectedModpack.project_id]?.length > 0 ? (
                     <div className="relative">
@@ -893,7 +895,7 @@ export function ModpacksTab({
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-[#7d8590] py-3">No versions available</p>
+                    <p className="text-sm text-[#7d8590] py-3">{t('modpacks.noVersionsAvailable')}</p>
                   )}
                 </div>
 
@@ -902,7 +904,7 @@ export function ModpacksTab({
                     onClick={handleCloseModal}
                     className="px-5 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors cursor-pointer"
                   >
-                    Cancel
+                    {t('common.actions.cancel')}
                   </button>
                   <button
                     onClick={handleInstallModpack}
@@ -910,7 +912,7 @@ export function ModpacksTab({
                     className="px-5 py-2.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:bg-[#22252b] disabled:cursor-not-allowed disabled:text-[#3a3f4b] text-white rounded font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
                   >
                     <Download size={16} />
-                    Install
+                    {t('mods.install')}
                   </button>
                 </div>
               </div>

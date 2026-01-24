@@ -1,4 +1,5 @@
 import { useState, useRef } from "react"
+import { useTranslation } from "react-i18next"
 import { ModsTab, ModsSelector } from "./ModsTab"
 import { ModpacksTab } from "./ModpacksTab"
 import type { Instance } from "../../types"
@@ -18,6 +19,7 @@ export function BrowseTab({
   onRefreshInstances, 
   onShowCreationToast 
 }: BrowseTabProps) {
+  const { t } = useTranslation()
   const [activeSubTab, setActiveSubTab] = useState<"mods" | "modpacks">("mods")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -37,7 +39,7 @@ export function BrowseTab({
                   activeSubTab === "mods" ? "text-[#e8e8e8]" : "text-[#4a4a4a] hover:text-[#808080]"
                 }`}
               >
-                Mods
+                {t('browse.tabs.mods')}
               </button>
               <button
                 onClick={() => setActiveSubTab("modpacks")}
@@ -45,11 +47,11 @@ export function BrowseTab({
                   activeSubTab === "modpacks" ? "text-[#e8e8e8]" : "text-[#4a4a4a] hover:text-[#808080]"
                 }`}
               >
-                Modpacks
+                {t('browse.tabs.modpacks')}
               </button>
             </div>
             <p className="text-sm text-[#808080] mt-0.5">
-              {activeSubTab === "mods" ? "Browse and install mods from Modrinth" : "Browse and install modpacks from Modrinth"}
+              {activeSubTab === "mods" ? t('browse.subtitle.mods') : t('browse.subtitle.modpacks')}
             </p>
           </div>
           

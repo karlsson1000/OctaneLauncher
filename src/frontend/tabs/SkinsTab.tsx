@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Upload, RotateCcw, Loader2, User, X, RotateCw } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
@@ -29,6 +30,7 @@ interface Cape {
 
 export function SkinsTab(props: SkinsTabProps) {
   const { activeAccount, isAuthenticated, invoke } = props
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -124,7 +126,7 @@ export function SkinsTab(props: SkinsTabProps) {
   const loadUserSkin = async () => {
     if (!isAuthenticated || !activeAccount || !invoke) {
       setLoading(false)
-      setError("Please sign in to view your skin")
+      setError(t('skins.errors.signInRequired'))
       return
     }
 
@@ -174,7 +176,7 @@ export function SkinsTab(props: SkinsTabProps) {
       }
     } catch (err) {
       console.error("Failed to load skin:", err)
-      setError(`Failed to load skin: ${err}`)
+      setError(`${t('skins.errors.loadFailed')}: ${err}`)
       setLoading(false)
       setCurrentSkinHash(null)
     }
@@ -211,7 +213,7 @@ export function SkinsTab(props: SkinsTabProps) {
       handleCloseCapeModal()
     } catch (err) {
       console.error("Failed to equip cape:", err)
-      setError(`Failed to equip cape: ${err}`)
+      setError(`${t('skins.errors.equipCapeFailed')}: ${err}`)
     }
   }
 
@@ -225,7 +227,7 @@ export function SkinsTab(props: SkinsTabProps) {
       handleCloseCapeModal()
     } catch (err) {
       console.error("Failed to remove cape:", err)
-      setError(`Failed to remove cape: ${err}`)
+      setError(`${t('skins.errors.removeCapeFailed')}: ${err}`)
     }
   }
 
@@ -273,7 +275,7 @@ export function SkinsTab(props: SkinsTabProps) {
         
         setError(null)
       } catch (err) {
-        setError(`Upload failed: ${err}`)
+        setError(`${t('skins.errors.uploadFailed')}: ${err}`)
       } finally {
         setUploading(false)
       }
@@ -297,7 +299,7 @@ export function SkinsTab(props: SkinsTabProps) {
       
       await loadUserSkin()
     } catch (err) {
-      setError(`Reset failed: ${err}`)
+      setError(`${t('skins.errors.resetFailed')}: ${err}`)
     } finally {
       setResetting(false)
     }
@@ -342,7 +344,7 @@ export function SkinsTab(props: SkinsTabProps) {
       
       setError(null)
     } catch (err) {
-      setError(`Failed to apply skin: ${err}`)
+      setError(`${t('skins.errors.applyFailed')}: ${err}`)
     } finally {
       setUploading(false)
     }
@@ -363,14 +365,14 @@ export function SkinsTab(props: SkinsTabProps) {
       <div className="p-6 space-y-4">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Skins</h1>
-            <p className="text-sm text-[#7d8590] mt-0.5">Manage your Minecraft skin</p>
+            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">{t('skins.title')}</h1>
+            <p className="text-sm text-[#7d8590] mt-0.5">{t('skins.subtitle')}</p>
           </div>
           
           <div className="flex flex-col items-center justify-center min-h-[calc(100vh-300px)]">
             <User size={64} className="text-[#4572e3] mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-semibold text-[#e6e6e6] mb-1">Sign In Required</h3>
-            <p className="text-sm text-[#7d8590]">Please sign in with your Microsoft account to manage your skin</p>
+            <h3 className="text-lg font-semibold text-[#e6e6e6] mb-1">{t('skins.signInRequired.title')}</h3>
+            <p className="text-sm text-[#7d8590]">{t('skins.signInRequired.description')}</p>
           </div>
         </div>
       </div>
@@ -447,9 +449,9 @@ export function SkinsTab(props: SkinsTabProps) {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Skins</h1>
+            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">{t('skins.title')}</h1>
             <p className="text-sm text-[#7d8590] mt-0.5">
-              {activeAccount ? `Viewing skin for ${activeAccount.username}` : "Manage your Minecraft skin"}
+              {activeAccount ? t('skins.viewingFor', { username: activeAccount.username }) : t('skins.subtitle')}
             </p>
           </div>
         </div>
@@ -463,7 +465,7 @@ export function SkinsTab(props: SkinsTabProps) {
                   <div className="w-[250px] h-[406px] flex items-center justify-center bg-[#181a1f] rounded-md">
                     <div className="text-center">
                       <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto mb-3" />
-                      <p className="text-sm text-[#7d8590]">Loading skin...</p>
+                      <p className="text-sm text-[#7d8590]">{t('skins.loadingSkin')}</p>
                     </div>
                   </div>
                 )}
@@ -471,7 +473,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 {!loading && currentSkinHash && (
                   <img
                     src={getSkinRenderUrl() || ''}
-                    alt="Minecraft skin render"
+                    alt={t('skins.skinRenderAlt')}
                     className="w-[250px] h-[406px]"
                     style={{ imageRendering: 'pixelated' }}
                   />
@@ -479,7 +481,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 
                 {!loading && !currentSkinHash && (
                   <div className="w-[250px] h-[406px] flex items-center justify-center">
-                    <p className="text-sm text-[#7d8590]">No skin loaded</p>
+                    <p className="text-sm text-[#7d8590]">{t('skins.noSkinLoaded')}</p>
                   </div>
                 )}
               </div>
@@ -489,7 +491,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 onClick={() => setCapeModalOpen(true)}
                 className="mt-3 px-4 py-2 bg-[#22252b] hover:bg-[#2a2d35] text-[#e6e6e6] rounded-md text-sm font-medium transition-all cursor-pointer"
               >
-                Manage Capes {capes.length > 0 && `(${capes.length})`}
+                {t('skins.manageCapes')} {capes.length > 0 && `(${capes.length})`}
               </button>
             </div>
           </div>
@@ -498,10 +500,11 @@ export function SkinsTab(props: SkinsTabProps) {
           <div className="flex-1 max-w-sm space-y-4">
             <div className="blur-border bg-[#22252b] rounded-md p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-[#e6e6e6]">Skin Model</h3>
+                <h3 className="text-base font-semibold text-[#e6e6e6]">{t('skins.skinModel')}</h3>
                 <button
                   onClick={handleRotate}
                   className="p-2 hover:bg-[#1f2128] text-[#e6e6e6] rounded-md transition-all cursor-pointer"
+                  title={t('skins.rotateTooltip')}
                 >
                   <RotateCw size={16} />
                 </button>
@@ -516,7 +519,7 @@ export function SkinsTab(props: SkinsTabProps) {
                       : "bg-[#181a1f] text-[#7d8590] hover:bg-[#1f2128] hover:text-[#e6e6e6]"
                   }`}
                 >
-                  Classic
+                  {t('skins.variants.classic')}
                 </button>
                 <button
                   onClick={() => setSkinVariant("slim")}
@@ -526,7 +529,7 @@ export function SkinsTab(props: SkinsTabProps) {
                       : "bg-[#181a1f] text-[#7d8590] hover:bg-[#1f2128] hover:text-[#e6e6e6]"
                   }`}
                 >
-                  Slim
+                  {t('skins.variants.slim')}
                 </button>
               </div>
 
@@ -547,12 +550,12 @@ export function SkinsTab(props: SkinsTabProps) {
                   {uploading ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      <span>Uploading...</span>
+                      <span>{t('skins.uploading')}</span>
                     </>
                   ) : (
                     <>
                       <Upload size={16} />
-                      <span>Upload New Skin</span>
+                      <span>{t('skins.uploadButton')}</span>
                     </>
                   )}
                 </button>
@@ -565,12 +568,12 @@ export function SkinsTab(props: SkinsTabProps) {
                   {resetting ? (
                     <>
                       <Loader2 size={16} className="animate-spin" />
-                      <span>Resetting...</span>
+                      <span>{t('skins.resetting')}</span>
                     </>
                   ) : (
                     <>
                       <RotateCcw size={16} />
-                      <span>Reset to Default</span>
+                      <span>{t('skins.resetButton')}</span>
                     </>
                   )}
                 </button>
@@ -581,7 +584,7 @@ export function SkinsTab(props: SkinsTabProps) {
             {recentSkins.length > 0 && (
               <div className="blur-border bg-[#22252b] rounded-md p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <h3 className="text-base font-semibold text-[#e6e6e6]">Recent Skins</h3>
+                  <h3 className="text-base font-semibold text-[#e6e6e6]">{t('skins.recentSkins')}</h3>
                 </div>
                 
                 <div className="flex gap-3">
@@ -600,10 +603,11 @@ export function SkinsTab(props: SkinsTabProps) {
                         onClick={() => handleRecentSkinSelect(skin)}
                         disabled={uploading}
                         className="bg-[#181a1f] rounded-md hover:ring-2 hover:ring-[#4572e3] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer overflow-hidden"
+                        title={t('skins.recentSkinTooltip')}
                       >
                         <img
                           src={renderUrl}
-                          alt="Recent skin"
+                          alt={t('skins.recentSkinAlt')}
                           className="w-20 h-20"
                           style={{ imageRendering: 'pixelated' }}
                         />
@@ -634,7 +638,7 @@ export function SkinsTab(props: SkinsTabProps) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-[#e6e6e6]">Manage Capes</h2>
+              <h2 className="text-xl font-semibold text-[#e6e6e6]">{t('skins.manageCapes')}</h2>
               <button
                 onClick={handleCloseCapeModal}
                 className="p-1 hover:bg-[#22252b] rounded-md transition-colors cursor-pointer"
@@ -679,13 +683,13 @@ export function SkinsTab(props: SkinsTabProps) {
                     onClick={handleCapeRemove}
                     className="w-full px-4 py-3 bg-[#22252b] hover:bg-[#2a2d35] text-[#e6e6e6] rounded-md text-sm font-medium transition-all cursor-pointer"
                   >
-                    Remove Cape
+                    {t('skins.removeCape')}
                   </button>
                 )}
               </div>
             ) : (
               <div className="text-center py-12">
-                <p className="text-sm text-[#7d8590]">No capes available</p>
+                <p className="text-sm text-[#7d8590]">{t('skins.noCapesAvailable')}</p>
               </div>
             )}
           </div>
