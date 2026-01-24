@@ -157,10 +157,20 @@ export function HomeTab({
 
   const getLoaderBadge = (instance: Instance) => {
     if (instance.loader === "fabric") {
-      return <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
+      return (
+        <span className="text-[#3b82f6] flex-shrink-0 flex items-center gap-1">
+          <img src="/loaders/fabric.png" alt="Fabric" className="w-3.5 h-3.5" />
+          {t('common.loaders.fabric')}
+        </span>
+      )
     }
     if (instance.loader === "neoforge") {
-      return <span className="text-[#f97316] flex-shrink-0">{t('common.loaders.neoforge')}</span>
+      return (
+        <span className="text-[#f97316] flex-shrink-0 flex items-center gap-1">
+          <img src="/loaders/neoforge.png" alt="NeoForge" className="w-3 h-3" />
+          {t('common.loaders.neoforge')}
+        </span>
+      )
     }
     return <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
   }

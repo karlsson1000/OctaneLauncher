@@ -135,10 +135,20 @@ export function InstancesTab({
 
   const getLoaderBadge = (instance: Instance) => {
     if (instance.loader === "fabric") {
-      return <span className="text-[#3b82f6] flex-shrink-0">{t('common.loaders.fabric')}</span>
+      return (
+        <span className="text-[#3b82f6] flex-shrink-0 flex items-center gap-1">
+          <img src="/loaders/fabric.png" alt="Fabric" className="w-3.5 h-3.5" />
+          {t('common.loaders.fabric')}
+        </span>
+      )
     }
     if (instance.loader === "neoforge") {
-      return <span className="text-[#f97316] flex-shrink-0">{t('common.loaders.neoforge')}</span>
+      return (
+        <span className="text-[#f97316] flex-shrink-0 flex items-center gap-1">
+          <img src="/loaders/neoforge.png" alt="NeoForge" className="w-3 h-3" />
+          {t('common.loaders.neoforge')}
+        </span>
+      )
     }
     return <span className="text-[#16a34a] flex-shrink-0">{t('common.loaders.vanilla')}</span>
   }
@@ -501,7 +511,9 @@ export function InstancesTab({
                     </div>
                     
                     <div className="bg-[#22252b] p-3 flex items-center justify-between gap-2 relative z-0">
-                      <div className="flex-1 min-w-0">
+                      <div className={`flex-1 min-w-0 transition-all ${
+                        isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'
+                      }`}>
                         <h3 className="text-sm font-semibold text-[#e6e6e6] truncate mb-0.5">{instance.name}</h3>
                         <div className="flex items-center gap-1.5 text-xs min-w-0">
                           <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
@@ -521,10 +533,12 @@ export function InstancesTab({
                             }
                           }}
                           disabled={launchingInstanceName !== null && !isRunning}
-                          className={`opacity-0 group-hover:opacity-100 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all cursor-pointer ${
+                          className={`absolute right-3 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all cursor-pointer ${
                             isRunning || isLaunching
-                              ? "bg-red-500/10 text-red-400 opacity-100"
-                              : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
+                              ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20"
+                              : launchingInstanceName !== null
+                              ? "opacity-0 pointer-events-none"
+                              : "opacity-0 group-hover:opacity-100 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                           } disabled:opacity-50`}
                           title={isRunning ? t('instances.instance.stopTooltip') : t('instances.instance.launchTooltip')}
                         >
