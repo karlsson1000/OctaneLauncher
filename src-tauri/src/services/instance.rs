@@ -748,7 +748,7 @@ impl InstanceManager {
             let lib_path = if let Some(path) = artifact_path {
                 libraries_dir.join(path)
             } else {
-                let group_path = group.replace('.', std::path::MAIN_SEPARATOR_STR);
+                let group_path = group.replace('.', "/");
 
                 let jar_name = if let Some(cls) = classifier {
                     format!("{}-{}-{}.jar", artifact, lib_version, cls)

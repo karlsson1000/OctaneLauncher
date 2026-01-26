@@ -38,6 +38,8 @@ impl MinecraftInstaller {
         
         // Only create if it doesn't exist
         if !launcher_profiles_path.exists() {
+            fs::create_dir_all(&self.launcher_dir)?;
+            
             let minimal_profile = serde_json::json!({
                 "profiles": {},
                 "settings": {
