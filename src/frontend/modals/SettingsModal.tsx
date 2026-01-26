@@ -503,7 +503,7 @@ export function SettingsModal({
                           }`}
                         >
                           <span className="truncate">
-                            {showCustomPath ? t('settings.java.customPath') : (settings.java_path || t('settings.game.java.autoDetect'))}
+                            {showCustomPath ? t('settings.game.java.customPath') : (settings.java_path || t('settings.game.java.autoDetect'))}
                           </span>
                           <ChevronDown size={16} className={`flex-shrink-0 ml-2 transition-transform ${isJavaDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
@@ -549,7 +549,7 @@ export function SettingsModal({
                               }}
                               className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
                             >
-                              <span>{t('settings.java.customPath')}</span>
+                              <span>{t('settings.game.java.customPath')}</span>
                               {showCustomPath && (
                                 <Check size={16} className="text-white" />
                               )}
