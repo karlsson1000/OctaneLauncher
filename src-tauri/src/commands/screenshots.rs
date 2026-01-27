@@ -184,3 +184,45 @@ pub async fn open_screenshot(path: String) -> Result<(), String> {
 
     Ok(())
 }
+
+#[tauri::command]
+pub async fn open_screenshots_folder(instance_name: Option<String>) -> Result<(), String> {
+    let instances_dir = get_instances_dir();
+    
+    if !instances_dir.exists() {
+        return Err("Instances directory does not exist".to_string());
+    }
+
+    if let Some(name) = instance_name {
+        let screenshots_dir = instances_dir.join(&name).join("screenshots");
+        
+        if screenshots_dir.exists() {
+            open::that(&screenshots_dir)
+                .map_err(|e| format!("Failed to open screenshots folder: {}", e))?;
+            return Ok(());
+        } else {
+            return Err(format!("Screenshots folder for instance '{}' does not exist", name));
+        }
+    }
+
+    for entry in fs::read_dir(&instances_dir).map_err(|e| e.to_string())?.flatten() {
+        let instance_path = entry.path();
+        
+        if !instance_path.is_dir() {
+            continue;
+        }
+
+        let screenshots_dir = instance_path.join("screenshots");
+        
+        if screenshots_dir.exists() {
+            open::that(&screenshots_dir)
+                .map_err(|e| format!("Failed to open screenshots folder: {}", e))?;
+            return Ok(());
+        }
+    }
+
+    open::that(&instances_dir)
+        .map_err(|e| format!("Failed to open instances folder: {}", e))?;
+
+    Ok(())
+}

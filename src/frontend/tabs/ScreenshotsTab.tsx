@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Camera, Package, X, Trash2, ExternalLink, ChevronLeft, ChevronRight, Calendar, Check } from "lucide-react"
+import { Camera, Package, X, Trash2, ExternalLink, ChevronLeft, ChevronRight, Calendar, Check, FolderOpen } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 interface Screenshot {
@@ -74,6 +74,14 @@ export function ScreenshotsTab(_props: ScreenshotsTabProps) {
       await invoke("open_screenshot", { path: screenshot.path })
     } catch (error) {
       console.error("Failed to open screenshot:", error)
+    }
+  }
+
+  const handleOpenScreenshotsFolder = async () => {
+    try {
+      await invoke("open_screenshots_folder", { instanceName: selectedInstance })
+    } catch (error) {
+      console.error("Failed to open screenshots folder:", error)
     }
   }
 
@@ -154,6 +162,13 @@ export function ScreenshotsTab(_props: ScreenshotsTabProps) {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenScreenshotsFolder}
+              className="w-8 h-8 bg-[#22252b] hover:bg-[#2a2e35] text-[#e6e6e6] rounded flex items-center justify-center transition-colors cursor-pointer"
+              title={t('screenshots.actions.openFolder')}
+            >
+              <FolderOpen size={16} />
+            </button>
             <InstanceDropdown
               selectedInstance={selectedInstance}
               setSelectedInstance={setSelectedInstance}
@@ -248,8 +263,8 @@ function InstanceDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`h-8 bg-[#22252b] px-3 pr-8 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer border border-[#3a3f4b] ${
-          isOpen ? 'rounded-t border-b-transparent' : 'rounded'
+        className={`h-8 bg-[#22252b] px-3 pr-8 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
+          isOpen ? 'rounded-t' : 'rounded'
         }`}
       >
         {selectedInstance 
@@ -263,7 +278,7 @@ function InstanceDropdown({
       </div>
       
       {isOpen && (
-        <div className="absolute z-10 min-w-full w-max bg-[#22252b] rounded-b max-h-60 overflow-y-auto border-l border-r border-b border-[#3a3f4b]">
+        <div className="absolute z-10 min-w-full w-max bg-[#22252b] rounded-b max-h-60 overflow-y-auto">
           <button
             type="button"
             onClick={() => { setSelectedInstance(null); setIsOpen(false); }}

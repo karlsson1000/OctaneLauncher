@@ -61,6 +61,7 @@ use commands::{
     get_screenshot_data,
     delete_screenshot,
     open_screenshot,
+    open_screenshots_folder,
     
     // Version commands
     get_minecraft_versions,
@@ -380,6 +381,7 @@ pub fn run() {
             get_screenshot_data,
             delete_screenshot,
             open_screenshot,
+            open_screenshots_folder,
             
             // Instance icons
             set_instance_icon,
