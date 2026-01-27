@@ -134,6 +134,40 @@
       "applyError": "Det gick inte att tillämpa mall: {{error}}"
     }
   },
+  "servers": {
+    "title": "",
+    "subtitle": "",
+    "addButton": "",
+    "searchPlaceholder": "",
+    "noServers": {
+      "title": "",
+      "description": "",
+      "addButton": ""
+    },
+    "noSearchResults": {
+      "title": "",
+      "description": ""
+    },
+    "status": {
+      "online": "",
+      "offline": "",
+      "unknown": ""
+    },
+    "players": "",
+    "play": "",
+    "launching": "",
+    "instanceRunning": "",
+    "removeTooltip": "",
+    "confirmRemove": {
+      "title": "",
+      "message": "",
+      "confirm": ""
+    },
+    "errors": {
+      "serverNotOnline": "",
+      "launchFailed": ""
+    }
+  },
   "settings": {
     "title": "Inställningar",
     "loadingSettings": "Laddar inställningar...",
@@ -207,6 +241,7 @@
     "servers": "Servrar",
     "skins": "Skins",
     "serverMaps": "Server Kartor",
+    "screenshot": "",
     "console": "Konsol"
   },
   "errors": {
@@ -414,6 +449,148 @@
       "updateVersionFailed": "Det gick inte att uppdatera Minecraft version: {{error}}",
       "updateFabricFailed": "Det gick inte att uppdatera Fabric loader: {{error}}",
       "updateNeoforgeFailed": "Det gick inte att uppdatera NeoForge loader: {{error}}"
+    }
+  },
+  "mods": {
+    "searchPlaceholder": "",
+    "noModdedInstances": "",
+    "createModdedInstance": "",
+    "followers": "",
+    "versions": "",
+    "noCompatibleVersions": "",
+    "installed": "",
+    "install": "",
+    "pagination": {
+      "previous": "",
+      "next": ""
+    }
+  },
+  "browse": {
+    "tabs": {
+      "mods": "",
+      "modpacks": ""
+    },
+    "subtitle": {
+      "mods": "",
+      "modpacks": ""
+    }
+  },
+  "modpacks": {
+    "searchPlaceholder": "",
+    "downloads": "",
+    "status": {
+      "success": "",
+      "error": "",
+      "installing": ""
+    },
+    "selectVersion": "",
+    "loadingVersions": "",
+    "noVersionsAvailable": ""
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "viewingFor": "",
+    "signInRequired": {
+      "title": "",
+      "description": ""
+    },
+    "loadingSkin": "",
+    "skinRenderAlt": "",
+    "noSkinLoaded": "",
+    "manageCapes": "",
+    "skinModel": "",
+    "rotateTooltip": "",
+    "variants": {
+      "classic": "",
+      "slim": ""
+    },
+    "uploadButton": "",
+    "uploading": "",
+    "resetButton": "",
+    "resetting": "",
+    "recentSkins": "",
+    "recentSkinTooltip": "",
+    "recentSkinAlt": "",
+    "removeCape": "",
+    "noCapesAvailable": "",
+    "errors": {
+      "signInRequired": "",
+      "loadFailed": "",
+      "equipCapeFailed": "",
+      "removeCapeFailed": "",
+      "uploadFailed": "",
+      "resetFailed": "",
+      "applyFailed": ""
+    }
+  },
+  "maps": {
+    "title": "",
+    "subtitle": "",
+    "iframeTitle": "",
+    "changeUrl": "",
+    "errors": {
+      "urlEmpty": "",
+      "invalidUrl": ""
+    }
+  },
+  "console": {
+    "title": "",
+    "subtitle": "",
+    "console": "",
+    "noOutput": {
+      "title": "",
+      "description": ""
+    },
+    "noInstanceSelected": {
+      "title": "",
+      "description": ""
+    },
+    "uploadTooltip": "",
+    "uploadButton": "",
+    "uploading": "",
+    "uploadSuccess": "",
+    "clearButton": "",
+    "errors": {
+      "noLogs": "",
+      "uploadFailed": "",
+      "networkError": ""
+    }
+  },
+  "screenshots": {
+    "title": "",
+    "subtitle": "",
+    "sortBy": {
+      "date": "",
+      "instance": ""
+    },
+    "searchPlaceholder": "",
+    "allInstances": "",
+    "screenshotCount_one": "",
+    "screenshotCount_other": "",
+    "noScreenshots": {
+      "title": "",
+      "description": ""
+    },
+    "actions": {
+      "open": "",
+      "download": "",
+      "delete": ""
+    },
+    "viewer": {
+      "open": "",
+      "delete": ""
+    },
+    "date": {
+      "today": "",
+      "yesterday": "",
+      "dayAgo": "",
+      "dayAgo_plural": ""
+    },
+    "errors": {
+      "loadFailed": "",
+      "deleteFailed": "",
+      "openFailed": ""
     }
   }
 }
