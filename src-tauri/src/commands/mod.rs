@@ -9,6 +9,7 @@ pub mod templates;
 pub mod settings;
 pub mod skins;
 pub mod friends;
+pub mod screenshots;
 
 pub use auth::*;
 pub use instances::*;
@@ -20,3 +21,4 @@ pub use templates::*;
 pub use settings::*;
 pub use skins::*;
 pub use friends::*;
+pub use screenshots::*;

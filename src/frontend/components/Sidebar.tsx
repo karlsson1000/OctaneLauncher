@@ -32,8 +32,8 @@ interface FriendRequest {
 }
 
 interface SidebarProps {
-  activeTab: "home" | "instances" | "browse" | "console" | "servers" | "skins" | "map"
-  setActiveTab: (tab: "home" | "instances" | "browse" | "console" | "servers" | "skins" | "map") => void
+  activeTab: "home" | "instances" | "browse" | "console" | "servers" | "skins" | "map" | "screenshots"
+  setActiveTab: (tab: "home" | "instances" | "browse" | "console" | "servers" | "skins" | "map" | "screenshots") => void
   showInstanceDetails: boolean
   setShowInstanceDetails: (show: boolean) => void
   instances: Instance[]

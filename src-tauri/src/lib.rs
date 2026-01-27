@@ -57,6 +57,9 @@ use commands::{
     update_instance_fabric_loader,
     update_instance_minecraft_version,
     export_instance,
+    get_all_screenshots,
+    delete_screenshot,
+    open_screenshot,
     
     // Version commands
     get_minecraft_versions,
@@ -372,6 +375,9 @@ pub fn run() {
             get_neoforge_versions,
             get_neoforge_supported_game_versions,
             install_neoforge,
+            get_all_screenshots,
+            delete_screenshot,
+            open_screenshot,
             
             // Instance icons
             set_instance_icon,

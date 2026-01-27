@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Telescope, Terminal, Settings } from "lucide-react"
+import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Telescope, Terminal, Settings, Camera } from "lucide-react"
 import { HomeTab } from "./tabs/HomeTab"
 import { InstancesTab } from "./tabs/InstancesTab"
 import { BrowseTab } from "./tabs/BrowseTab"
@@ -16,6 +16,7 @@ import { UpdateNotificationToast } from "./modals/UpdateNotificationToast"
 import { InstanceDetailsTab } from "./modals/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
 import { MapTab } from "./tabs/MapTab"
+import { ScreenshotsTab } from "./tabs/ScreenshotsTab"
 import { Sidebar } from "./components/Sidebar"
 import type { Instance, LauncherSettings, ConsoleLog } from "../types"
 import '../i18n'
@@ -46,7 +47,7 @@ function App() {
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null)
   const [launcherDirectory, setLauncherDirectory] = useState("")
   const [settings, setSettings] = useState<LauncherSettings | null>(null)
-  const [activeTab, setActiveTab] = useState<"home" | "instances" | "browse" | "console" | "servers" | "skins" | "map">("home")
+  const [activeTab, setActiveTab] = useState<"home" | "instances" | "browse" | "console" | "servers" | "skins" | "map" | "screenshots">("home")
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLog[]>([])
   const [showInstanceDetails, setShowInstanceDetails] = useState(false)
   const [creatingInstanceName, setCreatingInstanceName] = useState<string | null>(null)
@@ -172,7 +173,8 @@ function App() {
     { id: "browse" as const, icon: Puzzle, label: "Mods" },
     { id: "servers" as const, icon: Server, label: "Servers" },
     { id: "skins" as const, icon: HatGlasses, label: "Skins" },
-    { id: "map" as const, icon: Telescope, label: "Server Maps" },
+    { id: "screenshots" as const, icon: Camera, label: "Screenshots" },
+    { id: "map" as const, icon: Telescope, label: "Maps" },
     { id: "console" as const, icon: Terminal, label: "Console" },
   ]
 
@@ -721,6 +723,10 @@ function App() {
 
               {activeTab === "map" && (
                 <MapTab />
+              )}
+
+              {activeTab === "screenshots" && (
+                <ScreenshotsTab instances={instances} />
               )}
 
               {activeTab === "console" && (

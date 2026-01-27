@@ -241,6 +241,7 @@
     "servers": "Servers",
     "skins": "Skins",
     "serverMaps": "Server Maps",
+    "screenshot": "Screenshots",
     "console": "Console"
   },
   "errors": {
@@ -554,6 +555,42 @@
       "noLogs": "No logs to upload",
       "uploadFailed": "Upload failed",
       "networkError": "Network error occurred"
+    }
+  },
+  "screenshots": {
+    "title": "Screenshots",
+    "subtitle": "View and manage your Minecraft screenshots",
+    "sortBy": {
+      "date": "Sort by Date",
+      "instance": "Sort by Instance"
+    },
+    "searchPlaceholder": "Search screenshots...",
+    "allInstances": "All Instances ({{count}})",
+    "screenshotCount_one": "{{count}} screenshot",
+    "screenshotCount_other": "{{count}} screenshots",
+    "noScreenshots": {
+      "title": "No screenshots yet",
+      "description": "Take screenshots in-game using F2 and they will appear here"
+    },
+    "actions": {
+      "open": "Open in default viewer",
+      "download": "Save to Downloads",
+      "delete": "Delete screenshot"
+    },
+    "viewer": {
+      "open": "Open",
+      "delete": "Delete"
+    },
+    "date": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "dayAgo": "{{count}} day ago",
+      "dayAgo_plural": "{{count}} days ago"
+    },
+    "errors": {
+      "loadFailed": "Failed to load screenshots",
+      "deleteFailed": "Failed to delete screenshot",
+      "openFailed": "Failed to open screenshot"
     }
   }
 }
