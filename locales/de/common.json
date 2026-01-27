@@ -134,6 +134,40 @@
       "applyError": "Fehler beim Anwenden der Vorlage: {{error}}"
     }
   },
+  "servers": {
+    "title": "Server",
+    "subtitle": "Verwalten Sie Ihre Lieblings-Minecraft-Server",
+    "addButton": "Server hinzufügen",
+    "searchPlaceholder": "Suchen...",
+    "noServers": {
+      "title": "Kein Server hinzugefügt",
+      "description": "Fügen Sie Ihren ersten Server hinzu, um loszulegen",
+      "addButton": "Server hinzufügen"
+    },
+    "noSearchResults": {
+      "title": "Keine Server gefunden",
+      "description": "Versuchen Sie Ihre Suchabfrage anzupassen"
+    },
+    "status": {
+      "online": "online",
+      "offline": "offline",
+      "unknown": "unbekannt"
+    },
+    "players": "Spieler",
+    "play": "Spielen",
+    "launching": "Startet...",
+    "instanceRunning": "Instanz läuft",
+    "removeTooltip": "Server entfernen",
+    "confirmRemove": {
+      "title": "Server entfernen",
+      "message": "Sind Sie sicher, dass Sie \"{{name}}\" entfernen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirm": "Entfernen"
+    },
+    "errors": {
+      "serverNotOnline": "Server ist nicht online!",
+      "launchFailed": "Fehler beim Starten"
+    }
+  },
   "settings": {
     "title": "Einstellungen",
     "loadingSettings": "Einstellungen werden geladen...",
@@ -207,6 +241,7 @@
     "servers": "Server",
     "skins": "Skins",
     "serverMaps": "Serverkarten",
+    "screenshot": "Screenshots",
     "console": "Konsole"
   },
   "errors": {
@@ -414,6 +449,148 @@
       "updateVersionFailed": "Fehler beim Aktualisieren der Minecraft-Version: {{error}}",
       "updateFabricFailed": "Fehler beim Aktualisieren des Fabric-Loaders: {{error}}",
       "updateNeoforgeFailed": "Fehler beim Aktualisieren des NeoForge Loaders: {{error}}"
+    }
+  },
+  "mods": {
+    "searchPlaceholder": "Mods suchen...",
+    "noModdedInstances": "Keine modded Instanzen",
+    "createModdedInstance": "Erstelle eine Fabric oder NeoForge Instanz, um Mods zu installieren",
+    "followers": "Follower",
+    "versions": "Versionen",
+    "noCompatibleVersions": "Keine kompatiblen Versionen",
+    "installed": "Installiert",
+    "install": "Installieren",
+    "pagination": {
+      "previous": "Vorherige",
+      "next": "Nächste"
+    }
+  },
+  "browse": {
+    "tabs": {
+      "mods": "Mods",
+      "modpacks": "Modpacks"
+    },
+    "subtitle": {
+      "mods": "Mods von Modrinth durchsuchen und installieren",
+      "modpacks": "Modpacks von Modrinth durchsuchen und installieren"
+    }
+  },
+  "modpacks": {
+    "searchPlaceholder": "Modpacks suchen...",
+    "downloads": "downloaden",
+    "status": {
+      "success": "Erfolg",
+      "error": "Fehler",
+      "installing": "Installiere..."
+    },
+    "selectVersion": "Version auswählen:",
+    "loadingVersions": "Versionen werden geladen...",
+    "noVersionsAvailable": "Keine Versionen verfügbar"
+  },
+  "skins": {
+    "title": "Skins",
+    "subtitle": "Minecraft-Skin verwalten",
+    "viewingFor": "Skin für {{username}} anzeigen",
+    "signInRequired": {
+      "title": "Anmeldung erforderlich",
+      "description": "Bitte melden Sie sich mit Ihrem Microsoft-Konto an, um Ihren Skin zu verwalten"
+    },
+    "loadingSkin": "Skin wird geladen...",
+    "skinRenderAlt": "Minecraft-Skin-Render",
+    "noSkinLoaded": "Kein Skin geladen",
+    "manageCapes": "Capes verwalten",
+    "skinModel": "Skin-Modell",
+    "rotateTooltip": "Ansicht drehen",
+    "variants": {
+      "classic": "Klassisch",
+      "slim": "Slim"
+    },
+    "uploadButton": "Neuen Skin hochladen",
+    "uploading": "Wird hochgeladen...",
+    "resetButton": "Auf Standard zurücksetzen",
+    "resetting": "Setze zurück...",
+    "recentSkins": "Letzte Skins",
+    "recentSkinTooltip": "Klicken, um diesen Skin zu verwenden",
+    "recentSkinAlt": "Letzter Skin",
+    "removeCape": "Cape entfernen",
+    "noCapesAvailable": "Keine Capes verfügbar",
+    "errors": {
+      "signInRequired": "Bitte melden Sie sich an, um Ihren Skin anzusehen",
+      "loadFailed": "Fehler beim Laden des Skins",
+      "equipCapeFailed": "Fehler beim Rüsten des Caps",
+      "removeCapeFailed": "Fehler beim Entfernen des Caps",
+      "uploadFailed": "Upload fehlgeschlagen",
+      "resetFailed": "Reset fehlgeschlagen",
+      "applyFailed": "Fehler beim Anwenden des Skin"
+    }
+  },
+  "maps": {
+    "title": "Serverkarten",
+    "subtitle": "Erkunde eine Serverwelt",
+    "iframeTitle": "Serverkarten",
+    "changeUrl": "URL ändern",
+    "errors": {
+      "urlEmpty": "URL darf nicht leer sein",
+      "invalidUrl": "URL muss eine 'map.' Subdomain haben"
+    }
+  },
+  "console": {
+    "title": "Konsole",
+    "subtitle": "Spielausgabe und -protokolle anzeigen",
+    "console": "Konsole",
+    "noOutput": {
+      "title": "Noch keine Konsolenausgabe",
+      "description": "Starten Sie eine Instanz um Logs zu sehen"
+    },
+    "noInstanceSelected": {
+      "title": "Keine Instanz ausgewählt",
+      "description": "Wählen Sie oben eine Instanz"
+    },
+    "uploadTooltip": "Logs auf mclo.gs hochladen",
+    "uploadButton": "Auf mclo.gs hochladen",
+    "uploading": "Wird hochgeladen...",
+    "uploadSuccess": "Hochgeladen & kopiert!",
+    "clearButton": "{{instance}} leeren",
+    "errors": {
+      "noLogs": "Keine Logs zum Hochladen",
+      "uploadFailed": "Upload fehlgeschlagen",
+      "networkError": "Netzwerkfehler aufgetreten"
+    }
+  },
+  "screenshots": {
+    "title": "Screenshots",
+    "subtitle": "Sehen und verwalten Sie Ihre Minecraft-Screenshots",
+    "sortBy": {
+      "date": "Nach Datum sortieren",
+      "instance": "Nach Instanz sortieren"
+    },
+    "searchPlaceholder": "Screenshots suchen...",
+    "allInstances": "Alle Instanzen ({{count}})",
+    "screenshotCount_one": "{{count}} Screenshot",
+    "screenshotCount_other": "{{count}} Screenshots",
+    "noScreenshots": {
+      "title": "Noch keine Screenshots",
+      "description": "Machen Sie Screenshots im Spiel mit F2 und sie werden hier erscheinen"
+    },
+    "actions": {
+      "open": "Im Standard-Viewer öffnen",
+      "download": "In Downloads speichern",
+      "delete": "Screenshot löschen"
+    },
+    "viewer": {
+      "open": "Öffnen",
+      "delete": "Löschen"
+    },
+    "date": {
+      "today": "Heute",
+      "yesterday": "Gestern",
+      "dayAgo": "Vor {{count}} Tag",
+      "dayAgo_plural": "Vor {{count}} Tagen"
+    },
+    "errors": {
+      "loadFailed": "Fehler beim Laden der Screenshots",
+      "deleteFailed": "Fehler beim Löschen des Screenshots",
+      "openFailed": "Fehler beim Öffnen des Screenshots"
     }
   }
 }
