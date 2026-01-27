@@ -1,9 +1,14 @@
-import { Server, Plus, Search, Trash2, Play } from "lucide-react"
+import { Server, Plus, Search, Trash2, Play, MoreHorizontal } from "lucide-react"
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { useTranslation } from "react-i18next"
 import { CreateServerModal } from "../modals/CreateServerModal"
 import { ConfirmModal } from "../modals/ConfirmModal"
+
+interface PlayerInfo {
+  name: string
+  uuid: string
+}
 
 interface ServerInfo {
   name: string
@@ -12,6 +17,7 @@ interface ServerInfo {
   status: "online" | "offline" | "unknown"
   players_online?: number
   players_max?: number
+  players_list?: PlayerInfo[]
   version?: string
   motd?: string
   favicon?: string
@@ -35,6 +41,7 @@ interface McSrvStatResponse {
   players?: {
     online: number
     max: number
+    list?: PlayerInfo[]
   }
 }
 
@@ -97,6 +104,9 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
       const data: McSrvStatResponse = await response.json()
       
+      console.log('API Response for', fullAddress, ':', data)
+      console.log('Players list:', data.players?.list)
+      
       return {
         name: address,
         address: address,
@@ -104,6 +114,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
         status: data.online ? "online" : "offline",
         players_online: data.players?.online,
         players_max: data.players?.max,
+        players_list: data.players?.list,
         version: data.version || data.protocol?.name,
         motd: data.motd?.clean?.join('\n'),
         favicon: data.icon ? `https://api.mcsrvstat.us/icon/${fullAddress}` : undefined,
@@ -430,11 +441,42 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                     )}
 
                     {server.status === "online" && server.players_online !== undefined && (
-                      <div className="flex items-center justify-between mb-3 relative z-0">
-                        <span className="text-xs text-[#7d8590]">{t('servers.players')}</span>
-                        <span className="text-sm font-medium text-[#e6e6e6]">
-                          {server.players_online.toLocaleString()} / {server.players_max?.toLocaleString()}
-                        </span>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-[#e6e6e6]">{t('servers.players')}</span>
+                        <div className="flex items-center gap-3">
+                          {server.players_list && server.players_list.length > 0 && (
+                            <div className="flex items-center gap-1.5">
+                              <div className="flex items-center -space-x-1.5">
+                                {server.players_list.slice(0, 5).map((player, index) => (
+                                  <img
+                                    key={player.uuid}
+                                    src={`https://cravatar.eu/avatar/${player.name}/32`}
+                                    alt={player.name}
+                                    title={player.name}
+                                    className="w-5 h-5 rounded border-2 border-[#22252b] relative"
+                                    style={{ zIndex: 5 - index }}
+                                  />
+                                ))}
+                              </div>
+                              {server.players_list.length > 5 && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    // Handle showing all players
+                                    console.log('Show all players for', server.name)
+                                  }}
+                                  className="flex items-center justify-center w-5 h-5 rounded hover:bg-[#3a3f4b] transition-colors cursor-pointer"
+                                  title={`${server.players_list.length - 5} more players`}
+                                >
+                                  <MoreHorizontal size={12} className="text-[#7d8590] hover:text-[#e6e6e6]" strokeWidth={2.5} />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          <span className="text-sm font-medium text-[#e6e6e6]">
+                            {server.players_online.toLocaleString()} / {server.players_max?.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
                     )}
 
