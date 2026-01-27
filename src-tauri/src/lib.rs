@@ -58,6 +58,7 @@ use commands::{
     update_instance_minecraft_version,
     export_instance,
     get_all_screenshots,
+    get_screenshot_data,
     delete_screenshot,
     open_screenshot,
     
@@ -376,6 +377,7 @@ pub fn run() {
             get_neoforge_supported_game_versions,
             install_neoforge,
             get_all_screenshots,
+            get_screenshot_data,
             delete_screenshot,
             open_screenshot,
             

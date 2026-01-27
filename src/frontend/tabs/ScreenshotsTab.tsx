@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Camera, Package, X, Trash2, ExternalLink, ChevronLeft, ChevronRight, Calendar, Check } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import type { Instance } from "../../types"
 
 interface Screenshot {
   path: string
@@ -10,14 +9,13 @@ interface Screenshot {
   instance_name: string
   timestamp: number
   size: number
-  data_url: string
 }
 
 interface ScreenshotsTabProps {
-  instances: Instance[]
+  instances?: any[]
 }
 
-export function ScreenshotsTab({}: ScreenshotsTabProps) {
+export function ScreenshotsTab(_props: ScreenshotsTabProps) {
   const { t } = useTranslation()
   const [screenshots, setScreenshots] = useState<Screenshot[]>([])
   const [loading, setLoading] = useState(true)
@@ -26,6 +24,7 @@ export function ScreenshotsTab({}: ScreenshotsTabProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [sortBy, setSortBy] = useState<"date" | "instance">("date")
   const [isInstanceDropdownOpen, setIsInstanceDropdownOpen] = useState(false)
+  const [imageCache, setImageCache] = useState<Record<string, string>>({})
 
   useEffect(() => {
     loadScreenshots()
@@ -43,9 +42,27 @@ export function ScreenshotsTab({}: ScreenshotsTabProps) {
     }
   }
 
+  const getImageData = useCallback(async (path: string): Promise<string> => {
+    if (imageCache[path]) return imageCache[path]
+
+    try {
+      const dataUrl = await invoke<string>("get_screenshot_data", { path })
+      setImageCache(prev => ({ ...prev, [path]: dataUrl }))
+      return dataUrl
+    } catch (error) {
+      console.error("Failed to load screenshot data:", error)
+      return ""
+    }
+  }, [imageCache])
+
   const handleDeleteScreenshot = async (screenshot: Screenshot) => {
     try {
       await invoke("delete_screenshot", { path: screenshot.path })
+      setImageCache(prev => {
+        const newCache = { ...prev }
+        delete newCache[screenshot.path]
+        return newCache
+      })
       await loadScreenshots()
     } catch (error) {
       console.error("Failed to delete screenshot:", error)
@@ -63,20 +80,27 @@ export function ScreenshotsTab({}: ScreenshotsTabProps) {
   const openViewer = (index: number) => {
     setCurrentImageIndex(index)
     setViewerOpen(true)
-  }
-
-  const closeViewer = () => {
-    setViewerOpen(false)
+    // Preload adjacent images
+    const screenshot = filteredScreenshots[index]
+    if (screenshot) getImageData(screenshot.path)
+    if (filteredScreenshots[index + 1]) getImageData(filteredScreenshots[index + 1].path)
+    if (filteredScreenshots[index - 1]) getImageData(filteredScreenshots[index - 1].path)
   }
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % filteredScreenshots.length)
+    const newIndex = (currentImageIndex + 1) % filteredScreenshots.length
+    setCurrentImageIndex(newIndex)
+    if (filteredScreenshots[newIndex + 1]) {
+      getImageData(filteredScreenshots[newIndex + 1].path)
+    }
   }
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? filteredScreenshots.length - 1 : prev - 1
-    )
+    const newIndex = currentImageIndex === 0 ? filteredScreenshots.length - 1 : currentImageIndex - 1
+    setCurrentImageIndex(newIndex)
+    if (filteredScreenshots[newIndex - 1]) {
+      getImageData(filteredScreenshots[newIndex - 1].path)
+    }
   }
 
   const formatDate = (timestamp: number): string => {
@@ -96,19 +120,15 @@ export function ScreenshotsTab({}: ScreenshotsTabProps) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
-  const filteredScreenshots = screenshots.filter((screenshot) => {
-    const matchesInstance = !selectedInstance || screenshot.instance_name === selectedInstance
-    return matchesInstance
-  }).sort((a, b) => {
-    if (sortBy === "date") {
-      return b.timestamp - a.timestamp
-    } else {
+  const filteredScreenshots = screenshots
+    .filter((s: Screenshot) => !selectedInstance || s.instance_name === selectedInstance)
+    .sort((a, b) => {
+      if (sortBy === "date") return b.timestamp - a.timestamp
       return a.instance_name.localeCompare(b.instance_name) || b.timestamp - a.timestamp
-    }
-  })
+    })
 
-  const instanceCounts = screenshots.reduce((acc, screenshot) => {
-    acc[screenshot.instance_name] = (acc[screenshot.instance_name] || 0) + 1
+  const instanceCounts = screenshots.reduce((acc, s: Screenshot) => {
+    acc[s.instance_name] = (acc[s.instance_name] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
@@ -122,257 +142,404 @@ export function ScreenshotsTab({}: ScreenshotsTabProps) {
 
   return (
     <div className="p-6 space-y-4">
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #3a3f4b;
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #454a58;
-        }
-      `}</style>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">
-                {t('screenshots.title')}
-              </h1>
-              <p className="text-sm text-[#7d8590] mt-0.5">
-                {t('screenshots.screenshotCount', { count: filteredScreenshots.length })}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsInstanceDropdownOpen(!isInstanceDropdownOpen)}
-                  className={`h-8 bg-[#22252b] px-3 pr-8 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer border border-[#3a3f4b] ${
-                    isInstanceDropdownOpen ? 'rounded-t border-b-transparent' : 'rounded'
-                  }`}
-                >
-                  {selectedInstance 
-                    ? `${selectedInstance} (${instanceCounts[selectedInstance]})` 
-                    : t('screenshots.allInstances', { count: screenshots.length })}
-                </button>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  {isInstanceDropdownOpen ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="18 15 12 9 6 15"></polyline>
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  )}
-                </div>
-                
-                {isInstanceDropdownOpen && (
-                  <div className="absolute z-10 min-w-full w-max bg-[#22252b] rounded-b max-h-60 overflow-y-auto custom-scrollbar border-l border-r border-b border-[#3a3f4b]">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedInstance(null);
-                        setIsInstanceDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
-                    >
-                      <span>{t('screenshots.allInstances', { count: screenshots.length })}</span>
-                      {!selectedInstance && (
-                        <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
-                      )}
-                    </button>
-                    {Object.entries(instanceCounts)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([instanceName, count]) => (
-                        <button
-                          key={instanceName}
-                          type="button"
-                          onClick={() => {
-                            setSelectedInstance(instanceName);
-                            setIsInstanceDropdownOpen(false);
-                          }}
-                          className="w-full px-3 py-2 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
-                        >
-                          <span>{instanceName} ({count})</span>
-                          {selectedInstance === instanceName && (
-                            <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
-                          )}
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setSortBy(sortBy === "date" ? "instance" : "date")}
-                className="px-3 h-8 bg-[#22252b] hover:bg-[#2a2e35] text-[#e6e6e6] rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
-              >
-                {sortBy === "date" ? <Calendar size={14} /> : <Package size={14} />}
-                {t(`screenshots.sortBy.${sortBy}`)}
-              </button>
-            </div>
+          <div>
+            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">
+              {t('screenshots.title')}
+            </h1>
+            <p className="text-sm text-[#7d8590] mt-0.5">
+              {t('screenshots.screenshotCount', { count: filteredScreenshots.length })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <InstanceDropdown
+              selectedInstance={selectedInstance}
+              setSelectedInstance={setSelectedInstance}
+              instanceCounts={instanceCounts}
+              screenshots={screenshots}
+              isOpen={isInstanceDropdownOpen}
+              setIsOpen={setIsInstanceDropdownOpen}
+              t={t}
+            />
+            <button
+              onClick={() => setSortBy(sortBy === "date" ? "instance" : "date")}
+              className="px-3 h-8 bg-[#22252b] hover:bg-[#2a2e35] text-[#e6e6e6] rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              {sortBy === "date" ? <Calendar size={14} /> : <Package size={14} />}
+              {t(`screenshots.sortBy.${sortBy}`)}
+            </button>
           </div>
         </div>
 
         {/* Content */}
-        <div>
-          {filteredScreenshots.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Camera size={56} className="text-[#3a3f4b] mb-4" strokeWidth={1.5} />
-              <h3 className="text-lg font-semibold text-[#e6e6e6] mb-2">
-                {screenshots.length === 0 ? t('screenshots.noScreenshots.title') : t('screenshots.noResults.title')}
-              </h3>
-              <p className="text-sm text-[#7d8590] text-center max-w-md">
-                {screenshots.length === 0 
-                  ? t('screenshots.noScreenshots.description')
-                  : t('screenshots.noResults.description')}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filteredScreenshots.map((screenshot, index) => (
-                <div
-                  key={screenshot.path}
-                  onClick={() => openViewer(index)}
-                  className="group relative bg-[#22252b] rounded-lg overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#4572e3]"
-                >
-                  {/* Image */}
-                  <div className="aspect-video bg-[#181a1f] overflow-hidden relative">
-                    <img
-                      src={screenshot.data_url}
-                      alt={screenshot.filename}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-2">
-                    <p className="text-xs font-medium text-[#e6e6e6] truncate mb-0.5">
-                      {screenshot.instance_name}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-[#7d8590]">
-                      <span>{formatDate(screenshot.timestamp)}</span>
-                      <span>{formatFileSize(screenshot.size)}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleOpenScreenshot(screenshot)
-                      }}
-                      className="w-7 h-7 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded flex items-center justify-center transition-colors cursor-pointer"
-                      title={t('screenshots.actions.open')}
-                    >
-                      <ExternalLink size={14} className="text-[#e6e6e6]" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteScreenshot(screenshot)
-                      }}
-                      className="w-7 h-7 bg-red-500/90 hover:bg-red-600 rounded flex items-center justify-center transition-colors cursor-pointer"
-                      title={t('screenshots.actions.delete')}
-                    >
-                      <Trash2 size={14} className="text-white" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {filteredScreenshots.length === 0 ? (
+          <EmptyState screenshots={screenshots} t={t} />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filteredScreenshots.map((screenshot, index) => (
+              <ScreenshotCard
+                key={screenshot.path}
+                screenshot={screenshot}
+                index={index}
+                imageCache={imageCache}
+                getImageData={getImageData}
+                openViewer={openViewer}
+                handleOpenScreenshot={handleOpenScreenshot}
+                handleDeleteScreenshot={handleDeleteScreenshot}
+                formatDate={formatDate}
+                formatFileSize={formatFileSize}
+                t={t}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Image Viewer Modal */}
       {viewerOpen && filteredScreenshots[currentImageIndex] && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
-          {/* Close Button */}
+        <ImageViewer
+          screenshot={filteredScreenshots[currentImageIndex]}
+          currentImageIndex={currentImageIndex}
+          totalImages={filteredScreenshots.length}
+          imageCache={imageCache}
+          getImageData={getImageData}
+          closeViewer={() => setViewerOpen(false)}
+          nextImage={nextImage}
+          prevImage={prevImage}
+          handleOpenScreenshot={handleOpenScreenshot}
+          handleDeleteScreenshot={(s) => {
+            handleDeleteScreenshot(s)
+            if (filteredScreenshots.length === 1) {
+              setViewerOpen(false)
+            }
+          }}
+          formatDate={formatDate}
+          formatFileSize={formatFileSize}
+          t={t}
+        />
+      )}
+    </div>
+  )
+}
+
+interface InstanceDropdownProps {
+  selectedInstance: string | null
+  setSelectedInstance: (value: string | null) => void
+  instanceCounts: Record<string, number>
+  screenshots: Screenshot[]
+  isOpen: boolean
+  setIsOpen: (value: boolean) => void
+  t: any
+}
+
+function InstanceDropdown({ 
+  selectedInstance, 
+  setSelectedInstance, 
+  instanceCounts, 
+  screenshots, 
+  isOpen, 
+  setIsOpen,
+  t 
+}: InstanceDropdownProps) {
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`h-8 bg-[#22252b] px-3 pr-8 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer border border-[#3a3f4b] ${
+          isOpen ? 'rounded-t border-b-transparent' : 'rounded'
+        }`}
+      >
+        {selectedInstance 
+          ? `${selectedInstance} (${instanceCounts[selectedInstance]})` 
+          : t('screenshots.allInstances', { count: screenshots.length })}
+      </button>
+      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3">
+          <polyline points={isOpen ? "18 15 12 9 6 15" : "6 9 12 15 18 9"} />
+        </svg>
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-10 min-w-full w-max bg-[#22252b] rounded-b max-h-60 overflow-y-auto border-l border-r border-b border-[#3a3f4b]">
           <button
-            onClick={closeViewer}
-            className="absolute top-4 right-4 w-10 h-10 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+            type="button"
+            onClick={() => { setSelectedInstance(null); setIsOpen(false); }}
+            className="w-full px-3 py-2 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
           >
-            <X size={20} className="text-[#e6e6e6]" />
+            <span>{t('screenshots.allInstances', { count: screenshots.length })}</span>
+            {!selectedInstance && <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />}
           </button>
-
-          {/* Navigation */}
-          {filteredScreenshots.length > 1 && (
-            <>
+          {Object.entries(instanceCounts)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([instanceName, count]) => (
               <button
-                onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+                key={instanceName}
+                type="button"
+                onClick={() => { setSelectedInstance(instanceName); setIsOpen(false); }}
+                className="w-full px-3 py-2 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
               >
-                <ChevronLeft size={24} className="text-[#e6e6e6]" />
+                <span>{instanceName} ({count})</span>
+                {selectedInstance === instanceName && <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />}
               </button>
-              <button
-                onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
-              >
-                <ChevronRight size={24} className="text-[#e6e6e6]" />
-              </button>
-            </>
-          )}
+            ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
-          {/* Image */}
-          <div className="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
-            <img
-              src={filteredScreenshots[currentImageIndex].data_url}
-              alt={filteredScreenshots[currentImageIndex].filename}
-              className="max-w-full max-h-full object-contain"
-            />
+interface EmptyStateProps {
+  screenshots: Screenshot[]
+  t: any
+}
+
+function EmptyState({ screenshots, t }: EmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16">
+      <Camera size={56} className="text-[#3a3f4b] mb-4" strokeWidth={1.5} />
+      <h3 className="text-lg font-semibold text-[#e6e6e6] mb-2">
+        {screenshots.length === 0 ? t('screenshots.noScreenshots.title') : t('screenshots.noResults.title')}
+      </h3>
+      <p className="text-sm text-[#7d8590] text-center max-w-md">
+        {screenshots.length === 0 
+          ? t('screenshots.noScreenshots.description')
+          : t('screenshots.noResults.description')}
+      </p>
+    </div>
+  )
+}
+
+interface ScreenshotCardProps {
+  screenshot: Screenshot
+  index: number
+  imageCache: Record<string, string>
+  getImageData: (path: string) => Promise<string>
+  openViewer: (index: number) => void
+  handleOpenScreenshot: (screenshot: Screenshot) => void
+  handleDeleteScreenshot: (screenshot: Screenshot) => void
+  formatDate: (timestamp: number) => string
+  formatFileSize: (bytes: number) => string
+  t: any
+}
+
+function ScreenshotCard({ 
+  screenshot, 
+  index, 
+  imageCache, 
+  getImageData, 
+  openViewer, 
+  handleOpenScreenshot, 
+  handleDeleteScreenshot,
+  formatDate,
+  formatFileSize,
+  t
+}: ScreenshotCardProps) {
+  const [imageSrc, setImageSrc] = useState("")
+  const [imageLoading, setImageLoading] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (imageCache[screenshot.path]) {
+      setImageSrc(imageCache[screenshot.path])
+      setImageLoading(false)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadImage()
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '200px' }
+    )
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [screenshot.path, imageCache])
+
+  const loadImage = async () => {
+    const dataUrl = await getImageData(screenshot.path)
+    if (dataUrl) {
+      setImageSrc(dataUrl)
+      setImageLoading(false)
+    }
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      onClick={() => openViewer(index)}
+      className="group relative bg-[#22252b] rounded-lg overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#4572e3]"
+    >
+      <div className="aspect-video bg-[#181a1f] overflow-hidden relative">
+        {imageLoading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
           </div>
+        )}
+        {imageSrc && (
+          <img
+            src={imageSrc}
+            alt={screenshot.filename}
+            className="w-full h-full object-cover"
+            style={{ opacity: imageLoading ? 0 : 1, transition: 'opacity 0.2s' }}
+          />
+        )}
+      </div>
 
-          {/* Info Bar */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6">
-            <div className="max-w-4xl mx-auto flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-white mb-1">
-                  {filteredScreenshots[currentImageIndex].instance_name}
-                </p>
-                <p className="text-xs text-gray-300">
-                  {filteredScreenshots[currentImageIndex].filename} • {formatDate(filteredScreenshots[currentImageIndex].timestamp)} • {formatFileSize(filteredScreenshots[currentImageIndex].size)}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleOpenScreenshot(filteredScreenshots[currentImageIndex])}
-                  className="px-3 py-1.5 bg-[#22252b]/90 hover:bg-[#2a2e35] text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <ExternalLink size={14} />
-                  {t('screenshots.viewer.open')}
-                </button>
-                <button
-                  onClick={() => {
-                    handleDeleteScreenshot(filteredScreenshots[currentImageIndex])
-                    if (filteredScreenshots.length === 1) {
-                      closeViewer()
-                    } else if (currentImageIndex === filteredScreenshots.length - 1) {
-                      setCurrentImageIndex(currentImageIndex - 1)
-                    }
-                  }}
-                  className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
-                >
-                  <Trash2 size={14} />
-                  {t('screenshots.viewer.delete')}
-                </button>
-              </div>
-            </div>
+      <div className="p-2">
+        <p className="text-xs font-medium text-[#e6e6e6] truncate mb-0.5">
+          {screenshot.instance_name}
+        </p>
+        <div className="flex items-center justify-between text-xs text-[#7d8590]">
+          <span>{formatDate(screenshot.timestamp)}</span>
+          <span>{formatFileSize(screenshot.size)}</span>
+        </div>
+      </div>
+
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); handleOpenScreenshot(screenshot); }}
+          className="w-7 h-7 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded flex items-center justify-center transition-colors cursor-pointer"
+          title={t('screenshots.actions.open')}
+        >
+          <ExternalLink size={14} className="text-[#e6e6e6]" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); handleDeleteScreenshot(screenshot); }}
+          className="w-7 h-7 bg-red-500/90 hover:bg-red-600 rounded flex items-center justify-center transition-colors cursor-pointer"
+          title={t('screenshots.actions.delete')}
+        >
+          <Trash2 size={14} className="text-white" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+interface ImageViewerProps {
+  screenshot: Screenshot
+  currentImageIndex: number
+  totalImages: number
+  imageCache: Record<string, string>
+  getImageData: (path: string) => Promise<string>
+  closeViewer: () => void
+  nextImage: () => void
+  prevImage: () => void
+  handleOpenScreenshot: (screenshot: Screenshot) => void
+  handleDeleteScreenshot: (screenshot: Screenshot) => void
+  formatDate: (timestamp: number) => string
+  formatFileSize: (bytes: number) => string
+  t: any
+}
+
+function ImageViewer({
+  screenshot,
+  currentImageIndex,
+  totalImages,
+  imageCache,
+  getImageData,
+  closeViewer,
+  nextImage,
+  prevImage,
+  handleOpenScreenshot,
+  handleDeleteScreenshot,
+  formatDate,
+  formatFileSize,
+  t
+}: ImageViewerProps) {
+  const [imageSrc, setImageSrc] = useState("")
+
+  useEffect(() => {
+    const loadImage = async () => {
+      const dataUrl = imageCache[screenshot.path] || await getImageData(screenshot.path)
+      setImageSrc(dataUrl)
+    }
+    loadImage()
+  }, [screenshot.path])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeViewer()
+      if (e.key === 'ArrowLeft') prevImage()
+      if (e.key === 'ArrowRight') nextImage()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  return (
+    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
+      <button
+        onClick={closeViewer}
+        className="absolute top-4 right-4 w-10 h-10 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+      >
+        <X size={20} className="text-[#e6e6e6]" />
+      </button>
+
+      {totalImages > 1 && (
+        <>
+          <button
+            onClick={prevImage}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+          >
+            <ChevronLeft size={24} className="text-[#e6e6e6]" />
+          </button>
+          <button
+            onClick={nextImage}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+          >
+            <ChevronRight size={24} className="text-[#e6e6e6]" />
+          </button>
+        </>
+      )}
+
+      <div className="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+        {!imageSrc ? (
+          <div className="w-12 h-12 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
+        ) : (
+          <img src={imageSrc} alt={screenshot.filename} className="max-w-full max-h-full object-contain" />
+        )}
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-white mb-1">{screenshot.instance_name}</p>
+            <p className="text-xs text-gray-300">
+              {screenshot.filename} • {formatDate(screenshot.timestamp)} • {formatFileSize(screenshot.size)}
+            </p>
           </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleOpenScreenshot(screenshot)}
+              className="px-3 py-1.5 bg-[#22252b]/90 hover:bg-[#2a2e35] text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <ExternalLink size={14} />
+              {t('screenshots.viewer.open')}
+            </button>
+            <button
+              onClick={() => handleDeleteScreenshot(screenshot)}
+              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Trash2 size={14} />
+              {t('screenshots.viewer.delete')}
+            </button>
+          </div>
+        </div>
+      </div>
 
-          {/* Counter */}
-          {filteredScreenshots.length > 1 && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[#22252b]/90 rounded-full text-sm text-white">
-              {currentImageIndex + 1} / {filteredScreenshots.length}
-            </div>
-          )}
+      {totalImages > 1 && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[#22252b]/90 rounded-full text-sm text-white">
+          {currentImageIndex + 1} / {totalImages}
         </div>
       )}
     </div>
