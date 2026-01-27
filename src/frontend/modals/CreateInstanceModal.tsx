@@ -639,7 +639,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   disabled={isCreating}
                   className={`flex-1 px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     loaderType === "vanilla"
-                      ? "bg-[#4572e3] text-white"
+                      ? "bg-[#16a34a] text-white"
                       : "bg-[#22252b] text-gray-400 hover:bg-[#3a3f4b]"
                   }`}
                 >
@@ -658,7 +658,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   disabled={isCreating}
                   className={`flex-1 px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     loaderType === "fabric"
-                      ? "bg-[#4572e3] text-white"
+                      ? "bg-[#3b82f6] text-white"
                       : "bg-[#22252b] text-gray-400 hover:bg-[#3a3f4b]"
                   }`}
                 >
@@ -677,7 +677,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   disabled={isCreating}
                   className={`flex-1 px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2 ${
                     loaderType === "neoforge"
-                      ? "bg-[#4572e3] text-white"
+                      ? "bg-[#f97316] text-white"
                       : "bg-[#22252b] text-gray-400 hover:bg-[#3a3f4b]"
                   }`}
                 >
@@ -700,7 +700,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 </label>
                 {isLoadingFabric ? (
                   <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
-                    <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                    <Loader2 size={16} className="animate-spin text-[#3b82f6]" />
                     <span>{t('createInstance.modloader.loadingFabricVersions')}</span>
                   </div>
                 ) : (
@@ -759,7 +759,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                 </label>
                 {isLoadingNeoforge ? (
                   <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
-                    <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                    <Loader2 size={16} className="animate-spin text-[#f97316]" />
                     <span>Loading NeoForge versions...</span>
                   </div>
                 ) : neoforgeVersions.length === 0 ? (
