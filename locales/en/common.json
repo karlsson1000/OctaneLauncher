@@ -315,7 +315,8 @@
     "signInToStart": "Sign in to get started!",
     "accountDropdown": {
       "activeAccount": "Active Account",
-      "addAnother": "Add another account"
+      "addAnother": "Add another account",
+      "logout": "Log out"
     },
     "friendStatus": {
       "online": "Online",

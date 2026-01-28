@@ -99,7 +99,7 @@ export function Sidebar(props: SidebarProps) {
     if (showAccountDropdown && accountButtonRef.current) {
       const rect = accountButtonRef.current.getBoundingClientRect()
       setDropdownPosition({
-        top: rect.top,
+        top: rect.bottom,
         left: rect.left,
         width: rect.width
       })
@@ -412,7 +412,9 @@ export function Sidebar(props: SidebarProps) {
                   <button
                     ref={accountButtonRef}
                     onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                    className="w-full flex items-center gap-2.5 p-2 cursor-pointer hover:bg-[#181a1f] rounded transition-colors"
+                    className={`w-full flex items-center gap-2.5 p-2 cursor-pointer transition-colors ${
+                      showAccountDropdown ? 'bg-[#181a1f] rounded-t' : 'hover:bg-[#181a1f] rounded'
+                    }`}
                   >
                     <div className="relative">
                       <img
@@ -709,100 +711,71 @@ export function Sidebar(props: SidebarProps) {
           />
           
           <div 
-            className="fixed bg-[#22252b] rounded shadow-xl z-[70] overflow-hidden border border-[#3a3f4b]"
+            className="fixed bg-[#181a1f] rounded-b z-[70] overflow-hidden"
             style={{
               top: `${dropdownPosition.top}px`,
               left: `${dropdownPosition.left}px`,
               width: `${dropdownPosition.width}px`
             }}
           >
-            {/* Active Account */}
-            {activeAccount && (
-              <div className="bg-[#181a1f] group">
-                <div className="flex items-center gap-2 p-2.5">
-                  <button
-                    onClick={() => setShowAccountDropdown(false)}
-                    className="flex-1 flex items-center gap-2.5 cursor-pointer"
+            <div className="space-y-1 pt-0 pb-1 px-1">
+              {/* Other Accounts */}
+              {accounts
+                .filter(acc => !acc.is_active)
+                .map((account) => (
+                  <div
+                    key={account.uuid}
+                    className="group flex items-center gap-2 p-2 rounded hover:bg-[#22252b] transition-colors"
                   >
-                    <img
-                      src={`https://cravatar.eu/avatar/${activeAccount.username}/32`}
-                      alt={activeAccount.username}
-                      className="w-8 h-8 rounded"
-                    />
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="text-sm font-medium text-[#e6e6e6] truncate">
-                        {activeAccount.username}
-                      </div>
-                      <div className="text-xs text-[#7d8590]">
-                        {t('sidebar.accountDropdown.activeAccount')}
-                      </div>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => handleRemoveAccount(activeAccount.uuid)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer"
-                  >
-                    <LogOut size={16} className="text-red-400" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Other Accounts */}
-            {accounts.filter(acc => !acc.is_active).length > 0 && (
-              <div className="max-h-60 overflow-y-auto">
-                {accounts
-                  .filter(acc => !acc.is_active)
-                  .map((account) => (
-                    <div
-                      key={account.uuid}
-                      className="flex items-center gap-2 p-2.5 hover:bg-[#3a3f4b] transition-colors group"
+                    <button
+                      onClick={() => handleSwitchAccount(account.uuid)}
+                      className="flex-1 flex items-center gap-2.5 cursor-pointer min-w-0"
                     >
-                      <button
-                        onClick={() => handleSwitchAccount(account.uuid)}
-                        className="flex-1 flex items-center gap-2.5 cursor-pointer"
-                      >
-                        <img
-                          src={`https://cravatar.eu/avatar/${account.username}/32`}
-                          alt={account.username}
-                          className="w-8 h-8 rounded"
-                        />
-                        <div className="flex-1 min-w-0 text-left">
-                          <div className="text-sm font-medium text-[#e6e6e6] truncate">
-                            {account.username}
-                          </div>
-                          <div className="text-xs text-[#7d8590]">
-                            {formatLastUsed(account.last_used)}
-                          </div>
+                      <img
+                        src={`https://cravatar.eu/avatar/${account.username}/32`}
+                        alt={account.username}
+                        className="w-8 h-8 rounded"
+                      />
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="text-sm font-medium text-[#e6e6e6] truncate">
+                          {account.username}
                         </div>
-                      </button>
-                      
-                      <button
-                        onClick={() => handleRemoveAccount(account.uuid)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer"
-                      >
-                        <LogOut size={16} className="text-red-400" />
-                      </button>
-                    </div>
-                  ))}
-              </div>
-            )}
+                        <div className="text-xs text-[#7d8590]">
+                          {formatLastUsed(account.last_used)}
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleRemoveAccount(account.uuid)}
+                      className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer flex-shrink-0"
+                    >
+                      <LogOut size={16} className="text-red-400" />
+                    </button>
+                  </div>
+                ))}
+              
+              {/* Add Another Account */}
+              <button
+                onClick={handleAddAccount}
+                disabled={isLoggingIn}
+                className="w-full flex items-center gap-2.5 p-2 rounded text-sm transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#22252b]"
+              >
+                <LogIn size={18} className="text-[#16a34a]" />
+                <span>{isLoggingIn ? t('sidebar.authenticating') : t('sidebar.accountDropdown.addAnother')}</span>
+              </button>
 
-            {/* Separator before Add Account */}
-            <div className="h-px bg-[#3a3f4b]" />
-            
-            {/* Add Another Account */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleAddAccount()
-              }}
-              disabled={isLoggingIn}
-              className="w-full flex items-center gap-2 px-2.5 py-2.5 text-sm text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <LogIn size={18} className="text-[#16a34a]" />
-              <span>{isLoggingIn ? t('sidebar.authenticating') : t('sidebar.accountDropdown.addAnother')}</span>
-            </button>
+              {/* Logout Current Account */}
+              {activeAccount && (
+                <button
+                  onClick={() => handleRemoveAccount(activeAccount.uuid)}
+                  className="w-full flex items-center gap-2.5 p-2 rounded text-sm transition-colors cursor-pointer text-red-400 hover:bg-red-500/10"
+                >
+                  <LogOut size={18} />
+                  <span>{t('sidebar.accountDropdown.logout')}</span>
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}
