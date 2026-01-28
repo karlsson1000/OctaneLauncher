@@ -95,6 +95,18 @@ use commands::{
     install_modpack_from_file,
     get_modpack_name_from_file,
     
+    // Resource pack commands
+    get_installed_resourcepacks,
+    download_resourcepack,
+    delete_resourcepack,
+    open_resourcepacks_folder,
+    
+    // Shader pack commands
+    get_installed_shaderpacks,
+    download_shaderpack,
+    delete_shaderpack,
+    open_shaderpacks_folder,
+    
     // Server commands
     get_servers,
     add_server,
@@ -427,6 +439,18 @@ pub fn run() {
             get_modpack_game_versions,
             install_modpack_from_file,
             get_modpack_name_from_file,
+
+            // Resource pack commands
+            get_installed_resourcepacks,
+            download_resourcepack,
+            delete_resourcepack,
+            open_resourcepacks_folder,
+            
+            // Shader pack commands
+            get_installed_shaderpacks,
+            download_shaderpack,
+            delete_shaderpack,
+            open_shaderpacks_folder,
 
             // Servers
             get_servers,

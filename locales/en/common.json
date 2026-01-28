@@ -466,13 +466,22 @@
     }
   },
   "browse": {
-    "tabs": {
+    "browseContent": "Browse Content",
+    "categories": {
       "mods": "Mods",
-      "modpacks": "Modpacks"
+      "modpacks": "Modpacks",
+      "resourcepacks": "Resource Packs",
+      "shaderpacks": "Shader Packs"
     },
     "subtitle": {
       "mods": "Browse and install mods from Modrinth",
-      "modpacks": "Browse and install modpacks from Modrinth"
+      "modpacks": "Discover complete modpacks from Modrinth",
+      "resourcepacks": "Find resource packs on Modrinth",
+      "shaderpacks": "Explore shader packs from Modrinth"
+    },
+    "tabs": {
+      "mods": "Mods",
+      "modpacks": "Modpacks"
     }
   },
   "modpacks": {
@@ -486,6 +495,34 @@
     "selectVersion": "Select Version",
     "loadingVersions": "Loading versions...",
     "noVersionsAvailable": "No versions available"
+  },
+  "resourcepacks": {
+    "searchPlaceholder": "Search resource packs...",
+    "noInstanceSelected": "No Instance Selected",
+    "selectInstancePrompt": "Select an instance to browse resource packs",
+    "followers": "followers",
+    "versions": "Versions",
+    "noCompatibleVersions": "No compatible versions",
+    "installed": "Installed",
+    "install": "Install",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "shaderpacks": {
+    "searchPlaceholder": "Search shader packs...",
+    "noInstanceSelected": "No Instance Selected",
+    "selectInstancePrompt": "Select an instance to browse shader packs",
+    "followers": "followers",
+    "versions": "Versions",
+    "noCompatibleVersions": "No compatible versions",
+    "installed": "Installed",
+    "install": "Install",
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next"
+    }
   },
   "skins": {
     "title": "Skins",
@@ -575,7 +612,8 @@
     "actions": {
       "open": "Open in default viewer",
       "download": "Save to Downloads",
-      "delete": "Delete screenshot"
+      "delete": "Delete screenshot",
+      "openFolder": "Open screenshots folder"
     },
     "viewer": {
       "open": "Open",

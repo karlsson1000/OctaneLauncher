@@ -39,9 +39,99 @@ pub fn sanitize_filename(filename: &str) -> Result<String, String> {
         return Err("Filename contains null bytes".to_string());
     }
     
+    // Allow common Minecraft-related file types
+    let valid_extensions = [".jar", ".zip", ".mrpack", ".json", ".txt", ".toml", ".properties"];
+    let has_valid_extension = valid_extensions.iter().any(|ext| filename.to_lowercase().ends_with(ext));
+    
+    if !has_valid_extension {
+        return Err(format!(
+            "Invalid file extension. Allowed: {}",
+            valid_extensions.join(", ")
+        ));
+    }
+    
+    Ok(filename.to_string())
+}
+
+/// Sanitize mod filenames (only .jar files)
+pub fn sanitize_mod_filename(filename: &str) -> Result<String, String> {
+    if filename.is_empty() {
+        return Err("Filename cannot be empty".to_string());
+    }
+    
+    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+        return Err("Filename contains invalid characters".to_string());
+    }
+    
+    if filename.starts_with('.') {
+        return Err("Filename cannot start with a dot".to_string());
+    }
+    
+    if filename.contains('\0') {
+        return Err("Filename contains null bytes".to_string());
+    }
+    
     // Only allow .jar files for mods
     if !filename.ends_with(".jar") {
-        return Err("Only .jar files are allowed".to_string());
+        return Err("Only .jar files are allowed for mods".to_string());
+    }
+    
+    Ok(filename.to_string())
+}
+
+/// Sanitize resource pack filenames (allow .zip and .jar files)
+pub fn sanitize_resourcepack_filename(filename: &str) -> Result<String, String> {
+    if filename.is_empty() {
+        return Err("Filename cannot be empty".to_string());
+    }
+    
+    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+        return Err("Filename contains invalid characters".to_string());
+    }
+    
+    if filename.starts_with('.') {
+        return Err("Filename cannot start with a dot".to_string());
+    }
+    
+    if filename.contains('\0') {
+        return Err("Filename contains null bytes".to_string());
+    }
+    
+    // Resource packs can be .zip or .jar files
+    let is_valid = filename.to_lowercase().ends_with(".zip") || 
+                   filename.to_lowercase().ends_with(".jar");
+    
+    if !is_valid {
+        return Err("Only .zip or .jar files are allowed for resource packs".to_string());
+    }
+    
+    Ok(filename.to_string())
+}
+
+/// Sanitize shader pack filenames (allow .zip and .jar files)
+pub fn sanitize_shaderpack_filename(filename: &str) -> Result<String, String> {
+    if filename.is_empty() {
+        return Err("Filename cannot be empty".to_string());
+    }
+    
+    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+        return Err("Filename contains invalid characters".to_string());
+    }
+    
+    if filename.starts_with('.') {
+        return Err("Filename cannot start with a dot".to_string());
+    }
+    
+    if filename.contains('\0') {
+        return Err("Filename contains null bytes".to_string());
+    }
+    
+    // Shader packs can be .zip or .jar files
+    let is_valid = filename.to_lowercase().ends_with(".zip") || 
+                   filename.to_lowercase().ends_with(".jar");
+    
+    if !is_valid {
+        return Err("Only .zip or .jar files are allowed for shader packs".to_string());
     }
     
     Ok(filename.to_string())

@@ -218,7 +218,7 @@ pub async fn install_modpack(
     let temp_dir = std::env::temp_dir();
     let modpack_file = temp_dir.join(&primary_file.filename);
     
-    validate_download_url(&primary_file.url)?;
+    let _ = validate_download_url(&primary_file.url)?;
     
     client
         .download_mod_file(&primary_file.url, &modpack_file)
@@ -298,7 +298,7 @@ pub async fn install_modpack(
                     .map_err(|e| e.to_string())?;
             }
             
-            validate_download_url(download_url)?;
+            let _ = validate_download_url(download_url)?;
             client.download_mod_file(download_url, &dest_path)
                 .await
                 .map_err(|e| e.to_string())?;
@@ -752,7 +752,7 @@ async fn install_from_mrpack(
                     .map_err(|e| e.to_string())?;
             }
             
-            validate_download_url(download_url)?;
+            let _ = validate_download_url(download_url)?;
             client.download_mod_file(download_url, &dest_path)
                 .await
                 .map_err(|e| e.to_string())?;

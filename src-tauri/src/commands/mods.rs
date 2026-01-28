@@ -1,4 +1,4 @@
-use crate::commands::validation::{sanitize_instance_name, sanitize_filename, validate_download_url};
+use crate::commands::validation::{sanitize_instance_name, sanitize_mod_filename, validate_download_url};
 use crate::utils::{get_instance_dir, open_folder};
 use crate::utils::modrinth::{ModrinthClient, ModrinthProjectDetails, ModrinthSearchResult, ModrinthVersion};
 use serde::{Deserialize, Serialize};
@@ -59,7 +59,7 @@ pub async fn get_installed_mods(instance_name: String) -> Result<Vec<ModFile>, S
 #[tauri::command]
 pub async fn delete_mod(instance_name: String, filename: String) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
-    let safe_filename = sanitize_filename(&filename)?;
+    let safe_filename = sanitize_mod_filename(&filename)?;
     
     let instance_dir = get_instance_dir(&safe_name);
     let mods_dir = instance_dir.join("mods");
@@ -105,9 +105,9 @@ pub async fn toggle_mod(instance_name: String, filename: String, disable: bool) 
     
     let safe_filename = if filename.ends_with(".disabled") {
         let base = filename.trim_end_matches(".disabled");
-        sanitize_filename(base)?
+        sanitize_mod_filename(base)?
     } else {
-        sanitize_filename(&filename)?
+        sanitize_mod_filename(&filename)?
     };
     
     let instance_dir = get_instance_dir(&safe_name);
@@ -243,9 +243,8 @@ pub async fn download_mod(
     filename: String,
 ) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
-    let safe_filename = sanitize_filename(&filename)?;
-    
-    validate_download_url(&download_url)?;
+    let safe_filename = sanitize_mod_filename(&filename)?;
+    let _ = validate_download_url(&download_url)?;
     
     let instance_dir = get_instance_dir(&safe_name);
     let mods_dir = instance_dir.join("mods");
