@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { Upload, RotateCcw, Loader2, User, X, RotateCw } from "lucide-react"
+import { Upload, RotateCcw, Loader2, User, X, Rotate3d } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 interface SkinsTabProps {
@@ -47,7 +47,9 @@ export function SkinsTab(props: SkinsTabProps) {
   const [showBack, setShowBack] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const skinCacheRef = useRef<Map<string, CachedSkin>>(new Map())
-  const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+  const lastProfileFetchRef = useRef<number>(0)
+  const CACHE_DURATION = 15 * 60 * 1000
+  const MIN_FETCH_INTERVAL = 10 * 1000
 
   // Load recent skins from persistent storage on mount
   useEffect(() => {
@@ -123,7 +125,13 @@ export function SkinsTab(props: SkinsTabProps) {
     return lowerAlias.replace(/\s+/g, '_').replace(/['']/g, '')
   }
 
-  const loadUserSkin = async () => {
+  const canFetchProfile = () => {
+    const now = Date.now()
+    const timeSinceLastFetch = now - lastProfileFetchRef.current
+    return timeSinceLastFetch >= MIN_FETCH_INTERVAL
+  }
+
+  const loadUserSkin = async (forceRefresh: boolean = false) => {
     if (!isAuthenticated || !activeAccount || !invoke) {
       setLoading(false)
       setError(t('skins.errors.signInRequired'))
@@ -138,7 +146,8 @@ export function SkinsTab(props: SkinsTabProps) {
       const cached = skinCacheRef.current.get(cacheKey)
       const now = Date.now()
       
-      if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      // Use cache if available
+      if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_DURATION) {
         const match = cached.url.match(/texture\/([a-f0-9]+)/)
         if (match) {
           setCurrentSkinHash(match[1])
@@ -148,6 +157,23 @@ export function SkinsTab(props: SkinsTabProps) {
         loadCapes()
         return
       }
+      
+      // Check rate limiting before fetching
+      if (!canFetchProfile()) {
+        console.log("Skipping profile fetch due to rate limiting, using cache")
+        if (cached) {
+          const match = cached.url.match(/texture\/([a-f0-9]+)/)
+          if (match) {
+            setCurrentSkinHash(match[1])
+          }
+          setSkinVariant(cached.variant)
+        }
+        setLoading(false)
+        loadCapes()
+        return
+      }
+      
+      lastProfileFetchRef.current = now
       
       const skinData = await invoke("get_current_skin")
       
@@ -174,11 +200,27 @@ export function SkinsTab(props: SkinsTabProps) {
         setLoading(false)
         loadCapes()
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load skin:", err)
-      setError(`${t('skins.errors.loadFailed')}: ${err}`)
+      
+      // Handle rate limiting
+      if (err && typeof err === 'string' && err.includes('429')) {
+        setError(t('skins.errors.rateLimited') || 'Rate limited. Please wait before refreshing.')
+        // Keep showing cached skin if available
+        const cached = skinCacheRef.current.get(activeAccount.uuid)
+        if (cached) {
+          const match = cached.url.match(/texture\/([a-f0-9]+)/)
+          if (match) {
+            setCurrentSkinHash(match[1])
+          }
+          setSkinVariant(cached.variant)
+        }
+      } else {
+        setError(`${t('skins.errors.loadFailed')}: ${err}`)
+        setCurrentSkinHash(null)
+      }
+      
       setLoading(false)
-      setCurrentSkinHash(null)
     }
   }
 
@@ -256,21 +298,35 @@ export function SkinsTab(props: SkinsTabProps) {
       setError(null)
 
       try {
-        await invoke("upload_skin", {
+        const result = await invoke("upload_skin", {
           skinData: base64,
           variant: skinVariant
         })
 
-        if (activeAccount) {
-          skinCacheRef.current.delete(activeAccount.uuid)
-        }
-
-        await loadUserSkin()
-        
-        // Add to recent skins after successful upload
-        const skinData = await invoke("get_current_skin")
-        if (skinData && skinData.url) {
-          await addToRecentSkins(skinData.url, skinData.variant === "slim" ? "slim" : "classic")
+        if (result && result.url) {
+          const match = result.url.match(/texture\/([a-f0-9]+)/)
+          if (match) {
+            setCurrentSkinHash(match[1])
+          }
+          
+          const variant = result.variant === "slim" ? "slim" : "classic"
+          setSkinVariant(variant)
+          
+          if (activeAccount) {
+            skinCacheRef.current.set(activeAccount.uuid, {
+              url: result.url,
+              variant: variant,
+              timestamp: Date.now()
+            })
+          }
+          
+          // Add to recent skins
+          await addToRecentSkins(result.url, variant)
+        } else {
+          // Fallback
+          setTimeout(() => {
+            loadUserSkin(false)
+          }, 2000)
         }
         
         setError(null)
@@ -297,7 +353,10 @@ export function SkinsTab(props: SkinsTabProps) {
         skinCacheRef.current.delete(activeAccount.uuid)
       }
       
-      await loadUserSkin()
+      // Wait before refreshing to avoid rate limits
+      setTimeout(() => {
+        loadUserSkin(false)
+      }, 2000)
     } catch (err) {
       setError(`${t('skins.errors.resetFailed')}: ${err}`)
     } finally {
@@ -328,16 +387,29 @@ export function SkinsTab(props: SkinsTabProps) {
       })
 
       // Upload the skin
-      await invoke("upload_skin", {
+      const result = await invoke("upload_skin", {
         skinData: base64,
         variant: skin.variant
       })
 
-      if (activeAccount) {
-        skinCacheRef.current.delete(activeAccount.uuid)
+      // Update cache immediately
+      if (result && result.url) {
+        const match = result.url.match(/texture\/([a-f0-9]+)/)
+        if (match) {
+          setCurrentSkinHash(match[1])
+        }
+        
+        const variant = result.variant === "slim" ? "slim" : "classic"
+        setSkinVariant(variant)
+        
+        if (activeAccount) {
+          skinCacheRef.current.set(activeAccount.uuid, {
+            url: result.url,
+            variant: variant,
+            timestamp: Date.now()
+          })
+        }
       }
-
-      await loadUserSkin()
       
       // Move to top of recent skins
       await addToRecentSkins(skin.url, skin.variant)
@@ -354,7 +426,7 @@ export function SkinsTab(props: SkinsTabProps) {
     if (!currentSkinHash) return null
     
     const variant = skinVariant === "slim" ? "slim" : "wide"
-    const capeParam = showCape && activeCape ? "" : "&no=cape"
+    const capeParam = activeCape ? "" : "&no=cape"
     const angleParam = showBack ? "&y=180" : ""
 
     return `https://vzge.me/full/512/${currentSkinHash}?${variant}${capeParam}${angleParam}`
@@ -459,8 +531,18 @@ export function SkinsTab(props: SkinsTabProps) {
         <div className="flex gap-24 items-center justify-center">
           {/* Skin Viewer */}
           <div className="flex-shrink-0 self-start mt-8">
-            <div className="flex flex-col items-center">
-              <div className="rounded-md overflow-hidden relative bg-[#181a1f] p-4">
+            <div className="flex flex-col items-center relative">
+              {/* Rotate Button */}
+              <button
+                onClick={handleRotate}
+                className="absolute top-0 -right-8 z-10 p-2 bg-[#22252b] hover:bg-[#2a2d35] text-[#e6e6e6] rounded-md transition-all cursor-pointer"
+                title={t('skins.rotateTooltip')}
+              >
+                <Rotate3d size={20} />
+              </button>
+
+              <div className="rounded-md overflow-hidden bg-[#181a1f] p-4">
+
                 {loading && (
                   <div className="w-[250px] h-[406px] flex items-center justify-center bg-[#181a1f] rounded-md">
                     <div className="text-center">
@@ -499,15 +581,8 @@ export function SkinsTab(props: SkinsTabProps) {
           {/* Controls Panel */}
           <div className="flex-1 max-w-sm space-y-4">
             <div className="blur-border bg-[#22252b] rounded-md p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4">
                 <h3 className="text-base font-semibold text-[#e6e6e6]">{t('skins.skinModel')}</h3>
-                <button
-                  onClick={handleRotate}
-                  className="p-2 hover:bg-[#1f2128] text-[#e6e6e6] rounded-md transition-all cursor-pointer"
-                  title={t('skins.rotateTooltip')}
-                >
-                  <RotateCw size={16} />
-                </button>
               </div>
               
               <div className="flex gap-2 mb-6">

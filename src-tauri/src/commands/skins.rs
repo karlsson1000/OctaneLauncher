@@ -183,7 +183,7 @@ pub async fn save_recent_skin(
 pub async fn upload_skin(
     skin_data: String,
     variant: String,
-) -> Result<(), String> {
+) -> Result<CurrentSkin, String> {
     if variant != "classic" && variant != "slim" {
         return Err("Invalid skin variant. Must be 'classic' or 'slim'".to_string());
     }
@@ -228,7 +228,7 @@ pub async fn upload_skin(
     
     let form = reqwest::multipart::Form::new()
         .part("file", part)
-        .text("variant", variant);
+        .text("variant", variant.clone());
     
     let response = client
         .post(MINECRAFT_SKIN_URL)
@@ -244,7 +244,55 @@ pub async fn upload_skin(
         return Err(format!("Skin upload failed ({}): {}", status, error_text));
     }
     
-    Ok(())
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+    let uuid_no_dashes = active_account.uuid.replace("-", "");
+    let session_url = format!("{}/{}", MINECRAFT_SESSION_URL, uuid_no_dashes);
+    
+    let session_response = client
+        .get(&session_url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    if session_response.status().is_success() {
+        let session_profile: SessionProfileResponse = session_response
+            .json()
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        if let Some(textures_property) = session_profile.properties.iter().find(|p| p.name == "textures") {
+            let decoded = general_purpose::STANDARD
+                .decode(&textures_property.value)
+                .map_err(|e| e.to_string())?;
+            
+            let textures_str = String::from_utf8(decoded)
+                .map_err(|e| e.to_string())?;
+            
+            let textures_data: TexturesData = serde_json::from_str(&textures_str)
+                .map_err(|e| e.to_string())?;
+            
+            if let Some(skin_texture) = textures_data.textures.skin {
+                let skin_variant = skin_texture.metadata
+                    .and_then(|m| m.model)
+                    .unwrap_or_else(|| "classic".to_string());
+                
+                let cape_url = textures_data.textures.cape.map(|c| c.url);
+                
+                return Ok(CurrentSkin {
+                    url: skin_texture.url,
+                    variant: skin_variant.to_lowercase(),
+                    cape_url,
+                });
+            }
+        }
+    }
+
+    Ok(CurrentSkin {
+        url: String::new(),
+        variant: variant.to_lowercase(),
+        cape_url: None,
+    })
 }
 
 #[tauri::command]
