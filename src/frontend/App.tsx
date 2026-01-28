@@ -223,13 +223,17 @@ function App() {
       setLaunchingInstanceName(null)
     })
     
-    const unlistenServerLaunch = listen<{ instance: string, server: string }>("server-instance-launching", (event) => {
-      console.log(`Server launch detected: ${event.payload.instance} connecting to ${event.payload.server}`)
-      setLaunchingInstanceName(event.payload.instance)
-      setConsoleLogs([])
+  const unlistenServerLaunch = listen<{ instance: string, server: string }>("server-instance-launching", (event) => {
+    console.log(`Server launch detected: ${event.payload.instance} connecting to ${event.payload.server}`)
+    setLaunchingInstanceName(event.payload.instance)
+    setConsoleLogs([])
+    
+    if (settings?.auto_navigate_to_console !== false) {
       setActiveTab("console")
-      setRunningInstances((prev) => new Set(prev).add(event.payload.instance))
-    })
+    }
+    
+    setRunningInstances((prev) => new Set(prev).add(event.payload.instance))
+  })
     
     return () => {
       unlistenConsole.then((fn) => fn())
@@ -338,7 +342,10 @@ function App() {
     if (!activeAccount) return
     setLaunchingInstanceName(instance.name)
     setConsoleLogs([])
-    setActiveTab("console")
+    if (settings?.auto_navigate_to_console !== false) {
+      setActiveTab("console")
+    }
+    
     setShowInstanceDetails(false)
     try {
       await invoke<string>("launch_instance_with_active_account", {
@@ -453,7 +460,9 @@ function App() {
     
     setLaunchingInstanceName(instance.name)
     setConsoleLogs([])
-    setActiveTab("console")
+    if (settings?.auto_navigate_to_console !== false) {
+      setActiveTab("console")
+    }
     
     try {
       await invoke<string>("launch_instance_with_active_account", {

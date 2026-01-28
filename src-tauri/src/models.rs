@@ -367,6 +367,8 @@ pub struct LauncherSettings {
     pub discord_rpc_enabled: bool,
     #[serde(default)]
     pub language: Option<String>,
+    #[serde(default = "default_auto_navigate_to_console")]
+    pub auto_navigate_to_console: bool,
 }
 
 fn default_memory() -> u32 {
@@ -377,6 +379,10 @@ fn default_discord_rpc_enabled() -> bool {
     true
 }
 
+fn default_auto_navigate_to_console() -> bool {
+    true
+}
+
 impl Default for LauncherSettings {
     fn default() -> Self {
         Self {
@@ -384,6 +390,7 @@ impl Default for LauncherSettings {
             memory_mb: 2048,
             discord_rpc_enabled: true,
             language: None,
+            auto_navigate_to_console: true,
         }
     }
 }

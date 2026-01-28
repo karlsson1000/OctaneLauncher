@@ -39,6 +39,7 @@ export interface LauncherSettings {
   java_path: string | null
   discord_rpc_enabled: boolean
   language?: string
+  auto_navigate_to_console?: boolean
 }
 
 export interface ConsoleLog {

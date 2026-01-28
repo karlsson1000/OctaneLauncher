@@ -221,6 +221,12 @@
       "version": {
         "title": "Version Information",
         "launcherVersion": "Launcher Version"
+      },
+      "autoNavigateConsole": {
+        "title": "Console Navigation",
+        "label": "Auto-Navigate to Console",
+        "enabled": "Automatically switch to Console tab when launching",
+        "disabled": "Stay on current tab when launching"
       }
     },
     "errors": {

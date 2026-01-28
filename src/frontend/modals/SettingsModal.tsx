@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Globe } from "lucide-react"
+import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Globe, Terminal } from "lucide-react"
 import { AlertModal } from "./ConfirmModal"
 import { useTranslation } from "react-i18next"
 import type { LauncherSettings } from "../../types"
@@ -750,6 +750,37 @@ export function SettingsModal({
                         <span className="text-gray-400">{t('settings.system.version.launcherVersion')}</span>
                         <span className="text-white font-medium">{semanticVersion || t('common.actions.loading')}</span>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Auto Navigate to Console */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-white">
+                      <Terminal size={18} className="text-[#4572e3]" />
+                      <span className="font-medium">{t('settings.system.autoNavigateConsole.title')}</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-[#252932] rounded p-4">
+                      <div>
+                        <span className="text-sm font-medium text-white">{t('settings.system.autoNavigateConsole.label')}</span>
+                        <p className="text-xs text-gray-400">
+                          {(settings.auto_navigate_to_console ?? true)
+                            ? t('settings.system.autoNavigateConsole.enabled')
+                            : t('settings.system.autoNavigateConsole.disabled')}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleSettingChange({
+                          ...settings,
+                          auto_navigate_to_console: !(settings.auto_navigate_to_console ?? true)
+                        })}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
+                          (settings.auto_navigate_to_console ?? true) ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'
+                        }`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          (settings.auto_navigate_to_console ?? true) ? 'translate-x-6' : 'translate-x-1'
+                        }`} />
+                      </button>
                     </div>
                   </div>
                 </div>
