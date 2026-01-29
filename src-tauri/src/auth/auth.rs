@@ -17,6 +17,7 @@ const XBOX_AUTHENTICATE_URL: &str = "https://user.auth.xboxlive.com/user/authent
 const XSTS_AUTHORIZE_URL: &str = "https://xsts.auth.xboxlive.com/xsts/authorize";
 const MINECRAFT_LOGIN_URL: &str = "https://api.minecraftservices.com/authentication/login_with_xbox";
 const MINECRAFT_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft/profile";
+const AUTH_SUCCESS_HTML: &str = include_str!("../../../auth.html");
 
 pub struct Authenticator {
     oauth_client: BasicClient,
@@ -104,16 +105,16 @@ impl Authenticator {
 
         let auth_code = code.ok_or("No code in callback")?;
 
-        let success_response = b"HTTP/1.1 200 OK\r\n\
-    Content-Type: text/html; charset=utf-8\r\n\
-    Connection: close\r\n\
-    \r\n\
-    <!DOCTYPE html>\
-    <html>\
-        <p>Authentication complete. Please return to the Atomic Launcher to continue.</p>\
-    </html>";
+        let success_response = format!(
+            "HTTP/1.1 200 OK\r\n\
+            Content-Type: text/html; charset=utf-8\r\n\
+            Connection: close\r\n\
+            \r\n\
+            {}",
+            AUTH_SUCCESS_HTML
+        );
 
-        stream.write_all(success_response).await?;
+        stream.write_all(success_response.as_bytes()).await?;
         stream.flush().await?;
 
         tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
