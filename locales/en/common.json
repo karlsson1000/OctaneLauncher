@@ -484,11 +484,25 @@
       "mods": "Browse and install mods from Modrinth",
       "modpacks": "Discover complete modpacks from Modrinth",
       "resourcepacks": "Find resource packs on Modrinth",
-      "shaderpacks": "Explore shader packs from Modrinth"
+      "shaderpacks": "Explore shader packs from Modrinth",
+      "favorites": "Your favorited content"
     },
     "tabs": {
       "mods": "Mods",
       "modpacks": "Modpacks"
+    }
+  },
+  "favorites": {
+    "noFavorites": "No favorites yet",
+    "addFavoritesHint": "Start adding your favorite mods, resource packs, and shader packs",
+    "clickHeartIcon": "Click the heart icon on any item to add it to your favorites",
+    "installAll": {
+      "title": "Install All Favorites",
+      "description": "Quickly install all your favorited items to the selected instance",
+      "button": "Install All",
+      "installing": "Installing...",
+      "failed": "Failed to install {{count}} items",
+      "selectInstance": "Select an instance to install favorites"
     }
   },
   "modpacks": {
@@ -551,6 +565,7 @@
     },
     "uploadButton": "Upload New Skin",
     "uploading": "Uploading...",
+    "openEditor": "Open Skin Editor",
     "resetButton": "Reset to Default",
     "resetting": "Resetting...",
     "recentSkins": "Recent Skins",
@@ -558,6 +573,21 @@
     "recentSkinAlt": "Recent skin",
     "removeCape": "Remove Cape",
     "noCapesAvailable": "No capes available",
+    "editor": {
+      "title": "Skin Editor",
+      "subtitle": "Create and edit your Minecraft skin",
+      "tools": "Tools",
+      "pencil": "Pencil",
+      "eraser": "Eraser",
+      "eyedropper": "Eyedropper",
+      "color": "Color",
+      "undo": "Undo",
+      "redo": "Redo",
+      "toggleGrid": "Toggle Grid",
+      "downloadPng": "Download PNG",
+      "saveAndApply": "Save & Apply Skin",
+      "saving": "Saving..."
+    },
     "errors": {
       "signInRequired": "Please sign in to view your skin",
       "loadFailed": "Failed to load skin",
@@ -565,7 +595,8 @@
       "removeCapeFailed": "Failed to remove cape",
       "uploadFailed": "Upload failed",
       "resetFailed": "Reset failed",
-      "applyFailed": "Failed to apply skin"
+      "applyFailed": "Failed to apply skin",
+      "rateLimited": "Rate limited. Please wait before refreshing."
     }
   },
   "maps": {

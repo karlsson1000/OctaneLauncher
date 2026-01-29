@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
-import { Upload, RotateCcw, Loader2, User, X, Rotate3d } from "lucide-react"
+import { Upload, RotateCcw, Loader2, User, X, Rotate3d, Paintbrush } from "lucide-react"
 import { useTranslation } from "react-i18next"
+import { SkinEditor } from "./SkinEditor"
 
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
@@ -41,8 +42,9 @@ export function SkinsTab(props: SkinsTabProps) {
   const [loadingCapes, setLoadingCapes] = useState(false)
   const [recentSkins, setRecentSkins] = useState<RecentSkin[]>([])
   const [currentSkinHash, setCurrentSkinHash] = useState<string | null>(null)
-  const [showCape, setShowCape] = useState(true)
+  const [currentSkinUrl, setCurrentSkinUrl] = useState<string | null>(null)
   const [capeModalOpen, setCapeModalOpen] = useState(false)
+  const [editorOpen, setEditorOpen] = useState(false)
   const [isClosingModal, setIsClosingModal] = useState(false)
   const [showBack, setShowBack] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -151,6 +153,7 @@ export function SkinsTab(props: SkinsTabProps) {
         const match = cached.url.match(/texture\/([a-f0-9]+)/)
         if (match) {
           setCurrentSkinHash(match[1])
+          setCurrentSkinUrl(cached.url)
         }
         setSkinVariant(cached.variant)
         setLoading(false)
@@ -165,6 +168,7 @@ export function SkinsTab(props: SkinsTabProps) {
           const match = cached.url.match(/texture\/([a-f0-9]+)/)
           if (match) {
             setCurrentSkinHash(match[1])
+            setCurrentSkinUrl(cached.url)
           }
           setSkinVariant(cached.variant)
         }
@@ -183,6 +187,7 @@ export function SkinsTab(props: SkinsTabProps) {
         const match = skinData.url.match(/texture\/([a-f0-9]+)/)
         if (match) {
           setCurrentSkinHash(match[1])
+          setCurrentSkinUrl(skinData.url)
         }
         
         setSkinVariant(variant)
@@ -197,6 +202,7 @@ export function SkinsTab(props: SkinsTabProps) {
         loadCapes()
       } else {
         setCurrentSkinHash(null)
+        setCurrentSkinUrl(null)
         setLoading(false)
         loadCapes()
       }
@@ -212,12 +218,14 @@ export function SkinsTab(props: SkinsTabProps) {
           const match = cached.url.match(/texture\/([a-f0-9]+)/)
           if (match) {
             setCurrentSkinHash(match[1])
+            setCurrentSkinUrl(cached.url)
           }
           setSkinVariant(cached.variant)
         }
       } else {
         setError(`${t('skins.errors.loadFailed')}: ${err}`)
         setCurrentSkinHash(null)
+        setCurrentSkinUrl(null)
       }
       
       setLoading(false)
@@ -234,9 +242,7 @@ export function SkinsTab(props: SkinsTabProps) {
       if (capeData && capeData.capes) {
         setCapes(capeData.capes)
         const active = capeData.capes.find((cape: Cape) => cape.state === "ACTIVE")
-        const activeCapeId = active?.id || null
-        setActiveCape(activeCapeId)
-        setShowCape(!!activeCapeId)
+        setActiveCape(active?.id || null)
       }
     } catch (err) {
       console.error("Failed to load capes:", err)
@@ -251,7 +257,6 @@ export function SkinsTab(props: SkinsTabProps) {
     try {
       await invoke("equip_cape", { capeId })
       setActiveCape(capeId)
-      setShowCape(true)
       handleCloseCapeModal()
     } catch (err) {
       console.error("Failed to equip cape:", err)
@@ -265,7 +270,6 @@ export function SkinsTab(props: SkinsTabProps) {
     try {
       await invoke("remove_cape")
       setActiveCape(null)
-      setShowCape(false)
       handleCloseCapeModal()
     } catch (err) {
       console.error("Failed to remove cape:", err)
@@ -307,6 +311,7 @@ export function SkinsTab(props: SkinsTabProps) {
           const match = result.url.match(/texture\/([a-f0-9]+)/)
           if (match) {
             setCurrentSkinHash(match[1])
+            setCurrentSkinUrl(result.url)
           }
           
           const variant = result.variant === "slim" ? "slim" : "classic"
@@ -397,6 +402,7 @@ export function SkinsTab(props: SkinsTabProps) {
         const match = result.url.match(/texture\/([a-f0-9]+)/)
         if (match) {
           setCurrentSkinHash(match[1])
+          setCurrentSkinUrl(result.url)
         }
         
         const variant = result.variant === "slim" ? "slim" : "classic"
@@ -422,6 +428,41 @@ export function SkinsTab(props: SkinsTabProps) {
     }
   }
 
+  const handleEditorSave = async (skinData: string, variant: "classic" | "slim") => {
+    if (!invoke) return
+
+    try {
+      const result = await invoke("upload_skin", {
+        skinData: skinData,
+        variant: variant
+      })
+
+      if (result && result.url) {
+        const match = result.url.match(/texture\/([a-f0-9]+)/)
+        if (match) {
+          setCurrentSkinHash(match[1])
+          setCurrentSkinUrl(result.url)
+        }
+        
+        const newVariant = result.variant === "slim" ? "slim" : "classic"
+        setSkinVariant(newVariant)
+        
+        if (activeAccount) {
+          skinCacheRef.current.set(activeAccount.uuid, {
+            url: result.url,
+            variant: newVariant,
+            timestamp: Date.now()
+          })
+        }
+        
+        // Add to recent skins
+        await addToRecentSkins(result.url, newVariant)
+      }
+    } catch (err) {
+      throw err
+    }
+  }
+
   const getSkinRenderUrl = () => {
     if (!currentSkinHash) return null
     
@@ -430,6 +471,18 @@ export function SkinsTab(props: SkinsTabProps) {
     const angleParam = showBack ? "&y=180" : ""
 
     return `https://vzge.me/full/512/${currentSkinHash}?${variant}${capeParam}${angleParam}`
+  }
+
+  // Show editor if open
+  if (editorOpen) {
+    return (
+      <SkinEditor
+        onClose={() => setEditorOpen(false)}
+        onSave={handleEditorSave}
+        initialSkinUrl={currentSkinUrl || undefined}
+        initialVariant={skinVariant}
+      />
+    )
   }
 
   if (!isAuthenticated) {
@@ -633,6 +686,15 @@ export function SkinsTab(props: SkinsTabProps) {
                       <span>{t('skins.uploadButton')}</span>
                     </>
                   )}
+                </button>
+                
+                <button
+                  onClick={() => setEditorOpen(true)}
+                  disabled={uploading || loading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#7c3aed] hover:bg-[#6d28d9] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer"
+                >
+                  <Paintbrush size={16} />
+                  <span>{t('skins.openEditor') || 'Open Skin Editor'}</span>
                 </button>
                 
                 <button
