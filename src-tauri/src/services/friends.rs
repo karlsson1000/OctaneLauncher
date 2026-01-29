@@ -38,6 +38,7 @@ impl FriendsService {
                 "uuid": uuid,
                 "username": username,
                 "status": "online",
+                "current_instance": null,
                 "last_seen": Utc::now()
             })
         } else {
@@ -45,6 +46,7 @@ impl FriendsService {
                 "uuid": uuid,
                 "username": username,
                 "status": "online",
+                "current_instance": null,
                 "last_seen": Utc::now()
             })
         };
