@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Search, Download, Loader2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Download, Loader2, Sparkles, ChevronLeft, ChevronRight, Heart } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
@@ -27,6 +27,21 @@ export function ShaderPacksTab({
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [favoriteShaderPacks, setFavoriteShaderPacks] = useState<Set<string>>(new Set())
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('favoriteShaderPacks')
+    if (savedFavorites) {
+      try {
+        const parsed = JSON.parse(savedFavorites)
+        setFavoriteShaderPacks(new Set(parsed))
+      } catch (error) {
+        console.error('Failed to parse favorite shader packs:', error)
+        setFavoriteShaderPacks(new Set())
+      }
+    }
+  }, [])
 
   useEffect(() => {
     loadPopularShaderPacks()
@@ -52,6 +67,24 @@ export function ShaderPacksTab({
       }
     }
   }, [searchQuery])
+
+  const toggleFavorite = (projectId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation()
+    }
+    
+    setFavoriteShaderPacks(prev => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(projectId)) {
+        newFavorites.delete(projectId)
+      } else {
+        newFavorites.add(projectId)
+      }
+      // Save to localStorage
+      localStorage.setItem('favoriteShaderPacks', JSON.stringify(Array.from(newFavorites)))
+      return newFavorites
+    })
+  }
 
   const loadInstalledShaderPacks = async () => {
     if (!selectedInstance) return
@@ -363,7 +396,19 @@ export function ShaderPacksTab({
                     <img src={selectedShader.icon_url} alt={selectedShader.title} className="w-16 h-16 rounded" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedShader.title}</h2>
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedShader.title}</h2>
+                      <button
+                        onClick={(e) => toggleFavorite(selectedShader.project_id, e)}
+                        className="p-1 hover:bg-[#181a1f] rounded transition-colors flex-shrink-0 cursor-pointer"
+                      >
+                        <Heart
+                          size={20}
+                          className={favoriteShaderPacks.has(selectedShader.project_id) ? "fill-[#ef4444] text-[#ef4444]" : "text-[#7d8590]"}
+                          strokeWidth={2}
+                        />
+                      </button>
+                    </div>
                     <p className="text-sm text-[#7d8590]">by {selectedShader.author}</p>
                   </div>
                 </div>

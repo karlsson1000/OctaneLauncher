@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Search, Download, Loader2, Image, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Download, Loader2, Image, ChevronLeft, ChevronRight, Heart } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
@@ -27,6 +27,21 @@ export function ResourcePacksTab({
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [favoriteResourcePacks, setFavoriteResourcePacks] = useState<Set<string>>(new Set())
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('favoriteResourcePacks')
+    if (savedFavorites) {
+      try {
+        const parsed = JSON.parse(savedFavorites)
+        setFavoriteResourcePacks(new Set(parsed))
+      } catch (error) {
+        console.error('Failed to parse favorite resource packs:', error)
+        setFavoriteResourcePacks(new Set())
+      }
+    }
+  }, [])
 
   useEffect(() => {
     loadPopularResourcePacks()
@@ -52,6 +67,24 @@ export function ResourcePacksTab({
       }
     }
   }, [searchQuery])
+
+  const toggleFavorite = (projectId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation()
+    }
+    
+    setFavoriteResourcePacks(prev => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(projectId)) {
+        newFavorites.delete(projectId)
+      } else {
+        newFavorites.add(projectId)
+      }
+      // Save to localStorage
+      localStorage.setItem('favoriteResourcePacks', JSON.stringify(Array.from(newFavorites)))
+      return newFavorites
+    })
+  }
 
   const loadInstalledResourcePacks = async () => {
     if (!selectedInstance) return
@@ -146,25 +179,25 @@ export function ResourcePacksTab({
     return instance.version
   }
 
-    const handlePackSelect = async (pack: ModrinthProject) => {
+  const handlePackSelect = async (pack: ModrinthProject) => {
     if (!selectedInstance) return
     
     setSelectedPack(pack)
     setIsLoadingVersions(true)
     try {
-        const mcVersion = getMinecraftVersion(selectedInstance)
-        
-        const versions = await invoke<ModrinthVersion[]>("get_mod_versions", {
+      const mcVersion = getMinecraftVersion(selectedInstance)
+      
+      const versions = await invoke<ModrinthVersion[]>("get_mod_versions", {
         idOrSlug: pack.project_id,
         gameVersions: [mcVersion],
-        })
-        setPackVersions(versions)
+      })
+      setPackVersions(versions)
     } catch (error) {
-        console.error("Failed to load versions:", error)
+      console.error("Failed to load versions:", error)
     } finally {
-        setIsLoadingVersions(false)
+      setIsLoadingVersions(false)
     }
-    }
+  }
 
   const isPackInstalled = (version: ModrinthVersion): boolean => {
     return version.files.some(file => installedPacks.has(file.filename))
@@ -361,7 +394,19 @@ export function ResourcePacksTab({
                     <img src={selectedPack.icon_url} alt={selectedPack.title} className="w-16 h-16 rounded" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedPack.title}</h2>
+                    <div className="flex items-start justify-between gap-2">
+                      <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedPack.title}</h2>
+                      <button
+                        onClick={(e) => toggleFavorite(selectedPack.project_id, e)}
+                        className="p-1 hover:bg-[#181a1f] rounded transition-colors flex-shrink-0 cursor-pointer"
+                      >
+                        <Heart
+                          size={20}
+                          className={favoriteResourcePacks.has(selectedPack.project_id) ? "fill-[#ef4444] text-[#ef4444]" : "text-[#7d8590]"}
+                          strokeWidth={2}
+                        />
+                      </button>
+                    </div>
                     <p className="text-sm text-[#7d8590]">by {selectedPack.author}</p>
                   </div>
                 </div>

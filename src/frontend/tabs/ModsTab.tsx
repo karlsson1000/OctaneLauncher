@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Search, Download, Loader2, Package, ChevronDown, ChevronLeft, ChevronRight, Check } from "lucide-react"
+import { Search, Download, Loader2, Package, ChevronDown, ChevronLeft, ChevronRight, Check, Heart } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
 
@@ -195,9 +195,10 @@ interface ModsTabProps {
   instances: Instance[]
   onSetSelectedInstance: (instance: Instance) => void
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
+  favoritesOnly?: boolean
 }
 
-export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, scrollContainerRef }: ModsTabProps) {
+export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, scrollContainerRef, favoritesOnly = false }: ModsTabProps) {
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<ModrinthSearchResult | null>(null)
@@ -210,10 +211,27 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [favoriteMods, setFavoriteMods] = useState<Set<string>>(new Set())
+
+  // Load favorites from localStorage
+  useEffect(() => {
+    const savedFavorites = localStorage.getItem('favoriteMods')
+    if (savedFavorites) {
+      try {
+        const parsed = JSON.parse(savedFavorites)
+        setFavoriteMods(new Set(parsed))
+      } catch (error) {
+        console.error('Failed to parse favorite mods:', error)
+        setFavoriteMods(new Set())
+      }
+    }
+  }, [])
 
   useEffect(() => {
-    loadPopularMods()
-  }, [])
+    if (!favoritesOnly) {
+      loadPopularMods()
+    }
+  }, [favoritesOnly])
 
   useEffect(() => {
     if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) {
@@ -231,6 +249,8 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
   }, [selectedInstance])
 
   useEffect(() => {
+    if (favoritesOnly) return
+    
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current)
     }
@@ -243,7 +263,32 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
         clearTimeout(searchTimeoutRef.current)
       }
     }
-  }, [searchQuery])
+  }, [searchQuery, favoritesOnly])
+
+  // Load favorite mods when in favorites mode
+  useEffect(() => {
+    if (favoritesOnly) {
+      loadFavoriteMods()
+    }
+  }, [favoritesOnly, favoriteMods])
+
+  const toggleFavorite = (projectId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation()
+    }
+    
+    setFavoriteMods(prev => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(projectId)) {
+        newFavorites.delete(projectId)
+      } else {
+        newFavorites.add(projectId)
+      }
+      // Save to localStorage
+      localStorage.setItem('favoriteMods', JSON.stringify(Array.from(newFavorites)))
+      return newFavorites
+    })
+  }
 
   const loadInstalledMods = async () => {
     if (!selectedInstance) return
@@ -274,6 +319,34 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
       setSearchResults(result)
     } catch (error) {
       console.error("Failed to load popular mods:", error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  const loadFavoriteMods = async () => {
+    if (favoriteMods.size === 0) {
+      setSearchResults({ hits: [], offset: 0, limit: 20, total_hits: 0 })
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const facets = JSON.stringify([
+        ["project_type:mod"],
+        Array.from(favoriteMods).map(id => `project_id:${id}`)
+      ])
+      const result = await invoke<ModrinthSearchResult>("search_mods", {
+        query: "",
+        facets,
+        index: "downloads",
+        offset: 0,
+        limit: 100,
+      })
+      setSearchResults(result)
+    } catch (error) {
+      console.error("Failed to load favorite mods:", error)
+      setSearchResults({ hits: [], offset: 0, limit: 20, total_hits: 0 })
     } finally {
       setIsSearching(false)
     }
@@ -400,7 +473,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
   }
 
   const totalPages = searchResults ? Math.ceil(searchResults.total_hits / itemsPerPage) : 1
-  const showPagination = searchResults && searchResults.total_hits > itemsPerPage
+  const showPagination = searchResults && searchResults.total_hits > itemsPerPage && !favoritesOnly
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -463,149 +536,173 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
           );
         }
       `}</style>
-      <div className="flex gap-2 mb-4">
-        <div className="relative flex-1 blur-border-input rounded-md bg-[#22252b]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
-          <input
-            type="text"
-            placeholder={t('mods.searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
-          />
-          {isSearching && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
-              <Loader2 size={16} className="animate-spin text-[#16a34a]" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {searchResults ? (
-        <>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 space-y-3">
-              {searchResults.hits.map((mod) => (
-                <div
-                  key={mod.project_id}
-                  className={`blur-border rounded-md overflow-hidden cursor-pointer transition-all ${
-                    selectedMod?.project_id === mod.project_id ? "bg-[#2a2f3b]" : "bg-[#22252b]"
-                  }`}
-                  onClick={() => handleModSelect(mod)}
-                >
-                  <div className="flex min-h-0 relative z-0">
-                    {mod.icon_url ? (
-                      <div className="w-24 h-24 flex items-center justify-center flex-shrink-0 rounded m-2">
-                        <img
-                          src={mod.icon_url}
-                          alt={mod.title}
-                          className="w-full h-full object-contain rounded"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-24 h-24 bg-gradient-to-br from-[#16a34a]/10 to-[#22c55e]/10 flex items-center justify-center flex-shrink-0 rounded m-2">
-                        <Package size={48} className="text-[#16a34a]" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-0">
-                          <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{mod.title}</h3>
-                          <span className="text-xs text-[#7d8590] whitespace-nowrap">by {mod.author}</span>
-                        </div>
-                        <p className="text-sm text-[#7d8590] line-clamp-2 mb-2">{mod.description}</p>
-                        <div className="flex items-center gap-2 text-xs flex-wrap">
-                          <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
-                            <Download size={12} />
-                            {formatDownloads(mod.downloads)}
-                          </span>
-                          {mod.categories.slice(0, 2).map((category) => (
-                            <span key={category} className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
-                              {category}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {selectedMod && (
-              <div className="bg-[#22252b] rounded-md p-5 sticky top-4 self-start border border-[#3a3f4b]">
-                <div className="flex gap-3 mb-4">
-                  {selectedMod.icon_url && (
-                    <img src={selectedMod.icon_url} alt={selectedMod.title} className="w-16 h-16 rounded" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedMod.title}</h2>
-                    <p className="text-sm text-[#7d8590]">by {selectedMod.author}</p>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-[#7d8590] mb-4 leading-relaxed">{selectedMod.description}</p>
-                
-                <div className="flex gap-2 mb-5 text-xs flex-wrap">
-                  <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
-                    <Download size={12} />
-                    {formatDownloads(selectedMod.downloads)}
-                  </span>
-                  <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{selectedMod.follows.toLocaleString()} {t('mods.followers')}</span>
-                </div>
-
-                <div className="border-t border-[#3a3f4b] pt-4">
-                  <h3 className="font-semibold text-sm text-[#e6e6e6] mb-3">{t('mods.versions')}</h3>
-                  {isLoadingVersions ? (
-                    <div className="text-center py-6">
-                      <Loader2 size={20} className="animate-spin text-[#16a34a] mx-auto" />
-                    </div>
-                  ) : modVersions.length === 0 ? (
-                    <p className="text-sm text-[#3a3f4b] text-center py-3">{t('mods.noCompatibleVersions')}</p>
-                  ) : (
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {modVersions.map((version) => {
-                        const installed = isModInstalled(version)
-                        const downloading = downloadingMods.has(version.id)
-                        
-                        return (
-                          <div
-                            key={version.id}
-                            className="bg-[#181a1f] rounded p-3 flex items-center justify-between gap-2"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-[#e6e6e6] truncate">{version.name}</div>
-                              <div className="text-xs text-[#3a3f4b] truncate mt-0.5">
-                                {version.loaders.join(', ')} • {selectedInstance ? getMinecraftVersion(selectedInstance) : version.game_versions[0]}
-                              </div>
-                            </div>
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => handleDownloadMod(version)}
-                                disabled={!selectedInstance || downloading || installed}
-                                className="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1"
-                              >
-                                {downloading ? (
-                                  <Loader2 size={14} className="animate-spin" />
-                                ) : installed ? (
-                                  t('mods.installed')
-                                ) : (
-                                  <>
-                                    <Download size={14} />
-                                    {t('mods.install')}
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
+      {!favoritesOnly && (
+        <div className="flex gap-2 mb-4">
+          <div className="relative flex-1 blur-border-input rounded-md bg-[#22252b]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
+            <input
+              type="text"
+              placeholder={t('mods.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
+                <Loader2 size={16} className="animate-spin text-[#16a34a]" />
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {searchResults ? (
+        <>
+          {favoritesOnly && searchResults.hits.length === 0 ? (
+            <div className="text-center py-12">
+              <Heart size={48} className="mx-auto mb-4 text-[#3a3f4b]" />
+              <p className="text-[#7d8590] mb-2">{t('favorites.noFavorites')}</p>
+              <p className="text-sm text-[#3a3f4b]">{t('favorites.addFavoritesHint')}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2 space-y-3">
+                {searchResults.hits.map((mod) => {
+                  return (
+                    <div
+                      key={mod.project_id}
+                      className={`blur-border rounded-md overflow-hidden cursor-pointer transition-all ${
+                        selectedMod?.project_id === mod.project_id ? "bg-[#2a2f3b]" : "bg-[#22252b]"
+                      }`}
+                      onClick={() => handleModSelect(mod)}
+                    >
+                      <div className="flex min-h-0 relative z-0">
+                        {mod.icon_url ? (
+                          <div className="w-24 h-24 flex items-center justify-center flex-shrink-0 rounded m-2">
+                            <img
+                              src={mod.icon_url}
+                              alt={mod.title}
+                              className="w-full h-full object-contain rounded"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-24 h-24 bg-gradient-to-br from-[#16a34a]/10 to-[#22c55e]/10 flex items-center justify-center flex-shrink-0 rounded m-2">
+                            <Package size={48} className="text-[#16a34a]" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-0">
+                              <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{mod.title}</h3>
+                              <span className="text-xs text-[#7d8590] whitespace-nowrap">by {mod.author}</span>
+                            </div>
+                            <p className="text-sm text-[#7d8590] line-clamp-2 mb-2">{mod.description}</p>
+                            <div className="flex items-center gap-2 text-xs flex-wrap">
+                              <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                                <Download size={12} />
+                                {formatDownloads(mod.downloads)}
+                              </span>
+                              {mod.categories.slice(0, 2).map((category) => (
+                                <span key={category} className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                                  {category}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {selectedMod && (
+                <div className="bg-[#22252b] rounded-md p-5 sticky top-4 self-start border border-[#3a3f4b]">
+                  <div className="flex gap-3 mb-4">
+                    {selectedMod.icon_url && (
+                      <img src={selectedMod.icon_url} alt={selectedMod.title} className="w-16 h-16 rounded" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedMod.title}</h2>
+                        <button
+                          onClick={(e) => toggleFavorite(selectedMod.project_id, e)}
+                          className="p-1 hover:bg-[#181a1f] rounded transition-colors flex-shrink-0 cursor-pointer"
+                        >
+                          <Heart
+                            size={20}
+                            className={favoriteMods.has(selectedMod.project_id) ? "fill-[#ef4444] text-[#ef4444]" : "text-[#7d8590]"}
+                            strokeWidth={2}
+                          />
+                        </button>
+                      </div>
+                      <p className="text-sm text-[#7d8590]">by {selectedMod.author}</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-[#7d8590] mb-4 leading-relaxed">{selectedMod.description}</p>
+                  
+                  <div className="flex gap-2 mb-5 text-xs flex-wrap">
+                    <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                      <Download size={12} />
+                      {formatDownloads(selectedMod.downloads)}
+                    </span>
+                    <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{selectedMod.follows.toLocaleString()} {t('mods.followers')}</span>
+                  </div>
+
+                  <div className="border-t border-[#3a3f4b] pt-4">
+                    <h3 className="font-semibold text-sm text-[#e6e6e6] mb-3">{t('mods.versions')}</h3>
+                    {isLoadingVersions ? (
+                      <div className="text-center py-6">
+                        <Loader2 size={20} className="animate-spin text-[#16a34a] mx-auto" />
+                      </div>
+                    ) : modVersions.length === 0 ? (
+                      <p className="text-sm text-[#3a3f4b] text-center py-3">{t('mods.noCompatibleVersions')}</p>
+                    ) : (
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {modVersions.map((version) => {
+                          const installed = isModInstalled(version)
+                          const downloading = downloadingMods.has(version.id)
+                          
+                          return (
+                            <div
+                              key={version.id}
+                              className="bg-[#181a1f] rounded p-3 flex items-center justify-between gap-2"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-[#e6e6e6] truncate">{version.name}</div>
+                                <div className="text-xs text-[#3a3f4b] truncate mt-0.5">
+                                  {version.loaders.join(', ')} • {selectedInstance ? getMinecraftVersion(selectedInstance) : version.game_versions[0]}
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => handleDownloadMod(version)}
+                                  disabled={!selectedInstance || downloading || installed}
+                                  className="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1"
+                                >
+                                  {downloading ? (
+                                    <Loader2 size={14} className="animate-spin" />
+                                  ) : installed ? (
+                                    t('mods.installed')
+                                  ) : (
+                                    <>
+                                      <Download size={14} />
+                                      {t('mods.install')}
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {showPagination && (
             <div className="flex items-center justify-center gap-2 mt-6 pb-4">

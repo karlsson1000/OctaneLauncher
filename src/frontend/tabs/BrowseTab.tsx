@@ -4,7 +4,8 @@ import { ModsTab, ModsSelector } from "./ModsTab"
 import { ModpacksTab } from "./ModpacksTab"
 import { ResourcePacksTab } from "./ResourcePacksTab"
 import { ShaderPacksTab } from "./ShaderPacksTab"
-import { Puzzle, Layers, Image, Sparkles } from "lucide-react"
+import { FavoritesTab } from "./FavoritesTab"
+import { Puzzle, Layers, Image, Sparkles, Heart } from "lucide-react"
 import type { Instance } from "../../types"
 
 interface BrowseTabProps {
@@ -23,7 +24,7 @@ export function BrowseTab({
   onShowCreationToast 
 }: BrowseTabProps) {
   const { t } = useTranslation()
-  const [activeSubTab, setActiveSubTab] = useState<"mods" | "modpacks" | "resourcepacks" | "shaderpacks">("mods")
+  const [activeSubTab, setActiveSubTab] = useState<"mods" | "modpacks" | "resourcepacks" | "shaderpacks" | "favorites">("mods")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const [selectedModpackVersion, setSelectedModpackVersion] = useState<string | null>(null)
@@ -59,6 +60,13 @@ export function BrowseTab({
       icon: Sparkles,
       color: "text-[#f59e0b]"
     },
+    { 
+      id: "favorites" as const, 
+      label: "", 
+      subtitle: t('browse.subtitle.favorites'),
+      icon: Heart,
+      color: "text-[#ef4444]"
+    },
   ]
 
   const activeTab = tabs.find(tab => tab.id === activeSubTab)
@@ -82,7 +90,7 @@ export function BrowseTab({
                       }`}
                     >
                       <Icon size={24} strokeWidth={2} />
-                      <span>{tab.label}</span>
+                      {tab.label && <span>{tab.label}</span>}
                     </button>
                     {index < tabs.length - 1 && (
                       <div className="h-8 w-px bg-[#3a3f4b]" />
@@ -96,7 +104,7 @@ export function BrowseTab({
             </p>
           </div>
           
-          {(activeSubTab === "mods" || activeSubTab === "resourcepacks" || activeSubTab === "shaderpacks") && (
+          {(activeSubTab === "mods" || activeSubTab === "resourcepacks" || activeSubTab === "shaderpacks" || activeSubTab === "favorites") && (
             <ModsSelector 
               instances={instances}
               selectedInstance={selectedInstance}
@@ -145,6 +153,12 @@ export function BrowseTab({
           instances={instances}
           onSetSelectedInstance={onSetSelectedInstance}
           scrollContainerRef={scrollContainerRef}
+        />
+      )}
+
+      {activeSubTab === "favorites" && (
+        <FavoritesTab
+          selectedInstance={selectedInstance}
         />
       )}
     </div>
