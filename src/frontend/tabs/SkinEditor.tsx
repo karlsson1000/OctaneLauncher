@@ -27,7 +27,6 @@ export function SkinEditor(props: SkinEditorProps) {
   const [isDrawing, setIsDrawing] = useState(false)
   const [showGrid, setShowGrid] = useState(false)
   const [showOutlines, setShowOutlines] = useState(false)
-  const [variant, setVariant] = useState<"classic" | "slim">(initialVariant)
   const [history, setHistory] = useState<ImageData[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [saving, setSaving] = useState(false)
@@ -393,7 +392,7 @@ export function SkinEditor(props: SkinEditorProps) {
       // Convert to base64
       const base64Data = exportCanvas.toDataURL("image/png").split(",")[1]
       
-      await onSave(base64Data, variant)
+      await onSave(base64Data, initialVariant)
       onClose()
     } catch (err) {
       console.error("Failed to save skin:", err)
