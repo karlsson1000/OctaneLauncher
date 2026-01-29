@@ -502,9 +502,9 @@ function App() {
       <div 
         data-tauri-drag-region
         style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
-        className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center px-4"
+        className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center"
       >
-        <div className="flex items-center gap-2 mr-4">
+        <div className="flex items-center gap-2 ml-4 mr-4">
           <img src="/logo.png" alt="Atomic Launcher" className="h-5 w-5" />
           <span className="text-sm font-semibold text-[#e6e6e6]">Atomic Launcher</span>
         </div>
@@ -559,7 +559,7 @@ function App() {
           </nav>
         </div>
 
-        <div className="flex items-center" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center ml-auto" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={() => setShowSettingsModal(true)}
             className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-all cursor-pointer"
