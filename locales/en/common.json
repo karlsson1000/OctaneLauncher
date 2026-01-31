@@ -31,6 +31,12 @@
       "confirm": "Confirm"
     }
   },
+  "chat": {
+    "encrypted": "Encrypted",
+    "noMessages": "No messages yet",
+    "sendFirst": "Send a message to start chatting",
+    "typeMessage": "Type a message..."
+  },
   "home": {
     "title": "Home",
     "subtitle": "Recently played instances",

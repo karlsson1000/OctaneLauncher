@@ -11,6 +11,7 @@ use std::sync::Arc;
 use tauri_plugin_updater::UpdaterExt;
 use services::accounts::AccountManager;
 use services::friends::FriendsService;
+use services::chat::ChatService;
 use models::FriendStatus;
 use serde::Serialize;
 
@@ -33,6 +34,13 @@ use commands::{
     update_user_status,
     update_specific_user_status,
     register_user_in_friends_system,
+
+    // Chat commands
+    send_chat_message,
+    get_chat_messages,
+    get_unread_message_counts,
+    mark_messages_as_read,
+    cleanup_chat_messages,
     
     // Instance commands
     create_instance,
@@ -308,9 +316,18 @@ pub fn run() {
                     runtime.block_on(async {
                         match AccountManager::get_active_account() {
                             Ok(Some(account)) => {
+                                // Set user offline
                                 match FriendsService::new() {
                                     Ok(service) => {
                                         let _ = service.update_status(&account.uuid, FriendStatus::Offline, None).await;
+                                    }
+                                    Err(_) => {}
+                                }
+                                
+                                // Clean up chat messages
+                                match ChatService::new() {
+                                    Ok(chat_service) => {
+                                        let _ = chat_service.cleanup_messages_if_both_offline(&account.uuid).await;
                                     }
                                     Err(_) => {}
                                 }
@@ -350,6 +367,13 @@ pub fn run() {
             update_user_status,
             update_specific_user_status,
             register_user_in_friends_system,
+
+            // Chat System
+            send_chat_message,
+            get_chat_messages,
+            get_unread_message_counts,
+            mark_messages_as_read,
+            cleanup_chat_messages,
             
             // Skin Management
             upload_skin,

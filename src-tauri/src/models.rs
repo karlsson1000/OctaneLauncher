@@ -705,3 +705,16 @@ pub struct NeoForgeProfileLibrary {
     #[serde(default)]
     pub downloads: Option<serde_json::Value>,
 }
+
+// ===== CHAT =====
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub id: String,
+    pub from_uuid: String,
+    pub to_uuid: String,
+    pub content: String,
+    #[serde(with = "chrono::serde::ts_seconds")]
+    pub timestamp: DateTime<Utc>,
+    pub is_own: bool,
+}

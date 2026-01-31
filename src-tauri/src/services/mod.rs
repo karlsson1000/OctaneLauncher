@@ -6,3 +6,4 @@ pub mod template;
 pub mod settings;
 pub mod accounts;
 pub mod friends;
+pub mod chat;

@@ -4,6 +4,7 @@ import { LogIn, LogOut, ChevronUp, ChevronDown, Play, Package, FolderOpen, Copy,
 import { useTranslation } from "react-i18next"
 import { ContextMenu } from "../modals/ContextMenu"
 import { ConfirmModal } from "../modals/ConfirmModal"
+import { Chat } from "./Chat"
 import type { Instance } from "../../types"
 
 interface AccountInfo {
@@ -20,6 +21,7 @@ interface Friend {
   status: "online" | "offline" | "ingame"
   last_seen: string
   current_instance?: string
+  unread_count?: number
 }
 
 interface FriendRequest {
@@ -93,6 +95,8 @@ export function Sidebar(props: SidebarProps) {
   const [confirmRemoveFriend, setConfirmRemoveFriend] = useState<{ uuid: string, username: string } | null>(null)
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null)
   const [friendsUpdateKey, setFriendsUpdateKey] = useState(0)
+  const [openChat, setOpenChat] = useState<{ uuid: string, username: string } | null>(null)
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
   const accountButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -118,6 +122,7 @@ export function Sidebar(props: SidebarProps) {
           // Load friends and requests
           await loadFriends()
           await loadFriendRequests()
+          await checkUnreadMessages()
         } catch (err) {
           console.error("Failed to initialize friends system:", err)
         }
@@ -129,6 +134,7 @@ export function Sidebar(props: SidebarProps) {
       const interval = setInterval(() => {
         loadFriends()
         loadFriendRequests()
+        checkUnreadMessages()
       }, 5000)
 
       return () => {
@@ -136,6 +142,17 @@ export function Sidebar(props: SidebarProps) {
       }
     }
   }, [isAuthenticated, activeAccount])
+
+  const checkUnreadMessages = async () => {
+    if (!activeAccount) return
+    
+    try {
+      const counts = await invoke<Record<string, number>>("get_unread_message_counts")
+      setUnreadCounts(counts)
+    } catch (error) {
+      console.error("Failed to check unread messages:", error)
+    }
+  }
 
   const loadFriends = async () => {
     try {
@@ -253,6 +270,23 @@ export function Sidebar(props: SidebarProps) {
     }
   }
 
+  const handleFriendClick = async (friend: Friend) => {
+    setOpenChat({ uuid: friend.uuid, username: friend.username })
+    
+    // Mark messages as read from this friend
+    try {
+      await invoke("mark_messages_as_read", { friendUuid: friend.uuid })
+      // Update unread counts immediately
+      setUnreadCounts(prev => {
+        const updated = { ...prev }
+        delete updated[friend.uuid]
+        return updated
+      })
+    } catch (error) {
+      console.error("Failed to mark messages as read:", error)
+    }
+  }
+
   const recentInstances = [...instances]
     .filter(inst => inst.last_played)
     .sort((a, b) => {
@@ -351,6 +385,12 @@ export function Sidebar(props: SidebarProps) {
 
   const handleRemoveAccount = async (uuid: string) => {
     try {
+      if (activeAccount && uuid === activeAccount.uuid) {
+        await invoke("cleanup_chat_messages").catch(err => 
+          console.error("Failed to cleanup chat messages:", err)
+        )
+      }
+      
       await invoke("update_specific_user_status", {
         userUuid: uuid,
         status: "offline", 
@@ -657,9 +697,11 @@ export function Sidebar(props: SidebarProps) {
                     <div className="space-y-1" key={friendsUpdateKey}>
                       {friends.map((friend) => {
                         const statusKey = `${friend.uuid}-${friend.status}-${friend.current_instance || 'none'}`
+                        const unreadCount = unreadCounts[friend.uuid] || 0
                         return (
                           <div
                             key={statusKey}
+                            onClick={() => handleFriendClick(friend)}
                             className="group relative flex items-center gap-2 px-1.5 py-1.5 rounded cursor-pointer hover:bg-[#181a1f] transition-all"
                           >
                             <div className="relative flex-shrink-0">
@@ -669,6 +711,13 @@ export function Sidebar(props: SidebarProps) {
                                 className="w-8 h-8 rounded"
                               />
                               <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#22252b] ${getStatusColor(friend.status)}`} />
+                              {unreadCount > 0 && (
+                                <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 rounded-full flex items-center justify-center px-1">
+                                  <span className="text-[10px] font-bold text-white">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                             <div className="flex-1 min-w-0 group-hover:pr-6 transition-all">
                               <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">
@@ -684,7 +733,10 @@ export function Sidebar(props: SidebarProps) {
                               </div>
                             </div>
                             <button
-                              onClick={() => handleRemoveFriend(friend.uuid, friend.username)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRemoveFriend(friend.uuid, friend.username)
+                              }}
                               className="absolute right-1.5 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer bg-[#181a1f]"
                               title={t('sidebar.removeFriend')}
                             >
@@ -832,6 +884,14 @@ export function Sidebar(props: SidebarProps) {
         onConfirm={confirmRemove}
         onCancel={() => setConfirmRemoveFriend(null)}
       />
+
+      {openChat && activeAccount && (
+        <Chat
+          friendUuid={openChat.uuid}
+          friendUsername={openChat.username}
+          onClose={() => setOpenChat(null)}
+        />
+      )}
     </>
   )
 }
