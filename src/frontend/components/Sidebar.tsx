@@ -129,16 +129,102 @@ export function Sidebar(props: SidebarProps) {
       }
       
       registerAndLoad()
+      
+      const setupRealtimeSubscriptions = async () => {
+        try {
+          const supabaseUrl = import.meta.env.SUPABASE_URL || ''
+          const supabaseKey = import.meta.env.SUPABASE_ANON_KEY || ''
+          
+          if (!supabaseUrl || !supabaseKey) {
+            console.error('Supabase environment variables not configured')
+            return
+          }
+          
+          const { createClient } = await import('@supabase/supabase-js')
+          const supabase = createClient(supabaseUrl, supabaseKey)
 
-      // Poll for updates every 5 seconds
-      const interval = setInterval(() => {
-        loadFriends()
-        loadFriendRequests()
-        checkUnreadMessages()
-      }, 5000)
+          const statusChannel = supabase
+            .channel('user_status_changes')
+            .on(
+              'postgres_changes',
+              {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'users',
+              },
+              () => {
+                console.log("Friend status changed, reloading friends")
+                loadFriends()
+              }
+            )
+            .subscribe()
+          
+          const requestsChannel = supabase
+            .channel('friend_requests_changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'friend_requests',
+                filter: `to_uuid=eq.${activeAccount.uuid}`
+              },
+              () => {
+                console.log("Friend requests changed, reloading")
+                loadFriendRequests()
+              }
+            )
+            .subscribe()
+          
+          const friendshipsChannel = supabase
+            .channel('friendships_changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'friendships',
+                filter: `or(user1_uuid.eq.${activeAccount.uuid},user2_uuid.eq.${activeAccount.uuid})`
+              },
+              () => {
+                console.log("Friendships changed, reloading friends")
+                loadFriends()
+              }
+            )
+            .subscribe()
+          
+          const messagesChannel = supabase
+            .channel('chat_messages_unread')
+            .on(
+              'postgres_changes',
+              {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'chat_messages',
+                filter: `to_uuid=eq.${activeAccount.uuid}`
+              },
+              () => {
+                console.log("New message received, updating unread counts")
+                checkUnreadMessages()
+              }
+            )
+            .subscribe()
+
+          return () => {
+            statusChannel.unsubscribe()
+            requestsChannel.unsubscribe()
+            friendshipsChannel.unsubscribe()
+            messagesChannel.unsubscribe()
+          }
+        } catch (error) {
+          console.error('Failed to setup realtime subscriptions:', error)
+        }
+      }
+
+      const cleanup = setupRealtimeSubscriptions()
 
       return () => {
-        clearInterval(interval)
+        cleanup.then(fn => fn && fn())
       }
     }
   }, [isAuthenticated, activeAccount])
