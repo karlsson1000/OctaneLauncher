@@ -94,7 +94,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
       const fullAddress = port === 25565 ? address : `${address}:${port}`
       const response = await fetch(`https://api.mcsrvstat.us/3/${fullAddress}`, {
         headers: {
-          'User-Agent': 'AtomicLauncher/1.0'
+          'User-Agent': 'OctaneLauncher/1.0'
         }
       })
       

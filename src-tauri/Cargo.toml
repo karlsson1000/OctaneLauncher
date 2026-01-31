@@ -1,12 +1,12 @@
 [package]
-name = "AtomicLauncher"
+name = "OctaneLauncher"
 version = "0.1.0-dev"
 description = "A Minecraft Launcher"
 authors = ["karlsson1000"]
 edition = "2021"
 
 [lib]
-name = "atomic_launcher_lib"
+name = "octane_launcher_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

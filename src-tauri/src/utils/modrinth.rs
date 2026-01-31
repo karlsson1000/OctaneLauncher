@@ -131,7 +131,7 @@ impl ModrinthClient {
     pub fn new() -> Self {
         let http_client = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent("AtomicLauncher/2.4.0")
+            .user_agent("OctaneLauncher/1.0")
             .build()
             .unwrap();
 

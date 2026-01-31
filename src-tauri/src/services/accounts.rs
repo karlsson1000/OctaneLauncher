@@ -9,7 +9,7 @@ impl AccountManager {
     fn get_accounts_file() -> Result<PathBuf, Box<dyn std::error::Error>> {
         let data_dir = dirs::data_dir()
             .ok_or("Could not find data directory")?
-            .join("atomic-launcher");
+            .join("octane-launcher");
         
         fs::create_dir_all(&data_dir)?;
         Ok(data_dir.join("accounts.json"))

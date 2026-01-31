@@ -110,7 +110,7 @@ fn get_recent_skins_path(account_uuid: &str) -> Result<PathBuf, String> {
     let app_data_dir = dirs::data_dir()
         .ok_or("Failed to get app data directory".to_string())?;
     
-    let launcher_dir = app_data_dir.join("AtomicLauncher");
+    let launcher_dir = app_data_dir.join("OctaneLauncher");
     let skins_dir = launcher_dir.join("recent_skins");
     
     if !skins_dir.exists() {

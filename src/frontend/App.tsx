@@ -505,8 +505,8 @@ function App() {
         className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center"
       >
         <div className="flex items-center gap-2 ml-4 mr-4">
-          <img src="/logo.png" alt="Atomic Launcher" className="h-5 w-5" />
-          <span className="text-sm font-semibold text-[#e6e6e6]">Atomic Launcher</span>
+          <img src="/logo.png" alt="Octane Launcher" className="h-5 w-5" />
+          <span className="text-sm font-semibold text-[#e6e6e6]">Octane Launcher</span>
         </div>
         
         <div className="flex items-center gap-1 mr-4" style={{ WebkitAppRegion: 'no-drag' } as any}>

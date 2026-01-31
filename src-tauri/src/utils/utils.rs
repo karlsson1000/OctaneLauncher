@@ -15,16 +15,16 @@ pub fn get_launcher_dir() -> PathBuf {
     let home = dirs::home_dir().expect("Could not find home directory");
 
     #[cfg(target_os = "windows")]
-    let launcher_dir = home.join("AppData").join("Roaming").join("Atomic Launcher");
+    let launcher_dir = home.join("AppData").join("Roaming").join("Octane Launcher");
 
     #[cfg(target_os = "macos")]
     let launcher_dir = home
         .join("Library")
         .join("Application Support")
-        .join("Atomic Launcher");
+        .join("Octane Launcher");
 
     #[cfg(target_os = "linux")]
-    let launcher_dir = home.join(".atomic-launcher");
+    let launcher_dir = home.join(".octane-launcher");
 
     launcher_dir
 }

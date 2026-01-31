@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "atomic-launcher",
+      "name": "octane-launcher",
       "dependencies": {
         "@supabase/supabase-js": "^2.93.3",
         "@tauri-apps/api": "^2",
