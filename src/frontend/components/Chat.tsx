@@ -273,7 +273,7 @@ export function Chat({
                     className="group px-3 py-1.5 -mx-3 hover:bg-[#22252b] transition-colors rounded"
                   >
                     <div className={`flex ${message.is_own ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[85%] rounded ${
+                      <div className={`max-w-[75%] rounded ${
                         message.is_own 
                           ? 'bg-[#2b2f38] group-hover:bg-[#32363f]' 
                           : 'bg-[#32363f] group-hover:bg-[#3a3f4b]'
@@ -281,7 +281,7 @@ export function Chat({
                         <p className="text-sm text-[#e6e6e6] break-words whitespace-pre-wrap leading-relaxed">
                           {message.content}
                         </p>
-                        <span className="text-[10px] text-[#7d8590] mt-0.5 block leading-none">
+                        <span className={`text-[10px] text-[#7d8590] mt-0.5 block leading-none ${message.is_own ? 'text-right' : 'text-left'}`}>
                           {formatTimestamp(message.timestamp)}
                         </span>
                       </div>
