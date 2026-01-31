@@ -7,9 +7,7 @@ pub struct AccountManager;
 
 impl AccountManager {
     fn get_accounts_file() -> Result<PathBuf, Box<dyn std::error::Error>> {
-        let data_dir = dirs::data_dir()
-            .ok_or("Could not find data directory")?
-            .join("octane-launcher");
+        let data_dir = crate::utils::get_launcher_dir();
         
         fs::create_dir_all(&data_dir)?;
         Ok(data_dir.join("accounts.json"))
