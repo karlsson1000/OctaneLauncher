@@ -314,25 +314,30 @@ pub fn run() {
                 tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed => {
                     let runtime = tokio::runtime::Runtime::new().unwrap();
                     runtime.block_on(async {
-                        match AccountManager::get_active_account() {
-                            Ok(Some(account)) => {
-                                // Set user offline
+                        match AccountManager::get_all_accounts() {
+                            Ok(accounts) => {
                                 match FriendsService::new() {
                                     Ok(service) => {
-                                        let _ = service.update_status(&account.uuid, FriendStatus::Offline, None).await;
+                                        for account in &accounts {
+                                            let _ = service.update_status(&account.uuid, FriendStatus::Offline, None).await;
+                                        }
                                     }
                                     Err(_) => {}
                                 }
-                                
-                                // Clean up chat messages
-                                match ChatService::new() {
-                                    Ok(chat_service) => {
-                                        let _ = chat_service.cleanup_messages_if_both_offline(&account.uuid).await;
+
+                                match AccountManager::get_active_account() {
+                                    Ok(Some(active_account)) => {
+                                        match ChatService::new() {
+                                            Ok(chat_service) => {
+                                                let _ = chat_service.cleanup_messages_if_both_offline(&active_account.uuid).await;
+                                            }
+                                            Err(_) => {}
+                                        }
                                     }
+                                    Ok(None) => {}
                                     Err(_) => {}
                                 }
                             }
-                            Ok(None) => {}
                             Err(_) => {}
                         }
                     });
