@@ -15,7 +15,7 @@ export function UpdateDropdown({
 }: UpdateDropdownProps) {
   const handleChangelogClick = async () => {
     try {
-      await invoke('open_url', { url: 'https://atomiclauncher.com/changelog' }) // Use old domain for now
+      await invoke('open_url', { url: 'https://oct4ne.net/changelog' })
     } catch (error) {
       console.error('Failed to open changelog link:', error)
     }
