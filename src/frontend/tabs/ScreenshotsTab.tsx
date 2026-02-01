@@ -495,24 +495,47 @@ function ImageViewer({
     <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
       <button
         onClick={closeViewer}
-        className="absolute top-4 right-4 w-10 h-10 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+        className="absolute top-4 left-4 w-9 h-9 bg-[#22252b]/90 hover:bg-[#2a2e35] text-white rounded flex items-center justify-center transition-colors cursor-pointer z-10"
       >
-        <X size={20} className="text-[#e6e6e6]" />
+        <X size={16} />
       </button>
+
+      {totalImages > 1 && (
+        <div className="absolute top-4 left-[72px] px-3 py-2 bg-[#22252b]/90 rounded-full text-sm text-white pointer-events-none z-10">
+          {currentImageIndex + 1} / {totalImages}
+        </div>
+      )}
+
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+        <button
+          onClick={() => handleOpenScreenshot(screenshot)}
+          className="px-3 py-2 bg-[#22252b]/90 hover:bg-[#2a2e35] text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
+        >
+          <ExternalLink size={14} />
+          {t('screenshots.viewer.open')}
+        </button>
+        <button
+          onClick={() => handleDeleteScreenshot(screenshot)}
+          className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
+        >
+          <Trash2 size={14} />
+          {t('screenshots.viewer.delete')}
+        </button>
+      </div>
 
       {totalImages > 1 && (
         <>
           <button
             onClick={prevImage}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[#22252b]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
           >
-            <ChevronLeft size={24} className="text-[#e6e6e6]" />
+            <ChevronLeft size={32} className="text-[#e6e6e6]" />
           </button>
           <button
             onClick={nextImage}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[#22252b]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10"
           >
-            <ChevronRight size={24} className="text-[#e6e6e6]" />
+            <ChevronRight size={32} className="text-[#e6e6e6]" />
           </button>
         </>
       )}
@@ -525,38 +548,12 @@ function ImageViewer({
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-6">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium text-white mb-1">{screenshot.instance_name}</p>
-            <p className="text-xs text-gray-300">
-              {screenshot.filename} • {formatDate(screenshot.timestamp)} • {formatFileSize(screenshot.size)}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleOpenScreenshot(screenshot)}
-              className="px-3 py-1.5 bg-[#22252b]/90 hover:bg-[#2a2e35] text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <ExternalLink size={14} />
-              {t('screenshots.viewer.open')}
-            </button>
-            <button
-              onClick={() => handleDeleteScreenshot(screenshot)}
-              className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <Trash2 size={14} />
-              {t('screenshots.viewer.delete')}
-            </button>
-          </div>
-        </div>
+      <div className="absolute bottom-4 left-4">
+        <p className="text-sm font-medium text-white mb-1">{screenshot.instance_name}</p>
+        <p className="text-xs text-gray-300">
+          {screenshot.filename} • {formatDate(screenshot.timestamp)} • {formatFileSize(screenshot.size)}
+        </p>
       </div>
-
-      {totalImages > 1 && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[#22252b]/90 rounded-full text-sm text-white">
-          {currentImageIndex + 1} / {totalImages}
-        </div>
-      )}
     </div>
   )
 }
