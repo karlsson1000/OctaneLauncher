@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Telescope, Terminal, Settings, Camera } from "lucide-react"
+import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Telescope, Terminal, Settings, Camera, Download } from "lucide-react"
 import { HomeTab } from "./tabs/HomeTab"
 import { InstancesTab } from "./tabs/InstancesTab"
 import { BrowseTab } from "./tabs/BrowseTab"
@@ -12,7 +12,7 @@ import { ServersTab } from "./tabs/ServersTab"
 import { SkinsTab } from "./tabs/SkinsTab"
 import { CreateInstanceModal } from "./modals/CreateInstanceModal"
 import { CreationProgressToast } from "./modals/CreationProgressToast"
-import { UpdateNotificationToast } from "./modals/UpdateNotificationToast"
+import { UpdateDropdown } from "./modals/UpdateDropdown"
 import { InstanceDetailsTab } from "./modals/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
 import { MapTab } from "./tabs/MapTab"
@@ -76,7 +76,7 @@ function App() {
     instance: Instance
   } | null>(null)
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
-  const [showUpdateNotification, setShowUpdateNotification] = useState(false)
+  const [showUpdateDropdown, setShowUpdateDropdown] = useState(false)
   const [isInstallingUpdate, setIsInstallingUpdate] = useState(false)
 
   const appWindow = getCurrentWindow()
@@ -124,15 +124,20 @@ function App() {
 
   const checkForUpdates = async () => {
     try {
-      const update = await invoke<UpdateInfo | null>("check_for_updates")
+      const update = await invoke<string | null>("check_for_updates")
+      
       if (update) {
-        console.log("Update available:", update)
-        
-        // Check if user has dismissed this version before
-        const dismissedVersion = localStorage.getItem("dismissed_update_version")
-        if (dismissedVersion !== update.new_version) {
-          setUpdateInfo(update)
-          setShowUpdateNotification(true)
+        const parts = update.split(' -> ')
+        if (parts.length === 2) {
+          const updateInfo: UpdateInfo = {
+            current_version: parts[0].trim(),
+            new_version: parts[1].trim()
+          }
+          
+          const dismissedVersion = sessionStorage.getItem("dismissed_update_version")
+          if (dismissedVersion !== updateInfo.new_version) {
+            setUpdateInfo(updateInfo)
+          }
         }
       }
     } catch (error) {
@@ -156,15 +161,8 @@ function App() {
         type: "danger"
       })
       setIsInstallingUpdate(false)
-      setShowUpdateNotification(false)
+      setShowUpdateDropdown(false)
     }
-  }
-
-  const handleUpdateLater = () => {
-    if (updateInfo) {
-      sessionStorage.setItem("dismissed_update_version", updateInfo.new_version)
-    }
-    setShowUpdateNotification(false)
   }
 
   const tabs = [
@@ -269,6 +267,20 @@ function App() {
       loadIcons()
     }
   }, [instances])
+  
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (showUpdateDropdown) {
+        const target = e.target as HTMLElement
+        if (!target.closest('[data-update-dropdown]') && !target.closest('[data-update-button]')) {
+          setShowUpdateDropdown(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showUpdateDropdown])
 
   const loadVersions = async () => {
     try {
@@ -559,7 +571,29 @@ function App() {
           </nav>
         </div>
 
-        <div className="flex items-center ml-auto" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center ml-auto relative" style={{ WebkitAppRegion: 'no-drag' } as any}>
+          {updateInfo && (
+            <div className="relative">
+              <button
+                data-update-button
+                onClick={() => setShowUpdateDropdown(!showUpdateDropdown)}
+                className="flex items-center justify-center px-3 py-1.5 rounded text-[#16a34a] hover:text-[#15803d] hover:bg-[#3a3f4b] transition-all cursor-pointer"
+                title={`Update available: ${updateInfo.new_version}`}
+              >
+                <Download size={16} strokeWidth={1.5} />
+              </button>
+              
+              {showUpdateDropdown && (
+                <UpdateDropdown
+                  currentVersion={updateInfo.current_version}
+                  newVersion={updateInfo.new_version}
+                  isInstalling={isInstallingUpdate}
+                  onInstall={handleInstallUpdate}
+                />
+              )}
+            </div>
+          )}
+          
           <button
             onClick={() => setShowSettingsModal(true)}
             className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-all cursor-pointer"
@@ -595,16 +629,6 @@ function App() {
           onComplete={handleCreationComplete}
           onError={handleCreationError}
           onDismiss={() => setCreatingInstanceName(null)}
-        />
-      )}
-
-      {showUpdateNotification && updateInfo && (
-        <UpdateNotificationToast
-          currentVersion={updateInfo.current_version}
-          newVersion={updateInfo.new_version}
-          isInstalling={isInstallingUpdate}
-          onInstall={handleInstallUpdate}
-          onLater={handleUpdateLater}
         />
       )}
 

@@ -13,7 +13,6 @@ use services::accounts::AccountManager;
 use services::friends::FriendsService;
 use services::chat::ChatService;
 use models::FriendStatus;
-use serde::Serialize;
 
 use commands::{
     // Auth commands
@@ -161,12 +160,6 @@ use commands::{
     open_url,
 };
 
-#[derive(Clone, Serialize)]
-struct UpdateInfo {
-    current_version: String,
-    new_version: String,
-}
-
 #[tauri::command]
 fn get_app_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
@@ -175,7 +168,7 @@ fn get_app_version() -> String {
 }
 
 #[tauri::command]
-async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<UpdateInfo>, String> {
+async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<String>, String> {
     match app.updater() {
         Ok(updater) => {
             match updater.check().await {
@@ -185,10 +178,7 @@ async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<UpdateInfo>, 
                     
                     println!("Update available: {} -> {}", current_version, new_version);
 
-                    Ok(Some(UpdateInfo {
-                        current_version,
-                        new_version,
-                    }))
+                    Ok(Some(format!("{} -> {}", current_version, new_version)))
                 }
                 Ok(None) => {
                     println!("No updates available");
@@ -218,11 +208,7 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
                     println!("Downloading and installing update version: {}", update.version);
                     
                     match update.download_and_install(
-                        |chunk_length, content_length| {
-                            if let Some(total) = content_length {
-                                let progress = (chunk_length as f64 / total as f64) * 100.0;
-                                println!("Download progress: {:.1}%", progress);
-                            }
+                        |_chunk_length, _content_length| {
                         },
                         || {
                             println!("Update downloaded successfully, installing...");
