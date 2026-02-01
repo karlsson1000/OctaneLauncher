@@ -31,6 +31,12 @@
       "confirm": "Bestätigen"
     }
   },
+  "chat": {
+    "encrypted": "Verschlüsselt",
+    "noMessages": "Noch keine Nachrichten",
+    "sendFirst": "Sende eine Nachricht zum chatten",
+    "typeMessage": "Nachricht eingeben..."
+  },
   "home": {
     "title": "Hauptseite",
     "subtitle": "Kürzlich gespielte Instanzen",
@@ -221,6 +227,12 @@
       "version": {
         "title": "Versionsinformation",
         "launcherVersion": "Launcherversion"
+      },
+      "autoNavigateConsole": {
+        "title": "Konsolen-Navigation",
+        "label": "Auto-Navigieren zur Konsole",
+        "enabled": "Beim Start automatisch zum Konsolen-Tab wechseln",
+        "disabled": "Beim Start auf dem aktuellen Tab bleiben"
       }
     },
     "errors": {
@@ -309,7 +321,8 @@
     "signInToStart": "Melden Sie sich an, um loszulegen!",
     "accountDropdown": {
       "activeAccount": "Aktiver Account",
-      "addAnother": "Weiteren Account hinzufügen"
+      "addAnother": "Weiteren Account hinzufügen",
+      "logout": "Abmelden"
     },
     "friendStatus": {
       "online": "Online",
@@ -466,13 +479,36 @@
     }
   },
   "browse": {
-    "tabs": {
+    "browseContent": "Inhalte durchsuchen",
+    "categories": {
       "mods": "Mods",
-      "modpacks": "Modpacks"
+      "modpacks": "Modpacks",
+      "resourcepacks": "Ressourcenpacks",
+      "shaderpacks": "Shaderpacks"
     },
     "subtitle": {
       "mods": "Mods von Modrinth durchsuchen und installieren",
-      "modpacks": "Modpacks von Modrinth durchsuchen und installieren"
+      "modpacks": "Entdecke komplette Modpacks von Modrinth",
+      "resourcepacks": "Finde Ressourcenpacks auf Modrinth",
+      "shaderpacks": "Erkunde Shaderpacks von Modrinth",
+      "favorites": "Ihre Favoriten"
+    },
+    "tabs": {
+      "mods": "Mods",
+      "modpacks": "Modpacks"
+    }
+  },
+  "favorites": {
+    "noFavorites": "Noch keine Favoriten",
+    "addFavoritesHint": "Füge deine Lieblingsmods, Ressourcenpacks und Shaderpacks hinzu",
+    "clickHeartIcon": "Klicke auf das Herzsymbol eines Elements, um es zu deinen Favoriten hinzuzufügen",
+    "installAll": {
+      "title": "Installiere alle Favoriten",
+      "description": "Installieren Sie schnell alle Favoriten in der ausgewählten Instanz",
+      "button": "Alles installieren",
+      "installing": "Wird installiert...",
+      "failed": "Fehler beim Installieren von {{count}} Elementen",
+      "selectInstance": "Wähle eine Instanz aus, um Favoriten zu installieren"
     }
   },
   "modpacks": {
@@ -486,6 +522,34 @@
     "selectVersion": "Version auswählen:",
     "loadingVersions": "Versionen werden geladen...",
     "noVersionsAvailable": "Keine Versionen verfügbar"
+  },
+  "resourcepacks": {
+    "searchPlaceholder": "Suche Ressourcenpacks...",
+    "noInstanceSelected": "Keine Instanz ausgewählt",
+    "selectInstancePrompt": "Wähle eine Instanz, um Ressourcenpacks zu durchsuchen",
+    "followers": "Follower",
+    "versions": "Versionen",
+    "noCompatibleVersions": "Keine kompatiblen Versionen",
+    "installed": "Installiert",
+    "install": "Installieren",
+    "pagination": {
+      "previous": "Vorherige",
+      "next": "Nächste"
+    }
+  },
+  "shaderpacks": {
+    "searchPlaceholder": "Shaderpacks suchen...",
+    "noInstanceSelected": "Keine Instanz ausgewählt",
+    "selectInstancePrompt": "Wähle eine Instanz, um Shaderpacks zu durchsuchen",
+    "followers": "Follower",
+    "versions": "Versionen",
+    "noCompatibleVersions": "Keine kompatiblen Versionen",
+    "installed": "Installiert",
+    "install": "Installieren",
+    "pagination": {
+      "previous": "Vorherige",
+      "next": "Nächste"
+    }
   },
   "skins": {
     "title": "Skins",
@@ -507,6 +571,7 @@
     },
     "uploadButton": "Neuen Skin hochladen",
     "uploading": "Wird hochgeladen...",
+    "openEditor": "Skin-Editor öffnen",
     "resetButton": "Auf Standard zurücksetzen",
     "resetting": "Setze zurück...",
     "recentSkins": "Letzte Skins",
@@ -514,6 +579,21 @@
     "recentSkinAlt": "Letzter Skin",
     "removeCape": "Cape entfernen",
     "noCapesAvailable": "Keine Capes verfügbar",
+    "editor": {
+      "title": "Skin-Editor",
+      "subtitle": "Erstelle und bearbeite deinen Minecraft-Skin",
+      "tools": "Tools",
+      "pencil": "Stift",
+      "eraser": "Radierer",
+      "eyedropper": "Eyedropper",
+      "color": "Farbe",
+      "undo": "Rückgängig",
+      "redo": "Wiederholen",
+      "toggleGrid": "Raster ein/aus",
+      "downloadPng": "PNG herunterladen",
+      "saveAndApply": "Speichern & Skin anwenden",
+      "saving": "Wird gespeichert..."
+    },
     "errors": {
       "signInRequired": "Bitte melden Sie sich an, um Ihren Skin anzusehen",
       "loadFailed": "Fehler beim Laden des Skins",
@@ -521,7 +601,8 @@
       "removeCapeFailed": "Fehler beim Entfernen des Caps",
       "uploadFailed": "Upload fehlgeschlagen",
       "resetFailed": "Reset fehlgeschlagen",
-      "applyFailed": "Fehler beim Anwenden des Skin"
+      "applyFailed": "Fehler beim Anwenden des Skin",
+      "rateLimited": "Rate begrenzt. Bitte warten, bevor du aktualisierst."
     }
   },
   "maps": {
@@ -575,7 +656,8 @@
     "actions": {
       "open": "Im Standard-Viewer öffnen",
       "download": "In Downloads speichern",
-      "delete": "Screenshot löschen"
+      "delete": "Screenshot löschen",
+      "openFolder": "Screenshot-Ordner öffnen"
     },
     "viewer": {
       "open": "Öffnen",
