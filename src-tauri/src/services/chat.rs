@@ -7,22 +7,76 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use base64::{Engine as _, engine::general_purpose};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GiphyGif {
+    pub id: String,
+    pub title: String,
+    pub url: String,
+    pub images: GiphyImages,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GiphyImages {
+    pub fixed_height: GiphyImageData,
+    pub fixed_width: GiphyImageData,
+    pub original: GiphyImageData,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GiphyImageData {
+    pub url: String,
+    pub width: String,
+    pub height: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GiphySearchResponse {
+    data: Vec<GiphyApiGif>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GiphyApiGif {
+    id: String,
+    title: String,
+    url: String,
+    images: GiphyApiImages,
+}
+
+#[derive(Debug, Deserialize)]
+struct GiphyApiImages {
+    fixed_height: GiphyApiImageData,
+    fixed_width: GiphyApiImageData,
+    original: GiphyApiImageData,
+}
+
+#[derive(Debug, Deserialize)]
+struct GiphyApiImageData {
+    url: String,
+    width: String,
+    height: String,
+}
 
 pub struct ChatService {
     client: reqwest::Client,
     supabase_url: String,
     supabase_key: String,
+    giphy_api_key: String,
 }
 
 impl ChatService {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let supabase_url = env!("SUPABASE_URL").to_string();
         let supabase_key = env!("SUPABASE_ANON_KEY").to_string();
+        let giphy_api_key = std::env::var("GIPHY_API_KEY")
+        .unwrap_or_else(|_| "".to_string());
 
         Ok(Self {
             client: reqwest::Client::new(),
             supabase_url,
             supabase_key,
+            giphy_api_key,
         })
     }
 
@@ -295,5 +349,100 @@ impl ChatService {
         }
 
         Ok(())
+    }
+
+    /// Search for gifs
+    pub async fn search_gifs(&self, query: &str, limit: u32) -> Result<Vec<GiphyGif>, Box<dyn std::error::Error>> {
+        let url = format!(
+            "https://api.giphy.com/v1/gifs/search?api_key={}&q={}&limit={}&rating=g",
+            self.giphy_api_key,
+            urlencoding::encode(query),
+            limit
+        );
+
+        let response = self.client
+            .get(&url)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(format!("Giphy API error: {}", response.status()).into());
+        }
+
+        let data: GiphySearchResponse = response.json().await?;
+        
+        let gifs = data.data.into_iter().map(|gif| {
+            GiphyGif {
+                id: gif.id,
+                title: gif.title,
+                url: gif.url,
+                images: GiphyImages {
+                    fixed_height: GiphyImageData {
+                        url: gif.images.fixed_height.url,
+                        width: gif.images.fixed_height.width,
+                        height: gif.images.fixed_height.height,
+                    },
+                    fixed_width: GiphyImageData {
+                        url: gif.images.fixed_width.url,
+                        width: gif.images.fixed_width.width,
+                        height: gif.images.fixed_width.height,
+                    },
+                    original: GiphyImageData {
+                        url: gif.images.original.url,
+                        width: gif.images.original.width,
+                        height: gif.images.original.height,
+                    },
+                },
+            }
+        }).collect();
+
+        Ok(gifs)
+    }
+
+    /// Get trending gifs
+    pub async fn get_trending_gifs(&self, limit: u32) -> Result<Vec<GiphyGif>, Box<dyn std::error::Error>> {
+        let url = format!(
+            "https://api.giphy.com/v1/gifs/trending?api_key={}&limit={}&rating=g",
+            self.giphy_api_key,
+            limit
+        );
+
+        let response = self.client
+            .get(&url)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(format!("Giphy API error: {}", response.status()).into());
+        }
+
+        let data: GiphySearchResponse = response.json().await?;
+        
+        let gifs = data.data.into_iter().map(|gif| {
+            GiphyGif {
+                id: gif.id,
+                title: gif.title,
+                url: gif.url,
+                images: GiphyImages {
+                    fixed_height: GiphyImageData {
+                        url: gif.images.fixed_height.url,
+                        width: gif.images.fixed_height.width,
+                        height: gif.images.fixed_height.height,
+                    },
+                    fixed_width: GiphyImageData {
+                        url: gif.images.fixed_width.url,
+                        width: gif.images.fixed_width.width.clone(),
+                        height: gif.images.fixed_width.height,
+                    },
+                    original: GiphyImageData {
+                        url: gif.images.original.url,
+                        width: gif.images.original.width,
+                        height: gif.images.original.height,
+                    },
+                },
+            }
+        }).collect();
+
+        Ok(gifs)
     }
 }

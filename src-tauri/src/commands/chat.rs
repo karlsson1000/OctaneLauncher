@@ -1,5 +1,5 @@
 use crate::models::ChatMessage;
-use crate::services::chat::ChatService;
+use crate::services::chat::{ChatService, GiphyGif};
 use crate::services::accounts::AccountManager;
 use std::collections::HashMap;
 
@@ -69,6 +69,30 @@ pub async fn cleanup_chat_messages() -> Result<(), String> {
         .ok_or("No active account".to_string())?;
 
     service.cleanup_messages_if_both_offline(&active_account.uuid)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn search_gifs(query: String, limit: Option<u32>) -> Result<Vec<GiphyGif>, String> {
+    let service = ChatService::new()
+        .map_err(|e| e.to_string())?;
+    
+    let limit = limit.unwrap_or(25);
+    
+    service.search_gifs(&query, limit)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_trending_gifs(limit: Option<u32>) -> Result<Vec<GiphyGif>, String> {
+    let service = ChatService::new()
+        .map_err(|e| e.to_string())?;
+    
+    let limit = limit.unwrap_or(25);
+    
+    service.get_trending_gifs(limit)
         .await
         .map_err(|e| e.to_string())
 }

@@ -3,6 +3,7 @@ import { X, CornerRightUp, Lock, MessagesSquare } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { useTranslation } from "react-i18next"
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { GifPicker } from "./GifPicker"
 
 interface Message {
   id: string
@@ -46,6 +47,7 @@ export function Chat({
   const [isSending, setIsSending] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [currentUserUuid, setCurrentUserUuid] = useState<string>("")
+  const [showGifPicker, setShowGifPicker] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -125,10 +127,10 @@ export function Chat({
     }, 150)
   }
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isSending) return
+  const handleSendMessage = async (content?: string) => {
+    const messageText = content || inputMessage.trim()
+    if (!messageText || isSending) return
 
-    const messageText = inputMessage.trim()
     setInputMessage("")
     setIsSending(true)
 
@@ -140,11 +142,16 @@ export function Chat({
       await loadMessages()
     } catch (error) {
       console.error("Failed to send message:", error)
-      // Restore message on error
-      setInputMessage(messageText)
+      if (!content) {
+        setInputMessage(messageText)
+      }
     } finally {
       setIsSending(false)
     }
+  }
+
+  const handleGifSelect = (gifUrl: string) => {
+    handleSendMessage(`[GIF]${gifUrl}`)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -173,6 +180,14 @@ export function Chat({
     const day = String(date.getDate()).padStart(2, '0')
     
     return `${year}-${month}-${day} ${hours}:${minutes}`
+  }
+
+  const isGifMessage = (content: string) => {
+    return content.startsWith('[GIF]')
+  }
+
+  const getGifUrl = (content: string) => {
+    return content.replace('[GIF]', '')
   }
 
   return (
@@ -277,13 +292,28 @@ export function Chat({
                         message.is_own 
                           ? 'bg-[#2b2f38] group-hover:bg-[#32363f]' 
                           : 'bg-[#32363f] group-hover:bg-[#3a3f4b]'
-                      } px-2.5 py-1.5 transition-colors`}>
-                        <p className="text-sm text-[#e6e6e6] break-words whitespace-pre-wrap leading-relaxed">
-                          {message.content}
-                        </p>
-                        <span className={`text-[10px] text-[#7d8590] mt-0.5 block leading-none ${message.is_own ? 'text-right' : 'text-left'}`}>
-                          {formatTimestamp(message.timestamp)}
-                        </span>
+                      } transition-colors ${isGifMessage(message.content) ? 'p-1' : 'px-2.5 py-1.5'}`}>
+                        {isGifMessage(message.content) ? (
+                          <div className="overflow-hidden rounded">
+                            <img 
+                              src={getGifUrl(message.content)} 
+                              alt="GIF"
+                              className="max-w-full max-h-[200px] object-contain"
+                            />
+                            <span className={`text-[10px] text-[#7d8590] mt-1 px-2 block leading-none ${message.is_own ? 'text-right' : 'text-left'}`}>
+                              {formatTimestamp(message.timestamp)}
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm text-[#e6e6e6] break-words whitespace-pre-wrap leading-relaxed">
+                              {message.content}
+                            </p>
+                            <span className={`text-[10px] text-[#7d8590] mt-0.5 block leading-none ${message.is_own ? 'text-right' : 'text-left'}`}>
+                              {formatTimestamp(message.timestamp)}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -294,7 +324,14 @@ export function Chat({
           </div>
 
           {/* Input */}
-          <div className="flex-shrink-0 px-4 py-3 bg-[#2b2f38]">
+          <div className="flex-shrink-0 px-4 py-3 bg-[#2b2f38] relative">
+            {showGifPicker && (
+              <GifPicker 
+                onSelect={handleGifSelect}
+                onClose={() => setShowGifPicker(false)}
+              />
+            )}
+            
             <div className="flex items-stretch gap-2">
               <input
                 ref={inputRef}
@@ -306,7 +343,14 @@ export function Chat({
                 className="flex-1 bg-[#22252b] rounded px-3 py-2 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none focus:border-[#4572e3] transition-colors"
               />
               <button
-                onClick={handleSendMessage}
+                onClick={() => setShowGifPicker(!showGifPicker)}
+                className="px-3 bg-[#22252b] hover:bg-[#32363f] rounded transition-colors cursor-pointer flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] text-xs font-medium"
+                title="Send GIF"
+              >
+                GIF
+              </button>
+              <button
+                onClick={() => handleSendMessage()}
                 disabled={!inputMessage.trim() || isSending}
                 className="px-4 bg-[#4572e3] hover:bg-[#3461d1] disabled:bg-[#3a3f4b] disabled:cursor-not-allowed text-white rounded transition-colors cursor-pointer flex items-center justify-center"
               >

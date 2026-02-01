@@ -41,6 +41,8 @@ use commands::{
     get_unread_message_counts,
     mark_messages_as_read,
     cleanup_chat_messages,
+    search_gifs,
+    get_trending_gifs,
     
     // Instance commands
     create_instance,
@@ -379,6 +381,8 @@ pub fn run() {
             get_unread_message_counts,
             mark_messages_as_read,
             cleanup_chat_messages,
+            search_gifs,
+            get_trending_gifs,
             
             // Skin Management
             upload_skin,
