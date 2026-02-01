@@ -31,6 +31,12 @@
       "confirm": "Bekräfta"
     }
   },
+  "chat": {
+    "encrypted": "",
+    "noMessages": "",
+    "sendFirst": "",
+    "typeMessage": ""
+  },
   "home": {
     "title": "Hem",
     "subtitle": "Nyligen spelade instanser",
@@ -221,6 +227,12 @@
       "version": {
         "title": "Version Information",
         "launcherVersion": "Launcher Version"
+      },
+      "autoNavigateConsole": {
+        "title": "",
+        "label": "",
+        "enabled": "",
+        "disabled": ""
       }
     },
     "errors": {
@@ -309,7 +321,8 @@
     "signInToStart": "Logga in för att komma igång!",
     "accountDropdown": {
       "activeAccount": "Aktivt konto",
-      "addAnother": "Lägg till ett annat konto"
+      "addAnother": "Lägg till ett annat konto",
+      "logout": ""
     },
     "friendStatus": {
       "online": "Online",
@@ -466,13 +479,36 @@
     }
   },
   "browse": {
-    "tabs": {
+    "browseContent": "",
+    "categories": {
       "mods": "",
-      "modpacks": ""
+      "modpacks": "",
+      "resourcepacks": "",
+      "shaderpacks": ""
     },
     "subtitle": {
       "mods": "",
+      "modpacks": "",
+      "resourcepacks": "",
+      "shaderpacks": "",
+      "favorites": ""
+    },
+    "tabs": {
+      "mods": "",
       "modpacks": ""
+    }
+  },
+  "favorites": {
+    "noFavorites": "",
+    "addFavoritesHint": "",
+    "clickHeartIcon": "",
+    "installAll": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "installing": "",
+      "failed": "",
+      "selectInstance": ""
     }
   },
   "modpacks": {
@@ -486,6 +522,34 @@
     "selectVersion": "",
     "loadingVersions": "",
     "noVersionsAvailable": ""
+  },
+  "resourcepacks": {
+    "searchPlaceholder": "",
+    "noInstanceSelected": "",
+    "selectInstancePrompt": "",
+    "followers": "",
+    "versions": "",
+    "noCompatibleVersions": "",
+    "installed": "",
+    "install": "",
+    "pagination": {
+      "previous": "",
+      "next": ""
+    }
+  },
+  "shaderpacks": {
+    "searchPlaceholder": "",
+    "noInstanceSelected": "",
+    "selectInstancePrompt": "",
+    "followers": "",
+    "versions": "",
+    "noCompatibleVersions": "",
+    "installed": "",
+    "install": "",
+    "pagination": {
+      "previous": "",
+      "next": ""
+    }
   },
   "skins": {
     "title": "",
@@ -507,6 +571,7 @@
     },
     "uploadButton": "",
     "uploading": "",
+    "openEditor": "",
     "resetButton": "",
     "resetting": "",
     "recentSkins": "",
@@ -514,6 +579,21 @@
     "recentSkinAlt": "",
     "removeCape": "",
     "noCapesAvailable": "",
+    "editor": {
+      "title": "",
+      "subtitle": "",
+      "tools": "",
+      "pencil": "",
+      "eraser": "",
+      "eyedropper": "",
+      "color": "",
+      "undo": "",
+      "redo": "",
+      "toggleGrid": "",
+      "downloadPng": "",
+      "saveAndApply": "",
+      "saving": ""
+    },
     "errors": {
       "signInRequired": "",
       "loadFailed": "",
@@ -521,7 +601,8 @@
       "removeCapeFailed": "",
       "uploadFailed": "",
       "resetFailed": "",
-      "applyFailed": ""
+      "applyFailed": "",
+      "rateLimited": ""
     }
   },
   "maps": {
@@ -575,7 +656,8 @@
     "actions": {
       "open": "",
       "download": "",
-      "delete": ""
+      "delete": "",
+      "openFolder": ""
     },
     "viewer": {
       "open": "",
