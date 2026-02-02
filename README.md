@@ -12,7 +12,7 @@ This is a hobby project, things might change and things might break. Not affilia
 
 <div align="center">
 
-![Octane Launcher](https://atomiclauncher.com/octanelauncher.png)
+![Octane Launcher](https://oct4ne.net/octanelauncher.png)
 
 </div>
 
