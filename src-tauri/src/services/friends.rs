@@ -11,7 +11,7 @@ pub struct FriendsService {
 impl FriendsService {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let supabase_url = env!("SUPABASE_URL").to_string();
-        let supabase_key = env!("SUPABASE_ANON_KEY").to_string();
+        let supabase_key = env!("SUPABASE_SERVICE_KEY").to_string();
 
         Ok(Self {
             client: reqwest::Client::new(),
