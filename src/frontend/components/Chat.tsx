@@ -47,6 +47,7 @@ export function Chat({
   const [isSending, setIsSending] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [currentUserUuid, setCurrentUserUuid] = useState<string>("")
+  const [currentUsername, setCurrentUsername] = useState<string>("")
   const [showGifPicker, setShowGifPicker] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -54,12 +55,13 @@ export function Chat({
   useEffect(() => {
     inputRef.current?.focus()
 
-    // Get current user UUID
+    // Get current user
     const initialize = async () => {
       try {
-        // Get active account UUID from backend
-        const account = await invoke<{ uuid: string }>("get_active_account")
+        // Get active account from backend
+        const account = await invoke<{ uuid: string; username: string }>("get_active_account")
         setCurrentUserUuid(account.uuid)
+        setCurrentUsername(account.username)
         
         // Load initial messages
         await loadMessages()
@@ -114,6 +116,7 @@ export function Chat({
         friendUuid,
       })
       setMessages(msgs)
+      setTimeout(() => scrollToBottom(), 100)
     } catch (error) {
       console.error("Failed to load messages:", error)
     }
@@ -140,6 +143,7 @@ export function Chat({
         content: messageText,
       })
       await loadMessages()
+      scrollToBottom()
     } catch (error) {
       console.error("Failed to send message:", error)
       if (!content) {
@@ -269,7 +273,7 @@ export function Chat({
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
+          <div className="flex-1 overflow-y-auto px-4 py-4">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <MessagesSquare size={48} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
@@ -282,42 +286,68 @@ export function Chat({
               </div>
             ) : (
               <>
-                {messages.map((message) => (
+                {messages.map((message, index) => {
+                  const isOwn = message.from_uuid === currentUserUuid
+                  const prevMessage = index > 0 ? messages[index - 1] : null
+                  const isGrouped = prevMessage && prevMessage.from_uuid === message.from_uuid
+                  
+                  return (
                   <div
                     key={message.id}
-                    className="group px-3 py-1.5 -mx-3 hover:bg-[#22252b] transition-colors rounded"
+                    className={`group px-3 -mx-3 hover:bg-[#22252b] transition-colors rounded ${isGrouped ? 'py-0.5' : 'py-0.5 mt-1'}`}
                   >
-                    <div className={`flex ${message.is_own ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] rounded ${
-                        message.is_own 
-                          ? 'bg-[#2b2f38] group-hover:bg-[#32363f]' 
-                          : 'bg-[#32363f] group-hover:bg-[#3a3f4b]'
-                      } transition-colors ${isGifMessage(message.content) ? 'p-1' : 'px-2.5 py-1.5'}`}>
+                    <div className={`flex gap-2 items-start ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      {!isOwn && (
+                        <div className="w-6 flex-shrink-0">
+                          {!isGrouped && (
+                            <img
+                              src={`https://cravatar.eu/avatar/${friendUuid}/32`}
+                              alt={friendUsername}
+                              className="w-6 h-6 rounded"
+                            />
+                          )}
+                        </div>
+                      )}
+                      <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
+                        {!isGrouped && (
+                          <div className={`flex items-baseline gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+                            <span className="text-xs font-semibold text-[#e6e6e6]">
+                              {isOwn ? currentUsername : friendUsername}
+                            </span>
+                            <span className="text-[10px] text-[#7d8590]/70 leading-none">
+                              {formatTimestamp(message.timestamp)}
+                            </span>
+                          </div>
+                        )}
                         {isGifMessage(message.content) ? (
                           <div className="overflow-hidden rounded">
                             <img 
                               src={getGifUrl(message.content)} 
                               alt="GIF"
-                              className="max-w-full max-h-[200px] object-contain"
+                              className="max-w-full max-h-[200px] object-contain rounded"
                             />
-                            <span className={`text-[10px] text-[#7d8590] mt-1 px-2 block leading-none ${message.is_own ? 'text-right' : 'text-left'}`}>
-                              {formatTimestamp(message.timestamp)}
-                            </span>
                           </div>
                         ) : (
-                          <>
-                            <p className="text-sm text-[#e6e6e6] break-words whitespace-pre-wrap leading-relaxed">
-                              {message.content}
-                            </p>
-                            <span className={`text-[10px] text-[#7d8590] mt-0.5 block leading-none ${message.is_own ? 'text-right' : 'text-left'}`}>
-                              {formatTimestamp(message.timestamp)}
-                            </span>
-                          </>
+                          <p className="text-sm text-[#d1d5db] break-words whitespace-pre-wrap leading-relaxed max-w-[500px]">
+                            {message.content}
+                          </p>
                         )}
                       </div>
+                      {isOwn && (
+                        <div className="w-6 flex-shrink-0">
+                          {!isGrouped && (
+                            <img
+                              src={`https://cravatar.eu/avatar/${currentUserUuid}/32`}
+                              alt="You"
+                              className="w-6 h-6 rounded"
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                  )
+                })}
                 <div ref={messagesEndRef} />
               </>
             )}
