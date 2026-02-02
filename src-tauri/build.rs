@@ -12,6 +12,9 @@ fn main() {
             if let Ok(key) = std::env::var("SUPABASE_ANON_KEY") {
                 println!("cargo:rustc-env=SUPABASE_ANON_KEY={}", key);
             }
+            if let Ok(giphy_key) = std::env::var("GIPHY_API_KEY") {
+                println!("cargo:rustc-env=GIPHY_API_KEY={}", giphy_key);
+            }
         }
     }
 
@@ -20,6 +23,9 @@ fn main() {
     }
     if let Ok(key) = std::env::var("SUPABASE_ANON_KEY") {
         println!("cargo:rustc-env=SUPABASE_ANON_KEY={}", key);
+    }
+    if let Ok(giphy_key) = std::env::var("GIPHY_API_KEY") {
+        println!("cargo:rustc-env=GIPHY_API_KEY={}", giphy_key);
     }
     
     tauri_build::build()
