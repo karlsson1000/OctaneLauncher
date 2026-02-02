@@ -69,8 +69,7 @@ impl ChatService {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let supabase_url = env!("SUPABASE_URL").to_string();
         let supabase_key = env!("SUPABASE_ANON_KEY").to_string();
-        let giphy_api_key = std::env::var("GIPHY_API_KEY")
-        .unwrap_or_else(|_| "".to_string());
+        let giphy_api_key = env!("GIPHY_API_KEY").to_string();
 
         Ok(Self {
             client: reqwest::Client::new(),
