@@ -718,3 +718,12 @@ pub struct ChatMessage {
     pub timestamp: DateTime<Utc>,
     pub is_own: bool,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+  pub struct Snapshot {
+      pub id: String,
+      pub name: String,
+      pub created_at: String,
+      pub size_bytes: u64,
+      pub file_path: String,
+}

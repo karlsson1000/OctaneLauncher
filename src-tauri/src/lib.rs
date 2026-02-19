@@ -145,6 +145,14 @@ use commands::{
     export_template,
     import_template,
     
+    // Snapshot commands
+    create_launcher_snapshot,
+    get_launcher_snapshots,
+    restore_launcher_snapshot,
+    delete_launcher_snapshot,
+    export_launcher_snapshot,
+    import_launcher_snapshot,
+    
     // Skin commands
     upload_skin,
     reset_skin,
@@ -489,6 +497,14 @@ pub fn run() {
             create_instance_from_template,
             export_template,
             import_template,
+
+            // Snapshot Management
+            create_launcher_snapshot,
+            get_launcher_snapshots,
+            restore_launcher_snapshot,
+            delete_launcher_snapshot,
+            export_launcher_snapshot,
+            import_launcher_snapshot,
 
             // Open links
             open_url,

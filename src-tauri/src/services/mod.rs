@@ -7,3 +7,4 @@ pub mod settings;
 pub mod accounts;
 pub mod friends;
 pub mod chat;
+pub mod snapshot;
