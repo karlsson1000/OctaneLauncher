@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2, RefreshCw } from "lucide-react"
+import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2, RefreshCw, Search, X } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { useTranslation } from "react-i18next"
 import { ConfirmModal, AlertModal } from "./ConfirmModal"
@@ -72,6 +72,8 @@ export function InstanceDetailsTab({
   const [availableUpdates, setAvailableUpdates] = useState<ModUpdate[]>([])
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false)
   const [isUpdatingMods, setIsUpdatingMods] = useState(false)
+  const [modSearchQuery, setModSearchQuery] = useState("")
+  const [worldSearchQuery, setWorldSearchQuery] = useState("")
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
     title: string
@@ -541,6 +543,21 @@ export function InstanceDetailsTab({
   const neoforgeVersion = getNeoForgeVersion(instance)
   const modsWithProjectId = installedMods.filter(mod => mod.project_id && !mod.disabled).length
 
+  const filteredMods = installedMods.filter((mod) => {
+    if (!modSearchQuery.trim()) return true
+    const query = modSearchQuery.toLowerCase()
+    return (
+      (mod.name || mod.filename).toLowerCase().includes(query) ||
+      mod.filename.toLowerCase().includes(query)
+    )
+  })
+
+  const filteredWorlds = worlds.filter((world) => {
+    if (!worldSearchQuery.trim()) return true
+    const query = worldSearchQuery.toLowerCase()
+    return world.name.toLowerCase().includes(query)
+  })
+
   return (
     <>
       <style>{`
@@ -672,7 +689,7 @@ export function InstanceDetailsTab({
 
           <div className="grid grid-cols-2 gap-0 relative">
             <div className="pr-6 border-r border-[#3a3f4b]">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">{t('instanceDetails.installedMods')}</h2>
                   <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
@@ -686,7 +703,7 @@ export function InstanceDetailsTab({
                         <button
                           onClick={updateAllMods}
                           disabled={isUpdatingMods}
-                          className="flex items-center gap-1.5 px-3 py-1 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-sm font-medium transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 px-2 py-0.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer"
                         >
                           {isUpdatingMods ? (
                             <>
@@ -704,7 +721,7 @@ export function InstanceDetailsTab({
                         <button
                           onClick={checkForUpdates}
                           disabled={isCheckingUpdates}
-                          className="flex items-center gap-1.5 px-3 py-1 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer"
+                          className="flex items-center gap-1.5 px-2 py-0.5 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded text-xs transition-colors cursor-pointer"
                         >
                           {isCheckingUpdates ? (
                             <>
@@ -723,6 +740,28 @@ export function InstanceDetailsTab({
                   )}
                 </div>
               </div>
+
+              {/* Search field */}
+              {installedMods.length > 0 && (
+                <div className="relative mb-3">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] pointer-events-none" />
+                  <input
+                    type="text"
+                    value={modSearchQuery}
+                    onChange={(e) => setModSearchQuery(e.target.value)}
+                    placeholder={t('instanceDetails.searchMods', 'Search mods...')}
+                    className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors"
+                  />
+                  {modSearchQuery && (
+                    <button
+                      onClick={() => setModSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
               
               {isLoadingMods ? (
                 <div className="text-center py-16">
@@ -734,9 +773,14 @@ export function InstanceDetailsTab({
                   <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('instanceDetails.noMods.title')}</h3>
                   <p className="text-sm text-[#7d8590]">{t('instanceDetails.noMods.description')}</p>
                 </div>
+              ) : filteredMods.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Search size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
+                  <p className="text-sm text-[#7d8590]">{t('instanceDetails.noModsFound', 'No mods match your search')}</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {installedMods.map((mod) => {
+                  {filteredMods.map((mod) => {
                     const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
                     
                     return (
@@ -819,7 +863,7 @@ export function InstanceDetailsTab({
             </div>
 
             <div className="pl-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">{t('instanceDetails.worlds')}</h2>
                   <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
@@ -834,6 +878,26 @@ export function InstanceDetailsTab({
                   <span>{t('instanceDetails.openFolder')}</span>
                 </button>
               </div>
+              {worlds.length > 0 && (
+                <div className="relative mb-3">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] pointer-events-none" />
+                  <input
+                    type="text"
+                    value={worldSearchQuery}
+                    onChange={(e) => setWorldSearchQuery(e.target.value)}
+                    placeholder={t('instanceDetails.searchWorlds', 'Search worlds...')}
+                    className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors"
+                  />
+                  {worldSearchQuery && (
+                    <button
+                      onClick={() => setWorldSearchQuery("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
               
               {isLoadingWorlds ? (
                 <div className="text-center py-16">
@@ -845,9 +909,14 @@ export function InstanceDetailsTab({
                   <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">{t('instanceDetails.noWorlds.title')}</h3>
                   <p className="text-sm text-[#7d8590]">{t('instanceDetails.noWorlds.description')}</p>
                 </div>
+              ) : filteredWorlds.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Search size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
+                  <p className="text-sm text-[#7d8590]">{t('instanceDetails.noWorldsFound', 'No worlds match your search')}</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {worlds.map((world) => (
+                  {filteredWorlds.map((world) => (
                     <div
                       key={world.folder_name}
                       className="blur-border bg-[#22252b] rounded-md overflow-hidden transition-all"
