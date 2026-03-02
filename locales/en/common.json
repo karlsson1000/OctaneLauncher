@@ -183,6 +183,7 @@
       "appearance": "Appearance",
       "language": "Language",
       "integrations": "Integrations",
+      "snapshots": "Snapshots",
       "system": "System"
     },
     "game": {
@@ -219,6 +220,50 @@
       "showStatus": "Show Discord Status",
       "enabled": "Enabled",
       "disabled": "Disabled"
+    },
+    "snapshots": {
+      "title": "Octane Snapshots",
+      "description": "Create backups of your entire launcher including instances, settings, templates, and more. Restore them at any time or share with others.",
+      "infoBanner": "Snapshots backup your entire launcher configuration including instances, settings, templates, servers, and custom backgrounds. Making a snapshot might take a while.",
+      "manageButton": "Manage Snapshots",
+      "createButton": "Create Snapshot",
+      "importButton": "Import",
+      "namePlaceholder": "Enter snapshot name...",
+      "importPrompt": "Enter a name for the imported snapshot:",
+      "included": {
+        "title": "What's included in snapshots:",
+        "instances": "All instances (mods, configs, worlds)",
+        "settings": "Launcher settings",
+        "templates": "Templates",
+        "serverList": "Server list",
+        "backgrounds": "Custom backgrounds"
+      },
+      "empty": {
+        "title": "No snapshots yet",
+        "description": "Create your first snapshot to backup your launcher"
+      },
+      "actions": {
+        "restore": "Restore snapshot",
+        "export": "Export snapshot",
+        "delete": "Delete snapshot"
+      },
+      "alerts": {
+        "createSuccess": { "title": "Success", "message": "Snapshot created successfully!" },
+        "restoreSuccess": { "title": "Success", "message": "Snapshot restored successfully! Please restart the launcher for changes to take effect." },
+        "deleteSuccess": { "title": "Success", "message": "Snapshot deleted successfully" },
+        "exportSuccess": { "title": "Success", "message": "Snapshot exported successfully" },
+        "importSuccess": { "title": "Success", "message": "Snapshot imported successfully" }
+      },
+      "errors": {
+        "invalidName": "Invalid Name",
+        "enterName": "Please enter a name for the snapshot",
+        "loadFailed": "Failed to load snapshots",
+        "createFailed": "Failed to create snapshot",
+        "restoreFailed": "Failed to restore snapshot",
+        "deleteFailed": "Failed to delete snapshot",
+        "exportFailed": "Failed to export snapshot",
+        "importFailed": "Failed to import snapshot"
+      }
     },
     "system": {
       "gameDirectory": {

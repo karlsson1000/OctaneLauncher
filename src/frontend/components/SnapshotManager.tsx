@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { save, open } from "@tauri-apps/plugin-dialog"
 import { Download, Upload, Archive, Trash2, RotateCcw, Check, X, Loader2, AlertCircle } from "lucide-react"
 import { AlertModal } from "../modals/ConfirmModal"
+import { useTranslation } from "react-i18next"
 
 interface Snapshot {
   id: string
@@ -18,6 +19,7 @@ interface SnapshotManagerProps {
 }
 
 export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
+  const { t } = useTranslation()
   const [snapshots, setSnapshots] = useState<Snapshot[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
@@ -46,8 +48,8 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
       console.error("Failed to load snapshots:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to load snapshots: ${error}`,
+        title: t('errors.generic'),
+        message: `${t('settings.snapshots.errors.loadFailed')}: ${error}`,
         type: "danger"
       })
     } finally {
@@ -59,8 +61,8 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
     if (!snapshotName.trim()) {
       setAlertModal({
         isOpen: true,
-        title: "Invalid Name",
-        message: "Please enter a name for the snapshot",
+        title: t('settings.snapshots.errors.invalidName'),
+        message: t('settings.snapshots.errors.enterName'),
         type: "warning"
       })
       return
@@ -74,16 +76,16 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
       await loadSnapshots()
       setAlertModal({
         isOpen: true,
-        title: "Success",
-        message: "Snapshot created successfully!",
+        title: t('settings.snapshots.alerts.createSuccess.title'),
+        message: t('settings.snapshots.alerts.createSuccess.message'),
         type: "success"
       })
     } catch (error) {
       console.error("Failed to create snapshot:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to create snapshot: ${error}`,
+        title: t('errors.generic'),
+        message: `${t('settings.snapshots.errors.createFailed')}: ${error}`,
         type: "danger"
       })
     } finally {
@@ -97,16 +99,16 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
       await invoke("restore_launcher_snapshot", { snapshotId })
       setAlertModal({
         isOpen: true,
-        title: "Success",
-        message: "Snapshot restored successfully! Please restart the launcher for changes to take effect.",
+        title: t('settings.snapshots.alerts.restoreSuccess.title'),
+        message: t('settings.snapshots.alerts.restoreSuccess.message'),
         type: "success"
       })
     } catch (error) {
       console.error("Failed to restore snapshot:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to restore snapshot: ${error}`,
+        title: t('errors.generic'),
+        message: `${t('settings.snapshots.errors.restoreFailed')}: ${error}`,
         type: "danger"
       })
     } finally {
@@ -121,16 +123,16 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
       await loadSnapshots()
       setAlertModal({
         isOpen: true,
-        title: "Success",
-        message: "Snapshot deleted successfully",
+        title: t('settings.snapshots.alerts.deleteSuccess.title'),
+        message: t('settings.snapshots.alerts.deleteSuccess.message'),
         type: "success"
       })
     } catch (error) {
       console.error("Failed to delete snapshot:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to delete snapshot: ${error}`,
+        title: t('errors.generic'),
+        message: `${t('settings.snapshots.errors.deleteFailed')}: ${error}`,
         type: "danger"
       })
     } finally {
@@ -157,16 +159,16 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
 
       setAlertModal({
         isOpen: true,
-        title: "Success",
-        message: "Snapshot exported successfully",
+        title: t('settings.snapshots.alerts.exportSuccess.title'),
+        message: t('settings.snapshots.alerts.exportSuccess.message'),
         type: "success"
       })
     } catch (error) {
       console.error("Failed to export snapshot:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to export snapshot: ${error}`,
+        title: t('errors.generic'),
+        message: `${t('settings.snapshots.errors.exportFailed')}: ${error}`,
         type: "danger"
       })
     }
@@ -184,7 +186,7 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
 
       if (!filePath) return
 
-      const name = window.prompt("Enter a name for the imported snapshot:")
+      const name = window.prompt(t('settings.snapshots.importPrompt'))
       if (!name) return
 
       await invoke("import_launcher_snapshot", {
@@ -195,16 +197,16 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
       await loadSnapshots()
       setAlertModal({
         isOpen: true,
-        title: "Success",
-        message: "Snapshot imported successfully",
+        title: t('settings.snapshots.alerts.importSuccess.title'),
+        message: t('settings.snapshots.alerts.importSuccess.message'),
         type: "success"
       })
     } catch (error) {
       console.error("Failed to import snapshot:", error)
       setAlertModal({
         isOpen: true,
-        title: "Error",
-        message: `Failed to import snapshot: ${error}`,
+        title: t('errors.generic'),
+        message: `${t('settings.snapshots.errors.importFailed')}: ${error}`,
         type: "danger"
       })
     }
@@ -290,7 +292,7 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
           <div className="flex items-center justify-between p-5 border-b border-[#252932]">
             <div className="flex items-center gap-3">
               <Archive size={20} className="text-[#4572e3]" />
-              <h2 className="text-xl font-semibold text-white">Octane Snapshots</h2>
+              <h2 className="text-xl font-semibold text-white">{t('settings.snapshots.title')}</h2>
             </div>
             <button
               onClick={handleClose}
@@ -306,8 +308,7 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
               <AlertCircle size={20} className="text-[#4572e3] flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-sm text-gray-300 leading-relaxed">
-                  Snapshots backup your entire launcher configuration including instances, settings, templates, servers, and custom backgrounds. 
-                  Making a snapshot might take a while.
+                  {t('settings.snapshots.infoBanner')}
                 </p>
               </div>
             </div>
@@ -323,7 +324,7 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
                   className="flex items-center gap-2 px-4 py-2 bg-[#4572e3] hover:bg-[#3461d9] disabled:bg-[#2d3139] disabled:cursor-not-allowed text-white rounded text-sm font-medium cursor-pointer transition-colors"
                 >
                   <Archive size={16} />
-                  <span>Create Snapshot</span>
+                  <span>{t('settings.snapshots.createButton')}</span>
                 </button>
                 <button
                   onClick={handleImportSnapshot}
@@ -331,14 +332,14 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
                   className="flex items-center gap-2 px-4 py-2 bg-[#252932] hover:bg-[#2d3139] disabled:bg-[#1f2229] disabled:cursor-not-allowed text-white rounded text-sm font-medium cursor-pointer transition-colors"
                 >
                   <Upload size={16} />
-                  <span>Import</span>
+                  <span>{t('settings.snapshots.importButton')}</span>
                 </button>
               </>
             ) : (
               <div className="flex items-center gap-2 flex-1">
                 <input
                   type="text"
-                  placeholder="Enter snapshot name..."
+                  placeholder={t('settings.snapshots.namePlaceholder')}
                   value={snapshotName}
                   onChange={(e) => setSnapshotName(e.target.value)}
                   onKeyDown={(e) => {
@@ -381,8 +382,8 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
             ) : snapshots.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Archive size={48} className="text-gray-600 mb-4" />
-                <p className="text-gray-400 text-sm">No snapshots yet</p>
-                <p className="text-gray-500 text-xs mt-1">Create your first snapshot to backup your launcher</p>
+                <p className="text-gray-400 text-sm">{t('settings.snapshots.empty.title')}</p>
+                <p className="text-gray-500 text-xs mt-1">{t('settings.snapshots.empty.description')}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -405,7 +406,7 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
                           onClick={() => handleRestoreSnapshot(snapshot.id, snapshot.name)}
                           disabled={isLoading}
                           className="p-2 hover:bg-[#3a3f4b] disabled:opacity-50 disabled:cursor-not-allowed rounded text-green-400 hover:text-green-300 transition-colors cursor-pointer"
-                          title="Restore snapshot"
+                          title={t('settings.snapshots.actions.restore')}
                         >
                           <RotateCcw size={16} />
                         </button>
@@ -413,7 +414,7 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
                           onClick={() => handleExportSnapshot(snapshot.id, snapshot.name)}
                           disabled={isLoading}
                           className="p-2 hover:bg-[#3a3f4b] disabled:opacity-50 disabled:cursor-not-allowed rounded text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
-                          title="Export snapshot"
+                          title={t('settings.snapshots.actions.export')}
                         >
                           <Download size={16} />
                         </button>
@@ -421,7 +422,7 @@ export function SnapshotManager({ isOpen, onClose }: SnapshotManagerProps) {
                           onClick={() => handleDeleteSnapshot(snapshot.id, snapshot.name)}
                           disabled={isLoading}
                           className="p-2 hover:bg-[#3a3f4b] disabled:opacity-50 disabled:cursor-not-allowed rounded text-red-400 hover:text-red-300 transition-colors cursor-pointer"
-                          title="Delete snapshot"
+                          title={t('settings.snapshots.actions.delete')}
                         >
                           <Trash2 size={16} />
                         </button>
