@@ -502,7 +502,7 @@ export function SettingsModal({
                         <button
                           onClick={() => setIsJavaDropdownOpen(!isJavaDropdownOpen)}
                           className={`w-full bg-[#252932] px-4 py-2.5 text-sm text-white text-left flex items-center justify-between cursor-pointer min-w-0 ${
-                            isJavaDropdownOpen ? 'rounded-t' : 'rounded'
+                            isJavaDropdownOpen ? 'rounded-b' : 'rounded'
                           }`}
                         >
                           <span className="truncate">
@@ -512,7 +512,7 @@ export function SettingsModal({
                         </button>
                         
                         {isJavaDropdownOpen && (
-                          <div className="absolute z-[60] w-full bg-[#252932] rounded-b shadow-lg max-h-48 overflow-y-auto custom-scrollbar border-t border-[#1a1d23]">
+                          <div className="absolute z-[60] w-full bg-[#252932] rounded-t shadow-lg max-h-64 overflow-y-auto custom-scrollbar border-b border-[#1a1d23] bottom-full">
                             <button
                               onClick={() => {
                                 setShowCustomPath(false)
