@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react"
-import { Upload, RotateCcw, Loader2, User, X, Rotate3d, Paintbrush } from "lucide-react"
+import { Upload, RotateCcw, Loader2, User, X, Rotate3d } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { SkinEditor } from "./SkinEditor"
 import type { CachedSkin, RecentSkin, Cape } from "../../types"
 
 interface SkinsTabProps {
@@ -23,9 +22,7 @@ export function SkinsTab(props: SkinsTabProps) {
   const [loadingCapes, setLoadingCapes] = useState(false)
   const [recentSkins, setRecentSkins] = useState<RecentSkin[]>([])
   const [currentSkinHash, setCurrentSkinHash] = useState<string | null>(null)
-  const [currentSkinUrl, setCurrentSkinUrl] = useState<string | null>(null)
   const [capeModalOpen, setCapeModalOpen] = useState(false)
-  const [editorOpen, setEditorOpen] = useState(false)
   const [isClosingModal, setIsClosingModal] = useState(false)
   const [showBack, setShowBack] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -82,7 +79,7 @@ export function SkinsTab(props: SkinsTabProps) {
       const now = Date.now()
       if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_DURATION) {
         const match = cached.url.match(/texture\/([a-f0-9]+)/)
-        if (match) { setCurrentSkinHash(match[1]); setCurrentSkinUrl(cached.url) }
+        if (match) { setCurrentSkinHash(match[1]) }
         setSkinVariant(cached.variant)
         setLoading(false)
         loadCapes()
@@ -91,7 +88,7 @@ export function SkinsTab(props: SkinsTabProps) {
       if (!canFetchProfile()) {
         if (cached) {
           const match = cached.url.match(/texture\/([a-f0-9]+)/)
-          if (match) { setCurrentSkinHash(match[1]); setCurrentSkinUrl(cached.url) }
+          if (match) { setCurrentSkinHash(match[1]) }
           setSkinVariant(cached.variant)
         }
         setLoading(false)
@@ -103,12 +100,11 @@ export function SkinsTab(props: SkinsTabProps) {
       if (skinData && skinData.url) {
         const variant = skinData.variant === "slim" ? "slim" : "classic"
         const match = skinData.url.match(/texture\/([a-f0-9]+)/)
-        if (match) { setCurrentSkinHash(match[1]); setCurrentSkinUrl(skinData.url) }
+        if (match) { setCurrentSkinHash(match[1]) }
         setSkinVariant(variant)
         skinCacheRef.current.set(cacheKey, { url: skinData.url, variant, timestamp: now })
       } else {
         setCurrentSkinHash(null)
-        setCurrentSkinUrl(null)
       }
       setLoading(false)
       loadCapes()
@@ -119,13 +115,12 @@ export function SkinsTab(props: SkinsTabProps) {
         const cached = skinCacheRef.current.get(activeAccount.uuid)
         if (cached) {
           const match = cached.url.match(/texture\/([a-f0-9]+)/)
-          if (match) { setCurrentSkinHash(match[1]); setCurrentSkinUrl(cached.url) }
+          if (match) { setCurrentSkinHash(match[1]) }
           setSkinVariant(cached.variant)
         }
       } else {
         setError(`${t('skins.errors.loadFailed')}: ${err}`)
         setCurrentSkinHash(null)
-        setCurrentSkinUrl(null)
       }
       setLoading(false)
     }
@@ -179,7 +174,7 @@ export function SkinsTab(props: SkinsTabProps) {
         const result = await invoke("upload_skin", { skinData: base64, variant: skinVariant })
         if (result && result.url) {
           const match = result.url.match(/texture\/([a-f0-9]+)/)
-          if (match) { setCurrentSkinHash(match[1]); setCurrentSkinUrl(result.url) }
+          if (match) { setCurrentSkinHash(match[1]) }
           const variant = result.variant === "slim" ? "slim" : "classic"
           setSkinVariant(variant)
           if (activeAccount) skinCacheRef.current.set(activeAccount.uuid, { url: result.url, variant, timestamp: Date.now() })
@@ -220,7 +215,7 @@ export function SkinsTab(props: SkinsTabProps) {
       const result = await invoke("upload_skin", { skinData: base64, variant: skin.variant })
       if (result && result.url) {
         const match = result.url.match(/texture\/([a-f0-9]+)/)
-        if (match) { setCurrentSkinHash(match[1]); setCurrentSkinUrl(result.url) }
+        if (match) { setCurrentSkinHash(match[1]) }
         const variant = result.variant === "slim" ? "slim" : "classic"
         setSkinVariant(variant)
         if (activeAccount) skinCacheRef.current.set(activeAccount.uuid, { url: result.url, variant, timestamp: Date.now() })
@@ -230,29 +225,12 @@ export function SkinsTab(props: SkinsTabProps) {
     } catch (err) { setError(`${t('skins.errors.applyFailed')}: ${err}`) } finally { setUploading(false) }
   }
 
-  const handleEditorSave = async (skinData: string, variant: "classic" | "slim") => {
-    if (!invoke) return
-    const result = await invoke("upload_skin", { skinData, variant })
-    if (result && result.url) {
-      const match = result.url.match(/texture\/([a-f0-9]+)/)
-      if (match) { setCurrentSkinHash(match[1]); setCurrentSkinUrl(result.url) }
-      const newVariant = result.variant === "slim" ? "slim" : "classic"
-      setSkinVariant(newVariant)
-      if (activeAccount) skinCacheRef.current.set(activeAccount.uuid, { url: result.url, variant: newVariant, timestamp: Date.now() })
-      await addToRecentSkins(result.url, newVariant)
-    }
-  }
-
   const getSkinRenderUrl = () => {
     if (!currentSkinHash) return null
     const variant = skinVariant === "slim" ? "slim" : "wide"
     const capeParam = activeCape ? "" : "&no=cape"
     const angleParam = showBack ? "&y=180" : ""
     return `https://vzge.me/full/512/${currentSkinHash}?${variant}${capeParam}${angleParam}`
-  }
-
-  if (editorOpen) {
-    return <SkinEditor onClose={() => setEditorOpen(false)} onSave={handleEditorSave} initialSkinUrl={currentSkinUrl || undefined} initialVariant={skinVariant} />
   }
 
   if (!isAuthenticated) {
@@ -357,10 +335,6 @@ export function SkinsTab(props: SkinsTabProps) {
                 <input ref={fileInputRef} type="file" accept="image/png" onChange={handleFileSelect} className="hidden" />
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading || loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer">
                   {uploading ? <><Loader2 size={16} className="animate-spin" /><span>{t('skins.uploading')}</span></> : <><Upload size={16} /><span>{t('skins.uploadButton')}</span></>}
-                </button>
-                <button onClick={() => setEditorOpen(true)} disabled={uploading || loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#7c3aed] hover:bg-[#6d28d9] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer">
-                  <Paintbrush size={16} />
-                  <span>{t('skins.openEditor') || 'Open Skin Editor'}</span>
                 </button>
                 <button onClick={handleReset} disabled={resetting || loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#181a1f] hover:bg-[#1f2128] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md font-medium text-sm transition-all cursor-pointer">
                   {resetting ? <><Loader2 size={16} className="animate-spin" /><span>{t('skins.resetting')}</span></> : <><RotateCcw size={16} /><span>{t('skins.resetButton')}</span></>}
