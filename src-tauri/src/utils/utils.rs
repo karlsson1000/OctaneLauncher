@@ -55,24 +55,28 @@ pub fn find_java() -> Option<String> {
         }
     }
 
-    let java_cmd = if cfg!(windows) { "java.exe" } else { "java" };
-    if let Ok(output) = Command::new("which").arg(java_cmd).output() {
-        if output.status.success() {
-            if let Ok(path) = String::from_utf8(output.stdout) {
-                return Some(path.trim().to_string());
+    #[cfg(not(target_os = "windows"))]
+    {
+        if let Ok(output) = Command::new("which").arg("java").output() {
+            if output.status.success() {
+                if let Ok(path) = String::from_utf8(output.stdout) {
+                    let trimmed = path.trim().to_string();
+                    if !trimmed.is_empty() {
+                        return Some(trimmed);
+                    }
+                }
             }
         }
     }
 
     #[cfg(target_os = "windows")]
     {
-        let common_paths = vec![
+        let common_paths = [
             r"C:\Program Files\Java\jdk-17\bin\java.exe",
             r"C:\Program Files\Java\jdk-21\bin\java.exe",
             r"C:\Program Files\Eclipse Adoptium\jdk-17.0.8.7-hotspot\bin\java.exe",
             r"C:\Program Files\Eclipse Adoptium\jdk-21.0.1.12-hotspot\bin\java.exe",
         ];
-
         for path in common_paths {
             if PathBuf::from(path).exists() {
                 return Some(path.to_string());
@@ -82,11 +86,10 @@ pub fn find_java() -> Option<String> {
 
     #[cfg(target_os = "macos")]
     {
-        let common_paths = vec![
+        let common_paths = [
             "/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java",
             "/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java",
         ];
-
         for path in common_paths {
             if PathBuf::from(path).exists() {
                 return Some(path.to_string());
@@ -96,12 +99,11 @@ pub fn find_java() -> Option<String> {
 
     #[cfg(target_os = "linux")]
     {
-        let common_paths = vec![
+        let common_paths = [
             "/usr/lib/jvm/java-17-openjdk-amd64/bin/java",
             "/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
             "/usr/lib/jvm/default-java/bin/java",
         ];
-
         for path in common_paths {
             if PathBuf::from(path).exists() {
                 return Some(path.to_string());
@@ -114,19 +116,13 @@ pub fn find_java() -> Option<String> {
 
 pub fn open_folder(path: PathBuf) -> Result<(), std::io::Error> {
     #[cfg(target_os = "windows")]
-    {
-        Command::new("explorer").arg(path).spawn()?;
-    }
+    Command::new("explorer").arg(path).spawn()?;
 
     #[cfg(target_os = "macos")]
-    {
-        Command::new("open").arg(path).spawn()?;
-    }
+    Command::new("open").arg(path).spawn()?;
 
     #[cfg(target_os = "linux")]
-    {
-        Command::new("xdg-open").arg(path).spawn()?;
-    }
+    Command::new("xdg-open").arg(path).spawn()?;
 
     Ok(())
 }

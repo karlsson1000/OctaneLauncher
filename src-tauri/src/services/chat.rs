@@ -370,30 +370,7 @@ impl ChatService {
 
         let data: GiphySearchResponse = response.json().await?;
         
-        let gifs = data.data.into_iter().map(|gif| {
-            GiphyGif {
-                id: gif.id,
-                title: gif.title,
-                url: gif.url,
-                images: GiphyImages {
-                    fixed_height: GiphyImageData {
-                        url: gif.images.fixed_height.url,
-                        width: gif.images.fixed_height.width,
-                        height: gif.images.fixed_height.height,
-                    },
-                    fixed_width: GiphyImageData {
-                        url: gif.images.fixed_width.url,
-                        width: gif.images.fixed_width.width,
-                        height: gif.images.fixed_width.height,
-                    },
-                    original: GiphyImageData {
-                        url: gif.images.original.url,
-                        width: gif.images.original.width,
-                        height: gif.images.original.height,
-                    },
-                },
-            }
-        }).collect();
+        let gifs = data.data.into_iter().map(Self::map_gif_api_to_gif).collect();
 
         Ok(gifs)
     }
@@ -417,31 +394,33 @@ impl ChatService {
 
         let data: GiphySearchResponse = response.json().await?;
         
-        let gifs = data.data.into_iter().map(|gif| {
-            GiphyGif {
-                id: gif.id,
-                title: gif.title,
-                url: gif.url,
-                images: GiphyImages {
-                    fixed_height: GiphyImageData {
-                        url: gif.images.fixed_height.url,
-                        width: gif.images.fixed_height.width,
-                        height: gif.images.fixed_height.height,
-                    },
-                    fixed_width: GiphyImageData {
-                        url: gif.images.fixed_width.url,
-                        width: gif.images.fixed_width.width.clone(),
-                        height: gif.images.fixed_width.height,
-                    },
-                    original: GiphyImageData {
-                        url: gif.images.original.url,
-                        width: gif.images.original.width,
-                        height: gif.images.original.height,
-                    },
-                },
-            }
-        }).collect();
+        let gifs = data.data.into_iter().map(Self::map_gif_api_to_gif).collect();
 
         Ok(gifs)
+    }
+
+    fn map_gif_api_to_gif(gif: GiphyApiGif) -> GiphyGif {
+        GiphyGif {
+            id: gif.id,
+            title: gif.title,
+            url: gif.url,
+            images: GiphyImages {
+                fixed_height: GiphyImageData {
+                    url: gif.images.fixed_height.url,
+                    width: gif.images.fixed_height.width,
+                    height: gif.images.fixed_height.height,
+                },
+                fixed_width: GiphyImageData {
+                    url: gif.images.fixed_width.url,
+                    width: gif.images.fixed_width.width,
+                    height: gif.images.fixed_width.height,
+                },
+                original: GiphyImageData {
+                    url: gif.images.original.url,
+                    width: gif.images.original.width,
+                    height: gif.images.original.height,
+                },
+            },
+        }
     }
 }

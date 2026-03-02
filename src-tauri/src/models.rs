@@ -91,7 +91,7 @@ pub struct InstanceTemplate {
     pub minecraft_options: Option<MinecraftOptions>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MinecraftOptions {
     pub version: Option<i32>,
     pub lang: Option<String>,
@@ -219,141 +219,12 @@ pub struct MinecraftOptions {
     pub model_part_left_pants_leg: Option<bool>,
     pub model_part_right_pants_leg: Option<bool>,
     pub model_part_hat: Option<bool>,
+    #[serde(default = "default_keybinds")]
     pub keybinds: Option<HashMap<String, String>>,
 }
 
-impl Default for MinecraftOptions {
-    fn default() -> Self {
-        Self {
-            version: None,
-            lang: None,
-            fov: None,
-            fov_effect_scale: None,
-            render_distance: None,
-            simulation_distance: None,
-            max_fps: None,
-            fullscreen: None,
-            vsync: None,
-            gui_scale: None,
-            brightness: None,
-            entity_shadows: None,
-            entity_distance_scaling: None,
-            particles: None,
-            graphics: None,
-            graphics_preset: None,
-            smooth_lighting: None,
-            biome_blend: None,
-            mipmap_levels: None,
-            chunk_updates_mode: None,
-            cloud_rendering: None,
-            cloud_range: None,
-            weather_radius: None,
-            vignette: None,
-            cutout_leaves: None,
-            improved_transparency: None,
-            max_anisotropy_bit: None,
-            texture_filtering: None,
-            chunk_section_fade_in_time: None,
-            inactivity_fps_limit: None,
-            screen_effect_scale: None,
-            darkness_effect_scale: None,
-            glint_speed: None,
-            glint_strength: None,
-            damage_tilt_strength: None,
-            bob_view: None,
-            force_unicode_font: None,
-            japanese_glyph_variants: None,
-            reduced_debug_info: None,
-            show_autosave_indicator: None,
-            menu_background_blurriness: None,
-            sound_device: None,
-            master_volume: None,
-            music_volume: None,
-            record_volume: None,
-            weather_volume: None,
-            blocks_volume: None,
-            hostile_volume: None,
-            neutral_volume: None,
-            players_volume: None,
-            ambient_volume: None,
-            voice_volume: None,
-            ui_volume: None,
-            show_subtitles: None,
-            directional_audio: None,
-            music_toast: None,
-            music_frequency: None,
-            mouse_sensitivity: None,
-            invert_mouse: None,
-            invert_x_mouse: None,
-            raw_input: None,
-            discrete_mouse_scroll: None,
-            mouse_wheel_sensitivity: None,
-            allow_cursor_changes: None,
-            touchscreen: None,
-            auto_jump: None,
-            sneak_toggles: None,
-            sprint_toggles: None,
-            toggle_attack: None,
-            toggle_use: None,
-            sprint_window: None,
-            rotate_with_minecart: None,
-            main_hand: None,
-            attack_indicator: None,
-            auto_suggestions: None,
-            operator_items_tab: None,
-            narrator: None,
-            narrator_hotkey: None,
-            chat_visibility: None,
-            chat_opacity: None,
-            chat_line_spacing: None,
-            chat_scale: None,
-            text_background_opacity: None,
-            background_for_chat_only: None,
-            chat_height_focused: None,
-            chat_height_unfocused: None,
-            chat_width: None,
-            chat_delay: None,
-            chat_colors: None,
-            chat_links: None,
-            chat_links_prompt: None,
-            notification_display_time: None,
-            high_contrast: None,
-            high_contrast_block_outline: None,
-            dark_mojang_studios_background: None,
-            hide_lightning_flashes: None,
-            hide_splash_texts: None,
-            onboard_accessibility: None,
-            panorama_scroll_speed: None,
-            realms_notifications: None,
-            hide_server_address: None,
-            skip_multiplayer_warning: None,
-            hide_matched_names: None,
-            joined_first_server: None,
-            allow_server_listing: None,
-            only_show_secure_chat: None,
-            save_chat_drafts: None,
-            advanced_item_tooltips: None,
-            pause_on_lost_focus: None,
-            override_width: None,
-            override_height: None,
-            use_native_transport: None,
-            tutorial_step: None,
-            gl_debug_verbosity: None,
-            sync_chunk_writes: None,
-            telemetry_opt_in_extra: None,
-            resource_packs: None,
-            incompatible_resource_packs: None,
-            last_server: None,
-            model_part_cape: None,
-            model_part_jacket: None,
-            model_part_left_sleeve: None,
-            model_part_right_sleeve: None,
-            model_part_left_pants_leg: None,
-            model_part_right_pants_leg: None,
-            model_part_hat: None,
-            keybinds: Some(HashMap::new()),
-        }
-    }
+fn default_keybinds() -> Option<HashMap<String, String>> {
+    Some(HashMap::new())
 }
 
 // ===== SETTINGS MODELS =====
@@ -371,17 +242,9 @@ pub struct LauncherSettings {
     pub auto_navigate_to_console: bool,
 }
 
-fn default_memory() -> u32 {
-    2048
-}
-
-fn default_discord_rpc_enabled() -> bool {
-    true
-}
-
-fn default_auto_navigate_to_console() -> bool {
-    true
-}
+fn default_memory() -> u32 { 2048 }
+fn default_discord_rpc_enabled() -> bool { true }
+fn default_auto_navigate_to_console() -> bool { true }
 
 impl Default for LauncherSettings {
     fn default() -> Self {
@@ -453,7 +316,7 @@ pub struct XstsAuthResponse {
 
 #[derive(Deserialize)]
 pub struct DisplayClaims {
-    pub xui: Vec<std::collections::HashMap<String, String>>,
+    pub xui: Vec<HashMap<String, String>>,
 }
 
 #[derive(Serialize)]
@@ -585,7 +448,7 @@ pub struct Library {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LibraryDownloads {
     pub artifact: Option<Artifact>,
-    pub classifiers: Option<std::collections::HashMap<String, Artifact>>,
+    pub classifiers: Option<HashMap<String, Artifact>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -615,7 +478,7 @@ pub struct Arguments {
 
 #[derive(Debug, Deserialize)]
 pub struct AssetIndexData {
-    pub objects: std::collections::HashMap<String, AssetObject>,
+    pub objects: HashMap<String, AssetObject>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -720,10 +583,10 @@ pub struct ChatMessage {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-  pub struct Snapshot {
-      pub id: String,
-      pub name: String,
-      pub created_at: String,
-      pub size_bytes: u64,
-      pub file_path: String,
+pub struct Snapshot {
+    pub id: String,
+    pub name: String,
+    pub created_at: String,
+    pub size_bytes: u64,
+    pub file_path: String,
 }

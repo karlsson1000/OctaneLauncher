@@ -15,15 +15,12 @@ use services::chat::ChatService;
 use models::FriendStatus;
 
 use commands::{
-    // Auth commands
     microsoft_login,
     microsoft_login_and_store,
     get_accounts,
     get_active_account,
     switch_account,
     remove_account,
-    
-    // Friends commands
     send_friend_request,
     get_friend_requests,
     accept_friend_request,
@@ -33,8 +30,6 @@ use commands::{
     update_user_status,
     update_specific_user_status,
     register_user_in_friends_system,
-
-    // Chat commands
     send_chat_message,
     get_chat_messages,
     get_unread_message_counts,
@@ -42,8 +37,6 @@ use commands::{
     cleanup_chat_messages,
     search_gifs,
     get_trending_gifs,
-    
-    // Instance commands
     create_instance,
     get_instances,
     delete_instance,
@@ -71,8 +64,6 @@ use commands::{
     delete_screenshot,
     open_screenshot,
     open_screenshots_folder,
-    
-    // Version commands
     get_minecraft_versions,
     get_minecraft_versions_with_metadata,
     get_minecraft_versions_by_type,
@@ -84,8 +75,6 @@ use commands::{
     get_neoforge_versions,
     get_neoforge_supported_game_versions,
     install_neoforge,
-    
-    // Mod commands
     get_installed_mods,
     delete_mod,
     open_mods_folder,
@@ -95,35 +84,25 @@ use commands::{
     get_mod_versions,
     download_mod,
     get_project_details,
-    
-    // Modpack commands
     get_modpack_versions,
     install_modpack,
     get_modpack_manifest,
     get_modpack_game_versions,
     install_modpack_from_file,
     get_modpack_name_from_file,
-    
-    // Resource pack commands
     get_installed_resourcepacks,
     download_resourcepack,
     delete_resourcepack,
     open_resourcepacks_folder,
-    
-    // Shader pack commands
     get_installed_shaderpacks,
     download_shaderpack,
     delete_shaderpack,
     open_shaderpacks_folder,
-    
-    // Server commands
     get_servers,
     add_server,
     delete_server,
     update_server_status,
     launch_server,
-    
-    // Settings commands
     get_settings,
     save_settings,
     get_instance_settings,
@@ -132,8 +111,6 @@ use commands::{
     set_sidebar_background,
     get_sidebar_background,
     remove_sidebar_background,
-    
-    // Template commands
     create_template,
     get_templates,
     get_template,
@@ -144,16 +121,12 @@ use commands::{
     create_instance_from_template,
     export_template,
     import_template,
-    
-    // Snapshot commands
     create_launcher_snapshot,
     get_launcher_snapshots,
     restore_launcher_snapshot,
     delete_launcher_snapshot,
     export_launcher_snapshot,
     import_launcher_snapshot,
-    
-    // Skin commands
     upload_skin,
     reset_skin,
     get_current_skin,
@@ -162,8 +135,6 @@ use commands::{
     remove_cape,
     load_recent_skins,
     save_recent_skin,
-    
-    // System commands
     get_system_info,
     open_url,
 };
@@ -177,98 +148,49 @@ fn get_app_version() -> String {
 
 #[tauri::command]
 async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<String>, String> {
-    match app.updater() {
-        Ok(updater) => {
-            match updater.check().await {
-                Ok(Some(update)) => {
-                    let current_version = app.package_info().version.to_string();
-                    let new_version = update.version.clone();
-                    
-                    println!("Update available: {} -> {}", current_version, new_version);
+    let updater = app.updater().map_err(|e| format!("Failed to get updater: {}", e))?;
 
-                    Ok(Some(format!("{} -> {}", current_version, new_version)))
-                }
-                Ok(None) => {
-                    println!("No updates available");
-                    Ok(None)
-                }
-                Err(e) => {
-                    eprintln!("Failed to check for updates: {}", e);
-                    Err(format!("Failed to check for updates: {}", e))
-                }
-            }
+    match updater.check().await {
+        Ok(Some(update)) => {
+            let current_version = app.package_info().version.to_string();
+            Ok(Some(format!("{} -> {}", current_version, update.version)))
         }
-        Err(e) => {
-            eprintln!("Failed to get updater: {}", e);
-            Err(format!("Failed to get updater: {}", e))
-        }
+        Ok(None) => Ok(None),
+        Err(e) => Err(format!("Failed to check for updates: {}", e)),
     }
 }
 
 #[tauri::command]
 async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
-    println!("Starting update installation...");
-    
-    match app.updater() {
-        Ok(updater) => {
-            match updater.check().await {
-                Ok(Some(update)) => {
-                    println!("Downloading and installing update version: {}", update.version);
-                    
-                    match update.download_and_install(
-                        |_chunk_length, _content_length| {
-                        },
-                        || {
-                            println!("Update downloaded successfully, installing...");
-                        },
-                    ).await {
-                        Ok(_) => {
-                            println!("Update installed successfully, app will restart");
-                            Ok(())
-                        }
-                        Err(e) => {
-                            eprintln!("Failed to install update: {}", e);
-                            Err(format!("Failed to install update: {}", e))
-                        }
-                    }
-                }
-                Ok(None) => {
-                    println!("No update available to install");
-                    Err("No update available".to_string())
-                }
-                Err(e) => {
-                    eprintln!("Failed to check for updates during install: {}", e);
-                    Err(format!("Failed to check for updates: {}", e))
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("Failed to get updater: {}", e);
-            Err(format!("Failed to get updater: {}", e))
-        }
-    }
+    let updater = app.updater().map_err(|e| format!("Failed to get updater: {}", e))?;
+
+    let update = updater
+        .check()
+        .await
+        .map_err(|e| format!("Failed to check for updates: {}", e))?
+        .ok_or_else(|| "No update available".to_string())?;
+
+    update
+        .download_and_install(|_chunk, _total| {}, || {})
+        .await
+        .map_err(|e| format!("Failed to install update: {}", e))
 }
 
 #[tauri::command]
 async fn update_discord_rpc_mode(app: tauri::AppHandle) -> Result<(), String> {
     use crate::services::settings::SettingsManager;
-    
+
     let settings = SettingsManager::load()
         .map_err(|e| format!("Failed to load settings: {}", e))?;
-    
+
     let discord_rpc: tauri::State<Arc<DiscordRpc>> = app.state();
-    
+
     if settings.discord_rpc_enabled {
-        discord_rpc.set_activity(
-            "Playing Minecraft",
-            None,
-            "grass",
-            "Minecraft",
-        );
+        discord_rpc.set_activity("Playing Minecraft", None, "grass", "Minecraft");
     } else {
         discord_rpc.clear_activity();
     }
-    
+
     Ok(())
 }
 
@@ -286,68 +208,48 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(discord_rpc.clone())
         .setup(move |app| {
-            // Initialize Discord RPC based on settings
             use crate::services::settings::SettingsManager;
-            let should_enable_rpc = match SettingsManager::load() {
-                Ok(settings) => settings.discord_rpc_enabled,
-                Err(_) => true,
-            };
-            
+            let should_enable_rpc = SettingsManager::load()
+                .map(|s| s.discord_rpc_enabled)
+                .unwrap_or(true);
+
             if should_enable_rpc {
                 let rpc: tauri::State<Arc<DiscordRpc>> = app.state();
-                rpc.set_activity(
-                    "Playing Minecraft",
-                    None,
-                    "grass",
-                    "Minecraft",
-                );
+                rpc.set_activity("Playing Minecraft", None, "grass", "Minecraft");
             }
-            
+
             Ok(())
         })
-        .on_window_event(|window, event| {
-            match event {
-                tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed => {
-                    let runtime = tokio::runtime::Runtime::new().unwrap();
+        .on_window_event(|_window, event| {
+            if matches!(
+                event,
+                tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed
+            ) {
+                if let Ok(runtime) = tokio::runtime::Runtime::new() {
                     runtime.block_on(async {
-                        match AccountManager::get_all_accounts() {
-                            Ok(accounts) => {
-                                match FriendsService::new() {
-                                    Ok(service) => {
-                                        for account in &accounts {
-                                            let _ = service.update_status(&account.uuid, FriendStatus::Offline, None).await;
-                                        }
-                                    }
-                                    Err(_) => {}
-                                }
-
-                                match AccountManager::get_active_account() {
-                                    Ok(Some(active_account)) => {
-                                        match ChatService::new() {
-                                            Ok(chat_service) => {
-                                                let _ = chat_service.cleanup_messages_if_both_offline(&active_account.uuid).await;
-                                            }
-                                            Err(_) => {}
-                                        }
-                                    }
-                                    Ok(None) => {}
-                                    Err(_) => {}
+                        if let Ok(accounts) = AccountManager::get_all_accounts() {
+                            if let Ok(service) = FriendsService::new() {
+                                for account in &accounts {
+                                    let _ = service
+                                        .update_status(&account.uuid, FriendStatus::Offline, None)
+                                        .await;
                                 }
                             }
-                            Err(_) => {}
+                        }
+
+                        if let Ok(Some(active)) = AccountManager::get_active_account() {
+                            if let Ok(chat) = ChatService::new() {
+                                let _ = chat.cleanup_messages_if_both_offline(&active.uuid).await;
+                            }
                         }
                     });
                 }
-                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![
-            // App info
             get_app_version,
             check_for_updates,
             install_update,
-            
-            // Authentication
             microsoft_login,
             microsoft_login_and_store,
             get_accounts,
@@ -357,8 +259,6 @@ pub fn run() {
             launch_instance_with_active_account,
             get_launch_token,
             refresh_account_token,
-            
-            // Friends System
             send_friend_request,
             get_friend_requests,
             accept_friend_request,
@@ -368,8 +268,6 @@ pub fn run() {
             update_user_status,
             update_specific_user_status,
             register_user_in_friends_system,
-
-            // Chat System
             send_chat_message,
             get_chat_messages,
             get_unread_message_counts,
@@ -377,8 +275,6 @@ pub fn run() {
             cleanup_chat_messages,
             search_gifs,
             get_trending_gifs,
-            
-            // Skin Management
             upload_skin,
             reset_skin,
             get_current_skin,
@@ -387,20 +283,14 @@ pub fn run() {
             remove_cape,
             load_recent_skins,
             save_recent_skin,
-            
-            // Minecraft versions
             get_minecraft_versions,
             get_minecraft_versions_with_metadata,
             get_minecraft_versions_by_type,
             get_supported_game_versions,
             install_minecraft,
             check_version_installed,
-            
-            // Fabric loader
             get_fabric_versions,
             install_fabric,
-            
-            // Instance management
             create_instance,
             get_instances,
             delete_instance,
@@ -421,28 +311,18 @@ pub fn run() {
             delete_screenshot,
             open_screenshot,
             open_screenshots_folder,
-            
-            // Instance icons
             set_instance_icon,
             remove_instance_icon,
             get_instance_icon,
-            
-            // Launch
             launch_instance,
             kill_instance,
-            
-            // Launcher directory
             get_launcher_directory,
             open_instance_folder,
-            
-            // Modrinth API
             search_mods,
             get_mod_details,
             get_mod_versions,
             download_mod,
             get_project_details,
-            
-            // Settings
             get_settings,
             save_settings,
             get_instance_settings,
@@ -452,41 +332,29 @@ pub fn run() {
             get_sidebar_background,
             remove_sidebar_background,
             update_discord_rpc_mode,
-
-            // Mod Management
             get_installed_mods,
             delete_mod,
             open_mods_folder,
             toggle_mod,
-
-            // Modpacks
             get_modpack_versions,
             install_modpack,
             get_modpack_manifest,
             get_modpack_game_versions,
             install_modpack_from_file,
             get_modpack_name_from_file,
-
-            // Resource pack commands
             get_installed_resourcepacks,
             download_resourcepack,
             delete_resourcepack,
             open_resourcepacks_folder,
-            
-            // Shader pack commands
             get_installed_shaderpacks,
             download_shaderpack,
             delete_shaderpack,
             open_shaderpacks_folder,
-
-            // Servers
             get_servers,
             add_server,
             delete_server,
             update_server_status,
             launch_server,
-
-            // Template Management
             create_template,
             get_templates,
             get_template,
@@ -497,19 +365,13 @@ pub fn run() {
             create_instance_from_template,
             export_template,
             import_template,
-
-            // Snapshot Management
             create_launcher_snapshot,
             get_launcher_snapshots,
             restore_launcher_snapshot,
             delete_launcher_snapshot,
             export_launcher_snapshot,
             import_launcher_snapshot,
-
-            // Open links
             open_url,
-
-            // System Info
             get_system_info,
         ])
         .run(tauri::generate_context!())

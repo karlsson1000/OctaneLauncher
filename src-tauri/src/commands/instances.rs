@@ -91,47 +91,47 @@ pub async fn create_instance(
                 return Err("Fabric loader version not specified".to_string());
             }
         } else if loader_type == "neoforge" {
-    if let Some(neoforge_version) = &loader_version {
-        let _ = app_handle.emit("creation-progress", serde_json::json!({
-            "instance": safe_name,
-            "progress": 70,
-            "stage": format!("Downloading NeoForge installer {}...", neoforge_version)
-        }));
-
-        let neoforge_installer = crate::services::neoforge::NeoForgeInstaller::new(meta_dir.clone());
-
-        let app_handle_clone = app_handle.clone();
-        let safe_name_clone = safe_name.clone();
-        let progress_task = tauri::async_runtime::spawn(async move {
-            for i in 0..20 {
-                tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-                let progress = 75 + (i * 1).min(10);
-                let _ = app_handle_clone.emit("creation-progress", serde_json::json!({
-                    "instance": safe_name_clone,
-                    "progress": progress,
-                    "stage": "Running NeoForge installer (this may take a minute)..."
+            if let Some(neoforge_version) = &loader_version {
+                let _ = app_handle.emit("creation-progress", serde_json::json!({
+                    "instance": safe_name,
+                    "progress": 70,
+                    "stage": format!("Downloading NeoForge installer {}...", neoforge_version)
                 }));
+
+                let neoforge_installer = crate::services::neoforge::NeoForgeInstaller::new(meta_dir.clone());
+
+                let app_handle_clone = app_handle.clone();
+                let safe_name_clone = safe_name.clone();
+                let progress_task = tauri::async_runtime::spawn(async move {
+                    for i in 0..20 {
+                        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+                        let progress = 75 + (i * 1).min(10);
+                        let _ = app_handle_clone.emit("creation-progress", serde_json::json!({
+                            "instance": safe_name_clone,
+                            "progress": progress,
+                            "stage": "Running NeoForge installer (this may take a minute)..."
+                        }));
+                    }
+                });
+                
+                let version_id = neoforge_installer
+                    .install_neoforge(&version, neoforge_version)
+                    .await
+                    .map_err(|e| e.to_string())?;
+                
+                progress_task.abort();
+                    
+                let _ = app_handle.emit("creation-progress", serde_json::json!({
+                    "instance": safe_name,
+                    "progress": 85,
+                    "stage": "NeoForge installation complete"
+                }));
+                
+                version_id
+            } else {
+                return Err("NeoForge loader version not specified".to_string());
             }
-        });
-        
-        let version_id = neoforge_installer
-            .install_neoforge(&version, neoforge_version)
-            .await
-            .map_err(|e| e.to_string())?;
-        
-        progress_task.abort();
-            
-        let _ = app_handle.emit("creation-progress", serde_json::json!({
-            "instance": safe_name,
-            "progress": 85,
-            "stage": "NeoForge installation complete"
-        }));
-        
-        version_id
-    } else {
-        return Err("NeoForge loader version not specified".to_string());
-    }
-} else {
+        } else {
             version.clone()
         }
     } else {
@@ -1015,7 +1015,6 @@ pub async fn export_instance(
     } else {
         export_as_zip(
             &mut zip,
-            &safe_name,
             &instance_dir,
             options,
             include_worlds,
@@ -1034,7 +1033,6 @@ pub async fn export_instance(
 
 fn export_as_zip(
     zip: &mut zip::ZipWriter<std::fs::File>,
-    instance_name: &str,
     instance_dir: &std::path::Path,
     options: zip::write::SimpleFileOptions,
     include_worlds: bool,

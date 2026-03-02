@@ -33,23 +33,13 @@ impl FriendsService {
         
         let existing_users: Vec<serde_json::Value> = existing.json().await?;
 
-        let payload = if existing_users.is_empty() {
-            json!({
-                "uuid": uuid,
-                "username": username,
-                "status": "online",
-                "current_instance": null,
-                "last_seen": Utc::now()
-            })
-        } else {
-            json!({
-                "uuid": uuid,
-                "username": username,
-                "status": "online",
-                "current_instance": null,
-                "last_seen": Utc::now()
-            })
-        };
+        let payload = json!({
+            "uuid": uuid,
+            "username": username,
+            "status": "online",
+            "current_instance": null,
+            "last_seen": Utc::now()
+        });
 
         let response = self.client
             .post(&url)
