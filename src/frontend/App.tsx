@@ -18,21 +18,8 @@ import { ConfirmModal, AlertModal } from "./modals/ConfirmModal"
 import { MapTab } from "./tabs/MapTab"
 import { ScreenshotsTab } from "./tabs/ScreenshotsTab"
 import { Sidebar } from "./components/Sidebar"
-import type { Instance, LauncherSettings, ConsoleLog } from "../types"
+import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } from "../types"
 import '../i18n'
-
-interface AccountInfo {
-  uuid: string
-  username: string
-  is_active: boolean
-  added_at: string
-  last_used: string | null
-}
-
-interface UpdateInfo {
-  current_version: string
-  new_version: string
-}
 
 function App() {
   const [isReady, setIsReady] = useState(false)
@@ -83,7 +70,6 @@ function App() {
 
   const pushToHistory = (tab: typeof activeTab, showDetails: boolean, instance: Instance | null) => {
     if (isNavigating) return
-    
     setNavigationHistory(prev => {
       const newHistory = prev.slice(0, historyIndex + 1)
       newHistory.push({ tab, showDetails, instance })
@@ -99,9 +85,7 @@ function App() {
       const state = navigationHistory[newIndex]
       setActiveTab(state.tab)
       setShowInstanceDetails(state.showDetails)
-      if (state.instance) {
-        setSelectedInstance(state.instance)
-      }
+      if (state.instance) setSelectedInstance(state.instance)
       setHistoryIndex(newIndex)
       setTimeout(() => setIsNavigating(false), 0)
     }
@@ -114,9 +98,7 @@ function App() {
       const state = navigationHistory[newIndex]
       setActiveTab(state.tab)
       setShowInstanceDetails(state.showDetails)
-      if (state.instance) {
-        setSelectedInstance(state.instance)
-      }
+      if (state.instance) setSelectedInstance(state.instance)
       setHistoryIndex(newIndex)
       setTimeout(() => setIsNavigating(false), 0)
     }
@@ -125,18 +107,16 @@ function App() {
   const checkForUpdates = async () => {
     try {
       const update = await invoke<string | null>("check_for_updates")
-      
       if (update) {
         const parts = update.split(' -> ')
         if (parts.length === 2) {
-          const updateInfo: UpdateInfo = {
+          const info: UpdateInfo = {
             current_version: parts[0].trim(),
             new_version: parts[1].trim()
           }
-          
           const dismissedVersion = sessionStorage.getItem("dismissed_update_version")
-          if (dismissedVersion !== updateInfo.new_version) {
-            setUpdateInfo(updateInfo)
+          if (dismissedVersion !== info.new_version) {
+            setUpdateInfo(info)
           }
         }
       }
@@ -147,11 +127,9 @@ function App() {
 
   const handleInstallUpdate = async () => {
     if (!updateInfo) return
-    
     setIsInstallingUpdate(true)
     try {
       await invoke("install_update")
-      // The app will restart automatically after successful installation
     } catch (error) {
       console.error("Failed to install update:", error)
       setAlertModal({
@@ -180,22 +158,15 @@ function App() {
     const initializeApp = async () => {
       await new Promise(resolve => setTimeout(resolve, 100))
       setIsReady(true)
-
       const splash = document.getElementById('splash-screen')
       const root = document.getElementById('root')
-      
       if (splash && root) {
         splash.classList.add('hidden')
         root.classList.add('visible')
-        setTimeout(() => {
-          splash.remove()
-        }, 500)
+        setTimeout(() => splash.remove(), 500)
       }
-
-      // Check for updates after app is ready
       checkForUpdates()
     }
-    
     initializeApp()
   }, [])
 
@@ -211,7 +182,7 @@ function App() {
     const unlistenConsole = listen<ConsoleLog>("console-log", (event) => {
       setConsoleLogs((prev) => [...prev, event.payload])
     })
-    
+
     const unlistenExit = listen<{ instance: string }>("instance-exited", (event) => {
       setRunningInstances((prev) => {
         const newSet = new Set(prev)
@@ -220,19 +191,14 @@ function App() {
       })
       setLaunchingInstanceName(null)
     })
-    
-  const unlistenServerLaunch = listen<{ instance: string, server: string }>("server-instance-launching", (event) => {
-    console.log(`Server launch detected: ${event.payload.instance} connecting to ${event.payload.server}`)
-    setLaunchingInstanceName(event.payload.instance)
-    setConsoleLogs([])
-    
-    if (settings?.auto_navigate_to_console !== false) {
-      setActiveTab("console")
-    }
-    
-    setRunningInstances((prev) => new Set(prev).add(event.payload.instance))
-  })
-    
+
+    const unlistenServerLaunch = listen<{ instance: string, server: string }>("server-instance-launching", (event) => {
+      setLaunchingInstanceName(event.payload.instance)
+      setConsoleLogs([])
+      if (settings?.auto_navigate_to_console !== false) setActiveTab("console")
+      setRunningInstances((prev) => new Set(prev).add(event.payload.instance))
+    })
+
     return () => {
       unlistenConsole.then((fn) => fn())
       unlistenExit.then((fn) => fn())
@@ -251,23 +217,17 @@ function App() {
       const icons: Record<string, string | null> = {}
       for (const instance of instances) {
         try {
-          const icon = await invoke<string | null>("get_instance_icon", {
-            instanceName: instance.name
-          })
+          const icon = await invoke<string | null>("get_instance_icon", { instanceName: instance.name })
           icons[instance.name] = icon
-        } catch (error) {
-          console.error(`Failed to load icon for ${instance.name}:`, error)
+        } catch {
           icons[instance.name] = null
         }
       }
       setInstanceIcons(icons)
     }
-
-    if (instances.length > 0) {
-      loadIcons()
-    }
+    if (instances.length > 0) loadIcons()
   }, [instances])
-  
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (showUpdateDropdown) {
@@ -297,11 +257,8 @@ function App() {
       setInstances(instanceList)
       if (selectedInstance) {
         const updated = instanceList.find(i => i.name === selectedInstance.name)
-        if (updated) {
-          setSelectedInstance(updated)
-        } else {
-          setSelectedInstance(instanceList[0] || null)
-        }
+        if (updated) setSelectedInstance(updated)
+        else setSelectedInstance(instanceList[0] || null)
       } else if (instanceList.length > 0 && !selectedInstance) {
         setSelectedInstance(instanceList[0])
       }
@@ -341,7 +298,6 @@ function App() {
     try {
       const accountList = await invoke<AccountInfo[]>("get_accounts")
       setAccounts(accountList)
-      
       const active = accountList.find(acc => acc.is_active)
       setActiveAccount(active || null)
       setIsAuthenticated(!!active)
@@ -354,10 +310,7 @@ function App() {
     if (!activeAccount) return
     setLaunchingInstanceName(instance.name)
     setConsoleLogs([])
-    if (settings?.auto_navigate_to_console !== false) {
-      setActiveTab("console")
-    }
-    
+    if (settings?.auto_navigate_to_console !== false) setActiveTab("console")
     setShowInstanceDetails(false)
     try {
       await invoke<string>("launch_instance_with_active_account", {
@@ -399,21 +352,18 @@ function App() {
     let baseName = instance.name
     let counter = 1
     let newName = `${baseName} (Copy)`
-    
     while (instances.some(i => i.name === newName)) {
       counter++
       newName = `${baseName} (Copy ${counter})`
     }
-    
+
     setCreatingInstanceName(newName)
-    
     try {
       await invoke("duplicate_instance", {
         instanceName: instance.name,
-        newName: newName,
+        newName,
         appHandle: appWindow,
       })
-      
       await loadInstances()
     } catch (error) {
       console.error("Duplicate error:", error)
@@ -469,13 +419,9 @@ function App() {
 
   const handleQuickLaunch = async (instance: Instance) => {
     if (!activeAccount) return
-    
     setLaunchingInstanceName(instance.name)
     setConsoleLogs([])
-    if (settings?.auto_navigate_to_console !== false) {
-      setActiveTab("console")
-    }
-    
+    if (settings?.auto_navigate_to_console !== false) setActiveTab("console")
     try {
       await invoke<string>("launch_instance_with_active_account", {
         instanceName: instance.name,
@@ -511,7 +457,7 @@ function App() {
 
   return (
     <div className="flex flex-col h-screen bg-[#181a1f] text-[#e6e6e6] overflow-hidden font-sans">
-      <div 
+      <div
         data-tauri-drag-region
         style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
         className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center"
@@ -520,15 +466,13 @@ function App() {
           <img src="/logo.png" alt="Octane Launcher" className="h-5 w-5" />
           <span className="text-sm font-semibold text-[#e6e6e6]">Octane Launcher</span>
         </div>
-        
+
         <div className="flex items-center gap-1 mr-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
           <button
             onClick={navigateBack}
             disabled={historyIndex <= 0}
             className={`h-7 w-7 flex items-center justify-center rounded transition-colors ${
-              historyIndex > 0
-                ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" 
-                : "text-[#3a3f4b] cursor-not-allowed"
+              historyIndex > 0 ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" : "text-[#3a3f4b] cursor-not-allowed"
             }`}
           >
             <ChevronLeft size={16} strokeWidth={4} />
@@ -537,9 +481,7 @@ function App() {
             onClick={navigateForward}
             disabled={historyIndex >= navigationHistory.length - 1}
             className={`h-7 w-7 flex items-center justify-center rounded transition-colors ${
-              historyIndex < navigationHistory.length - 1
-                ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" 
-                : "text-[#3a3f4b] cursor-not-allowed"
+              historyIndex < navigationHistory.length - 1 ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" : "text-[#3a3f4b] cursor-not-allowed"
             }`}
           >
             <ChevronRight size={16} strokeWidth={4} />
@@ -553,14 +495,9 @@ function App() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id)
-                    setShowInstanceDetails(false)
-                  }}
+                  onClick={() => { setActiveTab(tab.id); setShowInstanceDetails(false) }}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all cursor-pointer ${
-                    activeTab === tab.id
-                      ? "bg-[#181a1f] text-[#e6e6e6]"
-                      : "text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b]"
+                    activeTab === tab.id ? "bg-[#181a1f] text-[#e6e6e6]" : "text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b]"
                   }`}
                 >
                   <Icon size={16} strokeWidth={1.5} />
@@ -582,7 +519,7 @@ function App() {
               >
                 <Download size={16} strokeWidth={1.5} />
               </button>
-              
+
               {showUpdateDropdown && (
                 <UpdateDropdown
                   currentVersion={updateInfo.current_version}
@@ -593,7 +530,7 @@ function App() {
               )}
             </div>
           )}
-          
+
           <button
             onClick={() => setShowSettingsModal(true)}
             className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-all cursor-pointer"
@@ -602,22 +539,13 @@ function App() {
             <Settings size={16} strokeWidth={1.5} />
           </button>
           <div className="w-px h-6 bg-[#3a3f4b] mx-2" style={{ pointerEvents: 'none' } as any} />
-          <button
-            onClick={() => appWindow.minimize()}
-            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors"
-          >
+          <button onClick={() => appWindow.minimize()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors">
             <Minus size={16} strokeWidth={1.5} />
           </button>
-          <button
-            onClick={() => appWindow.toggleMaximize()}
-            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors"
-          >
+          <button onClick={() => appWindow.toggleMaximize()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors">
             <Square size={14} strokeWidth={1.5} />
           </button>
-          <button
-            onClick={() => appWindow.close()}
-            className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-red-500 transition-colors"
-          >
+          <button onClick={() => appWindow.close()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-red-500 transition-colors">
             <X size={16} strokeWidth={1.5} />
           </button>
         </div>
@@ -740,7 +668,7 @@ function App() {
               )}
 
               {activeTab === "servers" && (
-                <ServersTab 
+                <ServersTab
                   launchingInstanceName={launchingInstanceName}
                   runningInstances={runningInstances}
                 />
@@ -754,14 +682,8 @@ function App() {
                 />
               )}
 
-              {activeTab === "map" && (
-                <MapTab />
-              )}
-
-              {activeTab === "screenshots" && (
-                <ScreenshotsTab instances={instances} />
-              )}
-
+              {activeTab === "map" && <MapTab />}
+              {activeTab === "screenshots" && <ScreenshotsTab instances={instances} />}
               {activeTab === "console" && (
                 <ConsoleTab
                   consoleLogs={consoleLogs}

@@ -42,6 +42,35 @@ export interface LauncherSettings {
   auto_navigate_to_console?: boolean
 }
 
+export interface MinecraftOptions {
+  fov: number | null
+  render_distance: number | null
+  max_fps: number | null
+  fullscreen: boolean | null
+  vsync: boolean | null
+  gui_scale: number | null
+  brightness: number | null
+  entity_shadows: boolean | null
+  particles: string | null
+  graphics: string | null
+  smooth_lighting: boolean | null
+  biome_blend: number | null
+  master_volume: number | null
+  music_volume: number | null
+  mouse_sensitivity: number | null
+  auto_jump: boolean | null
+  keybinds: Record<string, string> | null
+}
+
+export interface InstanceTemplate {
+  id: string
+  name: string
+  description: string | null
+  created_at: string
+  launcher_settings: LauncherSettings | null
+  minecraft_options: MinecraftOptions | null
+}
+
 export interface ConsoleLog {
   instance: string
   type: "stdout" | "stderr"
@@ -164,4 +193,105 @@ export interface ModrinthDependency {
 export interface ModFile {
   filename: string
   size: number
+}
+
+export interface AccountInfo {
+  uuid: string
+  username: string
+  is_active: boolean
+  added_at: string
+  last_used: string | null
+}
+
+export interface UpdateInfo {
+  current_version: string
+  new_version: string
+}
+
+export interface PlayerInfo {
+  name: string
+  uuid: string
+}
+
+export interface ServerInfo {
+  name: string
+  address: string
+  port: number
+  status: "online" | "offline" | "unknown"
+  players_online?: number
+  players_max?: number
+  players_list?: PlayerInfo[]
+  version?: string
+  motd?: string
+  favicon?: string
+  last_checked?: number
+}
+
+export interface McSrvStatResponse {
+  online: boolean
+  ip?: string
+  port?: number
+  hostname?: string
+  version?: string
+  protocol?: {
+    version: number
+    name?: string
+  }
+  icon?: string
+  motd?: {
+    clean?: string[]
+  }
+  players?: {
+    online: number
+    max: number
+    list?: PlayerInfo[]
+  }
+}
+
+export interface Screenshot {
+  path: string
+  filename: string
+  instance_name: string
+  timestamp: number
+  size: number
+}
+
+export interface CachedSkin {
+  url: string
+  variant: "classic" | "slim"
+  timestamp: number
+}
+
+export interface RecentSkin {
+  url: string
+  variant: "classic" | "slim"
+  timestamp: number
+}
+
+export interface Cape {
+  id: string
+  state: string
+  url: string
+  alias: string
+  icon?: string
+}
+
+export interface Snapshot {
+  id: string
+  title: string
+  version: string
+  type: string
+  date?: string
+  image?: {
+    title: string
+    url: string
+  }
+  body?: string
+  contentPath?: string
+  shortText?: string
+}
+
+export interface SnapshotsResponse {
+  version: number
+  entries: Snapshot[]
 }

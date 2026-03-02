@@ -4,44 +4,10 @@ import { createPortal } from "react-dom"
 import { invoke } from "@tauri-apps/api/core"
 import { open, save } from '@tauri-apps/plugin-dialog'
 import { useTranslation } from "react-i18next"
-import type { Instance } from "../../types"
+import type { Instance, InstanceTemplate } from "../../types"
 import { ContextMenu } from "../modals/ContextMenu"
 import { ConfirmModal, AlertModal } from "../modals/ConfirmModal"
 import { ExportModal } from "../modals/ExportModal"
-
-interface InstanceTemplate {
-  id: string
-  name: string
-  description: string | null
-  created_at: string
-  launcher_settings: LauncherSettings | null
-  minecraft_options: MinecraftOptions | null
-}
-
-interface LauncherSettings {
-  java_path: string | null
-  memory_mb: number
-}
-
-interface MinecraftOptions {
-  fov: number | null
-  render_distance: number | null
-  max_fps: number | null
-  fullscreen: boolean | null
-  vsync: boolean | null
-  gui_scale: number | null
-  brightness: number | null
-  entity_shadows: boolean | null
-  particles: string | null
-  graphics: string | null
-  smooth_lighting: boolean | null
-  biome_blend: number | null
-  master_volume: number | null
-  music_volume: number | null
-  mouse_sensitivity: number | null
-  auto_jump: boolean | null
-  keybinds: Record<string, string> | null
-}
 
 interface InstancesTabProps {
   instances: Instance[]
@@ -75,11 +41,7 @@ export function InstancesTab({
 }: InstancesTabProps) {
   const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState("")
-  const [contextMenu, setContextMenu] = useState<{
-    x: number
-    y: number
-    instance: Instance
-  } | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; instance: Instance } | null>(null)
   const [instanceIcons, setInstanceIcons] = useState<Record<string, string | null>>({})
   const [showTemplateMenu, setShowTemplateMenu] = useState(false)
   const [showApplyMenu, setShowApplyMenu] = useState(false)
@@ -112,10 +74,7 @@ export function InstancesTab({
     if (instance.loader === "neoforge") {
       const versionPart = instance.version.replace('neoforge-', '')
       const parts = versionPart.split('-')
-      if (parts[0].startsWith('1.')) {
-        return parts[0]
-      }
-      
+      if (parts[0].startsWith('1.')) return parts[0]
       const versionNumbers = parts[0].split('.')
       if (versionNumbers.length >= 2) {
         const major = versionNumbers[0]
@@ -123,10 +82,7 @@ export function InstancesTab({
         const patch = versionNumbers[2] || '0'
         const majorNum = parseInt(major)
         if (majorNum >= 20) {
-          if (patch === '0') {
-            return `1.${major}`
-          }
-          return `1.${major}.${minor}`
+          return patch === '0' ? `1.${major}` : `1.${major}.${minor}`
         }
       }
     }
@@ -163,21 +119,15 @@ export function InstancesTab({
       const icons: Record<string, string | null> = {}
       for (const instance of instances) {
         try {
-          const icon = await invoke<string | null>("get_instance_icon", {
-            instanceName: instance.name
-          })
+          const icon = await invoke<string | null>("get_instance_icon", { instanceName: instance.name })
           icons[instance.name] = icon
         } catch (error) {
-          console.error(`Failed to load icon for ${instance.name}:`, error)
           icons[instance.name] = null
         }
       }
       setInstanceIcons(icons)
     }
-
-    if (instances.length > 0) {
-      loadIcons()
-    }
+    if (instances.length > 0) loadIcons()
   }, [instances])
 
   const loadTemplates = async () => {
@@ -189,9 +139,7 @@ export function InstancesTab({
     }
   }
 
-  useEffect(() => {
-    loadTemplates()
-  }, [])
+  useEffect(() => { loadTemplates() }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -211,31 +159,24 @@ export function InstancesTab({
         setSelectedTemplateId(null)
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   const handleContextMenu = (e: React.MouseEvent, instance: Instance) => {
     e.preventDefault()
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      instance,
-    })
+    setContextMenu({ x: e.clientX, y: e.clientY, instance })
   }
 
   const handleCreateTemplate = async (instanceName: string) => {
     setShowTemplateMenu(false)
-    
     try {
-      await invoke("create_template_from_instance", { 
+      await invoke("create_template_from_instance", {
         instanceName,
         templateName: `${instanceName} Template`,
         description: `Template created from ${instanceName}`
       })
       await loadTemplates()
-
       setAlertModal({
         isOpen: true,
         title: t('instances.templates.createSuccess.title'),
@@ -243,7 +184,6 @@ export function InstancesTab({
         type: "success"
       })
     } catch (error) {
-      console.error("Failed to create template:", error)
       setAlertModal({
         isOpen: true,
         title: t('common.errors.title'),
@@ -257,17 +197,10 @@ export function InstancesTab({
     try {
       const filePath = await save({
         defaultPath: `${templateName}.json`,
-        filters: [{
-          name: 'Template',
-          extensions: ['json']
-        }]
+        filters: [{ name: 'Template', extensions: ['json'] }]
       })
-
       if (filePath) {
-        await invoke("export_template", { 
-          templateId, 
-          exportPath: filePath 
-        })
+        await invoke("export_template", { templateId, exportPath: filePath })
         setAlertModal({
           isOpen: true,
           title: t('instances.templates.exportSuccess.title'),
@@ -276,7 +209,6 @@ export function InstancesTab({
         })
       }
     } catch (error) {
-      console.error("Failed to export template:", error)
       setAlertModal({
         isOpen: true,
         title: t('common.errors.title'),
@@ -288,14 +220,7 @@ export function InstancesTab({
 
   const handleImportTemplate = async () => {
     try {
-      const selected = await open({
-        multiple: false,
-        filters: [{
-          name: 'Template',
-          extensions: ['json']
-        }]
-      })
-
+      const selected = await open({ multiple: false, filters: [{ name: 'Template', extensions: ['json'] }] })
       if (selected && typeof selected === 'string') {
         await invoke("import_template", { importPath: selected })
         await loadTemplates()
@@ -307,7 +232,6 @@ export function InstancesTab({
         })
       }
     } catch (error) {
-      console.error("Failed to import template:", error)
       setAlertModal({
         isOpen: true,
         title: t('common.errors.title'),
@@ -322,7 +246,6 @@ export function InstancesTab({
       await invoke("delete_template", { templateId })
       await loadTemplates()
     } catch (error) {
-      console.error("Failed to delete template:", error)
       setAlertModal({
         isOpen: true,
         title: t('common.errors.title'),
@@ -344,7 +267,6 @@ export function InstancesTab({
         type: "success"
       })
     } catch (error) {
-      console.error("Failed to apply template:", error)
       setAlertModal({
         isOpen: true,
         title: t('common.errors.title'),
@@ -354,9 +276,7 @@ export function InstancesTab({
     }
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString()
-  }
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
 
   const filteredInstances = instances.filter(instance =>
     instance.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -365,21 +285,14 @@ export function InstancesTab({
   return (
     <>
       <style>{`
-        .blur-border {
-          position: relative;
-        }
-
+        .blur-border { position: relative; }
         .blur-border::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: inherit;
           padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
@@ -387,26 +300,16 @@ export function InstancesTab({
           backdrop-filter: blur(8px);
           z-index: 10;
         }
-
         .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
         }
-
         .blur-border-input::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: inherit;
           padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
@@ -414,13 +317,8 @@ export function InstancesTab({
           backdrop-filter: blur(8px);
           z-index: 10;
         }
-
         .blur-border-input:focus-within::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
         }
       `}</style>
       <div className="p-6 space-y-4">
@@ -433,10 +331,7 @@ export function InstancesTab({
             <div className="flex items-center gap-2">
               <button
                 ref={templateButtonRef}
-                onClick={() => {
-                  setShowTemplateMenu(!showTemplateMenu)
-                  setShowApplyMenu(false)
-                }}
+                onClick={() => { setShowTemplateMenu(!showTemplateMenu); setShowApplyMenu(false) }}
                 className="w-8 h-8 hover:bg-[#22252b] text-[#7d8590] hover:text-[#e6e6e6] rounded flex items-center justify-center transition-colors cursor-pointer"
               >
                 <FileText size={22} strokeWidth={2} />
@@ -491,29 +386,20 @@ export function InstancesTab({
                 return (
                   <div
                     key={instance.name}
-                    onClick={() => {
-                      onSetSelectedInstance(instance)
-                      onShowDetails(instance)
-                    }}
+                    onClick={() => { onSetSelectedInstance(instance); onShowDetails(instance) }}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
                     className="blur-border group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all"
                   >
                     <div className="aspect-square bg-[#181a1f] flex items-center justify-center overflow-hidden relative z-0">
                       {icon ? (
-                        <img
-                          src={icon}
-                          alt={instance.name}
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={icon} alt={instance.name} className="w-full h-full object-cover" />
                       ) : (
                         <Package size={88} className="text-[#3a3f4b]" strokeWidth={1.5} />
                       )}
                     </div>
-                    
+
                     <div className="bg-[#22252b] p-3 flex items-center justify-between gap-2 relative z-0">
-                      <div className={`flex-1 min-w-0 transition-all ${
-                        isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'
-                      }`}>
+                      <div className={`flex-1 min-w-0 transition-all ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
                         <h3 className="text-sm font-semibold text-[#e6e6e6] truncate mb-0.5">{instance.name}</h3>
                         <div className="flex items-center gap-1.5 text-xs min-w-0">
                           <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
@@ -521,16 +407,13 @@ export function InstancesTab({
                           {getLoaderBadge(instance)}
                         </div>
                       </div>
-                      
+
                       {isAuthenticated && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            if (isRunning && onKillInstance) {
-                              onKillInstance(instance)
-                            } else {
-                              handleQuickLaunch(instance)
-                            }
+                            if (isRunning && onKillInstance) onKillInstance(instance)
+                            else handleQuickLaunch(instance)
                           }}
                           disabled={launchingInstanceName !== null && !isRunning}
                           className={`absolute right-3 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all cursor-pointer ${
@@ -558,7 +441,6 @@ export function InstancesTab({
         </div>
       </div>
 
-      {/* Template Menu Dropdown */}
       {showTemplateMenu && !showApplyMenu && createPortal(
         <div
           ref={templateMenuRef}
@@ -573,13 +455,9 @@ export function InstancesTab({
             <p className="text-xs text-[#7d8590] mt-1">{t('instances.templates.manager.description')}</p>
           </div>
           <div className="h-px bg-[#3a3f4b]" />
-
           <div className="p-3 space-y-2">
             <button
-              onClick={() => {
-                setShowTemplateMenu(false)
-                setShowApplyMenu(true)
-              }}
+              onClick={() => { setShowTemplateMenu(false); setShowApplyMenu(true) }}
               disabled={templates.length === 0 || instances.length === 0}
               className="w-full p-3 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 disabled:bg-[#3a3f4b] disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-left cursor-pointer flex items-center gap-3"
             >
@@ -593,7 +471,6 @@ export function InstancesTab({
                 </div>
               </div>
             </button>
-
             <button
               onClick={handleImportTemplate}
               className="w-full p-3 bg-[#3a3f4b] hover:bg-[#4a4f5b] rounded transition-colors text-left cursor-pointer flex items-center gap-3"
@@ -607,15 +484,12 @@ export function InstancesTab({
               </div>
             </button>
           </div>
-
           <div className="h-px bg-[#3a3f4b]" />
-
           <div className="p-3 pb-2">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">{t('instances.templates.createNew')}</h4>
               <span className="text-xs text-[#3a3f4b]">{t('instances.templates.instanceCount', { count: instances.length })}</span>
             </div>
-            
             <div className="bg-[#181a1f] rounded overflow-hidden">
               <div className="max-h-64 overflow-y-auto">
                 {instances.length === 0 ? (
@@ -634,11 +508,7 @@ export function InstancesTab({
                       >
                         <div className="w-10 h-10 bg-[#22252b] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {icon ? (
-                            <img
-                              src={icon}
-                              alt={instance.name}
-                              className="w-full h-full object-contain p-1"
-                            />
+                            <img src={icon} alt={instance.name} className="w-full h-full object-contain p-1" />
                           ) : (
                             <Package size={20} className="text-[#3a3f4b]" strokeWidth={1.5} />
                           )}
@@ -659,7 +529,6 @@ export function InstancesTab({
         document.body
       )}
 
-      {/* Apply Template Menu */}
       {showApplyMenu && createPortal(
         <div
           ref={applyMenuRef}
@@ -674,13 +543,11 @@ export function InstancesTab({
             <p className="text-xs text-[#7d8590] mt-1">{t('instances.templates.applyTemplate.description')}</p>
           </div>
           <div className="h-px bg-[#3a3f4b]" />
-          
           <div className="p-3 pb-2">
             <div className="flex items-center justify-between mb-2">
               <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">{t('instances.templates.availableTemplates')}</h4>
               <span className="text-xs text-[#3a3f4b]">{t('instances.templates.templateCount', { count: templates.length })}</span>
             </div>
-
             <div className="bg-[#181a1f] rounded overflow-hidden">
               <div className="max-h-96 overflow-y-auto">
                 {templates.length === 0 ? (
@@ -707,33 +574,27 @@ export function InstancesTab({
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleExportTemplate(template.id, template.name)
-                              }}
+                              onClick={(e) => { e.stopPropagation(); handleExportTemplate(template.id, template.name) }}
                               className="p-1.5 hover:bg-[#2a2f3b] text-[#7d8590] hover:text-[#16a34a] rounded transition-all cursor-pointer"
                               title={t('instances.templates.exportTooltip')}
                             >
                               <FileUp size={16} strokeWidth={2} />
                             </button>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteTemplate(template.id)
-                              }}
+                              onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id) }}
                               className="p-1.5 hover:bg-[#2a2f3b] text-[#7d8590] hover:text-red-400 rounded transition-all cursor-pointer"
                               title={t('instances.templates.deleteTooltip')}
                             >
                               <Trash2 size={16} strokeWidth={2} />
                             </button>
-                            <ChevronDown 
-                              size={16} 
-                              className={`text-[#7d8590] transition-transform ml-1 ${selectedTemplateId === template.id ? 'rotate-180' : ''}`} 
+                            <ChevronDown
+                              size={16}
+                              className={`text-[#7d8590] transition-transform ml-1 ${selectedTemplateId === template.id ? 'rotate-180' : ''}`}
                             />
                           </div>
                         </div>
                       </button>
-                      
+
                       {selectedTemplateId === template.id && (
                         <div className="bg-[#181a1f]">
                           <div className="px-3 py-2">
@@ -749,11 +610,7 @@ export function InstancesTab({
                               >
                                 <div className="w-10 h-10 bg-[#22252b] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
                                   {icon ? (
-                                    <img
-                                      src={icon}
-                                      alt={instance.name}
-                                      className="w-full h-full object-contain p-1"
-                                    />
+                                    <img src={icon} alt={instance.name} className="w-full h-full object-contain p-1" />
                                   ) : (
                                     <Package size={20} className="text-[#3a3f4b]" strokeWidth={1.5} />
                                   )}
@@ -778,62 +635,22 @@ export function InstancesTab({
         document.body
       )}
 
-      {/* Context Menu */}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           items={[
-            {
-              label: t('instances.contextMenu.open'),
-              icon: <Package size={16} />,
-              onClick: () => {
-                onSetSelectedInstance(contextMenu.instance)
-                onShowDetails(contextMenu.instance)
-              },
-            },
-            {
-              label: t('instances.contextMenu.openFolder'),
-              icon: <FolderOpen size={16} />,
-              onClick: () => {
-                if (onOpenFolder) {
-                  onOpenFolder(contextMenu.instance)
-                }
-              },
-            },
-            {
-              label: t('instances.contextMenu.duplicate'),
-              icon: <Copy size={16} />,
-              onClick: () => {
-                if (onDuplicateInstance) {
-                  onDuplicateInstance(contextMenu.instance)
-                }
-              },
-            },
-            {
-              label: t('instances.contextMenu.export'),
-              icon: <FileArchive size={16} />,
-              onClick: () => {
-                setExportModalInstance(contextMenu.instance)
-              },
-            },
+            { label: t('instances.contextMenu.open'), icon: <Package size={16} />, onClick: () => { onSetSelectedInstance(contextMenu.instance); onShowDetails(contextMenu.instance) } },
+            { label: t('instances.contextMenu.openFolder'), icon: <FolderOpen size={16} />, onClick: () => onOpenFolder?.(contextMenu.instance) },
+            { label: t('instances.contextMenu.duplicate'), icon: <Copy size={16} />, onClick: () => onDuplicateInstance?.(contextMenu.instance) },
+            { label: t('instances.contextMenu.export'), icon: <FileArchive size={16} />, onClick: () => setExportModalInstance(contextMenu.instance) },
             { separator: true },
-            {
-              label: t('instances.contextMenu.delete'),
-              icon: <Trash2 size={16} />,
-              onClick: () => {
-                if (onDeleteInstance) {
-                  onDeleteInstance(contextMenu.instance.name)
-                }
-              },
-              danger: true,
-            },
+            { label: t('instances.contextMenu.delete'), icon: <Trash2 size={16} />, onClick: () => onDeleteInstance?.(contextMenu.instance.name), danger: true },
           ]}
         />
       )}
 
-      {/* Confirmation Modal */}
       {confirmModal && (
         <ConfirmModal
           isOpen={confirmModal.isOpen}
@@ -846,7 +663,6 @@ export function InstancesTab({
         />
       )}
 
-      {/* Alert Modal */}
       {alertModal && (
         <AlertModal
           isOpen={alertModal.isOpen}
@@ -857,7 +673,6 @@ export function InstancesTab({
         />
       )}
 
-      {/* Export Modal */}
       {exportModalInstance && (
         <ExportModal
           instanceName={exportModalInstance.name}

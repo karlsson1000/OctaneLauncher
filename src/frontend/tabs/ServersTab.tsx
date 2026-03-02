@@ -4,46 +4,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { useTranslation } from "react-i18next"
 import { CreateServerModal } from "../modals/CreateServerModal"
 import { ConfirmModal } from "../modals/ConfirmModal"
-
-interface PlayerInfo {
-  name: string
-  uuid: string
-}
-
-interface ServerInfo {
-  name: string
-  address: string
-  port: number
-  status: "online" | "offline" | "unknown"
-  players_online?: number
-  players_max?: number
-  players_list?: PlayerInfo[]
-  version?: string
-  motd?: string
-  favicon?: string
-  last_checked?: number
-}
-
-interface McSrvStatResponse {
-  online: boolean
-  ip?: string
-  port?: number
-  hostname?: string
-  version?: string
-  protocol?: {
-    version: number
-    name?: string
-  }
-  icon?: string
-  motd?: {
-    clean?: string[]
-  }
-  players?: {
-    online: number
-    max: number
-    list?: PlayerInfo[]
-  }
-}
+import type { ServerInfo, McSrvStatResponse } from "../../types"
 
 interface ServersTabProps {
   launchingInstanceName: string | null
@@ -64,13 +25,12 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
     loadServers()
   }, [])
 
-  // Auto-refresh all servers every 5 minutes
   useEffect(() => {
     const interval = setInterval(() => {
       servers.forEach(server => {
         refreshServerStatus(server)
       })
-    }, 5 * 60 * 1000) // 5 minutes
+    }, 5 * 60 * 1000)
 
     return () => clearInterval(interval)
   }, [servers])
@@ -79,7 +39,6 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
     try {
       const serverList = await invoke<ServerInfo[]>("get_servers")
       setServers(serverList)
-      // Refresh status for all servers on load
       serverList.forEach(server => {
         refreshServerStatus(server)
       })
@@ -93,24 +52,17 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
     try {
       const fullAddress = port === 25565 ? address : `${address}:${port}`
       const response = await fetch(`https://api.mcsrvstat.us/3/${fullAddress}`, {
-        headers: {
-          'User-Agent': 'OctaneLauncher/1.0'
-        }
+        headers: { 'User-Agent': 'OctaneLauncher/1.0' }
       })
-      
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`)
-      }
+
+      if (!response.ok) throw new Error(`API returned ${response.status}`)
 
       const data: McSrvStatResponse = await response.json()
-      
-      console.log('API Response for', fullAddress, ':', data)
-      console.log('Players list:', data.players?.list)
-      
+
       return {
         name: address,
-        address: address,
-        port: port,
+        address,
+        port,
         status: data.online ? "online" : "offline",
         players_online: data.players?.online,
         players_max: data.players?.max,
@@ -129,26 +81,18 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
   const refreshServerStatus = async (server: ServerInfo) => {
     try {
       const statusData = await fetchServerStatus(server.address, server.port)
-      
+
       if (statusData) {
-        // Update server in list
-        setServers(prev => prev.map(s => 
-          s.name === server.name 
-            ? { ...statusData, name: server.name } 
-            : s
+        setServers(prev => prev.map(s =>
+          s.name === server.name ? { ...statusData, name: server.name } : s
         ))
-        
-        // Update selected server if it's the one being refreshed
+
         if (selectedServer?.name === server.name) {
           setSelectedServer({ ...statusData, name: server.name })
         }
 
-        // Save updated status to backend
         try {
-          await invoke("update_server_status", {
-            serverName: server.name,
-            status: statusData
-          })
+          await invoke("update_server_status", { serverName: server.name, status: statusData })
         } catch (error) {
           console.error("Failed to save server status:", error)
         }
@@ -160,13 +104,10 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
   const handleDeleteServer = async () => {
     if (!serverToDelete) return
-
     try {
       await invoke("delete_server", { serverName: serverToDelete })
       await loadServers()
-      if (selectedServer?.name === serverToDelete) {
-        setSelectedServer(null)
-      }
+      if (selectedServer?.name === serverToDelete) setSelectedServer(null)
     } catch (error) {
       console.error("Delete error:", error)
     } finally {
@@ -175,61 +116,39 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
   }
 
   const handleServerAdded = async (newServer: ServerInfo) => {
-    // First, save the server to backend
     try {
-      await invoke("add_server", {
-        name: newServer.name,
-        address: newServer.address,
-        port: newServer.port,
-      })
+      await invoke("add_server", { name: newServer.name, address: newServer.address, port: newServer.port })
     } catch (error) {
       console.error("Failed to save server:", error)
       alert(`Failed to add server: ${error}`)
       return
     }
 
-    // Then fetch initial status for the new server
     const statusData = await fetchServerStatus(newServer.address, newServer.port)
-    
+
     if (statusData) {
       const serverWithStatus = { ...statusData, name: newServer.name }
       setServers(prev => [...prev, serverWithStatus])
-      
-      // Update backend with status
       try {
-        await invoke("update_server_status", {
-          serverName: newServer.name,
-          status: statusData
-        })
+        await invoke("update_server_status", { serverName: newServer.name, status: statusData })
       } catch (error) {
         console.error("Failed to save server status:", error)
       }
     } else {
-      // Add server even if status fetch failed
       setServers(prev => [...prev, { ...newServer, status: "unknown" }])
     }
   }
 
   const handleLaunchServer = async (server: ServerInfo, e: React.MouseEvent) => {
     e.stopPropagation()
-    
     if (server.status !== "online") {
       alert(t('servers.errors.serverNotOnline'))
       return
     }
-
     setLaunchingServer(server.name)
-
     try {
-      await invoke("launch_server", {
-        serverAddress: server.address,
-        serverPort: server.port,
-        serverName: server.name
-      })
-
-      setTimeout(() => {
-        setLaunchingServer(null)
-      }, 1000)
+      await invoke("launch_server", { serverAddress: server.address, serverPort: server.port, serverName: server.name })
+      setTimeout(() => setLaunchingServer(null), 1000)
     } catch (error) {
       console.error("Failed to launch server:", error)
       alert(`${t('servers.errors.launchFailed')}: ${error}`)
@@ -269,21 +188,14 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
   return (
     <>
       <style>{`
-        .blur-border {
-          position: relative;
-        }
-
+        .blur-border { position: relative; }
         .blur-border::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: inherit;
           padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
@@ -291,26 +203,16 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
           backdrop-filter: blur(8px);
           z-index: 10;
         }
-
         .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
         }
-
         .blur-border-input::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: inherit;
           padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
@@ -318,13 +220,8 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
           backdrop-filter: blur(8px);
           z-index: 10;
         }
-
         .blur-border-input:focus-within::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
         }
       `}</style>
       <div className="p-6 space-y-4">
@@ -379,12 +276,9 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
               {filteredServers.map((server) => {
-                const displayAddress = server.port === 25565 
-                  ? server.address 
-                  : `${server.address}:${server.port}`
-                
+                const displayAddress = server.port === 25565 ? server.address : `${server.address}:${server.port}`
                 const isLaunching = launchingServer === server.name
-                
+
                 return (
                   <div
                     key={server.name}
@@ -392,10 +286,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                     className="blur-border group bg-[#22252b] rounded-md p-4 cursor-pointer transition-all relative"
                   >
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setServerToDelete(server.name)
-                      }}
+                      onClick={(e) => { e.stopPropagation(); setServerToDelete(server.name) }}
                       className="absolute top-4 right-4 px-3 py-2 bg-[#dc2626]/10 hover:bg-[#dc2626]/20 text-[#dc2626] rounded text-xs font-medium transition-all cursor-pointer z-20"
                       title={t('servers.removeTooltip')}
                     >
@@ -404,24 +295,16 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
                     <div className="flex gap-3 mb-2 pr-10 relative z-0">
                       {server.favicon ? (
-                        <img 
-                          src={server.favicon} 
-                          alt={server.name} 
-                          className="w-16 h-16 rounded object-cover"
-                        />
+                        <img src={server.favicon} alt={server.name} className="w-16 h-16 rounded object-cover" />
                       ) : (
                         <div className="w-16 h-16 bg-[#181a1f] rounded flex items-center justify-center flex-shrink-0">
                           <Server size={28} className="text-[#3a3f4b]" strokeWidth={1.5} />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-base text-[#e6e6e6] truncate mb-0">
-                          {server.name}
-                        </h3>
+                        <h3 className="font-semibold text-base text-[#e6e6e6] truncate mb-0">{server.name}</h3>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs text-[#7d8590] truncate">
-                            {displayAddress}
-                          </span>
+                          <span className="text-xs text-[#7d8590] truncate">{displayAddress}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusBgColor(server.status)} ${getStatusColor(server.status)}`}>
@@ -435,9 +318,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                     </div>
 
                     {server.motd && (
-                      <p className="text-xs text-[#7d8590] mb-2 truncate leading-relaxed relative z-0">
-                        {server.motd}
-                      </p>
+                      <p className="text-xs text-[#7d8590] mb-2 truncate leading-relaxed relative z-0">{server.motd}</p>
                     )}
 
                     {server.status === "online" && server.players_online !== undefined && (
@@ -460,11 +341,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                               </div>
                               {server.players_list.length > 5 && (
                                 <button
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    // Handle showing all players
-                                    console.log('Show all players for', server.name)
-                                  }}
+                                  onClick={(e) => e.stopPropagation()}
                                   className="flex items-center justify-center w-5 h-5 rounded hover:bg-[#3a3f4b] transition-colors cursor-pointer"
                                   title={`${server.players_list.length - 5} more players`}
                                 >
@@ -484,9 +361,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                       onClick={(e) => handleLaunchServer(server, e)}
                       disabled={server.status !== "online" || isLaunching || isAnyInstanceRunning}
                       className={`w-full py-2.5 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all relative z-20 ${
-                        isAnyInstanceRunning
-                          ? "bg-red-500/10 text-red-400 cursor-not-allowed"
-                          : isLaunching
+                        isAnyInstanceRunning || isLaunching
                           ? "bg-red-500/10 text-red-400 cursor-not-allowed"
                           : server.status === "online"
                           ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"

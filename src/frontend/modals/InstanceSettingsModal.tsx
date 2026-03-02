@@ -1,9 +1,15 @@
 import { useState, useRef, useEffect } from "react"
-import { X, Trash2, Camera, ImagePlus, Loader2, Check } from "lucide-react"
+import { X, Trash2, Camera, ImagePlus, Loader2, Check, Cpu } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { useTranslation } from "react-i18next"
 import { ConfirmModal, AlertModal } from "./ConfirmModal"
-import type { Instance, FabricVersion, NeoForgeVersion } from "../../types"
+import type { Instance, FabricVersion, NeoForgeVersion, LauncherSettings } from "../../types"
+
+interface SystemInfo {
+  total_memory_mb: number
+  available_memory_mb: number
+  recommended_max_memory_mb: number
+}
 
 interface InstanceSettingsModalProps {
   isOpen: boolean
@@ -52,6 +58,11 @@ export function InstanceSettingsModal({
   const versionDropdownRef = useRef<HTMLDivElement>(null)
   const fabricDropdownRef = useRef<HTMLDivElement>(null)
   const neoforgeDropdownRef = useRef<HTMLDivElement>(null)
+  
+  const [useCustomRam, setUseCustomRam] = useState(false)
+  const [instanceMemoryMb, setInstanceMemoryMb] = useState(2048)
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null)
+  const [isSavingRam, setIsSavingRam] = useState(false)
   
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
@@ -118,8 +129,77 @@ export function InstanceSettingsModal({
       if (minecraftVersions.length === 0) {
         loadMinecraftVersions()
       }
+
+      loadInstanceRamSettings()
+      loadSystemInfo()
     }
   }, [isOpen, instanceIcon, instance.name, instance.loader_version, instance.version, isFabricInstance, isNeoforgeInstance])
+
+  const loadInstanceRamSettings = async () => {
+    try {
+      const settings = await invoke<LauncherSettings | null>("get_instance_settings", {
+        instanceName: instance.name
+      })
+      if (settings && settings.memory_mb) {
+        setUseCustomRam(true)
+        setInstanceMemoryMb(settings.memory_mb)
+      } else {
+        setUseCustomRam(false)
+        setInstanceMemoryMb(2048)
+      }
+    } catch (error) {
+      console.error("Failed to load instance RAM settings:", error)
+      setUseCustomRam(false)
+      setInstanceMemoryMb(2048)
+    }
+  }
+
+  const loadSystemInfo = async () => {
+    try {
+      const info = await invoke<SystemInfo>("get_system_info")
+      setSystemInfo(info)
+    } catch (error) {
+      console.error("Failed to load system info:", error)
+    }
+  }
+
+  const handleSaveRam = async (memoryMb: number, enabled: boolean) => {
+    setIsSavingRam(true)
+    try {
+      if (enabled) {
+        const currentSettings = await invoke<LauncherSettings | null>("get_instance_settings", {
+          instanceName: instance.name
+        })
+        const newSettings: LauncherSettings = {
+          memory_mb: memoryMb,
+          java_path: currentSettings?.java_path ?? null,
+          discord_rpc_enabled: currentSettings?.discord_rpc_enabled ?? true,
+          language: currentSettings?.language,
+          auto_navigate_to_console: currentSettings?.auto_navigate_to_console ?? true,
+        }
+        await invoke("save_instance_settings", {
+          instanceName: instance.name,
+          settings: newSettings
+        })
+      } else {
+        await invoke("save_instance_settings", {
+          instanceName: instance.name,
+          settings: null
+        })
+      }
+      onInstanceUpdated()
+    } catch (error) {
+      console.error("Failed to save RAM settings:", error)
+      setAlertModal({
+        isOpen: true,
+        title: t('common.errors.title'),
+        message: `Failed to save RAM settings: ${String(error)}`,
+        type: "danger"
+      })
+    } finally {
+      setIsSavingRam(false)
+    }
+  }
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -453,109 +533,111 @@ export function InstanceSettingsModal({
     })
   }
 
-  return (
-      <>
-        <style>{`
-          @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-          }
-          @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-          }
-          @keyframes scaleIn {
-            from { 
-              opacity: 0;
-              transform: scale(0.95);
-            }
-            to { 
-              opacity: 1;
-              transform: scale(1);
-            }
-          }
-          @keyframes scaleOut {
-            from { 
-              opacity: 1;
-              transform: scale(1);
-            }
-            to { 
-              opacity: 0;
-              transform: scale(0.95);
-            }
-          }
-          .modal-backdrop {
-            animation: fadeIn 0.15s ease-out forwards;
-          }
-          .modal-backdrop.closing {
-            animation: fadeOut 0.15s ease-in forwards;
-          }
-          .modal-content {
-            animation: scaleIn 0.15s ease-out forwards;
-          }
-          .modal-content.closing {
-            animation: scaleOut 0.15s ease-in forwards;
-          }
-          
-          .blur-border {
-            position: relative;
-          }
+  const minMem = 1024
+  const maxMem = systemInfo?.total_memory_mb || 32768
+  const ramPercent = ((instanceMemoryMb - minMem) / (maxMem - minMem)) * 100
 
-          .blur-border::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            padding: 2px;
-            background: linear-gradient(
-              180deg,
-              rgba(255, 255, 255, 0.08),
-              rgba(255, 255, 255, 0.04)
-            );
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-            -webkit-mask-composite: xor;
-            mask-composite: exclude;
-            pointer-events: none;
-            backdrop-filter: blur(8px);
-            z-index: 10;
-            transition: none !important;
+  return (
+    <>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes scaleIn {
+          from { 
+            opacity: 0;
+            transform: scale(0.95);
           }
-          
-          .blur-border:hover::before {
-            background: linear-gradient(
-              180deg,
-              rgba(255, 255, 255, 0.08),
-              rgba(255, 255, 255, 0.04)
-            );
+          to { 
+            opacity: 1;
+            transform: scale(1);
           }
-          
-          .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
+        }
+        @keyframes scaleOut {
+          from { 
+            opacity: 1;
+            transform: scale(1);
           }
-          .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
+          to { 
+            opacity: 0;
+            transform: scale(0.95);
           }
-          .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #3a3f4b;
-            border-radius: 4px;
-          }
-          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #454a58;
-          }
-        `}</style>
+        }
+        .modal-backdrop {
+          animation: fadeIn 0.15s ease-out forwards;
+        }
+        .modal-backdrop.closing {
+          animation: fadeOut 0.15s ease-in forwards;
+        }
+        .modal-content {
+          animation: scaleIn 0.15s ease-out forwards;
+        }
+        .modal-content.closing {
+          animation: scaleOut 0.15s ease-in forwards;
+        }
+        
+        .blur-border {
+          position: relative;
+        }
+
+        .blur-border::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          padding: 2px;
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+          backdrop-filter: blur(8px);
+          z-index: 10;
+          transition: none !important;
+        }
+        
+        .blur-border:hover::before {
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.04)
+          );
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #3a3f4b;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #454a58;
+        }
+      `}</style>
+      <div 
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
+        onClick={handleClose}
+      >
         <div 
-          className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
-          onClick={handleClose}
+          className={`blur-border bg-[#181a1f] rounded w-full max-w-2xl shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+          style={{ pointerEvents: 'auto' }}
         >
-          <div 
-            className={`blur-border bg-[#181a1f] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
-            onClick={(e) => e.stopPropagation()}
-            style={{ pointerEvents: 'auto' }}
-          >
           <div className="flex items-center justify-between px-6 pt-6 pb-5">
-            <div>
-              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{t('instanceSettings.title')}</h2>
-            </div>
+            <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{t('instanceSettings.title')}</h2>
             <button
               onClick={handleClose}
               className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
@@ -564,188 +646,134 @@ export function InstanceSettingsModal({
             </button>
           </div>
 
-          <div className="px-6 pb-4 space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.instanceIcon.label')}</label>
-              <div className="flex items-center gap-4">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleIconChange}
-                  className="hidden"
-                />
-                
-                {localIcon ? (
-                  <div className="relative group">
+          <div className="px-6 pb-6">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+
+              {/* Icon */}
+              <div>
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.instanceIcon.label')}</label>
+                <div className="flex items-start gap-4 h-20">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIconChange}
+                    className="hidden"
+                  />
+                  
+                  {localIcon ? (
+                    <div className="relative group flex-shrink-0">
+                      <button
+                        onClick={handleIconClick}
+                        disabled={isUploadingIcon}
+                        className="w-20 h-20 rounded overflow-hidden relative cursor-pointer bg-transparent"
+                      >
+                        <img
+                          src={localIcon}
+                          alt={instance.name}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Camera size={24} className="text-white" />
+                        </div>
+                      </button>
+                    </div>
+                  ) : (
                     <button
                       onClick={handleIconClick}
                       disabled={isUploadingIcon}
-                      className="w-20 h-20 rounded overflow-hidden relative cursor-pointer bg-transparent"
+                      className="w-20 h-20 flex-shrink-0 border-2 border-dashed border-[#3a3f4b] hover:border-[#4572e3]/50 rounded flex items-center justify-center transition-all bg-[#22252b] cursor-pointer"
                     >
-                      <img
-                        src={localIcon}
-                        alt={instance.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Camera size={24} className="text-white" />
-                      </div>
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleIconClick}
-                    disabled={isUploadingIcon}
-                    className="w-20 h-20 border-2 border-dashed border-[#3a3f4b] hover:border-[#4572e3]/50 rounded flex items-center justify-center transition-all bg-[#22252b] cursor-pointer"
-                  >
-                    {isUploadingIcon ? (
-                      <Loader2 size={28} className="text-[#4572e3] animate-spin" />
-                    ) : (
-                      <ImagePlus size={28} className="text-[#3a3f4b] group-hover:text-[#4572e3] transition-colors" />
-                    )}
-                  </button>
-                )}
-                
-                <div className="flex-1 flex flex-col gap-2 h-20">
-                  <button
-                    onClick={handleIconClick}
-                    disabled={isUploadingIcon}
-                    className="flex-1 w-full px-4 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
-                  >
-                    {localIcon ? t('instanceSettings.instanceIcon.changeButton') : t('instanceSettings.instanceIcon.uploadButton')}
-                  </button>
-                  {localIcon && (
-                    <button
-                      onClick={handleRemoveIcon}
-                      disabled={isUploadingIcon}
-                      className="flex-1 w-full px-4 bg-[#22252b] hover:bg-red-500/10 text-[#e6e6e6] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
-                    >
-                      {t('instanceSettings.instanceIcon.removeButton')}
+                      {isUploadingIcon ? (
+                        <Loader2 size={28} className="text-[#4572e3] animate-spin" />
+                      ) : (
+                        <ImagePlus size={28} className="text-[#3a3f4b] group-hover:text-[#4572e3] transition-colors" />
+                      )}
                     </button>
                   )}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.instanceName.label')}</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={newName}
-                  onChange={(e) => {
-                    setNewName(e.target.value)
-                    setRenameError(null)
-                  }}
-                  onBlur={(e) => {
-                    const trimmedName = e.target.value.trim()
-                    if (trimmedName && trimmedName !== instance.name) {
-                      handleRename(trimmedName)
-                    }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.currentTarget.blur()
-                    }
-                  }}
-                  className="w-full bg-[#22252b] rounded px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all"
-                  placeholder={t('instanceSettings.instanceName.placeholder')}
-                  disabled={isRenamingInstance}
-                />
-                {isRenamingInstance && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <Loader2 size={14} className="animate-spin text-[#4572e3]" />
-                  </div>
-                )}
-              </div>
-              {renameError && (
-                <p className="text-xs text-red-400 mt-2">{renameError}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.minecraftVersion.label')}</label>
-              {isLoadingVersions ? (
-                <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
-                  <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                  <span>{t('common.actions.loading')}</span>
-                </div>
-              ) : (
-                <div className="relative" ref={versionDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
-                    className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
-                      isVersionDropdownOpen ? 'rounded-t' : 'rounded'
-                    }`}
-                    disabled={isUpdatingVersion}
-                  >
-                    {selectedMinecraftVersion}
-                  </button>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    {isUpdatingVersion ? (
-                      <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                    ) : isVersionDropdownOpen ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="18 15 12 9 6 15"></polyline>
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
+                  
+                  <div className="flex-1 flex flex-col gap-2 h-full">
+                    <button
+                      onClick={handleIconClick}
+                      disabled={isUploadingIcon}
+                      className="flex-1 w-full px-4 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      {localIcon ? t('instanceSettings.instanceIcon.changeButton') : t('instanceSettings.instanceIcon.uploadButton')}
+                    </button>
+                    {localIcon && (
+                      <button
+                        onClick={handleRemoveIcon}
+                        disabled={isUploadingIcon}
+                        className="flex-1 w-full px-4 bg-[#22252b] hover:bg-red-500/10 text-[#e6e6e6] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer"
+                      >
+                        {t('instanceSettings.instanceIcon.removeButton')}
+                      </button>
                     )}
                   </div>
-                  
-                  {isVersionDropdownOpen && (
-                    <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
-                      {minecraftVersions.map((version) => (
-                        <button
-                          key={version}
-                          type="button"
-                          onClick={() => {
-                            setSelectedMinecraftVersion(version)
-                            setIsVersionDropdownOpen(false)
-                            handleUpdateMinecraftVersion(version)
-                          }}
-                          className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
-                        >
-                          <span>{version}</span>
-                          {selectedMinecraftVersion === version && (
-                            <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
-                          )}
-                        </button>
-                      ))}
+                </div>
+              </div>
+
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.instanceName.label')}</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => {
+                      setNewName(e.target.value)
+                      setRenameError(null)
+                    }}
+                    onBlur={(e) => {
+                      const trimmedName = e.target.value.trim()
+                      if (trimmedName && trimmedName !== instance.name) {
+                        handleRename(trimmedName)
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.currentTarget.blur()
+                      }
+                    }}
+                    className="w-full bg-[#22252b] rounded px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all"
+                    placeholder={t('instanceSettings.instanceName.placeholder')}
+                    disabled={isRenamingInstance}
+                  />
+                  {isRenamingInstance && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Loader2 size={14} className="animate-spin text-[#4572e3]" />
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+                {renameError && (
+                  <p className="text-xs text-red-400 mt-2">{renameError}</p>
+                )}
+              </div>
 
-            {isFabricInstance && (
+              {/* Minecraft Version */}
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.fabricLoader.label')}</label>
-                {isLoadingFabric ? (
+                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.minecraftVersion.label')}</label>
+                {isLoadingVersions ? (
                   <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                     <Loader2 size={16} className="animate-spin text-[#4572e3]" />
                     <span>{t('common.actions.loading')}</span>
                   </div>
                 ) : (
-                  <div className="relative" ref={fabricDropdownRef}>
+                  <div className="relative" ref={versionDropdownRef}>
                     <button
                       type="button"
-                      onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
+                      onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
                       className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
-                        isFabricDropdownOpen ? 'rounded-t' : 'rounded'
+                        isVersionDropdownOpen ? 'rounded-t' : 'rounded'
                       }`}
-                      disabled={isUpdatingFabric}
+                      disabled={isUpdatingVersion}
                     >
-                      {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? t('instanceSettings.fabricLoader.stable') : ""}
+                      {selectedMinecraftVersion}
                     </button>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      {isUpdatingFabric ? (
+                      {isUpdatingVersion ? (
                         <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                      ) : isFabricDropdownOpen ? (
+                      ) : isVersionDropdownOpen ? (
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="18 15 12 9 6 15"></polyline>
                         </svg>
@@ -756,21 +784,21 @@ export function InstanceSettingsModal({
                       )}
                     </div>
                     
-                    {isFabricDropdownOpen && (
+                    {isVersionDropdownOpen && (
                       <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
-                        {fabricVersions.map((version) => (
+                        {minecraftVersions.map((version) => (
                           <button
-                            key={version.version}
+                            key={version}
                             type="button"
                             onClick={() => {
-                              setSelectedFabricVersion(version.version)
-                              setIsFabricDropdownOpen(false)
-                              handleUpdateFabricLoader(version.version)
+                              setSelectedMinecraftVersion(version)
+                              setIsVersionDropdownOpen(false)
+                              handleUpdateMinecraftVersion(version)
                             }}
                             className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
                           >
-                            <span>{version.version} {version.stable ? t('instanceSettings.fabricLoader.stable') : ""}</span>
-                            {selectedFabricVersion === version.version && (
+                            <span>{version}</span>
+                            {selectedMinecraftVersion === version && (
                               <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
                             )}
                           </button>
@@ -780,92 +808,214 @@ export function InstanceSettingsModal({
                   </div>
                 )}
               </div>
-            )}
 
-            {isNeoforgeInstance && false && (
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.neoforgeLoader.label')}</label>
-                {isLoadingNeoforge ? (
-                  <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
-                    <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                    <span>{t('common.actions.loading')}</span>
-                  </div>
-                ) : (
-                  <div className="relative" ref={neoforgeDropdownRef}>
-                    <button
-                      type="button"
-                      onClick={() => setIsNeoforgeDropdownOpen(!isNeoforgeDropdownOpen)}
-                      className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
-                        isNeoforgeDropdownOpen ? 'rounded-t' : 'rounded'
-                      }`}
-                      disabled={isUpdatingNeoforge}
-                    >
-                      {selectedNeoforgeVersion}
-                    </button>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      {isUpdatingNeoforge ? (
+                {isFabricInstance && (
+                  <>
+                    <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.fabricLoader.label')}</label>
+                    {isLoadingFabric ? (
+                      <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
                         <Loader2 size={16} className="animate-spin text-[#4572e3]" />
-                      ) : isNeoforgeDropdownOpen ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="18 15 12 9 6 15"></polyline>
-                        </svg>
-                      ) : (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                      )}
-                    </div>
-                    
-                    {isNeoforgeDropdownOpen && (
-                      <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
-                        {neoforgeVersions.length === 0 ? (
-                          <div className="px-4 py-3 text-sm text-[#7d8590]">
-                            {t('instanceSettings.neoforgeLoader.noVersions')}
+                        <span>{t('common.actions.loading')}</span>
+                      </div>
+                    ) : (
+                      <div className="relative" ref={fabricDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
+                          className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
+                            isFabricDropdownOpen ? 'rounded-t' : 'rounded'
+                          }`}
+                          disabled={isUpdatingFabric}
+                        >
+                          {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? t('instanceSettings.fabricLoader.stable') : ""}
+                        </button>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          {isUpdatingFabric ? (
+                            <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                          ) : isFabricDropdownOpen ? (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                          ) : (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                          )}
+                        </div>
+                        
+                        {isFabricDropdownOpen && (
+                          <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                            {fabricVersions.map((version) => (
+                              <button
+                                key={version.version}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedFabricVersion(version.version)
+                                  setIsFabricDropdownOpen(false)
+                                  handleUpdateFabricLoader(version.version)
+                                }}
+                                className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                              >
+                                <span>{version.version} {version.stable ? t('instanceSettings.fabricLoader.stable') : ""}</span>
+                                {selectedFabricVersion === version.version && (
+                                  <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
+                                )}
+                              </button>
+                            ))}
                           </div>
-                        ) : (
-                          neoforgeVersions.map((version) => (
-                            <button
-                              key={version.version}
-                              type="button"
-                              onClick={() => {
-                                setSelectedNeoforgeVersion(version.version)
-                                setIsNeoforgeDropdownOpen(false)
-                                handleUpdateNeoforgeLoader(version.version)
-                              }}
-                              className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
-                            >
-                              <span>{version.version}</span>
-                              {selectedNeoforgeVersion === version.version && (
-                                <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
-                              )}
-                            </button>
-                          ))
                         )}
                       </div>
                     )}
-                  </div>
+                  </>
+                )}
+
+                {isNeoforgeInstance && false && (
+                  <>
+                    <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">{t('instanceSettings.neoforgeLoader.label')}</label>
+                    {isLoadingNeoforge ? (
+                      <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
+                        <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                        <span>{t('common.actions.loading')}</span>
+                      </div>
+                    ) : (
+                      <div className="relative" ref={neoforgeDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={() => setIsNeoforgeDropdownOpen(!isNeoforgeDropdownOpen)}
+                          className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${
+                            isNeoforgeDropdownOpen ? 'rounded-t' : 'rounded'
+                          }`}
+                          disabled={isUpdatingNeoforge}
+                        >
+                          {selectedNeoforgeVersion}
+                        </button>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          {isUpdatingNeoforge ? (
+                            <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                          ) : isNeoforgeDropdownOpen ? (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                          ) : (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                          )}
+                        </div>
+                        
+                        {isNeoforgeDropdownOpen && (
+                          <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                            {neoforgeVersions.length === 0 ? (
+                              <div className="px-4 py-3 text-sm text-[#7d8590]">
+                                {t('instanceSettings.neoforgeLoader.noVersions')}
+                              </div>
+                            ) : (
+                              neoforgeVersions.map((version) => (
+                                <button
+                                  key={version.version}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedNeoforgeVersion(version.version)
+                                    setIsNeoforgeDropdownOpen(false)
+                                    handleUpdateNeoforgeLoader(version.version)
+                                  }}
+                                  className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                                >
+                                  <span>{version.version}</span>
+                                  {selectedNeoforgeVersion === version.version && (
+                                    <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />
+                                  )}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-            )}
 
-            <div className="pt-3 border-t border-[#3a3f4b]">
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    <span>{t('instanceSettings.deleteInstance.deleting')}</span>
-                  </>
-                ) : (
-                  <>
-                    <Trash2 size={16} />
-                    <span>{t('instanceSettings.deleteInstance.button')}</span>
-                  </>
-                )}
-              </button>
+              {/* RAM Allocation */}
+              <div className="col-span-2">
+                <div className="flex items-center justify-between mb-2.5">
+                  <div className="flex items-center gap-2 text-[#e6e6e6]">
+                    <Cpu size={18} className="text-[#4572e3]" />
+                    <span className="text-sm font-medium">RAM Allocation</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const next = !useCustomRam
+                      setUseCustomRam(next)
+                      handleSaveRam(instanceMemoryMb, next)
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 ${useCustomRam ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useCustomRam ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+                <div className={`transition-opacity ${useCustomRam ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+                  <div className="bg-[#22252b] rounded p-4 space-y-3">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-2xl font-bold text-[#e6e6e6]">
+                        {(instanceMemoryMb / 1024).toFixed(1)} GB
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {systemInfo ? `of ${(systemInfo.total_memory_mb / 1024).toFixed(0)} GB total` : ''}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={minMem}
+                      max={maxMem}
+                      step="512"
+                      value={instanceMemoryMb}
+                      onChange={(e) => setInstanceMemoryMb(parseInt(e.target.value))}
+                      onMouseUp={(e) => {
+                        if (useCustomRam) handleSaveRam(parseInt((e.target as HTMLInputElement).value), true)
+                      }}
+                      onTouchEnd={(e) => {
+                        if (useCustomRam) handleSaveRam(parseInt((e.target as HTMLInputElement).value), true)
+                      }}
+                      className="w-full h-2 bg-[#181a1f] rounded-full appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${ramPercent}%, #181a1f ${ramPercent}%, #181a1f 100%)`
+                      }}
+                    />
+                    {isSavingRam && (
+                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                        <Loader2 size={11} className="animate-spin" />
+                        <span>Saving…</span>
+                      </div>
+                    )}
+                  </div>
+                  {!useCustomRam && (
+                    <p className="text-xs text-gray-400 mt-1.5">Enable to override the global RAM setting for this instance.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* FULL WIDTH — Delete */}
+              <div className="col-span-2 pt-3 border-t border-[#3a3f4b]">
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>{t('instanceSettings.deleteInstance.deleting')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} />
+                      <span>{t('instanceSettings.deleteInstance.button')}</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

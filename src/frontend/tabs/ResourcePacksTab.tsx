@@ -29,13 +29,11 @@ export function ResourcePacksTab({
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [favoriteResourcePacks, setFavoriteResourcePacks] = useState<Set<string>>(new Set())
 
-  // Load favorites from localStorage
   useEffect(() => {
     const savedFavorites = localStorage.getItem('favoriteResourcePacks')
     if (savedFavorites) {
       try {
-        const parsed = JSON.parse(savedFavorites)
-        setFavoriteResourcePacks(new Set(parsed))
+        setFavoriteResourcePacks(new Set(JSON.parse(savedFavorites)))
       } catch (error) {
         console.error('Failed to parse favorite resource packs:', error)
         setFavoriteResourcePacks(new Set())
@@ -54,33 +52,21 @@ export function ResourcePacksTab({
   }, [selectedInstance])
 
   useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
-    }
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     searchTimeoutRef.current = setTimeout(() => {
       setCurrentPage(1)
       handleSearch(1)
     }, 500)
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current)
-      }
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     }
   }, [searchQuery])
 
   const toggleFavorite = (projectId: string, event?: React.MouseEvent) => {
-    if (event) {
-      event.stopPropagation()
-    }
-    
+    if (event) event.stopPropagation()
     setFavoriteResourcePacks(prev => {
       const newFavorites = new Set(prev)
-      if (newFavorites.has(projectId)) {
-        newFavorites.delete(projectId)
-      } else {
-        newFavorites.add(projectId)
-      }
-      // Save to localStorage
+      newFavorites.has(projectId) ? newFavorites.delete(projectId) : newFavorites.add(projectId)
       localStorage.setItem('favoriteResourcePacks', JSON.stringify(Array.from(newFavorites)))
       return newFavorites
     })
@@ -88,7 +74,6 @@ export function ResourcePacksTab({
 
   const loadInstalledResourcePacks = async () => {
     if (!selectedInstance) return
-    
     try {
       const packs = await invoke<string[]>("get_installed_resourcepacks", {
         instanceName: selectedInstance.name,
@@ -102,10 +87,9 @@ export function ResourcePacksTab({
   const loadPopularResourcePacks = async () => {
     setIsSearching(true)
     try {
-      const facets = JSON.stringify([["project_type:resourcepack"]])
       const result = await invoke<ModrinthSearchResult>("search_mods", {
         query: "",
-        facets,
+        facets: JSON.stringify([["project_type:resourcepack"]]),
         index: "downloads",
         offset: 0,
         limit: itemsPerPage,
@@ -122,11 +106,10 @@ export function ResourcePacksTab({
     const query = searchQuery.trim()
     setIsSearching(true)
     try {
-      const facets = JSON.stringify([["project_type:resourcepack"]])
       const offset = (page - 1) * itemsPerPage
       const result = await invoke<ModrinthSearchResult>("search_mods", {
         query: query || "",
-        facets,
+        facets: JSON.stringify([["project_type:resourcepack"]]),
         index: query ? "relevance" : "downloads",
         offset,
         limit: itemsPerPage,
@@ -145,7 +128,6 @@ export function ResourcePacksTab({
       scrollContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
-    
     setCurrentPage(newPage)
     setTimeout(() => handleSearch(newPage), 100)
   }
@@ -158,22 +140,13 @@ export function ResourcePacksTab({
     if (instance.loader === "neoforge") {
       const versionPart = instance.version.replace('neoforge-', '')
       const parts = versionPart.split('-')
-      if (parts[0].startsWith('1.')) {
-        return parts[0]
-      }
-      
+      if (parts[0].startsWith('1.')) return parts[0]
       const versionNumbers = parts[0].split('.')
       if (versionNumbers.length >= 2) {
         const major = versionNumbers[0]
         const minor = versionNumbers[1]
         const patch = versionNumbers[2] || '0'
-        const majorNum = parseInt(major)
-        if (majorNum >= 20) {
-          if (patch === '0') {
-            return `1.${major}`
-          }
-          return `1.${major}.${minor}`
-        }
+        if (parseInt(major) >= 20) return patch === '0' ? `1.${major}` : `1.${major}.${minor}`
       }
     }
     return instance.version
@@ -181,12 +154,10 @@ export function ResourcePacksTab({
 
   const handlePackSelect = async (pack: ModrinthProject) => {
     if (!selectedInstance) return
-    
     setSelectedPack(pack)
     setIsLoadingVersions(true)
     try {
       const mcVersion = getMinecraftVersion(selectedInstance)
-      
       const versions = await invoke<ModrinthVersion[]>("get_mod_versions", {
         idOrSlug: pack.project_id,
         gameVersions: [mcVersion],
@@ -199,25 +170,20 @@ export function ResourcePacksTab({
     }
   }
 
-  const isPackInstalled = (version: ModrinthVersion): boolean => {
-    return version.files.some(file => installedPacks.has(file.filename))
-  }
+  const isPackInstalled = (version: ModrinthVersion): boolean =>
+    version.files.some(file => installedPacks.has(file.filename))
 
   const handleDownloadPack = async (version: ModrinthVersion) => {
     if (!selectedInstance) return
-
     const primaryFile = version.files.find(f => f.primary) || version.files[0]
     if (!primaryFile) return
-
     setDownloadingPacks(prev => new Set(prev).add(version.id))
-    
     try {
       await invoke<string>("download_resourcepack", {
         instanceName: selectedInstance.name,
         downloadUrl: primaryFile.url,
         filename: primaryFile.filename,
       })
-      
       setInstalledPacks(prev => new Set(prev).add(primaryFile.filename))
     } catch (error) {
       console.error("Download error:", error)
@@ -266,11 +232,7 @@ export function ResourcePacksTab({
           inset: 0;
           border-radius: inherit;
           padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
@@ -278,30 +240,17 @@ export function ResourcePacksTab({
           backdrop-filter: blur(8px);
           z-index: 10;
         }
-
         .blur-border-input:focus-within::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
         }
-
-        .blur-border {
-          position: relative;
-        }
-
+        .blur-border { position: relative; }
         .blur-border::before {
           content: '';
           position: absolute;
           inset: 0;
           border-radius: inherit;
           padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: xor;
           mask-composite: exclude;
@@ -309,15 +258,11 @@ export function ResourcePacksTab({
           backdrop-filter: blur(8px);
           z-index: 10;
         }
-
         .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
+          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
         }
       `}</style>
+
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1 blur-border-input rounded-md bg-[#22252b]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
@@ -351,11 +296,7 @@ export function ResourcePacksTab({
                   <div className="flex min-h-0 relative z-0">
                     {pack.icon_url ? (
                       <div className="w-24 h-24 flex items-center justify-center flex-shrink-0 rounded m-2">
-                        <img
-                          src={pack.icon_url}
-                          alt={pack.title}
-                          className="w-full h-full object-contain rounded"
-                        />
+                        <img src={pack.icon_url} alt={pack.title} className="w-full h-full object-contain rounded" />
                       </div>
                     ) : (
                       <div className="w-24 h-24 bg-gradient-to-br from-[#8b5cf6]/10 to-[#a78bfa]/10 flex items-center justify-center flex-shrink-0 rounded m-2">
@@ -375,9 +316,7 @@ export function ResourcePacksTab({
                             {formatDownloads(pack.downloads)}
                           </span>
                           {pack.categories.slice(0, 2).map((category) => (
-                            <span key={category} className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
-                              {category}
-                            </span>
+                            <span key={category} className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{category}</span>
                           ))}
                         </div>
                       </div>
@@ -410,15 +349,17 @@ export function ResourcePacksTab({
                     <p className="text-sm text-[#7d8590]">by {selectedPack.author}</p>
                   </div>
                 </div>
-                
+
                 <p className="text-sm text-[#7d8590] mb-4 leading-relaxed">{selectedPack.description}</p>
-                
+
                 <div className="flex gap-2 mb-5 text-xs flex-wrap">
                   <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
                     <Download size={12} />
                     {formatDownloads(selectedPack.downloads)}
                   </span>
-                  <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{selectedPack.follows.toLocaleString()} {t('resourcepacks.followers')}</span>
+                  <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                    {selectedPack.follows.toLocaleString()} {t('resourcepacks.followers')}
+                  </span>
                 </div>
 
                 <div className="border-t border-[#3a3f4b] pt-4">
@@ -434,12 +375,8 @@ export function ResourcePacksTab({
                       {packVersions.map((version) => {
                         const installed = isPackInstalled(version)
                         const downloading = downloadingPacks.has(version.id)
-                        
                         return (
-                          <div
-                            key={version.id}
-                            className="bg-[#181a1f] rounded p-3 flex items-center justify-between gap-2"
-                          >
+                          <div key={version.id} className="bg-[#181a1f] rounded p-3 flex items-center justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="text-sm font-medium text-[#e6e6e6] truncate">{version.name}</div>
                               <div className="text-xs text-[#3a3f4b] truncate mt-0.5">
@@ -457,10 +394,7 @@ export function ResourcePacksTab({
                                 ) : installed ? (
                                   t('resourcepacks.installed')
                                 ) : (
-                                  <>
-                                    <Download size={14} />
-                                    {t('resourcepacks.install')}
-                                  </>
+                                  <><Download size={14} />{t('resourcepacks.install')}</>
                                 )}
                               </button>
                             </div>
@@ -477,88 +411,36 @@ export function ResourcePacksTab({
           {showPagination && (
             <div className="flex items-center justify-center gap-2 mt-6 pb-4">
               <button
-                onClick={(e) => {
-                  e.preventDefault()
-                  handlePageChange(currentPage - 1)
-                }}
+                onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1) }}
                 disabled={currentPage === 1}
                 className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
                 <ChevronLeft size={16} />
                 {t('resourcepacks.pagination.previous')}
               </button>
-
               <div className="flex items-center gap-1">
                 {currentPage > 2 && (
                   <>
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        handlePageChange(1)
-                      }}
-                      className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
-                    >
-                      1
-                    </button>
-                    {currentPage > 3 && (
-                      <span className="px-2 text-[#3a3f4b]">...</span>
-                    )}
+                    <button onClick={(e) => { e.preventDefault(); handlePageChange(1) }} className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]">1</button>
+                    {currentPage > 3 && <span className="px-2 text-[#3a3f4b]">...</span>}
                   </>
                 )}
-
                 {currentPage > 1 && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handlePageChange(currentPage - 1)
-                    }}
-                    className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
-                  >
-                    {currentPage - 1}
-                  </button>
+                  <button onClick={(e) => { e.preventDefault(); handlePageChange(currentPage - 1) }} className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]">{currentPage - 1}</button>
                 )}
-
-                <button
-                  className="px-3 py-2 bg-[#8b5cf6] text-white rounded-md text-sm font-medium"
-                >
-                  {currentPage}
-                </button>
-
+                <button className="px-3 py-2 bg-[#8b5cf6] text-white rounded-md text-sm font-medium">{currentPage}</button>
                 {currentPage < totalPages && (
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handlePageChange(currentPage + 1)
-                    }}
-                    className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
-                  >
-                    {currentPage + 1}
-                  </button>
+                  <button onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1) }} className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]">{currentPage + 1}</button>
                 )}
-
                 {currentPage < totalPages - 1 && (
                   <>
-                    {currentPage < totalPages - 2 && (
-                      <span className="px-2 text-[#3a3f4b]">...</span>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault()
-                        handlePageChange(totalPages)
-                      }}
-                      className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
-                    >
-                      {totalPages}
-                    </button>
+                    {currentPage < totalPages - 2 && <span className="px-2 text-[#3a3f4b]">...</span>}
+                    <button onClick={(e) => { e.preventDefault(); handlePageChange(totalPages) }} className="px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]">{totalPages}</button>
                   </>
                 )}
               </div>
-
               <button
-                onClick={(e) => {
-                  e.preventDefault()
-                  handlePageChange(currentPage + 1)
-                }}
+                onClick={(e) => { e.preventDefault(); handlePageChange(currentPage + 1) }}
                 disabled={currentPage === totalPages}
                 className="flex items-center gap-1 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded-md text-sm transition-colors cursor-pointer border border-[#3a3f4b]"
               >
