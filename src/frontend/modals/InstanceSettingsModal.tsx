@@ -990,13 +990,10 @@ export function InstanceSettingsModal({
                       </div>
                     )}
                   </div>
-                  {!useCustomRam && (
-                    <p className="text-xs text-gray-400 mt-1.5">Enable to override the global RAM setting for this instance.</p>
-                  )}
                 </div>
               </div>
 
-              {/* FULL WIDTH — Delete */}
+              {/* Delete */}
               <div className="col-span-2 pt-3 border-t border-[#3a3f4b]">
                 <button
                   onClick={handleDelete}
