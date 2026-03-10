@@ -788,7 +788,7 @@ export function Sidebar(props: SidebarProps) {
                           <div
                             key={statusKey}
                             onClick={() => handleFriendClick(friend)}
-                            className="group relative flex items-center gap-2 px-1.5 py-1.5 rounded cursor-pointer hover:bg-[#181a1f] transition-all"
+                            className="group relative flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[#181a1f] transition-all"
                           >
                             <div className="relative flex-shrink-0">
                               <img
