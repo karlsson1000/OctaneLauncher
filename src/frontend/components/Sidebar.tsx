@@ -544,7 +544,7 @@ export function Sidebar(props: SidebarProps) {
                   >
                     <div className="relative">
                       <img
-                        src={`https://cravatar.eu/avatar/${activeAccount.username}/32`}
+                        src={`https://minotar.net/helm/${activeAccount.username}/32`}
                         alt={activeAccount.username}
                         className="w-8 h-8 rounded"
                       />
@@ -698,7 +698,7 @@ export function Sidebar(props: SidebarProps) {
                         <div key={request.id} className="rounded px-2 py-2 hover:bg-[#181a1f] transition-colors">
                           <div className="flex items-center gap-2 mb-2">
                             <img
-                              src={`https://cravatar.eu/avatar/${request.from_username}/24`}
+                              src={`https://minotar.net/helm/${request.from_username}/32`}
                               alt={request.from_username}
                               className="w-5 h-5 rounded"
                             />
@@ -792,7 +792,7 @@ export function Sidebar(props: SidebarProps) {
                           >
                             <div className="relative flex-shrink-0">
                               <img
-                                src={`https://cravatar.eu/avatar/${friend.username}/32`}
+                                src={`https://minotar.net/helm/${friend.username}/32`}
                                 alt={friend.username}
                                 className="w-8 h-8 rounded"
                               />

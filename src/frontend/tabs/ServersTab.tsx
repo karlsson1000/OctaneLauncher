@@ -331,7 +331,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                                 {server.players_list.slice(0, 5).map((player, index) => (
                                   <img
                                     key={player.uuid}
-                                    src={`https://cravatar.eu/avatar/${player.name}/32`}
+                                    src={`https://minotar.net/helm/${player.name}/32`}
                                     alt={player.name}
                                     title={player.name}
                                     className="w-5 h-5 rounded border-2 border-[#22252b] relative"

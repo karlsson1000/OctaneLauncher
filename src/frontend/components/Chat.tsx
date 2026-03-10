@@ -250,7 +250,7 @@ export function Chat({
           <div className="flex items-center justify-between px-4 py-3 bg-[#2b2f38]">
             <div className="flex items-center gap-3">
               <img
-                src={`https://cravatar.eu/avatar/${friendUsername}/32`}
+                src={`https://minotar.net/helm/${friendUsername}/32`}
                 alt={friendUsername}
                 className="w-8 h-8 rounded"
               />
@@ -301,7 +301,7 @@ export function Chat({
                         <div className="w-6 flex-shrink-0">
                           {!isGrouped && (
                             <img
-                              src={`https://cravatar.eu/avatar/${friendUuid}/32`}
+                              src={`https://minotar.net/helm/${friendUuid}/32`}
                               alt={friendUsername}
                               className="w-6 h-6 rounded"
                             />
@@ -337,7 +337,7 @@ export function Chat({
                         <div className="w-6 flex-shrink-0">
                           {!isGrouped && (
                             <img
-                              src={`https://cravatar.eu/avatar/${currentUserUuid}/32`}
+                              src={`https://minotar.net/helm/${currentUserUuid}/32`}
                               alt="You"
                               className="w-6 h-6 rounded"
                             />
