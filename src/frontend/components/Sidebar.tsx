@@ -86,7 +86,6 @@ export function Sidebar(props: SidebarProps) {
   const [showAccountDropdown, setShowAccountDropdown] = useState(false)
   const [showAddFriend, setShowAddFriend] = useState(false)
   const [friendUsername, setFriendUsername] = useState("")
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const [friends, setFriends] = useState<Friend[]>([])
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([])
   const [showRequests, setShowRequests] = useState(false)
@@ -94,139 +93,83 @@ export function Sidebar(props: SidebarProps) {
   const [requestStatus, setRequestStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   const [confirmRemoveFriend, setConfirmRemoveFriend] = useState<{ uuid: string, username: string } | null>(null)
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null)
-  const [friendsUpdateKey, setFriendsUpdateKey] = useState(0)
   const [openChat, setOpenChat] = useState<{ uuid: string, username: string } | null>(null)
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
   const accountButtonRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (showAccountDropdown && accountButtonRef.current) {
-      const rect = accountButtonRef.current.getBoundingClientRect()
-      setDropdownPosition({
-        top: rect.bottom,
-        left: rect.left,
-        width: rect.width
-      })
-    }
-  }, [showAccountDropdown])
+  const positionDropdown = (node: HTMLDivElement | null) => {
+    (dropdownRef as React.MutableRefObject<HTMLDivElement | null>).current = node
+    if (!node || !accountButtonRef.current) return
+    const rect = accountButtonRef.current.getBoundingClientRect()
+    node.style.top = `${rect.bottom}px`
+    node.style.left = `${rect.left}px`
+    node.style.width = `${rect.width}px`
+  }
 
   // Load friends and requests when authenticated
   useEffect(() => {
-    if (isAuthenticated && activeAccount) {
-      const registerAndLoad = async () => {
-        try {
-          console.log("Registering user in friends system:", activeAccount.username)
-          await invoke("register_user_in_friends_system")
-          console.log("User registered successfully")
-          
-          // Load friends and requests
-          await loadFriends()
-          await loadFriendRequests()
-          await checkUnreadMessages()
-        } catch (err) {
-          console.error("Failed to initialize friends system:", err)
-        }
-      }
-      
-      registerAndLoad()
-      
-      const setupRealtimeSubscriptions = async () => {
-        try {
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-          const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-          
-          if (!supabaseUrl || !supabaseKey) {
-            console.error('Supabase environment variables not configured')
-            return
-          }
-          
-          const { createClient } = await import('@supabase/supabase-js')
-          const supabase = createClient(supabaseUrl, supabaseKey)
+    if (!isAuthenticated || !activeAccount) return
 
-          const statusChannel = supabase
-            .channel('user_status_changes')
-            .on(
-              'postgres_changes',
-              {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'users',
-              },
-              () => {
-                console.log("Friend status changed, reloading friends")
-                loadFriends()
-              }
-            )
-            .subscribe()
-          
-          const requestsChannel = supabase
-            .channel('friend_requests_changes')
-            .on(
-              'postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table: 'friend_requests',
-                filter: `to_uuid=eq.${activeAccount.uuid}`
-              },
-              () => {
-                console.log("Friend requests changed, reloading")
-                loadFriendRequests()
-              }
-            )
-            .subscribe()
-          
-          const friendshipsChannel = supabase
-            .channel('friendships_changes')
-            .on(
-              'postgres_changes',
-              {
-                event: '*',
-                schema: 'public',
-                table: 'friendships',
-                filter: `or(user1_uuid.eq.${activeAccount.uuid},user2_uuid.eq.${activeAccount.uuid})`
-              },
-              () => {
-                console.log("Friendships changed, reloading friends")
-                loadFriends()
-              }
-            )
-            .subscribe()
-          
-          const messagesChannel = supabase
-            .channel('chat_messages_unread')
-            .on(
-              'postgres_changes',
-              {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'chat_messages',
-                filter: `to_uuid=eq.${activeAccount.uuid}`
-              },
-              () => {
-                console.log("New message received, updating unread counts")
-                checkUnreadMessages()
-              }
-            )
-            .subscribe()
-
-          return () => {
-            statusChannel.unsubscribe()
-            requestsChannel.unsubscribe()
-            friendshipsChannel.unsubscribe()
-            messagesChannel.unsubscribe()
-          }
-        } catch (error) {
-          console.error('Failed to setup realtime subscriptions:', error)
-        }
-      }
-
-      const cleanup = setupRealtimeSubscriptions()
-
-      return () => {
-        cleanup.then(fn => fn && fn())
+    const registerAndLoad = async () => {
+      try {
+        await invoke("register_user_in_friends_system")
+        await loadFriends()
+        await loadFriendRequests()
+        await checkUnreadMessages()
+      } catch (err) {
+        console.error("Failed to initialize friends system:", err)
       }
     }
+
+    registerAndLoad()
+
+    const setupRealtimeSubscriptions = async () => {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+
+        if (!supabaseUrl || !supabaseKey) {
+          console.error('Supabase environment variables not configured')
+          return
+        }
+
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(supabaseUrl, supabaseKey)
+
+        const statusChannel = supabase
+          .channel('user_status_changes')
+          .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, () => loadFriends())
+          .subscribe()
+
+        const requestsChannel = supabase
+          .channel('friend_requests_changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'friend_requests', filter: `to_uuid=eq.${activeAccount.uuid}` }, () => loadFriendRequests())
+          .subscribe()
+
+        const friendshipsChannel = supabase
+          .channel('friendships_changes')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships', filter: `or(user1_uuid.eq.${activeAccount.uuid},user2_uuid.eq.${activeAccount.uuid})` }, () => loadFriends())
+          .subscribe()
+
+        const messagesChannel = supabase
+          .channel('chat_messages_unread')
+          .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `to_uuid=eq.${activeAccount.uuid}` }, () => checkUnreadMessages())
+          .subscribe()
+
+        return () => {
+          statusChannel.unsubscribe()
+          requestsChannel.unsubscribe()
+          friendshipsChannel.unsubscribe()
+          messagesChannel.unsubscribe()
+        }
+      } catch (error) {
+        console.error('Failed to setup realtime subscriptions:', error)
+      }
+    }
+
+    const cleanup = setupRealtimeSubscriptions()
+    return () => { cleanup.then(fn => fn && fn()) }
   }, [isAuthenticated, activeAccount])
 
   const checkUnreadMessages = async () => {
@@ -243,20 +186,12 @@ export function Sidebar(props: SidebarProps) {
   const loadFriends = async () => {
     try {
       const friendsList = await invoke<Friend[]>("get_friends")
-      console.log("Loaded friends with status:", friendsList.map(f => ({
-        username: f.username,
-        status: f.status,
-        server: f.current_instance,
-        statusText: getStatusText(f)
-      })))
-
       const sortedFriends = [...friendsList].sort((a, b) => {
         const statusOrder = { ingame: 0, online: 1, offline: 2 }
         return statusOrder[a.status] - statusOrder[b.status]
       })
 
       setFriends(sortedFriends)
-      setFriendsUpdateKey(prev => prev + 1)
     } catch (error) {
       console.error("Failed to load friends:", error)
     }
@@ -273,14 +208,13 @@ export function Sidebar(props: SidebarProps) {
 
   const handleSendFriendRequest = async () => {
     if (!friendUsername.trim()) return
-    
-    // Check if user is trying to add themselves
+
     if (activeAccount && friendUsername.trim().toLowerCase() === activeAccount.username.toLowerCase()) {
       setRequestStatus({ type: 'error', message: t('sidebar.friendRequest.cantAddSelf') })
       setTimeout(() => setRequestStatus(null), 3000)
       return
     }
-    
+
     setSendingRequest(true)
     setRequestStatus(null)
     try {
@@ -295,16 +229,10 @@ export function Sidebar(props: SidebarProps) {
       const errorMsg = String(error)
       // Clean up the error message for better display
       let displayMsg = errorMsg
-      if (errorMsg.includes("Friend request already sent")) {
-        displayMsg = t('sidebar.friendRequest.alreadySent')
-      } else if (errorMsg.includes("already sent you a friend request")) {
-        displayMsg = t('sidebar.friendRequest.checkRequests')
-      } else if (errorMsg.includes("User") && errorMsg.includes("not found")) {
-        displayMsg = t('sidebar.friendRequest.userNotFound')
-      } else if (errorMsg.includes("Already friends")) {
-        displayMsg = t('sidebar.friendRequest.alreadyFriends')
-      }
-      
+      if (errorMsg.includes("Friend request already sent")) displayMsg = t('sidebar.friendRequest.alreadySent')
+      else if (errorMsg.includes("already sent you a friend request")) displayMsg = t('sidebar.friendRequest.checkRequests')
+      else if (errorMsg.includes("User") && errorMsg.includes("not found")) displayMsg = t('sidebar.friendRequest.userNotFound')
+      else if (errorMsg.includes("Already friends")) displayMsg = t('sidebar.friendRequest.alreadyFriends')
       setRequestStatus({ type: 'error', message: displayMsg })
       setTimeout(() => setRequestStatus(null), 3000)
     } finally {
@@ -327,7 +255,7 @@ export function Sidebar(props: SidebarProps) {
 
   const handleRejectRequest = async (requestId: string) => {
     setProcessingRequestId(requestId)
-    setConfirmRemoveFriend(null) // Clear any existing confirm modal state
+    setConfirmRemoveFriend(null)
     try {
       await invoke("reject_friend_request", { requestId })
       await loadFriendRequests()
@@ -338,7 +266,7 @@ export function Sidebar(props: SidebarProps) {
     }
   }
 
-  const handleRemoveFriend = async (friendUuid: string, friendUsername: string) => {
+  const handleRemoveFriend = (friendUuid: string, friendUsername: string) => {
     setConfirmRemoveFriend({ uuid: friendUuid, username: friendUsername })
   }
 
@@ -346,8 +274,7 @@ export function Sidebar(props: SidebarProps) {
     if (!confirmRemoveFriend) return
     
     const friendToRemove = confirmRemoveFriend
-    setConfirmRemoveFriend(null) // Close modal immediately
-    
+    setConfirmRemoveFriend(null)
     try {
       await invoke("remove_friend", { friendUuid: friendToRemove.uuid })
       await loadFriends()
@@ -390,21 +317,14 @@ export function Sidebar(props: SidebarProps) {
     if (instance.loader === "neoforge") {
       const versionPart = instance.version.replace('neoforge-', '')
       const parts = versionPart.split('-')
-      if (parts[0].startsWith('1.')) {
-        return parts[0]
-      }
-      
+      if (parts[0].startsWith('1.')) return parts[0]
       const versionNumbers = parts[0].split('.')
       if (versionNumbers.length >= 2) {
         const major = versionNumbers[0]
         const minor = versionNumbers[1]
         const patch = versionNumbers[2] || '0'
-        const majorNum = parseInt(major)
-        if (majorNum >= 20) {
-          if (patch === '0') {
-            return `1.${major}`
-          }
-          return `1.${major}.${minor}`
+        if (parseInt(major) >= 20) {
+          return patch === '0' ? `1.${major}` : `1.${major}.${minor}`
         }
       }
     }
@@ -440,11 +360,7 @@ export function Sidebar(props: SidebarProps) {
   const handleSidebarContextMenu = (e: React.MouseEvent, instance: Instance) => {
     e.preventDefault()
     e.stopPropagation()
-    setSidebarContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      instance,
-    })
+    setSidebarContextMenu({ x: e.clientX, y: e.clientY, instance })
   }
 
   const handleAddAccount = async () => {
@@ -472,17 +388,12 @@ export function Sidebar(props: SidebarProps) {
   const handleRemoveAccount = async (uuid: string) => {
     try {
       if (activeAccount && uuid === activeAccount.uuid) {
-        await invoke("cleanup_chat_messages").catch(err => 
+        await invoke("cleanup_chat_messages").catch(err =>
           console.error("Failed to cleanup chat messages:", err)
         )
       }
-      
-      await invoke("update_specific_user_status", {
-        userUuid: uuid,
-        status: "offline", 
-        currentInstance: null 
-      }).catch(err => console.error("Failed to set offline:", err))
-      
+      await invoke("update_specific_user_status", { userUuid: uuid, status: "offline", currentInstance: null })
+        .catch(err => console.error("Failed to set offline:", err))
       await invoke("remove_account", { uuid })
       await loadAccounts()
       setShowAccountDropdown(false)
@@ -493,37 +404,31 @@ export function Sidebar(props: SidebarProps) {
 
   const getStatusColor = (status: Friend["status"]) => {
     switch (status) {
-      case "online":
-        return "bg-green-500"
-      case "ingame":
-        return "bg-green-500"
-      case "offline":
-        return "bg-gray-500"
+      case "online": return "bg-green-500"
+      case "ingame": return "bg-green-500"
+      case "offline": return "bg-gray-500"
     }
   }
 
   const getStatusText = (friend: Friend) => {
     switch (friend.status) {
-      case "online":
-        return t('sidebar.friendStatus.online')
-      case "ingame":
-        return friend.current_instance 
-          ? t('sidebar.friendStatus.playing', { instance: friend.current_instance })
-          : t('sidebar.friendStatus.inGame')
-      case "offline":
-        return t('sidebar.friendStatus.offline')
+      case "online": return t('sidebar.friendStatus.online')
+      case "ingame": return friend.current_instance
+        ? t('sidebar.friendStatus.playing', { instance: friend.current_instance })
+        : t('sidebar.friendStatus.inGame')
+      case "offline": return t('sidebar.friendStatus.offline')
     }
   }
 
   return (
     <>
       <div className="w-64 pl-2 py-2 flex-shrink-0">
-        <aside 
+        <aside
           className="sidebar-bg h-full bg-[#22252b] flex flex-col rounded-lg overflow-hidden"
           data-custom-bg={sidebarBackground ? "true" : undefined}
           style={{
-            backgroundImage: sidebarBackground 
-              ? `linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), url(${sidebarBackground})` 
+            backgroundImage: sidebarBackground
+              ? `linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.9)), url(${sidebarBackground})`
               : undefined,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -533,33 +438,31 @@ export function Sidebar(props: SidebarProps) {
         >
           <div className="flex-shrink-0 p-2 pt-3 space-y-1">
             {isAuthenticated && activeAccount ? (
-              <>
-                <div className="py-1">
-                  <button
-                    ref={accountButtonRef}
-                    onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                    className={`w-full flex items-center gap-2.5 p-2 cursor-pointer transition-colors ${
-                      showAccountDropdown ? 'bg-[#181a1f] rounded-t' : 'hover:bg-[#181a1f] rounded'
-                    }`}
-                  >
-                    <div className="relative">
-                      <img
-                        src={`https://avatar.mcindex.net/avatar/${activeAccount.username}/32`}
-                        alt={activeAccount.username}
-                        className="w-8 h-8 rounded"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="text-xs text-[#7d8590]">{t('sidebar.welcome')}</div>
-                      <div className="text-sm font-medium text-[#e6e6e6] truncate">{activeAccount.username}</div>
-                    </div>
-                    <div className="flex flex-col text-[#7d8590]">
-                      <ChevronUp size={14} strokeWidth={2.5} />
-                      <ChevronDown size={14} strokeWidth={2.5} />
-                    </div>
-                  </button>
-                </div>
-              </>
+              <div className="py-1">
+                <button
+                  ref={accountButtonRef}
+                  onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+                  className={`w-full flex items-center gap-2.5 p-2 cursor-pointer transition-colors ${
+                    showAccountDropdown ? 'bg-[#181a1f] rounded-t' : 'hover:bg-[#181a1f] rounded'
+                  }`}
+                >
+                  <div className="relative">
+                    <img
+                      src={`https://avatar.mcindex.net/avatar/${activeAccount.username}/32`}
+                      alt={activeAccount.username}
+                      className="w-8 h-8 rounded"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="text-xs text-[#7d8590]">{t('sidebar.welcome')}</div>
+                    <div className="text-sm font-medium text-[#e6e6e6] truncate">{activeAccount.username}</div>
+                  </div>
+                  <div className="flex flex-col text-[#7d8590]">
+                    <ChevronUp size={14} strokeWidth={2.5} />
+                    <ChevronDown size={14} strokeWidth={2.5} />
+                  </div>
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleAddAccount}
@@ -572,328 +475,247 @@ export function Sidebar(props: SidebarProps) {
             )}
           </div>
 
-        {!isAuthenticated ? (
-          <div className="flex-1 flex items-center justify-center px-4">
-            <div className="text-center">
-              <Gamepad2 size={40} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
-              <p className="text-sm text-[#7d8590] mb-1">{t('sidebar.nothingHere')}</p>
-              <p className="text-xs text-[#7d8590]/70">{t('sidebar.signInToStart')}</p>
-            </div>
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {recentInstances.length > 0 && (
-              <div className="flex-shrink-0 overflow-y-auto px-2 pb-3">
-                <div className="py-2">
-                  <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider mb-2 px-2">
-                    {t('sidebar.recentlyPlayed')}
-                  </h3>
-                  <div className="space-y-1">
-                    {recentInstances.map((instance) => {
-                      const icon = instanceIcons[instance.name]
-                      const isRunning = runningInstances.has(instance.name)
-                      const isLaunching = launchingInstanceName === instance.name
-                      return (
-                        <button
-                          key={instance.name}
-                          onClick={() => {
-                            setSelectedInstance(instance)
-                            setActiveTab("instances")
-                            setShowInstanceDetails(true)
-                          }}
-                          onContextMenu={(e) => handleSidebarContextMenu(e, instance)}
-                          className="group w-full flex items-center gap-2 rounded cursor-pointer transition-all text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#181a1f] px-1.5 py-1.5 relative"
-                        >
-                          {icon ? (
-                            <img
-                              src={icon}
-                              alt={instance.name}
-                              className="w-9 h-9 rounded object-cover flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#181a1f] rounded">
-                              <Package size={24} className="text-[#3a3f4b]" strokeWidth={1.5} />
-                            </div>
-                          )}
-                          <div className={`flex-1 min-w-0 text-left transition-all ${
-                            isRunning || isLaunching ? 'pr-10' : 'group-hover:pr-10'
-                          }`}>
-                            <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">
-                              {instance.name}
-                            </div>
-                            <div className="text-xs text-[#7d8590] leading-tight mt-0.5 truncate">
-                              {getMinecraftVersion(instance)} • {formatLastPlayed(instance.last_played!)}
-                            </div>
-                          </div>
-                          {isAuthenticated && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (isRunning) {
-                                  onKillInstance(instance)
-                                } else {
-                                  onQuickLaunch(instance)
-                                }
-                              }}
-                              disabled={launchingInstanceName !== null && !isLaunching && !isRunning}
-                              className={`absolute right-1.5 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all ${
-                                isRunning || isLaunching
-                                  ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20 cursor-pointer"
-                                  : launchingInstanceName !== null
-                                  ? "opacity-0 pointer-events-none"
-                                  : "opacity-0 group-hover:opacity-100 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"
-                              }`}
-                              title={isRunning ? t('sidebar.instance.stopTooltip') : t('sidebar.instance.launchTooltip')}
-                            >
-                              {isLaunching ? (
-                                <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                              ) : isRunning ? (
-                                <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                              ) : (
-                                <Play size={16} fill="currentColor" strokeWidth={0} />
-                              )}
-                            </button>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+          {!isAuthenticated ? (
+            <div className="flex-1 flex items-center justify-center px-4">
+              <div className="text-center">
+                <Gamepad2 size={40} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
+                <p className="text-sm text-[#7d8590] mb-1">{t('sidebar.nothingHere')}</p>
+                <p className="text-xs text-[#7d8590]/70">{t('sidebar.signInToStart')}</p>
               </div>
-            )}
-
-            {isAuthenticated && (
-              <div className="flex-1 overflow-y-auto px-2 pb-3">
-                <div className="py-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider px-2">
-                      {t('sidebar.friends')}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {recentInstances.length > 0 && (
+                <div className="flex-shrink-0 overflow-y-auto px-2 pb-3">
+                  <div className="py-2">
+                    <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider mb-2 px-2">
+                      {t('sidebar.recentlyPlayed')}
                     </h3>
-                    <div className="flex items-center gap-1 px-2">
-                      {friendRequests.length > 0 && (
-                        <button
-                          onClick={() => setShowRequests(!showRequests)}
-                          className="relative text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
-                          title={t('sidebar.friendRequests')}
-                        >
-                          <Mail size={14} strokeWidth={2} />
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold">
-                            {friendRequests.length}
-                          </div>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setShowAddFriend(!showAddFriend)}
-                        className="text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
-                        title={t('sidebar.addFriend')}
-                      >
-                        <UserPlus size={14} strokeWidth={2} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {showRequests && friendRequests.length > 0 && (
-                    <div className="mb-2 space-y-1">
-                      {friendRequests.map((request) => (
-                        <div key={request.id} className="rounded px-2 py-2 hover:bg-[#181a1f] transition-colors">
-                          <div className="flex items-center gap-2 mb-2">
-                            <img
-                              src={`https://avatar.mcindex.net/avatar/${request.from_username}/32`}
-                              alt={request.from_username}
-                              className="w-5 h-5 rounded"
-                            />
-                            <span className="text-xs text-[#e6e6e6] flex-1 truncate">
-                              {request.from_username}
-                            </span>
-                          </div>
-                          <div className="flex gap-1.5">
-                            <button
-                              onClick={() => handleAcceptRequest(request.id)}
-                              disabled={processingRequestId !== null}
-                              className="flex-1 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] px-3 py-1.5 rounded text-xs cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {processingRequestId === request.id ? (
-                                <div className="w-3 h-3 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
-                              ) : (
-                                <>
-                                  <Check size={12} />
-                                  {t('sidebar.friendRequest.accept')}
-                                </>
-                              )}
-                            </button>
-                            <button
-                              onClick={() => handleRejectRequest(request.id)}
-                              disabled={processingRequestId !== null}
-                              className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <X size={12} />
-                              {t('sidebar.friendRequest.reject')}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {showAddFriend && (
-                    <div className="mb-2 px-1">
-                      <div className="flex gap-1">
-                        <input
-                          type="text"
-                          value={friendUsername}
-                          onChange={(e) => setFriendUsername(e.target.value)}
-                          placeholder={t('sidebar.friendRequest.usernamePlaceholder')}
-                          className="flex-1 min-w-0 bg-[#181a1f] border border-[#3a3f4b] rounded px-2 py-1 text-xs text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none focus:border-[#3a3f4b]"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && friendUsername.trim()) {
-                              handleSendFriendRequest()
-                            }
-                          }}
-                        />
-                        <button
-                          onClick={handleSendFriendRequest}
-                          disabled={!friendUsername.trim() || sendingRequest}
-                          className="bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] px-2.5 py-1 rounded text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center justify-center"
-                        >
-                          {sendingRequest ? (
-                            <div className="w-3 h-3 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
-                          ) : (
-                            t('sidebar.friendRequest.add')
-                          )}
-                        </button>
-                      </div>
-                      {requestStatus && (
-                        <div className={`mt-1 px-2 py-1 rounded text-xs ${
-                          requestStatus.type === 'success' 
-                            ? 'bg-[#16a34a]/10 text-[#16a34a]' 
-                            : 'bg-red-500/10 text-red-400'
-                        }`}>
-                          {requestStatus.message}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {friends.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                      <UserPlus size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
-                      <p className="text-sm text-[#7d8590]">{t('sidebar.noFriendsYet')}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1" key={friendsUpdateKey}>
-                      {friends.map((friend) => {
-                        const statusKey = `${friend.uuid}-${friend.status}-${friend.current_instance || 'none'}`
-                        const unreadCount = unreadCounts[friend.uuid] || 0
+                    <div className="space-y-1">
+                      {recentInstances.map((instance) => {
+                        const icon = instanceIcons[instance.name]
+                        const isRunning = runningInstances.has(instance.name)
+                        const isLaunching = launchingInstanceName === instance.name
                         return (
-                          <div
-                            key={statusKey}
-                            onClick={() => handleFriendClick(friend)}
-                            className="group relative flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[#181a1f] transition-all"
+                          <button
+                            key={instance.name}
+                            onClick={() => {
+                              setSelectedInstance(instance)
+                              setActiveTab("instances")
+                              setShowInstanceDetails(true)
+                            }}
+                            onContextMenu={(e) => handleSidebarContextMenu(e, instance)}
+                            className="group w-full flex items-center gap-2 rounded cursor-pointer transition-all text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#181a1f] px-1.5 py-1.5 relative"
                           >
-                            <div className="relative flex-shrink-0">
-                              <img
-                                src={`https://avatar.mcindex.net/avatar/${friend.username}/32`}
-                                alt={friend.username}
-                                className="w-8 h-8 rounded"
-                              />
-                              <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#22252b] ${getStatusColor(friend.status)}`} />
-                              {unreadCount > 0 && (
-                                <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 rounded-full flex items-center justify-center px-1">
-                                  <span className="text-[10px] font-bold text-white">
-                                    {unreadCount > 9 ? '9+' : unreadCount}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0 group-hover:pr-6 transition-all">
-                              <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">
-                                {friend.username}
+                            {icon ? (
+                              <img src={icon} alt={instance.name} className="w-9 h-9 rounded object-cover flex-shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 bg-[#181a1f] rounded">
+                                <Package size={24} className="text-[#3a3f4b]" strokeWidth={1.5} />
                               </div>
-                              <div className="flex items-center gap-1 text-xs text-[#7d8590] truncate leading-tight">
-                                {friend.status === "ingame" && (
-                                  <Gamepad2 size={14} className="flex-shrink-0 text-green-400" />
+                            )}
+                            <div className={`flex-1 min-w-0 text-left transition-all ${isRunning || isLaunching ? 'pr-10' : 'group-hover:pr-10'}`}>
+                              <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">{instance.name}</div>
+                              <div className="text-xs text-[#7d8590] leading-tight mt-0.5 truncate">
+                                {getMinecraftVersion(instance)} • {formatLastPlayed(instance.last_played!)}
+                              </div>
+                            </div>
+                            {isAuthenticated && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (isRunning) onKillInstance(instance)
+                                  else onQuickLaunch(instance)
+                                }}
+                                disabled={launchingInstanceName !== null && !isLaunching && !isRunning}
+                                className={`absolute right-1.5 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all ${
+                                  isRunning || isLaunching
+                                    ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20 cursor-pointer"
+                                    : launchingInstanceName !== null
+                                    ? "opacity-0 pointer-events-none"
+                                    : "opacity-0 group-hover:opacity-100 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"
+                                }`}
+                                title={isRunning ? t('sidebar.instance.stopTooltip') : t('sidebar.instance.launchTooltip')}
+                              >
+                                {isLaunching || isRunning ? (
+                                  <div className="w-3.5 h-3.5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                                ) : (
+                                  <Play size={16} fill="currentColor" strokeWidth={0} />
                                 )}
-                                <span className="truncate">
-                                  {getStatusText(friend)}
-                                </span>
-                              </div>
-                            </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRemoveFriend(friend.uuid, friend.username)
-                              }}
-                              className="absolute right-1.5 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer bg-[#181a1f]"
-                              title={t('sidebar.removeFriend')}
-                            >
-                              <X size={14} className="text-red-400" />
-                            </button>
-                          </div>
+                              </button>
+                            )}
+                          </button>
                         )
                       })}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {isAuthenticated && (
+                <div className="flex-1 overflow-y-auto px-2 pb-3">
+                  <div className="py-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider px-2">
+                        {t('sidebar.friends')}
+                      </h3>
+                      <div className="flex items-center gap-1 px-2">
+                        {friendRequests.length > 0 && (
+                          <button
+                            onClick={() => setShowRequests(!showRequests)}
+                            className="relative text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
+                            title={t('sidebar.friendRequests')}
+                          >
+                            <Mail size={14} strokeWidth={2} />
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold">
+                              {friendRequests.length}
+                            </div>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setShowAddFriend(!showAddFriend)}
+                          className="text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
+                          title={t('sidebar.addFriend')}
+                        >
+                          <UserPlus size={14} strokeWidth={2} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {showRequests && friendRequests.length > 0 && (
+                      <div className="mb-2 space-y-1">
+                        {friendRequests.map((request) => (
+                          <div key={request.id} className="rounded px-2 py-2 hover:bg-[#181a1f] transition-colors">
+                            <div className="flex items-center gap-2 mb-2">
+                              <img src={`https://avatar.mcindex.net/avatar/${request.from_username}/32`} alt={request.from_username} className="w-5 h-5 rounded" />
+                              <span className="text-xs text-[#e6e6e6] flex-1 truncate">{request.from_username}</span>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => handleAcceptRequest(request.id)}
+                                disabled={processingRequestId !== null}
+                                className="flex-1 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] px-3 py-1.5 rounded text-xs cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {processingRequestId === request.id ? (
+                                  <div className="w-3 h-3 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
+                                ) : (
+                                  <><Check size={12} />{t('sidebar.friendRequest.accept')}</>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleRejectRequest(request.id)}
+                                disabled={processingRequestId !== null}
+                                className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <X size={12} />{t('sidebar.friendRequest.reject')}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {showAddFriend && (
+                      <div className="mb-2 px-1">
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            value={friendUsername}
+                            onChange={(e) => setFriendUsername(e.target.value)}
+                            placeholder={t('sidebar.friendRequest.usernamePlaceholder')}
+                            className="flex-1 min-w-0 bg-[#181a1f] border border-[#3a3f4b] rounded px-2 py-1 text-xs text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none focus:border-[#3a3f4b]"
+                            onKeyDown={(e) => { if (e.key === 'Enter' && friendUsername.trim()) handleSendFriendRequest() }}
+                          />
+                          <button
+                            onClick={handleSendFriendRequest}
+                            disabled={!friendUsername.trim() || sendingRequest}
+                            className="bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] px-2.5 py-1 rounded text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center justify-center"
+                          >
+                            {sendingRequest ? (
+                              <div className="w-3 h-3 border-2 border-[#16a34a]/30 border-t-[#16a34a] rounded-full animate-spin" />
+                            ) : t('sidebar.friendRequest.add')}
+                          </button>
+                        </div>
+                        {requestStatus && (
+                          <div className={`mt-1 px-2 py-1 rounded text-xs ${requestStatus.type === 'success' ? 'bg-[#16a34a]/10 text-[#16a34a]' : 'bg-red-500/10 text-red-400'}`}>
+                            {requestStatus.message}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {friends.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+                        <UserPlus size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
+                        <p className="text-sm text-[#7d8590]">{t('sidebar.noFriendsYet')}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {friends.map((friend) => {
+                          // Key includes status
+                          const statusKey = `${friend.uuid}-${friend.status}-${friend.current_instance || 'none'}`
+                          const unreadCount = unreadCounts[friend.uuid] || 0
+                          return (
+                            <div
+                              key={statusKey}
+                              onClick={() => handleFriendClick(friend)}
+                              className="group relative flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-[#181a1f] transition-all"
+                            >
+                              <div className="relative flex-shrink-0">
+                                <img src={`https://avatar.mcindex.net/avatar/${friend.username}/32`} alt={friend.username} className="w-8 h-8 rounded" />
+                                <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#22252b] ${getStatusColor(friend.status)}`} />
+                                {unreadCount > 0 && (
+                                  <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 rounded-full flex items-center justify-center px-1">
+                                    <span className="text-[10px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0 group-hover:pr-6 transition-all">
+                                <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">{friend.username}</div>
+                                <div className="flex items-center gap-1 text-xs text-[#7d8590] truncate leading-tight">
+                                  {friend.status === "ingame" && <Gamepad2 size={14} className="flex-shrink-0 text-green-400" />}
+                                  <span className="truncate">{getStatusText(friend)}</span>
+                                </div>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleRemoveFriend(friend.uuid, friend.username) }}
+                                className="absolute right-1.5 opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/10 rounded transition-all cursor-pointer bg-[#181a1f]"
+                                title={t('sidebar.removeFriend')}
+                              >
+                                <X size={14} className="text-red-400" />
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </aside>
       </div>
 
       {showAccountDropdown && (
         <>
-          <div 
-            className="fixed inset-0 z-[60]"
-            onClick={() => setShowAccountDropdown(false)}
-          />
-          
-          <div 
-            className="fixed bg-[#181a1f] rounded-b z-[70] overflow-hidden"
-            style={{
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`,
-              width: `${dropdownPosition.width}px`
-            }}
-          >
+          <div className="fixed inset-0 z-[60]" onClick={() => setShowAccountDropdown(false)} />
+          <div ref={positionDropdown} className="fixed bg-[#181a1f] rounded-b z-[70] overflow-hidden">
             <div className="space-y-1 pt-0 pb-1 px-1">
-              {/* Other Accounts */}
-              {accounts
-                .filter(acc => !acc.is_active)
-                .map((account) => (
-                  <div
-                    key={account.uuid}
-                    className="group flex items-center gap-2 p-2 rounded hover:bg-[#22252b] transition-colors"
-                  >
-                    <button
-                      onClick={() => handleSwitchAccount(account.uuid)}
-                      className="flex-1 flex items-center gap-2.5 cursor-pointer min-w-0"
-                    >
-                      <img
-                        src={`https://cravatar.eu/avatar/${account.username}/32`}
-                        alt={account.username}
-                        className="w-8 h-8 rounded"
-                      />
-                      <div className="flex-1 min-w-0 text-left">
-                        <div className="text-sm font-medium text-[#e6e6e6] truncate">
-                          {account.username}
-                        </div>
-                        <div className="text-xs text-[#7d8590]">
-                          {formatLastUsed(account.last_used)}
-                        </div>
-                      </div>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleRemoveAccount(account.uuid)}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer flex-shrink-0"
-                    >
-                      <LogOut size={16} className="text-red-400" />
-                    </button>
-                  </div>
-                ))}
-              
-              {/* Add Another Account */}
+              {accounts.filter(acc => !acc.is_active).map((account) => (
+                <div key={account.uuid} className="group flex items-center gap-2 p-2 rounded hover:bg-[#22252b] transition-colors">
+                  <button onClick={() => handleSwitchAccount(account.uuid)} className="flex-1 flex items-center gap-2.5 cursor-pointer min-w-0">
+                    <img src={`https://cravatar.eu/avatar/${account.username}/32`} alt={account.username} className="w-8 h-8 rounded" />
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="text-sm font-medium text-[#e6e6e6] truncate">{account.username}</div>
+                      <div className="text-xs text-[#7d8590]">{formatLastUsed(account.last_used)}</div>
+                    </div>
+                  </button>
+                  <button onClick={() => handleRemoveAccount(account.uuid)} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-500/10 rounded transition-all cursor-pointer flex-shrink-0">
+                    <LogOut size={16} className="text-red-400" />
+                  </button>
+                </div>
+              ))}
               <button
                 onClick={handleAddAccount}
                 disabled={isLoggingIn}
@@ -905,10 +727,7 @@ export function Sidebar(props: SidebarProps) {
 
               {/* Logout Current Account */}
               {activeAccount && (
-                <button
-                  onClick={() => handleRemoveAccount(activeAccount.uuid)}
-                  className="w-full flex items-center gap-2.5 p-2 rounded text-sm transition-colors cursor-pointer text-red-400 hover:bg-red-500/10"
-                >
+                <button onClick={() => handleRemoveAccount(activeAccount.uuid)} className="w-full flex items-center gap-2.5 p-2 rounded text-sm transition-colors cursor-pointer text-red-400 hover:bg-red-500/10">
                   <LogOut size={18} />
                   <span>{t('sidebar.accountDropdown.logout')}</span>
                 </button>
@@ -927,35 +746,12 @@ export function Sidebar(props: SidebarProps) {
             {
               label: t('sidebar.contextMenu.open'),
               icon: <Package size={16} />,
-              onClick: () => {
-                setSelectedInstance(sidebarContextMenu.instance)
-                setActiveTab("instances")
-                setShowInstanceDetails(true)
-              },
+              onClick: () => { setSelectedInstance(sidebarContextMenu.instance); setActiveTab("instances"); setShowInstanceDetails(true) },
             },
-            {
-              label: t('sidebar.contextMenu.openFolder'),
-              icon: <FolderOpen size={16} />,
-              onClick: () => {
-                onOpenInstanceFolder(sidebarContextMenu.instance)
-              },
-            },
-            {
-              label: t('sidebar.contextMenu.duplicate'),
-              icon: <Copy size={16} />,
-              onClick: () => {
-                onDuplicateInstance(sidebarContextMenu.instance)
-              },
-            },
+            { label: t('sidebar.contextMenu.openFolder'), icon: <FolderOpen size={16} />, onClick: () => onOpenInstanceFolder(sidebarContextMenu.instance) },
+            { label: t('sidebar.contextMenu.duplicate'), icon: <Copy size={16} />, onClick: () => onDuplicateInstance(sidebarContextMenu.instance) },
             { separator: true },
-            {
-              label: t('sidebar.contextMenu.delete'),
-              icon: <Trash2 size={16} />,
-              onClick: () => {
-                onDeleteInstance(sidebarContextMenu.instance.name)
-              },
-              danger: true,
-            },
+            { label: t('sidebar.contextMenu.delete'), icon: <Trash2 size={16} />, onClick: () => onDeleteInstance(sidebarContextMenu.instance.name), danger: true },
           ]}
         />
       )}
@@ -972,11 +768,7 @@ export function Sidebar(props: SidebarProps) {
       />
 
       {openChat && activeAccount && (
-        <Chat
-          friendUuid={openChat.uuid}
-          friendUsername={openChat.username}
-          onClose={() => setOpenChat(null)}
-        />
+        <Chat friendUuid={openChat.uuid} friendUsername={openChat.username} onClose={() => setOpenChat(null)} />
       )}
     </>
   )

@@ -24,13 +24,13 @@ interface SettingsModalProps {
 
 type SettingsTab = "game" | "appearance" | "language" | "integrations" | "about" | "snapshots"
 
-export function SettingsModal({ 
-  isOpen, 
-  settings, 
-  launcherDirectory, 
-  onClose, 
-  onSettingsChange, 
-  onBackgroundChanged 
+export function SettingsModal({
+  isOpen,
+  settings,
+  launcherDirectory,
+  onClose,
+  onSettingsChange,
+  onBackgroundChanged
 }: SettingsModalProps) {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<SettingsTab>("game")
@@ -68,6 +68,7 @@ export function SettingsModal({
     { code: "no", name: "Norwegian", nativeName: "Norsk" }
   ]
 
+  // Load data on open
   useEffect(() => {
     if (isOpen) {
       setActiveTab("game")
@@ -78,17 +79,9 @@ export function SettingsModal({
     }
 
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-      }
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
   }, [isOpen])
-
-  useEffect(() => {
-    if (settings?.language) {
-      i18n.changeLanguage(settings.language)
-    }
-  }, [settings?.language])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -109,13 +102,10 @@ export function SettingsModal({
     }
 
     if (javaInstallations.length > 0) {
-      const isCustomPath = !javaInstallations.includes(settings.java_path)
-      setShowCustomPath(isCustomPath)
-      if (isCustomPath) {
-        setCustomPathValue(settings.java_path)
-      } else {
-        setCustomPathValue("")
-      }
+      const isCustom = !javaInstallations.includes(settings.java_path)
+      setShowCustomPath(isCustom)
+      if (isCustom) setCustomPathValue(settings.java_path)
+      else setCustomPathValue("")
     }
   }, [settings?.java_path, javaInstallations])
 
@@ -123,9 +113,7 @@ export function SettingsModal({
     try {
       const version = await invoke<string>("get_app_version")
       setAppVersion(version)
-
-      const semanticVer = version.split('-')[0]
-      setSemanticVersion(semanticVer)
+      setSemanticVersion(version.split('-')[0])
     } catch (error) {
       console.error("Failed to get app version:", error)
     }
@@ -168,25 +156,20 @@ export function SettingsModal({
       onSettingsChange(newSettings)
     } catch (error) {
       console.error("Failed to save settings:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('errors.generic'),
-        message: t('settings.errors.failedToSave') + `: ${error}`,
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('errors.generic'), message: t('settings.errors.failedToSave') + `: ${error}`, type: "danger" })
     }
   }
 
   const handleSettingChangeDebounced = (newSettings: LauncherSettings) => {
     onSettingsChange(newSettings)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+    saveTimeoutRef.current = setTimeout(() => handleSettingChange(newSettings), 500)
+  }
 
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      handleSettingChange(newSettings)
-    }, 500)
+  const handleLanguageChange = (langCode: string) => {
+    if (!settings) return
+    i18n.changeLanguage(langCode)
+    handleSettingChange({ ...settings, language: langCode })
   }
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,22 +177,12 @@ export function SettingsModal({
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
-      setAlertModal({
-        isOpen: true,
-        title: t('settings.errors.invalidFile'),
-        message: t('settings.errors.selectImage'),
-        type: "warning"
-      })
+      setAlertModal({ isOpen: true, title: t('settings.errors.invalidFile'), message: t('settings.errors.selectImage'), type: "warning" })
       return
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      setAlertModal({
-        isOpen: true,
-        title: t('settings.errors.fileTooLarge'),
-        message: t('settings.errors.imageTooLarge'),
-        type: "warning"
-      })
+      setAlertModal({ isOpen: true, title: t('settings.errors.fileTooLarge'), message: t('settings.errors.imageTooLarge'), type: "warning" })
       return
     }
 
@@ -224,28 +197,16 @@ export function SettingsModal({
           onBackgroundChanged?.()
         } catch (error) {
           console.error("Failed to save sidebar background:", error)
-          setAlertModal({
-            isOpen: true,
-            title: t('errors.generic'),
-            message: t('settings.errors.failedToSaveBackground') + `: ${error}`,
-            type: "danger"
-          })
+          setAlertModal({ isOpen: true, title: t('errors.generic'), message: t('settings.errors.failedToSaveBackground') + `: ${error}`, type: "danger" })
         }
       }
       reader.readAsDataURL(file)
     } catch (error) {
       console.error("Failed to read file:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('errors.generic'),
-        message: t('settings.errors.failedToReadFile'),
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('errors.generic'), message: t('settings.errors.failedToReadFile'), type: "danger" })
     }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleRemoveBackground = async () => {
@@ -255,21 +216,13 @@ export function SettingsModal({
       onBackgroundChanged?.()
     } catch (error) {
       console.error("Failed to remove sidebar background:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('errors.generic'),
-        message: t('settings.errors.failedToRemoveBackground') + `: ${error}`,
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('errors.generic'), message: t('settings.errors.failedToRemoveBackground') + `: ${error}`, type: "danger" })
     }
   }
 
   const handleClose = () => {
     setIsClosing(true)
-    setTimeout(() => {
-      setIsClosing(false)
-      onClose()
-    }, 150)
+    setTimeout(() => { setIsClosing(false); onClose() }, 150)
   }
 
   if (!isOpen) return null
@@ -300,100 +253,38 @@ export function SettingsModal({
     { id: "about" as const, label: t('settings.tabs.system'), icon: FolderOpen }
   ]
 
+  const ramPercent = ((settings.memory_mb - 1024) / ((systemInfo?.total_memory_mb || 32768) - 1024)) * 100
+
   return (
     <>
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes fadeOut {
-          from { opacity: 1; }
-          to { opacity: 0; }
-        }
-        @keyframes scaleIn {
-          from { 
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to { 
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        @keyframes scaleOut {
-          from { 
-            opacity: 1;
-            transform: scale(1);
-          }
-          to { 
-            opacity: 0;
-            transform: scale(0.95);
-          }
-        }
-        .modal-backdrop {
-          animation: fadeIn 0.15s ease-out forwards;
-        }
-        .modal-backdrop.closing {
-          animation: fadeOut 0.15s ease-in forwards;
-        }
-        .modal-content {
-          animation: scaleIn 0.15s ease-out forwards;
-        }
-        .modal-content.closing {
-          animation: scaleOut 0.15s ease-in forwards;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #3d424d;
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #4d525d;
-        }
-        
-        .blur-border {
-          position: relative;
-        }
-
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        @keyframes scaleOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+        .modal-backdrop { animation: fadeIn 0.15s ease-out forwards; }
+        .modal-backdrop.closing { animation: fadeOut 0.15s ease-in forwards; }
+        .modal-content { animation: scaleIn 0.15s ease-out forwards; }
+        .modal-content.closing { animation: scaleOut 0.15s ease-in forwards; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3d424d; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4d525d; }
+        .blur-border { position: relative; }
         .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 2px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-          transition: none !important;
+          -webkit-mask-composite: xor; mask-composite: exclude;
+          pointer-events: none; backdrop-filter: blur(8px); z-index: 10; transition: none !important;
         }
-        
-        .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
-        }
+        .blur-border:hover::before { background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); }
       `}</style>
-      <div 
+      <div
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
         onClick={handleClose}
       >
-        <div 
+        <div
           className={`blur-border bg-[#1a1d23] rounded w-full max-w-3xl h-[500px] flex flex-col shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
         >
@@ -406,10 +297,7 @@ export function SettingsModal({
                   {t('settings.buildLabel')} {appVersion.split('-')[1] || appVersion}
                 </span>
               )}
-              <button
-                onClick={handleClose}
-                className="p-2 hover:bg-[#252932] rounded transition-colors text-gray-400 hover:text-white cursor-pointer"
-              >
+              <button onClick={handleClose} className="p-2 hover:bg-[#252932] rounded transition-colors text-gray-400 hover:text-white cursor-pointer">
                 <X size={18} />
               </button>
             </div>
@@ -425,11 +313,7 @@ export function SettingsModal({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-colors cursor-pointer ${
-                      activeTab === tab.id
-                        ? 'bg-[#4572e3] text-white'
-                        : 'text-gray-400 hover:bg-[#252932] hover:text-white'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-colors cursor-pointer ${activeTab === tab.id ? 'bg-[#4572e3] text-white' : 'text-gray-400 hover:bg-[#252932] hover:text-white'}`}
                   >
                     <Icon size={18} />
                     <span>{tab.label}</span>
@@ -450,41 +334,25 @@ export function SettingsModal({
                     </div>
                     <div className="bg-[#252932] rounded p-4 space-y-3">
                       <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-bold text-white">
-                          {(settings.memory_mb / 1024).toFixed(1)} GB
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {t('settings.game.memory.ofTotal', { total: systemInfo ? (systemInfo.total_memory_mb / 1024).toFixed(0) : '16' })}
-                        </span>
+                        <span className="text-2xl font-bold text-white">{(settings.memory_mb / 1024).toFixed(1)} GB</span>
+                        <span className="text-xs text-gray-400">{t('settings.game.memory.ofTotal', { total: systemInfo ? (systemInfo.total_memory_mb / 1024).toFixed(0) : '16' })}</span>
                       </div>
                       <input
-                        type="range"
-                        min="1024"
-                        max={systemInfo?.total_memory_mb || 32768}
-                        step="512"
+                        type="range" min="1024" max={systemInfo?.total_memory_mb || 32768} step="512"
                         value={settings.memory_mb}
-                        onChange={(e) => handleSettingChangeDebounced({
-                          ...settings,
-                          memory_mb: parseInt(e.target.value)
-                        })}
+                        onChange={(e) => handleSettingChangeDebounced({ ...settings, memory_mb: parseInt(e.target.value) })}
                         className="w-full h-2 bg-[#1a1d23] rounded-full appearance-none cursor-pointer"
-                        style={{
-                          background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${((settings.memory_mb - 1024) / ((systemInfo?.total_memory_mb || 32768) - 1024)) * 100}%, #1a1d23 ${((settings.memory_mb - 1024) / ((systemInfo?.total_memory_mb || 32768) - 1024)) * 100}%, #1a1d23 100%)`
-                        }}
+                        style={{ background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${ramPercent}%, #1a1d23 ${ramPercent}%, #1a1d23 100%)` }}
                       />
                       {systemInfo && (
                         <div className="pt-2 border-t border-[#1a1d23] space-y-1">
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-400">{t('settings.game.memory.systemTotal')}</span>
-                            <span className="text-white font-medium">
-                              {(systemInfo.total_memory_mb / 1024).toFixed(1)} GB
-                            </span>
+                            <span className="text-white font-medium">{(systemInfo.total_memory_mb / 1024).toFixed(1)} GB</span>
                           </div>
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-400">{t('settings.game.memory.available')}</span>
-                            <span className="text-white font-medium">
-                              {(systemInfo.available_memory_mb / 1024).toFixed(1)} GB
-                            </span>
+                            <span className="text-white font-medium">{(systemInfo.available_memory_mb / 1024).toFixed(1)} GB</span>
                           </div>
                         </div>
                       )}
@@ -501,71 +369,45 @@ export function SettingsModal({
                       <div className="relative flex-1 min-w-0" ref={javaDropdownRef}>
                         <button
                           onClick={() => setIsJavaDropdownOpen(!isJavaDropdownOpen)}
-                          className={`w-full bg-[#252932] px-4 py-2.5 text-sm text-white text-left flex items-center justify-between cursor-pointer min-w-0 ${
-                            isJavaDropdownOpen ? 'rounded-b' : 'rounded'
-                          }`}
+                          className={`w-full bg-[#252932] px-4 py-2.5 text-sm text-white text-left flex items-center justify-between cursor-pointer min-w-0 ${isJavaDropdownOpen ? 'rounded-b' : 'rounded'}`}
                         >
                           <span className="truncate">
                             {showCustomPath ? t('settings.game.java.customPath') : (settings.java_path || t('settings.game.java.autoDetect'))}
                           </span>
                           <ChevronDown size={16} className={`flex-shrink-0 ml-2 transition-transform ${isJavaDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
-                        
+
                         {isJavaDropdownOpen && (
                           <div className="absolute z-[60] w-full bg-[#252932] rounded-t shadow-lg max-h-64 overflow-y-auto custom-scrollbar border-b border-[#1a1d23] bottom-full">
                             <button
-                              onClick={() => {
-                                setShowCustomPath(false)
-                                setCustomPathValue("")
-                                handleSettingChange({ ...settings, java_path: null })
-                                setIsJavaDropdownOpen(false)
-                              }}
+                              onClick={() => { setShowCustomPath(false); setCustomPathValue(""); handleSettingChange({ ...settings, java_path: null }); setIsJavaDropdownOpen(false) }}
                               className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
                             >
                               <span>{t('settings.game.java.autoDetect')}</span>
-                              {!settings.java_path && !showCustomPath && (
-                                <Check size={16} className="text-white" />
-                              )}
+                              {!settings.java_path && !showCustomPath && <Check size={16} className="text-white" />}
                             </button>
                             {javaInstallations.map((path) => (
                               <button
                                 key={path}
-                                onClick={() => {
-                                  setShowCustomPath(false)
-                                  setCustomPathValue("")
-                                  handleSettingChange({ ...settings, java_path: path })
-                                  setIsJavaDropdownOpen(false)
-                                }}
+                                onClick={() => { setShowCustomPath(false); setCustomPathValue(""); handleSettingChange({ ...settings, java_path: path }); setIsJavaDropdownOpen(false) }}
                                 className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
                               >
                                 <span className="truncate">{path}</span>
-                                {settings.java_path === path && !showCustomPath && (
-                                  <Check size={16} className="text-white flex-shrink-0 ml-2" />
-                                )}
+                                {settings.java_path === path && !showCustomPath && <Check size={16} className="text-white flex-shrink-0 ml-2" />}
                               </button>
                             ))}
                             <button
-                              onClick={() => {
-                                setShowCustomPath(true)
-                                setCustomPathValue(settings.java_path || "")
-                                setIsJavaDropdownOpen(false)
-                              }}
+                              onClick={() => { setShowCustomPath(true); setCustomPathValue(settings.java_path || ""); setIsJavaDropdownOpen(false) }}
                               className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
                             >
                               <span>{t('settings.game.java.customPath')}</span>
-                              {showCustomPath && (
-                                <Check size={16} className="text-white" />
-                              )}
+                              {showCustomPath && <Check size={16} className="text-white" />}
                             </button>
                           </div>
                         )}
                       </div>
-                      
-                      <button
-                        onClick={loadJavaInstallations}
-                        disabled={isLoadingJava}
-                        className="px-4 py-2.5 bg-[#252932] hover:bg-[#2d3139] disabled:opacity-50 rounded text-sm font-medium text-white cursor-pointer disabled:cursor-not-allowed"
-                      >
+
+                      <button onClick={loadJavaInstallations} disabled={isLoadingJava} className="px-4 py-2.5 bg-[#252932] hover:bg-[#2d3139] disabled:opacity-50 rounded text-sm font-medium text-white cursor-pointer disabled:cursor-not-allowed">
                         {isLoadingJava ? <Loader2 size={16} className="animate-spin" /> : t('settings.game.java.scan')}
                       </button>
                     </div>
@@ -577,17 +419,8 @@ export function SettingsModal({
                         placeholder={t('settings.game.java.placeholder')}
                         value={customPathValue}
                         onChange={(e) => setCustomPathValue(e.target.value)}
-                        onBlur={() => {
-                          if (customPathValue.trim()) {
-                            handleSettingChange({ ...settings, java_path: customPathValue.trim() })
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && customPathValue.trim()) {
-                            handleSettingChange({ ...settings, java_path: customPathValue.trim() })
-                            e.currentTarget.blur()
-                          }
-                        }}
+                        onBlur={() => { if (customPathValue.trim()) handleSettingChange({ ...settings, java_path: customPathValue.trim() }) }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && customPathValue.trim()) { handleSettingChange({ ...settings, java_path: customPathValue.trim() }); e.currentTarget.blur() } }}
                       />
                     )}
                   </div>
@@ -606,25 +439,12 @@ export function SettingsModal({
                         <img src={sidebarBgPreview} alt="Background" className="w-full h-full object-cover" />
                       </div>
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded text-sm font-medium cursor-pointer"
-                        >
-                          {t('settings.appearance.sidebarBackground.change')}
-                        </button>
-                        <button
-                          onClick={handleRemoveBackground}
-                          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-medium cursor-pointer"
-                        >
-                          {t('settings.appearance.sidebarBackground.remove')}
-                        </button>
+                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded text-sm font-medium cursor-pointer">{t('settings.appearance.sidebarBackground.change')}</button>
+                        <button onClick={handleRemoveBackground} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-medium cursor-pointer">{t('settings.appearance.sidebarBackground.remove')}</button>
                       </div>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-48 bg-[#252932] hover:bg-[#2d3139] border-2 border-dashed border-[#2a2e36] hover:border-[#4572e3] rounded transition-all flex flex-col items-center justify-center gap-2 cursor-pointer"
-                    >
+                    <button onClick={() => fileInputRef.current?.click()} className="w-full h-48 bg-[#252932] hover:bg-[#2d3139] border-2 border-dashed border-[#2a2e36] hover:border-[#4572e3] rounded transition-all flex flex-col items-center justify-center gap-2 cursor-pointer">
                       <ImagePlus size={32} className="text-gray-500" />
                       <span className="text-sm text-gray-400">{t('settings.appearance.sidebarBackground.clickToUpload')}</span>
                       <span className="text-xs text-gray-500">{t('settings.appearance.sidebarBackground.fileTypes')}</span>
@@ -640,47 +460,28 @@ export function SettingsModal({
                     <Languages size={18} className="text-[#4572e3]" />
                     <span className="font-medium">{t('settings.language.title')}</span>
                   </div>
-                  <p className="text-sm text-gray-400 mb-4">
-                    {t('settings.language.description')}
-                  </p>
+                  <p className="text-sm text-gray-400 mb-4">{t('settings.language.description')}</p>
                   <div className="grid grid-cols-3 gap-2 max-h-[270px] overflow-y-auto custom-scrollbar pr-2">
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
-                        onClick={() => {
-                          i18n.changeLanguage(lang.code)
-                          handleSettingChange({
-                            ...settings,
-                            language: lang.code
-                          })
-                        }}
-                        className={`p-3 rounded text-left transition-colors cursor-pointer ${
-                          (settings.language || 'en') === lang.code
-                            ? 'bg-[#4572e3] text-white'
-                            : 'bg-[#252932] text-gray-300 hover:bg-[#2d3139]'
-                        }`}
+                        // CHANGED: calls handleLanguageChange which does i18n + settings save together
+                        onClick={() => handleLanguageChange(lang.code)}
+                        className={`p-3 rounded text-left transition-colors cursor-pointer ${(settings.language || 'en') === lang.code ? 'bg-[#4572e3] text-white' : 'bg-[#252932] text-gray-300 hover:bg-[#2d3139]'}`}
                       >
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="text-sm font-medium">{lang.nativeName}</div>
                             <div className="text-xs opacity-75">{lang.name}</div>
                           </div>
-                          {(settings.language || 'en') === lang.code && (
-                            <Check size={16} className="flex-shrink-0" />
-                          )}
+                          {(settings.language || 'en') === lang.code && <Check size={16} className="flex-shrink-0" />}
                         </div>
                       </button>
                     ))}
                   </div>
                   <div className="mt-4 pt-4 border-t border-[#252932]">
                     <button
-                      onClick={async () => {
-                        try {
-                          await invoke('open_url', { url: 'https://translate.oct4ne.net' })
-                        } catch (error) {
-                          console.error('Failed to open translation link:', error)
-                        }
-                      }}
+                      onClick={async () => { try { await invoke('open_url', { url: 'https://translate.oct4ne.net' }) } catch (error) { console.error('Failed to open translation link:', error) } }}
                       className="w-full flex items-center justify-center gap-2 text-sm text-gray-400 cursor-pointer group"
                     >
                       <span>{t('settings.language.helpTranslate')}</span>
@@ -705,25 +506,14 @@ export function SettingsModal({
                       </svg>
                       <div>
                         <span className="text-sm font-medium text-white">{t('settings.discord.showStatus')}</span>
-                        <p className="text-xs text-gray-400">
-                          {settings.discord_rpc_enabled
-                            ? t('settings.discord.enabled')
-                            : t('settings.discord.disabled')}
-                        </p>
+                        <p className="text-xs text-gray-400">{settings.discord_rpc_enabled ? t('settings.discord.enabled') : t('settings.discord.disabled')}</p>
                       </div>
                     </div>
                     <button
-                      onClick={() => handleSettingChange({
-                        ...settings,
-                        discord_rpc_enabled: !settings.discord_rpc_enabled
-                      })}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                        settings.discord_rpc_enabled ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'
-                      }`}
+                      onClick={() => handleSettingChange({ ...settings, discord_rpc_enabled: !settings.discord_rpc_enabled })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${settings.discord_rpc_enabled ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'}`}
                     >
-                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        settings.discord_rpc_enabled ? 'translate-x-6' : 'translate-x-1'
-                      }`} />
+                      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.discord_rpc_enabled ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </div>
                 </div>
@@ -735,40 +525,21 @@ export function SettingsModal({
                     <Archive size={18} className="text-[#4572e3]" />
                     <span className="font-medium">{t('settings.snapshots.title')}</span>
                   </div>
-                  <p className="text-sm text-gray-400 mb-4">
-                    {t('settings.snapshots.description')}
-                  </p>
-                  <button
-                    onClick={() => setShowSnapshotManager(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded text-sm font-medium cursor-pointer transition-colors"
-                  >
+                  <p className="text-sm text-gray-400 mb-4">{t('settings.snapshots.description')}</p>
+                  <button onClick={() => setShowSnapshotManager(true)} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded text-sm font-medium cursor-pointer transition-colors">
                     <Archive size={18} />
                     <span>{t('settings.snapshots.manageButton')}</span>
                   </button>
-                  
+
                   <div className="mt-4 p-4 bg-[#252932] rounded">
                     <h4 className="text-sm font-medium text-white mb-2">{t('settings.snapshots.included.title')}</h4>
                     <ul className="text-xs text-gray-400 space-y-1">
-                      <li className="flex items-center gap-2">
-                        <Check size={14} className="text-[#4572e3]" />
-                        <span>{t('settings.snapshots.included.instances')}</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={14} className="text-[#4572e3]" />
-                        <span>{t('settings.snapshots.included.settings')}</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={14} className="text-[#4572e3]" />
-                        <span>{t('settings.snapshots.included.templates')}</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={14} className="text-[#4572e3]" />
-                        <span>{t('settings.snapshots.included.serverList')}</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Check size={14} className="text-[#4572e3]" />
-                        <span>{t('settings.snapshots.included.backgrounds')}</span>
-                      </li>
+                      {['instances', 'settings', 'templates', 'serverList', 'backgrounds'].map(key => (
+                        <li key={key} className="flex items-center gap-2">
+                          <Check size={14} className="text-[#4572e3]" />
+                          <span>{t(`settings.snapshots.included.${key}`)}</span>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -782,9 +553,7 @@ export function SettingsModal({
                       <span className="font-medium">{t('settings.system.gameDirectory.title')}</span>
                     </div>
                     <div className="bg-[#252932] rounded p-4">
-                      <p className="text-xs text-gray-400 font-mono break-all">
-                        {launcherDirectory || t('common.actions.loading')}
-                      </p>
+                      <p className="text-xs text-gray-400 font-mono break-all">{launcherDirectory || t('common.actions.loading')}</p>
                     </div>
                   </div>
 
@@ -811,23 +580,14 @@ export function SettingsModal({
                       <div>
                         <span className="text-sm font-medium text-white">{t('settings.system.autoNavigateConsole.label')}</span>
                         <p className="text-xs text-gray-400">
-                          {(settings.auto_navigate_to_console ?? true)
-                            ? t('settings.system.autoNavigateConsole.enabled')
-                            : t('settings.system.autoNavigateConsole.disabled')}
+                          {(settings.auto_navigate_to_console ?? true) ? t('settings.system.autoNavigateConsole.enabled') : t('settings.system.autoNavigateConsole.disabled')}
                         </p>
                       </div>
                       <button
-                        onClick={() => handleSettingChange({
-                          ...settings,
-                          auto_navigate_to_console: !(settings.auto_navigate_to_console ?? true)
-                        })}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${
-                          (settings.auto_navigate_to_console ?? true) ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'
-                        }`}
+                        onClick={() => handleSettingChange({ ...settings, auto_navigate_to_console: !(settings.auto_navigate_to_console ?? true) })}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${(settings.auto_navigate_to_console ?? true) ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'}`}
                       >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          (settings.auto_navigate_to_console ?? true) ? 'translate-x-6' : 'translate-x-1'
-                        }`} />
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(settings.auto_navigate_to_console ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
                       </button>
                     </div>
                   </div>
@@ -838,24 +598,8 @@ export function SettingsModal({
         </div>
       </div>
 
-      {/* Snapshot Manager Modal */}
-      {showSnapshotManager && (
-        <SnapshotManager
-          isOpen={showSnapshotManager}
-          onClose={() => setShowSnapshotManager(false)}
-        />
-      )}
-
-      {/* Alert Modal */}
-      {alertModal && (
-        <AlertModal
-          isOpen={alertModal.isOpen}
-          title={alertModal.title}
-          message={alertModal.message}
-          type={alertModal.type}
-          onClose={() => setAlertModal(null)}
-        />
-      )}
+      {showSnapshotManager && <SnapshotManager isOpen={showSnapshotManager} onClose={() => setShowSnapshotManager(false)} />}
+      {alertModal && <AlertModal isOpen={alertModal.isOpen} title={alertModal.title} message={alertModal.message} type={alertModal.type} onClose={() => setAlertModal(null)} />}
     </>
   )
 }

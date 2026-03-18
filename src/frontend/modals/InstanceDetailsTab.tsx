@@ -100,9 +100,7 @@ export function InstanceDetailsTab({
 
   const loadInstanceIcon = async () => {
     try {
-      const icon = await invoke<string | null>("get_instance_icon", {
-        instanceName: instance.name
-      })
+      const icon = await invoke<string | null>("get_instance_icon", { instanceName: instance.name })
       setInstanceIcon(icon)
     } catch (error) {
       console.error("Failed to load instance icon:", error)
@@ -113,9 +111,7 @@ export function InstanceDetailsTab({
   const loadWorlds = async () => {
     setIsLoadingWorlds(true)
     try {
-      const worldsList = await invoke<World[]>("get_instance_worlds", {
-        instanceName: instance.name
-      })
+      const worldsList = await invoke<World[]>("get_instance_worlds", { instanceName: instance.name })
       setWorlds(worldsList)
     } catch (error) {
       console.error("Failed to load worlds:", error)
@@ -128,20 +124,15 @@ export function InstanceDetailsTab({
   const loadInstalledMods = async () => {
     setIsLoadingMods(true)
     try {
-      const mods = await invoke<InstalledMod[]>("get_installed_mods", {
-        instanceName: instance.name
-      })
-      
+      const mods = await invoke<InstalledMod[]>("get_installed_mods", { instanceName: instance.name })
+
       const modsWithMetadata = await Promise.all(
         mods.map(async (mod) => {
           const isDisabled = mod.filename.endsWith('.disabled')
           const actualFilename = isDisabled ? mod.filename.replace('.disabled', '') : mod.filename
-          
+
           try {
-            let slug = actualFilename
-              .replace(/\.jar$/i, '')
-              .toLowerCase()
-            
+            let slug = actualFilename.replace(/\.jar$/i, '').toLowerCase()
             slug = slug
               .replace(/[-_]((\d+\.)+\d+)[-_+]?.*$/i, '')
               .replace(/[-_]v?((\d+\.)+\d+)$/i, '')
@@ -149,28 +140,20 @@ export function InstanceDetailsTab({
               .replace(/[-_](forge|fabric|quilt|neoforge)$/i, '')
               .replace(/[-_]\d+$/i, '')
               .trim()
-            
-            if (!slug) {
-              return { ...mod, disabled: isDisabled }
-            }
-            
+
+            if (!slug) return { ...mod, disabled: isDisabled }
+
             const facets = JSON.stringify([["project_type:mod"]])
-            let result = await invoke<any>("search_mods", {
-              query: slug,
-              facets,
-              index: "relevance",
-              offset: 0,
-              limit: 20,
-            })
-            
+            const result = await invoke<any>("search_mods", { query: slug, facets, index: "relevance", offset: 0, limit: 20 })
+
             if (result.hits && result.hits.length > 0) {
               const slugNormalized = slug.replace(/[-_\s]/g, '').toLowerCase()
-              let bestMatch = result.hits.find((hit: any) => {
+              const bestMatch = result.hits.find((hit: any) => {
                 const hitSlug = hit.slug.toLowerCase().replace(/[-_\s]/g, '')
                 const hitTitle = hit.title.toLowerCase().replace(/[-_\s]/g, '')
                 return hitSlug === slugNormalized || hitTitle === slugNormalized
               })
-              
+
               if (bestMatch) {
                 const mcVersion = getMinecraftVersion(instance)
                 try {
@@ -179,21 +162,17 @@ export function InstanceDetailsTab({
                     loaders: [instance.loader],
                     gameVersions: [mcVersion],
                   })
-                  
+
                   if (versions && versions.length > 0) {
-                    const currentVersion = versions.find((v: any) => 
+                    const currentVersion = versions.find((v: any) =>
                       v.files.some((f: any) => f.filename === actualFilename)
                     )
                     
                     return {
-                      ...mod,
-                      disabled: isDisabled,
-                      name: bestMatch.title,
-                      description: bestMatch.description,
-                      icon_url: bestMatch.icon_url,
-                      downloads: bestMatch.downloads,
-                      author: bestMatch.author,
-                      project_id: bestMatch.project_id,
+                      ...mod, disabled: isDisabled,
+                      name: bestMatch.title, description: bestMatch.description,
+                      icon_url: bestMatch.icon_url, downloads: bestMatch.downloads,
+                      author: bestMatch.author, project_id: bestMatch.project_id,
                       current_version_id: currentVersion?.id,
                     }
                   }
@@ -202,14 +181,10 @@ export function InstanceDetailsTab({
                 }
                 
                 return {
-                  ...mod,
-                  disabled: isDisabled,
-                  name: bestMatch.title,
-                  description: bestMatch.description,
-                  icon_url: bestMatch.icon_url,
-                  downloads: bestMatch.downloads,
-                  author: bestMatch.author,
-                  project_id: bestMatch.project_id,
+                  ...mod, disabled: isDisabled,
+                  name: bestMatch.title, description: bestMatch.description,
+                  icon_url: bestMatch.icon_url, downloads: bestMatch.downloads,
+                  author: bestMatch.author, project_id: bestMatch.project_id,
                 }
               }
             }
@@ -219,7 +194,7 @@ export function InstanceDetailsTab({
           return { ...mod, disabled: isDisabled }
         })
       )
-      
+
       setInstalledMods(modsWithMetadata)
     } catch (error) {
       console.error("Failed to load installed mods:", error)
@@ -231,23 +206,23 @@ export function InstanceDetailsTab({
 
   const checkForUpdates = async () => {
     if (!instance || (instance.loader !== "fabric" && instance.loader !== "neoforge")) return
-    
+
     setIsCheckingUpdates(true)
     const updates: ModUpdate[] = []
-    
+
     try {
       const mcVersion = getMinecraftVersion(instance)
-      
+
       for (const mod of installedMods) {
         if (!mod.project_id || !mod.current_version_id || mod.disabled) continue
-        
+
         try {
           const versions = await invoke<any[]>("get_mod_versions", {
             idOrSlug: mod.project_id,
             loaders: [instance.loader],
             gameVersions: [mcVersion],
           })
-          
+
           if (versions && versions.length > 0) {
             const latestVersion = versions[0]
             
@@ -259,13 +234,7 @@ export function InstanceDetailsTab({
                   filename: mod.filename,
                   projectId: mod.project_id,
                   currentVersionId: mod.current_version_id,
-                  latestVersion: {
-                    id: latestVersion.id,
-                    name: latestVersion.name,
-                    version_number: latestVersion.version_number,
-                    downloadUrl: primaryFile.url,
-                    filename: primaryFile.filename,
-                  }
+                  latestVersion: { id: latestVersion.id, name: latestVersion.name, version_number: latestVersion.version_number, downloadUrl: primaryFile.url, filename: primaryFile.filename },
                 })
               }
             }
@@ -274,16 +243,11 @@ export function InstanceDetailsTab({
           console.error(`Failed to check updates for ${mod.name || mod.filename}:`, error)
         }
       }
-      
+
       setAvailableUpdates(updates)
     } catch (error) {
       console.error("Failed to check for updates:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('instanceDetails.errors.checkUpdatesTitle'),
-        message: t('instanceDetails.errors.checkUpdatesFailed', { error: String(error) }),
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('instanceDetails.errors.checkUpdatesTitle'), message: t('instanceDetails.errors.checkUpdatesFailed', { error: String(error) }), type: "danger" })
     } finally {
       setIsCheckingUpdates(false)
     }
@@ -293,35 +257,20 @@ export function InstanceDetailsTab({
     if (availableUpdates.length === 0) return
     
     setIsUpdatingMods(true)
-    let successCount = 0
-    let failCount = 0
-    
+
     for (const update of availableUpdates) {
       try {
-        await invoke("download_mod", {
-          instanceName: instance.name,
-          downloadUrl: update.latestVersion.downloadUrl,
-          filename: update.latestVersion.filename,
-        })
-        
+        await invoke("download_mod", { instanceName: instance.name, downloadUrl: update.latestVersion.downloadUrl, filename: update.latestVersion.filename })
         if (update.filename !== update.latestVersion.filename) {
-          try {
-            await invoke("delete_mod", {
-              instanceName: instance.name,
-              filename: update.filename
-            })
-          } catch (deleteError) {
-            console.error(`Failed to delete old version ${update.filename}:`, deleteError)
-          }
+          await invoke("delete_mod", { instanceName: instance.name, filename: update.filename }).catch(err =>
+            console.error(`Failed to delete old version ${update.filename}:`, err)
+          )
         }
-        
-        successCount++
       } catch (error) {
         console.error(`Failed to update mod ${update.filename}:`, error)
-        failCount++
       }
     }
-    
+
     setIsUpdatingMods(false)
     setAvailableUpdates([])
     
@@ -329,25 +278,16 @@ export function InstanceDetailsTab({
   }
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes >= 1024 * 1024) {
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-    }
-    if (bytes >= 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`
-    }
+    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`
     return `${bytes} B`
   }
 
   const formatPlaytime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
-    
-    if (hours > 0) {
-      return t('instanceDetails.playtime.hoursMinutes', { hours, minutes })
-    }
-    if (minutes > 0) {
-      return t('instanceDetails.playtime.minutes', { minutes })
-    }
+    if (hours > 0) return t('instanceDetails.playtime.hoursMinutes', { hours, minutes })
+    if (minutes > 0) return t('instanceDetails.playtime.minutes', { minutes })
     return t('instanceDetails.playtime.seconds', { seconds })
   }
 
@@ -362,9 +302,7 @@ export function InstanceDetailsTab({
     let hours = date.getHours()
     const minutes = String(date.getMinutes()).padStart(2, '0')
     const ampm = hours >= 12 ? 'PM' : 'AM'
-    hours = hours % 12
-    hours = hours ? hours : 12
-    
+    hours = hours % 12 || 12
     return `${year}-${month}-${day} at ${hours}:${minutes} ${ampm}`
   }
 
@@ -376,22 +314,13 @@ export function InstanceDetailsTab({
     if (instance.loader === "neoforge") {
       const versionPart = instance.version.replace('neoforge-', '')
       const parts = versionPart.split('-')
-      if (parts[0].startsWith('1.')) {
-        return parts[0]
-      }
-      
+      if (parts[0].startsWith('1.')) return parts[0]
       const versionNumbers = parts[0].split('.')
       if (versionNumbers.length >= 2) {
         const major = versionNumbers[0]
         const minor = versionNumbers[1]
         const patch = versionNumbers[2] || '0'
-        const majorNum = parseInt(major)
-        if (majorNum >= 20) {
-          if (patch === '0') {
-            return `1.${major}`
-          }
-          return `1.${major}.${minor}`
-        }
+        if (parseInt(major) >= 20) return patch === '0' ? `1.${major}` : `1.${major}.${minor}`
       }
     }
     return instance.version
@@ -400,9 +329,7 @@ export function InstanceDetailsTab({
   const getFabricLoaderVersion = (instance: Instance): string | null => {
     if (instance.loader === "fabric") {
       const parts = instance.version.split('-')
-      if (parts.length >= 2) {
-        return parts[parts.length - 2]
-      }
+      if (parts.length >= 2) return parts[parts.length - 2]
     }
     return null
   }
@@ -414,10 +341,7 @@ export function InstanceDetailsTab({
 
       const mcVersion = getMinecraftVersion(instance)
       const neoforgeVersionParts = parts.filter(part => part !== mcVersion)
-      
-      if (neoforgeVersionParts.length > 0) {
-        return neoforgeVersionParts.join('-')
-      }
+      if (neoforgeVersionParts.length > 0) return neoforgeVersionParts.join('-')
     }
     return null
   }
@@ -432,20 +356,12 @@ export function InstanceDetailsTab({
 
   const handleDeleteMod = async (filename: string) => {
     try {
-      await invoke("delete_mod", {
-        instanceName: instance.name,
-        filename
-      })
+      await invoke("delete_mod", { instanceName: instance.name, filename })
       await loadInstalledMods()
       setAvailableUpdates([])
     } catch (error) {
       console.error("Failed to delete mod:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('instanceDetails.errors.deleteModTitle'),
-        message: t('instanceDetails.errors.deleteModFailed', { error: String(error) }),
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('instanceDetails.errors.deleteModTitle'), message: t('instanceDetails.errors.deleteModFailed', { error: String(error) }), type: "danger" })
     }
   }
 
@@ -458,19 +374,11 @@ export function InstanceDetailsTab({
       onConfirm: async () => {
         setConfirmModal(null)
         try {
-          await invoke("delete_world", {
-            instanceName: instance.name,
-            folderName
-          })
+          await invoke("delete_world", { instanceName: instance.name, folderName })
           await loadWorlds()
         } catch (error) {
           console.error("Failed to delete world:", error)
-          setAlertModal({
-            isOpen: true,
-            title: t('instanceDetails.errors.deleteWorldTitle'),
-            message: t('instanceDetails.errors.deleteWorldFailed', { error: String(error) }),
-            type: "danger"
-          })
+          setAlertModal({ isOpen: true, title: t('instanceDetails.errors.deleteWorldTitle'), message: t('instanceDetails.errors.deleteWorldFailed', { error: String(error) }), type: "danger" })
         }
       }
     })
@@ -478,23 +386,11 @@ export function InstanceDetailsTab({
 
   const handleToggleMod = async (mod: InstalledMod) => {
     try {
-      await invoke("toggle_mod", {
-        instanceName: instance.name,
-        filename: mod.filename,
-        disable: !mod.disabled
-      })
+      await invoke("toggle_mod", { instanceName: instance.name, filename: mod.filename, disable: !mod.disabled })
       await loadInstalledMods()
     } catch (error) {
       console.error("Failed to toggle mod:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('instanceDetails.errors.toggleModTitle'),
-        message: t('instanceDetails.errors.toggleModFailed', { 
-          action: mod.disabled ? 'enable' : 'disable',
-          error: String(error) 
-        }),
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('instanceDetails.errors.toggleModTitle'), message: t('instanceDetails.errors.toggleModFailed', { action: mod.disabled ? 'enable' : 'disable', error: String(error) }), type: "danger" })
     }
   }
 
@@ -503,29 +399,16 @@ export function InstanceDetailsTab({
       await invoke("open_worlds_folder", { instanceName: instance.name })
     } catch (error) {
       console.error("Failed to open worlds folder:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('instanceDetails.errors.openWorldsFolderTitle'),
-        message: t('instanceDetails.errors.openWorldsFolderFailed', { error: String(error) }),
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('instanceDetails.errors.openWorldsFolderTitle'), message: t('instanceDetails.errors.openWorldsFolderFailed', { error: String(error) }), type: "danger" })
     }
   }
 
   const handleOpenWorldFolder = async (folderName: string) => {
     try {
-      await invoke("open_world_folder", {
-        instanceName: instance.name,
-        folderName
-      })
+      await invoke("open_world_folder", { instanceName: instance.name, folderName })
     } catch (error) {
       console.error("Failed to open world folder:", error)
-      setAlertModal({
-        isOpen: true,
-        title: t('instanceDetails.errors.openWorldFolderTitle'),
-        message: t('instanceDetails.errors.openWorldFolderFailed', { error: String(error) }),
-        type: "danger"
-      })
+      setAlertModal({ isOpen: true, title: t('instanceDetails.errors.openWorldFolderTitle'), message: t('instanceDetails.errors.openWorldFolderFailed', { error: String(error) }), type: "danger" })
     }
   }
 
@@ -541,56 +424,30 @@ export function InstanceDetailsTab({
 
   const fabricLoaderVersion = getFabricLoaderVersion(instance)
   const neoforgeVersion = getNeoForgeVersion(instance)
+  // Derived during render — no effect/state needed
   const modsWithProjectId = installedMods.filter(mod => mod.project_id && !mod.disabled).length
-
-  const filteredMods = installedMods.filter((mod) => {
+  const filteredMods = installedMods.filter(mod => {
     if (!modSearchQuery.trim()) return true
     const query = modSearchQuery.toLowerCase()
-    return (
-      (mod.name || mod.filename).toLowerCase().includes(query) ||
-      mod.filename.toLowerCase().includes(query)
-    )
+    return (mod.name || mod.filename).toLowerCase().includes(query) || mod.filename.toLowerCase().includes(query)
   })
-
-  const filteredWorlds = worlds.filter((world) => {
+  const filteredWorlds = worlds.filter(world => {
     if (!worldSearchQuery.trim()) return true
-    const query = worldSearchQuery.toLowerCase()
-    return world.name.toLowerCase().includes(query)
+    return world.name.toLowerCase().includes(worldSearchQuery.toLowerCase())
   })
 
   return (
     <>
       <style>{`
-        .blur-border {
-          position: relative;
-        }
-
+        .blur-border { position: relative; }
         .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
+          content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 2px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
+          -webkit-mask-composite: xor; mask-composite: exclude;
+          pointer-events: none; backdrop-filter: blur(8px); z-index: 10;
         }
-
-        .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
-        }
+        .blur-border:hover::before { background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08)); }
       `}</style>
       <div className="p-6 space-y-4">
         <div className="max-w-7xl mx-auto">
@@ -598,11 +455,7 @@ export function InstanceDetailsTab({
             <div className="flex-shrink-0">
               {instanceIcon ? (
                 <div className="w-16 h-16 rounded-md overflow-hidden bg-[#181a1f]">
-                  <img
-                    src={instanceIcon}
-                    alt={instance.name}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={instanceIcon} alt={instance.name} className="w-full h-full object-cover" />
                 </div>
               ) : (
                 <div className="w-16 h-16 rounded-md flex items-center justify-center bg-[#181a1f]">
@@ -626,19 +479,9 @@ export function InstanceDetailsTab({
                     {t('instanceDetails.minecraftVersion', { version: getMinecraftVersion(instance) })}
                     {" • "}
                     {instance.loader === "fabric" ? (
-                      <>
-                        <span className="text-[#3b82f6]">{t('instanceDetails.fabricLoader')}</span>
-                        {fabricLoaderVersion && (
-                          <span className="text-[#7d8590]"> {fabricLoaderVersion}</span>
-                        )}
-                      </>
+                      <><span className="text-[#3b82f6]">{t('instanceDetails.fabricLoader')}</span>{fabricLoaderVersion && <span className="text-[#7d8590]"> {fabricLoaderVersion}</span>}</>
                     ) : instance.loader === "neoforge" ? (
-                      <>
-                        <span className="text-[#f97316]">{t('common.loaders.neoforge')}</span>
-                        {neoforgeVersion && (
-                          <span className="text-[#7d8590]"> {neoforgeVersion}</span>
-                        )}
-                      </>
+                      <><span className="text-[#f97316]">{t('common.loaders.neoforge')}</span>{neoforgeVersion && <span className="text-[#7d8590]"> {neoforgeVersion}</span>}</>
                     ) : (
                       <span className="text-[#16a34a]">{t('common.loaders.vanilla')}</span>
                     )}
@@ -648,36 +491,18 @@ export function InstanceDetailsTab({
                   <button
                     onClick={onLaunch}
                     disabled={!isAuthenticated || isLaunching || isRunning}
-                    className={`px-6 py-2.5 rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer ${
-                      isLaunching || isRunning
-                        ? "bg-red-500/10 text-red-400"
-                        : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`px-6 py-2.5 rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer ${isLaunching || isRunning ? "bg-red-500/10 text-red-400" : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"} disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {isLaunching || isRunning ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                        <span>{t('instanceDetails.running')}</span>
-                      </>
+                      <><div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" /><span>{t('instanceDetails.running')}</span></>
                     ) : (
-                      <>
-                        <Play size={18} fill="currentColor" strokeWidth={0} />
-                        <span>{t('instanceDetails.play')}</span>
-                      </>
+                      <><Play size={18} fill="currentColor" strokeWidth={0} /><span>{t('instanceDetails.play')}</span></>
                     )}
                   </button>
-                  <button
-                    onClick={handleOpenFolder}
-                    className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
-                  >
-                    <FolderOpen size={16} />
-                    <span>{t('instanceDetails.openFolder')}</span>
+                  <button onClick={handleOpenFolder} className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer">
+                    <FolderOpen size={16} /><span>{t('instanceDetails.openFolder')}</span>
                   </button>
-                  <button
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
-                    title={t('instanceDetails.instanceSettings')}
-                  >
+                  <button onClick={() => setIsSettingsOpen(true)} className="px-4 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer" title={t('instanceDetails.instanceSettings')}>
                     <Settings size={18} />
                   </button>
                 </div>
@@ -685,58 +510,27 @@ export function InstanceDetailsTab({
             </div>
           </div>
 
-          <div className="border-t border-[#3a3f4b] my-6"></div>
+          <div className="border-t border-[#3a3f4b] my-6" />
 
           <div className="grid grid-cols-2 gap-0 relative">
+            {/* Mods column */}
             <div className="pr-6 border-r border-[#3a3f4b]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">{t('instanceDetails.installedMods')}</h2>
-                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
-                    {t('instanceDetails.modCount', { count: installedMods.length })}
-                  </span>
+                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">{t('instanceDetails.modCount', { count: installedMods.length })}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {(instance.loader === "fabric" || instance.loader === "neoforge") && modsWithProjectId > 0 && (
-                    <>
-                      {availableUpdates.length > 0 ? (
-                        <button
-                          onClick={updateAllMods}
-                          disabled={isUpdatingMods}
-                          className="flex items-center gap-1.5 px-2 py-0.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer"
-                        >
-                          {isUpdatingMods ? (
-                            <>
-                              <Loader2 size={14} className="animate-spin" />
-                              <span>{t('instanceDetails.updating')}</span>
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw size={14} />
-                              <span>{t('instanceDetails.updateAll', { count: availableUpdates.length })}</span>
-                            </>
-                          )}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={checkForUpdates}
-                          disabled={isCheckingUpdates}
-                          className="flex items-center gap-1.5 px-2 py-0.5 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded text-xs transition-colors cursor-pointer"
-                        >
-                          {isCheckingUpdates ? (
-                            <>
-                              <Loader2 size={14} className="animate-spin" />
-                              <span>{t('instanceDetails.checking')}</span>
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw size={14} />
-                              <span>{t('instanceDetails.checkForUpdates')}</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </>
+                    availableUpdates.length > 0 ? (
+                      <button onClick={updateAllMods} disabled={isUpdatingMods} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                        {isUpdatingMods ? <><Loader2 size={14} className="animate-spin" /><span>{t('instanceDetails.updating')}</span></> : <><RefreshCw size={14} /><span>{t('instanceDetails.updateAll', { count: availableUpdates.length })}</span></>}
+                      </button>
+                    ) : (
+                      <button onClick={checkForUpdates} disabled={isCheckingUpdates} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded text-xs transition-colors cursor-pointer">
+                        {isCheckingUpdates ? <><Loader2 size={14} className="animate-spin" /><span>{t('instanceDetails.checking')}</span></> : <><RefreshCw size={14} /><span>{t('instanceDetails.checkForUpdates')}</span></>}
+                      </button>
+                    )
                   )}
                 </div>
               </div>
@@ -745,28 +539,13 @@ export function InstanceDetailsTab({
               {installedMods.length > 0 && (
                 <div className="relative mb-3">
                   <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] pointer-events-none" />
-                  <input
-                    type="text"
-                    value={modSearchQuery}
-                    onChange={(e) => setModSearchQuery(e.target.value)}
-                    placeholder={t('instanceDetails.searchMods', 'Search mods...')}
-                    className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors"
-                  />
-                  {modSearchQuery && (
-                    <button
-                      onClick={() => setModSearchQuery("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
+                  <input type="text" value={modSearchQuery} onChange={(e) => setModSearchQuery(e.target.value)} placeholder={t('instanceDetails.searchMods', 'Search mods...')} className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors" />
+                  {modSearchQuery && <button onClick={() => setModSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"><X size={14} /></button>}
                 </div>
               )}
-              
+
               {isLoadingMods ? (
-                <div className="text-center py-16">
-                  <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
-                </div>
+                <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
               ) : installedMods.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
@@ -784,22 +563,11 @@ export function InstanceDetailsTab({
                     const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
                     
                     return (
-                      <div
-                        key={mod.filename}
-                        className={`blur-border bg-[#22252b] rounded-md overflow-hidden transition-all ${
-                          mod.disabled ? 'opacity-60' : ''
-                        } ${hasUpdate ? 'ring-2 ring-[#4572e3]/50' : ''}`}
-                      >
+                      <div key={mod.filename} className={`blur-border bg-[#22252b] rounded-md overflow-hidden transition-all ${mod.disabled ? 'opacity-60' : ''} ${hasUpdate ? 'ring-2 ring-[#4572e3]/50' : ''}`}>
                         <div className="flex min-h-0">
                           {mod.icon_url ? (
                             <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
-                              <img
-                                src={mod.icon_url}
-                                alt={mod.name || mod.filename}
-                                className={`w-full h-full object-contain ${
-                                  mod.disabled ? 'grayscale' : ''
-                                }`}
-                              />
+                              <img src={mod.icon_url} alt={mod.name || mod.filename} className={`w-full h-full object-contain ${mod.disabled ? 'grayscale' : ''}`} />
                             </div>
                           ) : (
                             <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
@@ -809,47 +577,19 @@ export function InstanceDetailsTab({
                           <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-base text-[#e6e6e6] truncate">
-                                  {mod.name || mod.filename}
-                                </h3>
-                                {hasUpdate && (
-                                  <span className="px-1.5 py-0.5 bg-[#4572e3] text-white text-xs rounded font-medium">
-                                    {t('instanceDetails.updateBadge')}
-                                  </span>
-                                )}
+                                <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{mod.name || mod.filename}</h3>
+                                {hasUpdate && <span className="px-1.5 py-0.5 bg-[#4572e3] text-white text-xs rounded font-medium">{t('instanceDetails.updateBadge')}</span>}
                               </div>
                               <p className="text-sm text-[#7d8590] truncate">{mod.filename}</p>
                               <p className="text-sm text-[#3a3f4b] mt-0.5">{formatFileSize(mod.size)}</p>
                             </div>
                             <div className="flex flex-col items-center gap-1">
-                              <button
-                                onClick={() => handleToggleMod(mod)}
-                                className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${
-                                  mod.disabled 
-                                    ? 'bg-[#3a3f4b] border-[#3a3f4b]' 
-                                    : 'bg-[#16a34a] border-[#16a34a]'
-                                }`}
-                              >
-                                <svg
-                                  width="12"
-                                  height="12"
-                                  viewBox="0 0 12 12"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    d="M10 3L4.5 8.5L2 6"
-                                    stroke={mod.disabled ? '#7d8590' : '#0f1115'}
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
+                              <button onClick={() => handleToggleMod(mod)} className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${mod.disabled ? 'bg-[#3a3f4b] border-[#3a3f4b]' : 'bg-[#16a34a] border-[#16a34a]'}`}>
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                  <path d="M10 3L4.5 8.5L2 6" stroke={mod.disabled ? '#7d8590' : '#0f1115'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                 </svg>
                               </button>
-                              <button
-                                onClick={() => handleDeleteMod(mod.filename)}
-                                className="p-1.5 mt-1 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer"
-                              >
+                              <button onClick={() => handleDeleteMod(mod.filename)} className="p-1.5 mt-1 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer">
                                 <Trash2 size={16} />
                               </button>
                             </div>
@@ -866,43 +606,23 @@ export function InstanceDetailsTab({
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">{t('instanceDetails.worlds')}</h2>
-                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">
-                    {t('instanceDetails.worldCount', { count: worlds.length })}
-                  </span>
+                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">{t('instanceDetails.worldCount', { count: worlds.length })}</span>
                 </div>
-                <button
-                  onClick={handleOpenWorldsFolder}
-                  className="flex items-center gap-1.5 text-sm text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
-                >
-                  <ExternalLink size={14} />
-                  <span>{t('instanceDetails.openFolder')}</span>
+                <button onClick={handleOpenWorldsFolder} className="flex items-center gap-1.5 text-sm text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer">
+                  <ExternalLink size={14} /><span>{t('instanceDetails.openFolder')}</span>
                 </button>
               </div>
+
               {worlds.length > 0 && (
                 <div className="relative mb-3">
                   <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] pointer-events-none" />
-                  <input
-                    type="text"
-                    value={worldSearchQuery}
-                    onChange={(e) => setWorldSearchQuery(e.target.value)}
-                    placeholder={t('instanceDetails.searchWorlds', 'Search worlds...')}
-                    className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors"
-                  />
-                  {worldSearchQuery && (
-                    <button
-                      onClick={() => setWorldSearchQuery("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
+                  <input type="text" value={worldSearchQuery} onChange={(e) => setWorldSearchQuery(e.target.value)} placeholder={t('instanceDetails.searchWorlds', 'Search worlds...')} className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors" />
+                  {worldSearchQuery && <button onClick={() => setWorldSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"><X size={14} /></button>}
                 </div>
               )}
-              
+
               {isLoadingWorlds ? (
-                <div className="text-center py-16">
-                  <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" />
-                </div>
+                <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
               ) : worlds.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
@@ -917,18 +637,11 @@ export function InstanceDetailsTab({
               ) : (
                 <div className="space-y-3">
                   {filteredWorlds.map((world) => (
-                    <div
-                      key={world.folder_name}
-                      className="blur-border bg-[#22252b] rounded-md overflow-hidden transition-all"
-                    >
+                    <div key={world.folder_name} className="blur-border bg-[#22252b] rounded-md overflow-hidden transition-all">
                       <div className="flex min-h-0">
                         {world.icon ? (
                           <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
-                            <img 
-                              src={world.icon} 
-                              alt={world.name} 
-                              className="w-full h-full object-contain"
-                            />
+                            <img src={world.icon} alt={world.name} className="w-full h-full object-contain" />
                           </div>
                         ) : (
                           <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
@@ -937,36 +650,16 @@ export function InstanceDetailsTab({
                         )}
                         <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base text-[#e6e6e6] truncate">
-                              {world.name}
-                            </h3>
-                            <p className="text-xs text-[#7d8590] mt-0.5">
-                              {t('instanceDetails.created', { date: formatDate(world.created) })}
-                            </p>
+                            <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{world.name}</h3>
+                            <p className="text-xs text-[#7d8590] mt-0.5">{t('instanceDetails.created', { date: formatDate(world.created) })}</p>
                             <div className="flex items-center gap-2 text-sm text-[#7d8590] mt-0.5">
                               <span>{formatFileSize(world.size)}</span>
-                              {world.game_mode && (
-                                <>
-                                  <span>•</span>
-                                  <span className="capitalize">{world.game_mode}</span>
-                                </>
-                              )}
+                              {world.game_mode && <><span>•</span><span className="capitalize">{world.game_mode}</span></>}
                             </div>
                           </div>
                           <div className="flex flex-col items-end gap-1">
-                            <button
-                              onClick={() => handleOpenWorldFolder(world.folder_name)}
-                              className="p-1.5 hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded-md transition-all cursor-pointer"
-                            >
-                              <FolderOpen size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteWorld(world.folder_name, world.name)}
-                              className="p-1.5 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer"
-                              title={t('instanceDetails.deleteWorld')}
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded-md transition-all cursor-pointer"><FolderOpen size={16} /></button>
+                            <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer" title={t('instanceDetails.deleteWorld')}><Trash2 size={16} /></button>
                           </div>
                         </div>
                       </div>
@@ -979,35 +672,14 @@ export function InstanceDetailsTab({
         </div>
       </div>
 
-      <InstanceSettingsModal
-        isOpen={isSettingsOpen}
-        instance={instance}
-        instanceIcon={instanceIcon}
-        onClose={() => setIsSettingsOpen(false)}
-        onInstanceUpdated={handleInstanceUpdated}
-        onInstanceDeleted={handleInstanceDeleted}
-      />
+      <InstanceSettingsModal isOpen={isSettingsOpen} instance={instance} instanceIcon={instanceIcon} onClose={() => setIsSettingsOpen(false)} onInstanceUpdated={handleInstanceUpdated} onInstanceDeleted={handleInstanceDeleted} />
 
       {confirmModal && (
-        <ConfirmModal
-          isOpen={confirmModal.isOpen}
-          title={confirmModal.title}
-          message={confirmModal.message}
-          type={confirmModal.type}
-          confirmText={confirmModal.type === "danger" ? t('common.actions.delete') : t('common.actions.confirm')}
-          onConfirm={confirmModal.onConfirm}
-          onCancel={() => setConfirmModal(null)}
-        />
+        <ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} type={confirmModal.type} confirmText={confirmModal.type === "danger" ? t('common.actions.delete') : t('common.actions.confirm')} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal(null)} />
       )}
 
       {alertModal && (
-        <AlertModal
-          isOpen={alertModal.isOpen}
-          title={alertModal.title}
-          message={alertModal.message}
-          type={alertModal.type}
-          onClose={() => setAlertModal(null)}
-        />
+        <AlertModal isOpen={alertModal.isOpen} title={alertModal.title} message={alertModal.message} type={alertModal.type} onClose={() => setAlertModal(null)} />
       )}
     </>
   )
