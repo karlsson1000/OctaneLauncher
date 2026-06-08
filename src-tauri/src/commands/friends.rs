@@ -123,11 +123,10 @@ pub async fn register_user_in_friends_system(app_handle: tauri::AppHandle) -> Re
         .map_err(|e| e.to_string())
 }
 
-pub async fn update_specific_user_status(user_uuid: String, status: String, current_instance: Option<String>, supabase_url: &str, supabase_key: &str) -> Result<(), String> {
-    let service = match FriendsService::new(supabase_url, supabase_key) {
-        Ok(s) => s,
-        Err(e) => return Err(e.to_string()),
-    };
+#[tauri::command]
+pub async fn update_specific_user_status(user_uuid: String, status: String, current_instance: Option<String>, app_handle: tauri::AppHandle) -> Result<(), String> {
+    let config = app_handle.state::<AppConfig>();
+    let service = get_friends_service(&config)?;
 
     let friend_status = match status.as_str() {
         "online" => FriendStatus::Online,

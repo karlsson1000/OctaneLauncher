@@ -29,6 +29,7 @@ use commands::{
     remove_friend,
     update_user_status,
     register_user_in_friends_system,
+    update_specific_user_status,
     create_instance,
     get_instances,
     delete_instance,
@@ -271,14 +272,14 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if matches!(
-                event,
-                tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed
-            ) {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+
                 let app_handle = window.app_handle();
                 let config = app_handle.state::<AppConfig>();
                 let supabase_url = config.supabase_url.clone();
                 let supabase_key = config.supabase_key.clone();
+                let window = window.clone();
 
                 tauri::async_runtime::spawn(async move {
                     let accounts = AccountManager::get_all_accounts()
@@ -296,6 +297,7 @@ pub fn run() {
                             }
                         }
                     }
+                    let _ = window.destroy();
                 });
             }
         })
@@ -319,6 +321,7 @@ pub fn run() {
             get_friends,
             remove_friend,
             update_user_status,
+            update_specific_user_status,
             register_user_in_friends_system,
             upload_skin,
             reset_skin,

@@ -920,15 +920,11 @@ impl InstanceManager {
         let supabase_url = config.supabase_url.clone();
         let supabase_key = config.supabase_key.clone();
         tauri::async_runtime::spawn(async move {
-            if let Err(e) = crate::commands::friends::update_specific_user_status(
-                launching_uuid.clone(),
-                "ingame".to_string(),
-                Some(instance_name_for_status),
-                &supabase_url,
-                &supabase_key,
-            ).await {
-                eprintln!("Failed to update status to ingame: {}", e);
-            }
+            let service = match crate::services::friends::FriendsService::new(&supabase_url, &supabase_key) {
+                Ok(s) => s,
+                Err(_) => return,
+            };
+            let _ = service.update_status(&launching_uuid, crate::models::FriendStatus::InGame, Some(instance_name_for_status)).await;
         });
 
         if let Some(stdout) = child.stdout.take() {
@@ -1043,15 +1039,11 @@ impl InstanceManager {
             let supabase_url = config.supabase_url.clone();
             let supabase_key = config.supabase_key.clone();
             tauri::async_runtime::spawn(async move {
-                if let Err(e) = crate::commands::friends::update_specific_user_status(
-                    launching_uuid.clone(),
-                    "online".to_string(),
-                    None,
-                    &supabase_url,
-                    &supabase_key,
-                ).await {
-                    eprintln!("Failed to update status to online: {}", e);
-                }
+                let service = match crate::services::friends::FriendsService::new(&supabase_url, &supabase_key) {
+                    Ok(s) => s,
+                    Err(_) => return,
+                };
+                let _ = service.update_status(&launching_uuid, crate::models::FriendStatus::Online, None).await;
             });
             
             let _ = app_handle_clone.emit("instance-exited", serde_json::json!({
