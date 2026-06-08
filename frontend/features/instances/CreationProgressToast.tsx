@@ -144,7 +144,7 @@ export function CreationProgressToast({
           }
         }, 5000)
 
-        errorTimerRef.current = watchdogInterval as any
+        errorTimerRef.current = watchdogInterval
 
       } catch (error) {
         console.error(`[ProgressToast] Failed to set up listeners:`, error)
@@ -165,7 +165,7 @@ export function CreationProgressToast({
         clearTimeout(completionTimerRef.current)
       }
       if (errorTimerRef.current) {
-        clearInterval(errorTimerRef.current as any)
+        clearInterval(errorTimerRef.current)
       }
       
       // Unlisten from all events

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Search, Download, Loader2, Package, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, Check } from "lucide-react"
-import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion } from "../../types"
+import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion, ModrinthProjectDetails } from "../../types"
 
 interface ModpacksTabProps {
   instances: Instance[]
@@ -76,7 +76,7 @@ export function ModpacksTab({
 
   const loadCustomModpack = async () => {
     try {
-      const projectDetails = await invoke<any>("get_project_details", {
+      const projectDetails = await invoke<ModrinthProjectDetails>("get_project_details", {
         idOrSlug: CUSTOM_MODPACK_SLUG,
       })
 
@@ -245,19 +245,19 @@ export function ModpacksTab({
 
   const loadModpackGallery = async (projectId: string) => {
     try {
-      const projectDetails = await invoke<any>("get_project_details", {
+      const projectDetails = await invoke<ModrinthProjectDetails>("get_project_details", {
         idOrSlug: projectId,
       })
       
       if (projectDetails.gallery && projectDetails.gallery.length > 0) {
         const sortedGallery = projectDetails.gallery
-          .map((img: any) => ({
-            url: img.url || img,
-            featured: img.featured || false,
+          .map((img) => ({
+            url: img.url,
+            featured: img.featured,
             title: (img.title || '').toLowerCase(),
             description: (img.description || '').toLowerCase(),
           }))
-          .sort((a: any, b: any) => {
+          .sort((a, b) => {
             if (a.featured && !b.featured) return -1
             if (!a.featured && b.featured) return 1
             
@@ -273,7 +273,7 @@ export function ModpacksTab({
             
             return 0
           })
-          .map((img: any) => img.url)
+          .map((img) => img.url)
         
         setModpackGalleries(prev => ({ ...prev, [projectId]: sortedGallery }))
       }

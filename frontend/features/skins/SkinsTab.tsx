@@ -5,7 +5,7 @@ import type { CachedSkin, RecentSkin, Cape } from "../../types"
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
   isAuthenticated?: boolean
-  invoke?: (command: string, args?: any) => Promise<any>
+  invoke?: <T>(command: string, args?: Record<string, unknown>) => Promise<T>
 }
 
 export function SkinsTab(props: SkinsTabProps) {
@@ -37,7 +37,7 @@ export function SkinsTab(props: SkinsTabProps) {
   const loadRecentSkins = async () => {
     if (!activeAccount || !invoke) return
     try {
-      const result = await invoke("load_recent_skins", { accountUuid: activeAccount.uuid })
+      const result = await invoke<RecentSkin[]>("load_recent_skins", { accountUuid: activeAccount.uuid })
       setRecentSkins(Array.isArray(result) ? result : [])
     } catch { setRecentSkins([]) }
   }
@@ -47,7 +47,7 @@ export function SkinsTab(props: SkinsTabProps) {
     const newSkin: RecentSkin = { url, variant, timestamp: Date.now() }
     setRecentSkins(prev => [newSkin, ...prev.filter(s => s.url !== url)].slice(0, 3))
     try {
-      await invoke("save_recent_skin", { accountUuid: activeAccount.uuid, skinUrl: url, variant })
+      await invoke<void>("save_recent_skin", { accountUuid: activeAccount.uuid, skinUrl: url, variant })
     } catch { console.error("Failed to save recent skin") }
   }
 
@@ -94,7 +94,7 @@ export function SkinsTab(props: SkinsTabProps) {
         return
       }
       lastProfileFetchRef.current = now
-      const skinData = await invoke("get_current_skin")
+      const skinData = await invoke<{ url: string; variant: string }>("get_current_skin")
       if (skinData && skinData.url) {
         const variant = skinData.variant === "slim" ? "slim" : "classic"
         const match = skinData.url.match(/texture\/([a-f0-9]+)/)
@@ -128,7 +128,7 @@ export function SkinsTab(props: SkinsTabProps) {
     if (!invoke || !isAuthenticated) return
     try {
       setLoadingCapes(true)
-      const capeData = await invoke("get_user_capes")
+      const capeData = await invoke<{ capes: Cape[] }>("get_user_capes")
       if (capeData && capeData.capes) {
         setCapes(capeData.capes)
         const active = capeData.capes.find((cape: Cape) => cape.state === "ACTIVE")
@@ -140,7 +140,7 @@ export function SkinsTab(props: SkinsTabProps) {
   const handleCapeSelect = async (capeId: string) => {
     if (!invoke) return
     try {
-      await invoke("equip_cape", { capeId })
+      await invoke<void>("equip_cape", { capeId })
       setActiveCape(capeId)
       handleCloseCapeModal()
     } catch (err) { setError(`Failed to equip cape: ${err}`) }
@@ -149,7 +149,7 @@ export function SkinsTab(props: SkinsTabProps) {
   const handleCapeRemove = async () => {
     if (!invoke) return
     try {
-      await invoke("remove_cape")
+      await invoke<void>("remove_cape")
       setActiveCape(null)
       handleCloseCapeModal()
     } catch (err) { setError(`Failed to remove cape: ${err}`) }
@@ -169,7 +169,7 @@ export function SkinsTab(props: SkinsTabProps) {
       setUploading(true)
       setError(null)
       try {
-        const result = await invoke("upload_skin", { skinData: base64, variant: skinVariant })
+        const result = await invoke<{ url: string; variant: string }>("upload_skin", { skinData: base64, variant: skinVariant })
         if (result && result.url) {
           const match = result.url.match(/texture\/([a-f0-9]+)/)
           if (match) { setCurrentSkinHash(match[1]) }
@@ -191,7 +191,7 @@ export function SkinsTab(props: SkinsTabProps) {
     setResetting(true)
     setError(null)
     try {
-      await invoke("reset_skin")
+      await invoke<void>("reset_skin")
       if (activeAccount) skinCacheRef.current.delete(activeAccount.uuid)
       setTimeout(() => loadUserSkin(false), 2000)
     } catch (err) { setError(`Reset failed: ${err}`) } finally { setResetting(false) }
@@ -210,7 +210,7 @@ export function SkinsTab(props: SkinsTabProps) {
         reader.onerror = reject
         reader.readAsDataURL(blob)
       })
-      const result = await invoke("upload_skin", { skinData: base64, variant: skin.variant })
+      const result = await invoke<{ url: string; variant: string }>("upload_skin", { skinData: base64, variant: skin.variant })
       if (result && result.url) {
         const match = result.url.match(/texture\/([a-f0-9]+)/)
         if (match) { setCurrentSkinHash(match[1]) }

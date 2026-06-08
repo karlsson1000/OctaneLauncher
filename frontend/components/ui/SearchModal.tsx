@@ -11,20 +11,22 @@ interface SearchResult {
   keywords?: string[]
 }
 
+import type { Instance } from "../../types"
+
 interface GlobalSearchModalProps {
   isOpen: boolean
   onClose: () => void
-  instances: any[]
-  onNavigateToInstance: (instance: any) => void
+  instances: Instance[]
+  onNavigateToInstance: (instance: Instance) => void
   onNavigateToTab: (tab: string) => void
   onOpenSettings: () => void
   isAuthenticated?: boolean
   onCreateInstance?: () => void
   onAddAccount?: () => void
-  onLaunchInstance?: (instance: any) => void
-  onOpenInstanceFolder?: (instance: any) => void
-  onExportInstance?: (instance: any) => void
-  onDuplicateInstance?: (instance: any) => void
+  onLaunchInstance?: (instance: Instance) => void
+  onOpenInstanceFolder?: (instance: Instance) => void
+  onExportInstance?: (instance: Instance) => void
+  onDuplicateInstance?: (instance: Instance) => void
   onDeleteInstance?: (instanceName: string) => void
   onAddServer?: () => void
 }
@@ -318,7 +320,7 @@ export function GlobalSearchModal({
         handleClose()
       },
       category: "Instances",
-      keywords: [instance.name.toLowerCase(), instance.version, instance.loader, "instance", "minecraft", "play", "launch"]
+      keywords: [instance.name.toLowerCase(), instance.version, "instance", "minecraft", "play", "launch", ...(instance.loader ? [instance.loader] : [])]
     })),
     ...instances.map(instance => ({
       type: "action" as const,

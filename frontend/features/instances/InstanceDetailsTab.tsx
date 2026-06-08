@@ -3,7 +3,7 @@ import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Tras
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "../../components/ui/ConfirmModal"
 import { InstanceSettingsModal } from "./InstanceSettingsModal"
-import type { Instance } from "../../types"
+import type { Instance, ModrinthSearchResult, ModrinthVersion, ModrinthFile } from "../../types"
 
 interface InstalledMod {
   filename: string
@@ -142,11 +142,11 @@ export function InstanceDetailsTab({
             if (!slug) return { ...mod, disabled: isDisabled }
 
             const facets = JSON.stringify([["project_type:mod"]])
-            const result = await invoke<any>("search_mods", { query: slug, facets, index: "relevance", offset: 0, limit: 20 })
+            const result = await invoke<ModrinthSearchResult>("search_mods", { query: slug, facets, index: "relevance", offset: 0, limit: 20 })
 
             if (result.hits && result.hits.length > 0) {
               const slugNormalized = slug.replace(/[-_\s]/g, '').toLowerCase()
-              const bestMatch = result.hits.find((hit: any) => {
+              const bestMatch = result.hits.find((hit) => {
                 const hitSlug = hit.slug.toLowerCase().replace(/[-_\s]/g, '')
                 const hitTitle = hit.title.toLowerCase().replace(/[-_\s]/g, '')
                 return hitSlug === slugNormalized || hitTitle === slugNormalized
@@ -155,21 +155,21 @@ export function InstanceDetailsTab({
               if (bestMatch) {
                 const mcVersion = getMinecraftVersion(instance)
                 try {
-                  const versions = await invoke<any[]>("get_mod_versions", {
+                  const versions = await invoke<ModrinthVersion[]>("get_mod_versions", {
                     idOrSlug: bestMatch.project_id,
                     loaders: [instance.loader],
                     gameVersions: [mcVersion],
                   })
 
                   if (versions && versions.length > 0) {
-                    const currentVersion = versions.find((v: any) =>
-                      v.files.some((f: any) => f.filename === actualFilename)
+                    const currentVersion = versions.find((v) =>
+                      v.files.some((f: ModrinthFile) => f.filename === actualFilename)
                     )
                     
                     return {
                       ...mod, disabled: isDisabled,
                       name: bestMatch.title, description: bestMatch.description,
-                      icon_url: bestMatch.icon_url, downloads: bestMatch.downloads,
+                  icon_url: bestMatch.icon_url ?? undefined, downloads: bestMatch.downloads,
                       author: bestMatch.author, project_id: bestMatch.project_id,
                       current_version_id: currentVersion?.id,
                     }
@@ -181,7 +181,7 @@ export function InstanceDetailsTab({
                 return {
                   ...mod, disabled: isDisabled,
                   name: bestMatch.title, description: bestMatch.description,
-                  icon_url: bestMatch.icon_url, downloads: bestMatch.downloads,
+                  icon_url: bestMatch.icon_url ?? undefined, downloads: bestMatch.downloads,
                   author: bestMatch.author, project_id: bestMatch.project_id,
                 }
               }
@@ -215,7 +215,7 @@ export function InstanceDetailsTab({
         if (!mod.project_id || !mod.current_version_id || mod.disabled) continue
 
         try {
-          const versions = await invoke<any[]>("get_mod_versions", {
+          const versions = await invoke<ModrinthVersion[]>("get_mod_versions", {
             idOrSlug: mod.project_id,
             loaders: [instance.loader],
             gameVersions: [mcVersion],
@@ -225,7 +225,7 @@ export function InstanceDetailsTab({
             const latestVersion = versions[0]
             
             if (latestVersion.id !== mod.current_version_id) {
-              const primaryFile = latestVersion.files.find((f: any) => f.primary) || latestVersion.files[0]
+              const primaryFile = latestVersion.files.find((f: ModrinthFile) => f.primary) || latestVersion.files[0]
               
               if (primaryFile) {
                 updates.push({

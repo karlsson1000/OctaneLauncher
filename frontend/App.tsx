@@ -18,6 +18,7 @@ import { ConfirmModal, AlertModal } from "./components/ui/ConfirmModal"
 import { ScreenshotsTab } from "./features/screenshots/ScreenshotsTab"
 import { Sidebar } from "./components/layout/Sidebar"
 import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } from "./types"
+import type { CSSProperties } from "react"
 
 function App() {
   const [isReady, setIsReady] = useState(false)
@@ -65,6 +66,9 @@ function App() {
   const [isInstallingUpdate, setIsInstallingUpdate] = useState(false)
 
   const appWindow = getCurrentWindow()
+
+  const dragRegion = { WebkitAppRegion: 'drag' as const } as CSSProperties
+  const noDragRegion = { WebkitAppRegion: 'no-drag' as const } as CSSProperties
 
   const pushToHistory = (tab: typeof activeTab, showDetails: boolean, instance: Instance | null) => {
     if (isNavigating) return
@@ -447,7 +451,7 @@ function App() {
     <div className="flex flex-col h-screen bg-[#181a1f] text-[#e6e6e6] overflow-hidden font-sans">
       <div
         data-tauri-drag-region
-        style={{ userSelect: 'none', WebkitAppRegion: 'drag' } as any}
+        style={{ userSelect: 'none', ...dragRegion } as CSSProperties}
         className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center"
       >
         <div className="flex items-center gap-2 ml-4 mr-4">
@@ -455,7 +459,7 @@ function App() {
           <span className="text-sm font-semibold text-[#e6e6e6]">Octane Launcher</span>
         </div>
 
-        <div className="flex items-center gap-1 mr-4" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center gap-1 mr-4" style={noDragRegion}>
           <button
             onClick={navigateBack}
             disabled={historyIndex <= 0}
@@ -476,8 +480,8 @@ function App() {
           </button>
         </div>
 
-        <div className="flex-1 flex items-center justify-center" style={{ WebkitAppRegion: 'drag' } as any}>
-          <nav className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex-1 flex items-center justify-center" style={dragRegion}>
+          <nav className="flex items-center gap-1" style={noDragRegion}>
             {tabs.map((tab) => {
               const Icon = tab.icon
               return (
@@ -496,7 +500,7 @@ function App() {
           </nav>
         </div>
 
-        <div className="flex items-center ml-auto relative" style={{ WebkitAppRegion: 'no-drag' } as any}>
+        <div className="flex items-center ml-auto relative" style={noDragRegion}>
           {updateInfo && (
             <div className="relative">
               <button
@@ -525,7 +529,7 @@ function App() {
           >
             <Settings size={16} strokeWidth={1.5} />
           </button>
-          <div className="w-px h-6 bg-[#3a3f4b] mx-2" style={{ pointerEvents: 'none' } as any} />
+          <div className="w-px h-6 bg-[#3a3f4b] mx-2" style={{ pointerEvents: 'none' } as CSSProperties} />
           <button onClick={() => appWindow.minimize()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors">
             <Minus size={16} strokeWidth={1.5} />
           </button>
