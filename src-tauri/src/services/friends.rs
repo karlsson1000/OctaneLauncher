@@ -9,14 +9,11 @@ pub struct FriendsService {
 }
 
 impl FriendsService {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let supabase_url = env!("SUPABASE_URL").to_string();
-        let supabase_key = env!("SUPABASE_SERVICE_KEY").to_string();
-
+    pub fn new(supabase_url: &str, supabase_key: &str) -> Result<Self, Box<dyn std::error::Error>> {
         Ok(Self {
             client: reqwest::Client::new(),
-            supabase_url,
-            supabase_key,
+            supabase_url: supabase_url.to_string(),
+            supabase_key: supabase_key.to_string(),
         })
     }
 

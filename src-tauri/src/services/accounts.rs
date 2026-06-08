@@ -146,7 +146,7 @@ impl AccountManager {
         Ok(())
     }
 
-    pub async fn get_valid_token(uuid: &str) -> Result<String, Box<dyn std::error::Error>> {
+    pub async fn get_valid_token(uuid: &str, client_id: &str) -> Result<String, Box<dyn std::error::Error>> {
         let data = Self::load_accounts()?;
         let account = data
             .accounts
@@ -161,7 +161,7 @@ impl AccountManager {
             return Ok(account.access_token);
         }
         
-        let authenticator = crate::auth::Authenticator::new()?;
+        let authenticator = crate::auth::Authenticator::new(client_id)?;
         let refreshed = authenticator.refresh_tokens(&account.refresh_token).await?;
         
         Self::update_account_tokens(

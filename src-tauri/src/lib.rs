@@ -11,7 +11,8 @@ use std::sync::Arc;
 use tauri_plugin_updater::UpdaterExt;
 use services::accounts::AccountManager;
 use services::friends::FriendsService;
-use models::FriendStatus;
+use models::{AppConfig, FriendStatus};
+use tauri_plugin_store::StoreExt;
 
 use commands::{
     microsoft_login,
@@ -27,7 +28,6 @@ use commands::{
     get_friends,
     remove_friend,
     update_user_status,
-    update_specific_user_status,
     register_user_in_friends_system,
     create_instance,
     get_instances,
@@ -192,8 +192,35 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .manage(discord_rpc.clone())
         .setup(move |app| {
+            let store = app.store("secrets.json")?;
+
+            let microsoft_client_id = store
+                .get("microsoft_client_id")
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .or_else(|| std::env::var("MICROSOFT_CLIENT_ID").ok())
+                .expect("MICROSOFT_CLIENT_ID must be set in .env file or store");
+
+            let supabase_url = store
+                .get("supabase_url")
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .or_else(|| std::env::var("SUPABASE_URL").ok())
+                .expect("SUPABASE_URL must be set in .env file or store");
+
+            let supabase_key = store
+                .get("supabase_key")
+                .and_then(|v| v.as_str().map(|s| s.to_string()))
+                .or_else(|| std::env::var("SUPABASE_SERVICE_KEY").ok())
+                .expect("SUPABASE_SERVICE_KEY must be set in .env file or store");
+
+            app.manage(AppConfig {
+                microsoft_client_id,
+                supabase_url,
+                supabase_key,
+            });
+
             use crate::services::settings::SettingsManager;
             let should_enable_rpc = SettingsManager::load()
                 .map(|s| s.discord_rpc_enabled)
@@ -206,15 +233,18 @@ pub fn run() {
 
             Ok(())
         })
-        .on_window_event(|_window, event| {
+        .on_window_event(|window, event| {
             if matches!(
                 event,
                 tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed
             ) {
+                let app_handle = window.app_handle();
+                let config = app_handle.state::<AppConfig>();
+
                 if let Ok(runtime) = tokio::runtime::Runtime::new() {
                     runtime.block_on(async {
                         if let Ok(accounts) = AccountManager::get_all_accounts() {
-                            if let Ok(service) = FriendsService::new() {
+                            if let Ok(service) = FriendsService::new(&config.supabase_url, &config.supabase_key) {
                                 for account in &accounts {
                                     let _ = service
                                         .update_status(&account.uuid, FriendStatus::Offline, None)
@@ -222,8 +252,6 @@ pub fn run() {
                                 }
                             }
                         }
-
-
                     });
                 }
             }
@@ -248,7 +276,6 @@ pub fn run() {
             get_friends,
             remove_friend,
             update_user_status,
-            update_specific_user_status,
             register_user_in_friends_system,
             upload_skin,
             reset_skin,

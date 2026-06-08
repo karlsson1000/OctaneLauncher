@@ -25,11 +25,9 @@ pub struct Authenticator {
 }
 
 impl Authenticator {
-    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let client_id = env!("MICROSOFT_CLIENT_ID").to_string();
-
+    pub fn new(client_id: &str) -> Result<Self, Box<dyn std::error::Error>> {
         let oauth_client = BasicClient::new(
-            ClientId::new(client_id),
+            ClientId::new(client_id.to_string()),
             None,
             AuthUrl::new(AUTH_URL.to_string()).unwrap(),
             Some(TokenUrl::new(TOKEN_URL.to_string()).unwrap()),

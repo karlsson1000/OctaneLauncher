@@ -1,14 +1,16 @@
 use crate::auth::Authenticator;
 use crate::services::accounts::AccountManager;
-use crate::models::{AuthResponse, AccountInfo};
+use crate::models::{AppConfig, AuthResponse, AccountInfo};
+use tauri::Manager;
 
-fn make_authenticator() -> Result<Authenticator, String> {
-    Authenticator::new().map_err(|e| e.to_string())
+fn make_authenticator(client_id: &str) -> Result<Authenticator, String> {
+    Authenticator::new(client_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn microsoft_login() -> Result<AuthResponse, String> {
-    make_authenticator()?
+pub async fn microsoft_login(app_handle: tauri::AppHandle) -> Result<AuthResponse, String> {
+    let config = app_handle.state::<AppConfig>();
+    make_authenticator(&config.microsoft_client_id)?
         .authenticate()
         .await
         .map_err(|e| e.to_string())
@@ -48,8 +50,9 @@ pub async fn remove_account(uuid: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn microsoft_login_and_store() -> Result<AccountInfo, String> {
-    let auth_response = make_authenticator()?
+pub async fn microsoft_login_and_store(app_handle: tauri::AppHandle) -> Result<AccountInfo, String> {
+    let config = app_handle.state::<AppConfig>();
+    let auth_response = make_authenticator(&config.microsoft_client_id)?
         .authenticate()
         .await
         .map_err(|e| e.to_string())?;
@@ -87,20 +90,22 @@ pub async fn microsoft_login_and_store() -> Result<AccountInfo, String> {
 }
 
 #[tauri::command]
-pub async fn get_launch_token() -> Result<String, String> {
+pub async fn get_launch_token(app_handle: tauri::AppHandle) -> Result<String, String> {
+    let config = app_handle.state::<AppConfig>();
     let active = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account")?;
 
-    AccountManager::get_valid_token(&active.uuid)
+    AccountManager::get_valid_token(&active.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub async fn refresh_account_token(uuid: String) -> Result<(), String> {
+pub async fn refresh_account_token(uuid: String, app_handle: tauri::AppHandle) -> Result<(), String> {
     crate::commands::validation::validate_uuid(&uuid)?;
-    AccountManager::get_valid_token(&uuid)
+    let config = app_handle.state::<AppConfig>();
+    AccountManager::get_valid_token(&uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
     Ok(())

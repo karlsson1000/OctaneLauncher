@@ -1,9 +1,10 @@
 use crate::commands::validation::{sanitize_server_name, validate_server_address};
 use crate::services::accounts::AccountManager;
 use crate::services::instance::InstanceManager;
+use crate::models::AppConfig;
 use crate::utils::{get_launcher_dir, get_instance_dir};
 use serde::{Deserialize, Serialize};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use std::io::Write;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -143,11 +144,13 @@ pub async fn launch_server(
         return Err("Invalid server port".to_string());
     }
 
+    let config = app_handle.state::<AppConfig>();
+
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account")?;
 
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
 

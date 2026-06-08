@@ -1,8 +1,10 @@
 use crate::services::accounts::AccountManager;
+use crate::models::AppConfig;
 use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use tauri::Manager;
 
 const MINECRAFT_SKIN_URL: &str = "https://api.minecraftservices.com/minecraft/profile/skins";
 const MINECRAFT_SKIN_RESET_URL: &str = "https://api.minecraftservices.com/minecraft/profile/skins/active";
@@ -178,16 +180,19 @@ pub async fn save_recent_skin(
 pub async fn upload_skin(
     skin_data: String,
     variant: String,
+    app_handle: tauri::AppHandle,
 ) -> Result<CurrentSkin, String> {
     if variant != "classic" && variant != "slim" {
         return Err("Invalid skin variant. Must be 'classic' or 'slim'".to_string());
     }
     
+    let config = app_handle.state::<AppConfig>();
+    
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account".to_string())?;
     
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
     
@@ -291,12 +296,14 @@ pub async fn upload_skin(
 }
 
 #[tauri::command]
-pub async fn reset_skin() -> Result<(), String> {
+pub async fn reset_skin(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let config = app_handle.state::<AppConfig>();
+    
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account".to_string())?;
     
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
     
@@ -319,12 +326,14 @@ pub async fn reset_skin() -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn get_current_skin() -> Result<Option<CurrentSkin>, String> {
+pub async fn get_current_skin(app_handle: tauri::AppHandle) -> Result<Option<CurrentSkin>, String> {
+    let config = app_handle.state::<AppConfig>();
+    
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account".to_string())?;
     
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
     
@@ -362,12 +371,14 @@ pub async fn get_current_skin() -> Result<Option<CurrentSkin>, String> {
 }
 
 #[tauri::command]
-pub async fn get_user_capes() -> Result<UserCapesResponse, String> {
+pub async fn get_user_capes(app_handle: tauri::AppHandle) -> Result<UserCapesResponse, String> {
+    let config = app_handle.state::<AppConfig>();
+    
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account".to_string())?;
     
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
     
@@ -441,12 +452,14 @@ async fn get_player_cape(uuid: &str) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn equip_cape(cape_id: String) -> Result<(), String> {
+pub async fn equip_cape(cape_id: String, app_handle: tauri::AppHandle) -> Result<(), String> {
+    let config = app_handle.state::<AppConfig>();
+    
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account".to_string())?;
     
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
     
@@ -476,12 +489,14 @@ pub async fn equip_cape(cape_id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn remove_cape() -> Result<(), String> {
+pub async fn remove_cape(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let config = app_handle.state::<AppConfig>();
+    
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account".to_string())?;
     
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
     

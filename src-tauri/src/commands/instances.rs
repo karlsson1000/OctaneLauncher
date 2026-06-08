@@ -2,11 +2,11 @@ use crate::services::instance::InstanceManager;
 use crate::services::installer::MinecraftInstaller;
 use crate::services::fabric::FabricInstaller;
 use crate::services::accounts::AccountManager;
-use crate::models::Instance;
+use crate::models::{AppConfig, Instance};
 use crate::utils::*;
 use std::sync::Mutex;
 use crate::commands::validation::sanitize_instance_name;
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use base64::{Engine as _, engine::general_purpose};
 
 #[tauri::command]
@@ -256,12 +256,13 @@ pub async fn launch_instance_with_active_account(
     app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
+    let config = app_handle.state::<AppConfig>();
 
     let active_account = AccountManager::get_active_account()
         .map_err(|e| e.to_string())?
         .ok_or("No active account")?;
 
-    let access_token = AccountManager::get_valid_token(&active_account.uuid)
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
         .await
         .map_err(|e| e.to_string())?;
 

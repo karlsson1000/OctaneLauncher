@@ -916,11 +916,15 @@ impl InstanceManager {
 
         let instance_name_for_status = instance_name.to_string();
         let launching_uuid = uuid.to_string();
+        let supabase_url = std::env::var("SUPABASE_URL").unwrap_or_default();
+        let supabase_key = std::env::var("SUPABASE_SERVICE_KEY").unwrap_or_default();
         tauri::async_runtime::spawn(async move {
             if let Err(e) = crate::commands::friends::update_specific_user_status(
                 launching_uuid.clone(),
                 "ingame".to_string(),
-                Some(instance_name_for_status)
+                Some(instance_name_for_status),
+                &supabase_url,
+                &supabase_key,
             ).await {
                 eprintln!("Failed to update status to ingame: {}", e);
             }
@@ -1033,11 +1037,15 @@ impl InstanceManager {
                 processes.remove(&instance_name_clone);
             }
 
+            let supabase_url = std::env::var("SUPABASE_URL").unwrap_or_default();
+            let supabase_key = std::env::var("SUPABASE_SERVICE_KEY").unwrap_or_default();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = crate::commands::friends::update_specific_user_status(
                     launching_uuid.clone(),
                     "online".to_string(),
-                    None
+                    None,
+                    &supabase_url,
+                    &supabase_key,
                 ).await {
                     eprintln!("Failed to update status to online: {}", e);
                 }
