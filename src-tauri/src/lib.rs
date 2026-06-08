@@ -180,6 +180,32 @@ async fn update_discord_rpc_mode(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn save_secrets(
+    app: tauri::AppHandle,
+    microsoft_client_id: String,
+    supabase_url: String,
+    supabase_key: String,
+) -> Result<(), String> {
+    let store = app.store("secrets.json").map_err(|e| e.to_string())?;
+    store.set("microsoft_client_id", serde_json::Value::String(microsoft_client_id));
+    store.set("supabase_url", serde_json::Value::String(supabase_url));
+    store.set("supabase_key", serde_json::Value::String(supabase_key));
+    store.save().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+async fn is_secrets_configured(app: tauri::AppHandle) -> Result<bool, String> {
+    let store = app.store("secrets.json").map_err(|e| e.to_string())?;
+
+    let configured = |key: &str| -> bool {
+        store.get(key).is_some_and(|v| v.as_str().is_some_and(|s| !s.is_empty()))
+    };
+
+    Ok(configured("microsoft_client_id") && configured("supabase_url") && configured("supabase_key"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     if let Err(e) = dotenvy::dotenv() {
@@ -200,20 +226,17 @@ pub fn run() {
             let microsoft_client_id = store
                 .get("microsoft_client_id")
                 .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .or_else(|| std::env::var("MICROSOFT_CLIENT_ID").ok())
-                .expect("MICROSOFT_CLIENT_ID must be set in .env file or store");
+                .unwrap_or_else(|| env!("MICROSOFT_CLIENT_ID").to_string());
 
             let supabase_url = store
                 .get("supabase_url")
                 .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .or_else(|| std::env::var("SUPABASE_URL").ok())
-                .expect("SUPABASE_URL must be set in .env file or store");
+                .unwrap_or_else(|| env!("SUPABASE_URL").to_string());
 
             let supabase_key = store
                 .get("supabase_key")
                 .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .or_else(|| std::env::var("SUPABASE_SERVICE_KEY").ok())
-                .expect("SUPABASE_SERVICE_KEY must be set in .env file or store");
+                .unwrap_or_else(|| env!("SUPABASE_SERVICE_KEY").to_string());
 
             let client_id = microsoft_client_id.clone();
             app.manage(AppConfig {
@@ -389,6 +412,8 @@ pub fn run() {
             import_template,
             open_url,
             get_system_info,
+            save_secrets,
+            is_secrets_configured,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
