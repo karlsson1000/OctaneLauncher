@@ -89,10 +89,8 @@ export function Sidebar(props: SidebarProps) {
   const [confirmRemoveFriend, setConfirmRemoveFriend] = useState<{ uuid: string, username: string } | null>(null)
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null)
   const accountButtonRef = useRef<HTMLButtonElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const positionDropdown = (node: HTMLDivElement | null) => {
-    (dropdownRef as React.MutableRefObject<HTMLDivElement | null>).current = node
     if (!node || !accountButtonRef.current) return
     const rect = accountButtonRef.current.getBoundingClientRect()
     node.style.top = `${rect.bottom}px`
