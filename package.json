@@ -15,11 +15,9 @@
     "@tauri-apps/api": "2.9.1",
     "@tauri-apps/plugin-dialog": "2.6.0",
     "@tauri-apps/plugin-opener": "2.5.0",
-    "i18next": "^25.7.4",
     "lucide-react": "^0.556.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-i18next": "^16.5.3"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",
