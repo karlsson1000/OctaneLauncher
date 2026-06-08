@@ -151,7 +151,7 @@ pub async fn search_mods(
     
     let safe_limit = limit.unwrap_or(20).min(100);
     
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .search_projects(
             &query,
@@ -174,7 +174,7 @@ pub async fn get_mod_details(id_or_slug: String) -> Result<ModrinthProjectDetail
         return Err("Mod ID or slug too long".to_string());
     }
     
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .get_project(&id_or_slug)
         .await
@@ -191,7 +191,7 @@ pub async fn get_project_details(id_or_slug: String) -> Result<ModrinthProjectDe
         return Err("Project ID or slug too long".to_string());
     }
     
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .get_project(&id_or_slug)
         .await
@@ -228,7 +228,7 @@ pub async fn get_mod_versions(
         }
     }
     
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .get_project_versions(&id_or_slug, loaders, game_versions)
         .await
@@ -259,7 +259,7 @@ pub async fn download_mod(
         return Err("Invalid destination path".to_string());
     }
 
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .download_mod_file(&download_url, &destination)
         .await

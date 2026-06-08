@@ -15,7 +15,7 @@ pub struct MinecraftInstaller {
 }
 
 impl MinecraftInstaller {
-    pub fn new(launcher_dir: PathBuf) -> Self {
+    pub fn new(launcher_dir: PathBuf) -> Result<Self, DownloadError> {
         let http_client = reqwest::Client::builder()
             .timeout(Duration::from_secs(300))
             .pool_max_idle_per_host(MAX_CONCURRENT_DOWNLOADS * 2)
@@ -23,13 +23,12 @@ impl MinecraftInstaller {
             .tcp_keepalive(Duration::from_secs(60))
             .http2_keep_alive_interval(Duration::from_secs(30))
             .http2_keep_alive_timeout(Duration::from_secs(10))
-            .build()
-            .unwrap();
+            .build()?;
 
-        Self {
+        Ok(Self {
             http_client,
             launcher_dir,
-        }
+        })
     }
 
     // Ensure launcher_profiles.json exists
@@ -264,7 +263,10 @@ impl MinecraftInstaller {
         let asset_index_path = assets_dir
             .join("indexes")
             .join(format!("{}.json", version_details.asset_index.id));
-        fs::create_dir_all(asset_index_path.parent().unwrap())?;
+        fs::create_dir_all(
+            asset_index_path.parent()
+                .ok_or_else(|| format!("Invalid asset index path: {}", asset_index_path.display()))?
+        )?;
 
         self.download_file_with_sha1(
             &version_details.asset_index.url,
@@ -303,7 +305,7 @@ impl MinecraftInstaller {
         let mut handles = Vec::new();
 
         for (url, path, sha1, is_native) in tasks {
-            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let permit = semaphore.clone().acquire_owned().await?;
             let client = client.clone();
             let downloaded_count = downloaded_count.clone();
 
@@ -338,7 +340,7 @@ impl MinecraftInstaller {
         let mut handles = Vec::new();
         
         for (url, path, sha1) in tasks {
-            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let permit = semaphore.clone().acquire_owned().await?;
             let client = client.clone();
             let downloaded_count = downloaded_count.clone();
 

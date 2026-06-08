@@ -71,7 +71,7 @@ pub async fn download_resourcepack(
         return Err("Invalid destination path".to_string());
     }
 
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .download_mod_file(&download_url, &destination)
         .await
@@ -190,7 +190,7 @@ pub async fn download_shaderpack(
         return Err("Invalid destination path".to_string());
     }
 
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .download_mod_file(&download_url, &destination)
         .await

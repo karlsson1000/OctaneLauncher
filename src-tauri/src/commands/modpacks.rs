@@ -26,7 +26,7 @@ pub async fn get_modpack_versions(
         }
     }
     
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .get_project_versions(
             &id_or_slug,
@@ -73,7 +73,7 @@ pub async fn install_modpack(
         "stage": "Fetching modpack information..."
     }));
     
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     let versions = client
         .get_project_versions(&modpack_slug, None, None)
         .await
@@ -109,7 +109,8 @@ pub async fn install_modpack(
     }));
     
     let meta_dir = get_meta_dir();
-    let installer = MinecraftInstaller::new(meta_dir.clone());
+    let installer = MinecraftInstaller::new(meta_dir.clone())
+        .map_err(|e| e.to_string())?;
     installer
         .install_version(&game_version)
         .await
@@ -122,7 +123,8 @@ pub async fn install_modpack(
             "stage": "Installing Fabric loader..."
         }));
         
-        let fabric_installer = FabricInstaller::new(meta_dir);
+        let fabric_installer = FabricInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
         
         let fabric_versions = fabric_installer
             .get_loader_versions()
@@ -388,7 +390,7 @@ pub async fn get_modpack_manifest(
         return Err("Invalid version ID format".to_string());
     }
     
-    let client = ModrinthClient::new();
+    let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     
     let versions = client
         .get_project_versions(&modpack_slug, None, None)
@@ -627,7 +629,8 @@ async fn install_from_mrpack(
     }));
     
     let meta_dir = get_meta_dir();
-    let installer = MinecraftInstaller::new(meta_dir.clone());
+    let installer = MinecraftInstaller::new(meta_dir.clone())
+        .map_err(|e| e.to_string())?;
     installer
         .install_version(&game_version)
         .await
@@ -640,7 +643,8 @@ async fn install_from_mrpack(
             "stage": "Installing Fabric loader..."
         }));
         
-        let fabric_installer = FabricInstaller::new(meta_dir);
+        let fabric_installer = FabricInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
         
         let fabric_versions = fabric_installer
             .get_loader_versions()
@@ -712,7 +716,7 @@ async fn install_from_mrpack(
             "stage": format!("Downloading {} mods...", total_files)
         }));
         
-        let client = crate::utils::modrinth::ModrinthClient::new();
+        let client = crate::utils::modrinth::ModrinthClient::new().map_err(|e| e.to_string())?;
         
         for (idx, file) in files.iter().enumerate() {
             let downloads = file.get("downloads")
@@ -788,7 +792,8 @@ async fn install_from_standard_zip(
     }));
     
     let meta_dir = get_meta_dir();
-    let installer = MinecraftInstaller::new(meta_dir.clone());
+    let installer = MinecraftInstaller::new(meta_dir.clone())
+        .map_err(|e| e.to_string())?;
     installer
         .install_version(&game_version)
         .await
@@ -801,7 +806,8 @@ async fn install_from_standard_zip(
             "stage": "Installing Fabric loader..."
         }));
         
-        let fabric_installer = FabricInstaller::new(meta_dir);
+        let fabric_installer = FabricInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
         
         let fabric_ver = if let Some(ref ver) = loader_version {
             ver.clone()

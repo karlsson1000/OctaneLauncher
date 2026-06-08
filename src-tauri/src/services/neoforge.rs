@@ -21,16 +21,15 @@ pub struct NeoForgeInstaller {
 }
 
 impl NeoForgeInstaller {
-    pub fn new(meta_dir: PathBuf) -> Self {
+    pub fn new(meta_dir: PathBuf) -> Result<Self, NeoForgeError> {
         let http_client = Client::builder()
             .timeout(std::time::Duration::from_secs(300))
-            .build()
-            .unwrap();
+            .build()?;
 
-        Self {
+        Ok(Self {
             http_client,
             meta_dir,
-        }
+        })
     }
 
     fn parse_minecraft_version_from_neoforge(neoforge_version: &str) -> Option<String> {

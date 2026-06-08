@@ -35,8 +35,7 @@ impl Authenticator {
 
         let http_client = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
-            .build()
-            .unwrap();
+            .build()?;
 
         Ok(Self {
             oauth_client,

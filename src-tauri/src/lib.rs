@@ -254,20 +254,26 @@ pub fn run() {
             ) {
                 let app_handle = window.app_handle();
                 let config = app_handle.state::<AppConfig>();
+                let supabase_url = config.supabase_url.clone();
+                let supabase_key = config.supabase_key.clone();
 
-                if let Ok(runtime) = tokio::runtime::Runtime::new() {
-                    runtime.block_on(async {
-                        if let Ok(accounts) = AccountManager::get_all_accounts() {
-                            if let Ok(service) = FriendsService::new(&config.supabase_url, &config.supabase_key) {
-                                for account in &accounts {
-                                    let _ = service
-                                        .update_status(&account.uuid, FriendStatus::Offline, None)
-                                        .await;
-                                }
+                tauri::async_runtime::spawn(async move {
+                    let accounts = AccountManager::get_all_accounts()
+                        .map_err(|e| e.to_string())
+                        .ok();
+                    if let Some(accounts) = accounts {
+                        let service = FriendsService::new(&supabase_url, &supabase_key)
+                            .map_err(|e| e.to_string())
+                            .ok();
+                        if let Some(service) = service {
+                            for account in &accounts {
+                                let _ = service
+                                    .update_status(&account.uuid, FriendStatus::Offline, None)
+                                    .await;
                             }
                         }
-                    });
-                }
+                    }
+                });
             }
         })
         .invoke_handler(tauri::generate_handler![

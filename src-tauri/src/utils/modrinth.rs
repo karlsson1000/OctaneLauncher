@@ -128,14 +128,13 @@ pub struct ModrinthClient {
 }
 
 impl ModrinthClient {
-    pub fn new() -> Self {
+    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let http_client = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
             .user_agent("OctaneLauncher/1.0")
-            .build()
-            .unwrap();
+            .build()?;
 
-        Self { http_client }
+        Ok(Self { http_client })
     }
 
     pub async fn search_projects(

@@ -48,7 +48,8 @@ pub async fn create_instance(
     }));
 
     let meta_dir = get_meta_dir();
-    let installer = MinecraftInstaller::new(meta_dir.clone());
+    let installer = MinecraftInstaller::new(meta_dir.clone())
+        .map_err(|e| e.to_string())?;
     
     let needs_installation = !installer.check_version_installed(&version);
     
@@ -80,7 +81,8 @@ pub async fn create_instance(
                     "stage": format!("Installing Fabric {}...", fabric_version)
                 }));
 
-                let fabric_installer = FabricInstaller::new(meta_dir.clone());
+                let fabric_installer = FabricInstaller::new(meta_dir.clone())
+                    .map_err(|e| e.to_string())?;
                 
                 fabric_installer
                     .install_fabric(&version, fabric_version)
@@ -97,7 +99,8 @@ pub async fn create_instance(
                     "stage": format!("Downloading NeoForge installer {}...", neoforge_version)
                 }));
 
-                let neoforge_installer = crate::services::neoforge::NeoForgeInstaller::new(meta_dir.clone());
+                let neoforge_installer = crate::services::neoforge::NeoForgeInstaller::new(meta_dir.clone())
+                    .map_err(|e| e.to_string())?;
 
                 let app_handle_clone = app_handle.clone();
                 let safe_name_clone = safe_name.clone();
@@ -164,11 +167,15 @@ pub async fn kill_instance(instance_name: String) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     
     let pid = {
-        let processes = RUNNING_PROCESSES.lock().unwrap();
+        let processes = RUNNING_PROCESSES.lock().map_err(|e| e.to_string())?;
         processes.get(&safe_name).copied()
     };
     
     if let Some(pid) = pid {
+        if pid == 0 {
+            return Err("Invalid process PID".to_string());
+        }
+
         #[cfg(target_os = "windows")]
         {
             use std::process::Command;
@@ -179,12 +186,14 @@ pub async fn kill_instance(instance_name: String) -> Result<(), String> {
         
         #[cfg(not(target_os = "windows"))]
         {
-            unsafe {
-                libc::kill(pid as i32, libc::SIGTERM);
+            if pid > 0 {
+                unsafe {
+                    libc::kill(pid as i32, libc::SIGTERM);
+                }
             }
         }
         
-        let mut processes = RUNNING_PROCESSES.lock().unwrap();
+        let mut processes = RUNNING_PROCESSES.lock().map_err(|e| e.to_string())?;
         processes.remove(&safe_name);
         
         Ok(())
@@ -830,7 +839,8 @@ pub async fn update_instance_fabric_loader(
     };
     
     let meta_dir = get_meta_dir();
-    let fabric_installer = FabricInstaller::new(meta_dir);
+    let fabric_installer = FabricInstaller::new(meta_dir)
+        .map_err(|e| e.to_string())?;
     
     let new_fabric_version_id = fabric_installer
         .install_fabric(&minecraft_version, &fabric_version)
@@ -883,7 +893,8 @@ pub async fn update_instance_minecraft_version(
         }));
         
         let meta_dir = get_meta_dir();
-        let installer = MinecraftInstaller::new(meta_dir.clone());
+        let installer = MinecraftInstaller::new(meta_dir.clone())
+            .map_err(|e| e.to_string())?;
         
         let needs_installation = !installer.check_version_installed(&new_minecraft_version);
         
@@ -899,7 +910,8 @@ pub async fn update_instance_minecraft_version(
             "stage": "Finding compatible Fabric loader..."
         }));
         
-        let fabric_installer = FabricInstaller::new(meta_dir.clone());
+        let fabric_installer = FabricInstaller::new(meta_dir.clone())
+            .map_err(|e| e.to_string())?;
         let compatible_loader = fabric_installer
             .get_compatible_loader_for_minecraft(&new_minecraft_version)
             .await
@@ -924,7 +936,8 @@ pub async fn update_instance_minecraft_version(
         }));
         
         let meta_dir = get_meta_dir();
-        let installer = MinecraftInstaller::new(meta_dir);
+        let installer = MinecraftInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
         
         let needs_installation = !installer.check_version_installed(&new_minecraft_version);
         

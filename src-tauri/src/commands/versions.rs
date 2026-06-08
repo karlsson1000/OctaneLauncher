@@ -6,7 +6,8 @@ use crate::utils::get_meta_dir;
 
 #[tauri::command]
 pub async fn get_minecraft_versions() -> Result<Vec<String>, String> {
-    let installer = MinecraftInstaller::new(get_meta_dir());
+    let installer = MinecraftInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
     installer
         .get_versions()
         .await
@@ -15,7 +16,8 @@ pub async fn get_minecraft_versions() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub async fn get_minecraft_versions_with_metadata() -> Result<Vec<crate::models::MinecraftVersion>, String> {
-    let installer = MinecraftInstaller::new(get_meta_dir());
+    let installer = MinecraftInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
     installer
         .get_versions_with_metadata()
         .await
@@ -29,7 +31,8 @@ pub async fn get_minecraft_versions_by_type(version_type: String) -> Result<Vec<
         return Err(format!("Invalid version type. Must be one of: {}", valid_types.join(", ")));
     }
     
-    let installer = MinecraftInstaller::new(get_meta_dir());
+    let installer = MinecraftInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
     installer
         .get_versions_by_type(&version_type)
         .await
@@ -38,7 +41,8 @@ pub async fn get_minecraft_versions_by_type(version_type: String) -> Result<Vec<
 
 #[tauri::command]
 pub async fn get_supported_game_versions() -> Result<Vec<String>, String> {
-    let installer = FabricInstaller::new(get_meta_dir());
+    let installer = FabricInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
     installer
         .get_supported_game_versions()
         .await
@@ -47,7 +51,8 @@ pub async fn get_supported_game_versions() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 pub async fn get_neoforge_supported_game_versions() -> Result<Vec<String>, String> {
-    let installer = NeoForgeInstaller::new(get_meta_dir());
+    let installer = NeoForgeInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
     installer
         .get_supported_game_versions()
         .await
@@ -61,7 +66,8 @@ pub async fn install_minecraft(version: String) -> Result<String, String> {
     }
     
     let meta_dir = get_meta_dir();
-    let installer = MinecraftInstaller::new(meta_dir);
+    let installer = MinecraftInstaller::new(meta_dir)
+        .map_err(|e| e.to_string())?;
 
     installer
         .install_version(&version)
@@ -78,13 +84,15 @@ pub async fn check_version_installed(version: String) -> Result<bool, String> {
     }
     
     let meta_dir = get_meta_dir();
-    let installer = MinecraftInstaller::new(meta_dir);
+    let installer = MinecraftInstaller::new(meta_dir)
+        .map_err(|e| e.to_string())?;
     Ok(installer.check_version_installed(&version))
 }
 
 #[tauri::command]
 pub async fn get_fabric_versions() -> Result<Vec<FabricLoaderVersion>, String> {
-    let installer = FabricInstaller::new(get_meta_dir());
+    let installer = FabricInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
     installer
         .get_loader_versions()
         .await
@@ -93,7 +101,8 @@ pub async fn get_fabric_versions() -> Result<Vec<FabricLoaderVersion>, String> {
 
 #[tauri::command]
 pub async fn get_neoforge_versions() -> Result<Vec<NeoForgeVersion>, String> {
-    let installer = NeoForgeInstaller::new(get_meta_dir());
+    let installer = NeoForgeInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
     installer
         .get_loader_versions()
         .await
@@ -110,7 +119,8 @@ pub async fn install_fabric(minecraft_version: String, loader_version: String) -
     }
     
     let meta_dir = get_meta_dir();
-    let installer = FabricInstaller::new(meta_dir);
+    let installer = FabricInstaller::new(meta_dir)
+        .map_err(|e| e.to_string())?;
 
     installer
         .install_fabric(&minecraft_version, &loader_version)
@@ -128,7 +138,8 @@ pub async fn install_neoforge(minecraft_version: String, loader_version: String)
     }
     
     let meta_dir = get_meta_dir();
-    let installer = NeoForgeInstaller::new(meta_dir);
+    let installer = NeoForgeInstaller::new(meta_dir)
+        .map_err(|e| e.to_string())?;
 
     installer
         .install_neoforge(&minecraft_version, &loader_version)

@@ -4,7 +4,7 @@ use crate::utils::*;
 use chrono::Utc;
 use std::io::{BufRead, BufReader};
 use std::{fs, process::{Command, Stdio}};
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 use zip::ZipArchive;
 
 pub struct InstanceManager;
@@ -910,14 +910,15 @@ impl InstanceManager {
         let child_pid = child.id();
 
         {
-            let mut processes = crate::commands::instances::RUNNING_PROCESSES.lock().unwrap();
+            let mut processes = crate::commands::instances::RUNNING_PROCESSES.lock().map_err(|e| e.to_string())?;
             processes.insert(instance_name.to_string(), child_pid);
         }
 
         let instance_name_for_status = instance_name.to_string();
         let launching_uuid = uuid.to_string();
-        let supabase_url = std::env::var("SUPABASE_URL").unwrap_or_default();
-        let supabase_key = std::env::var("SUPABASE_SERVICE_KEY").unwrap_or_default();
+        let config = app_handle.state::<crate::models::AppConfig>();
+        let supabase_url = config.supabase_url.clone();
+        let supabase_key = config.supabase_key.clone();
         tauri::async_runtime::spawn(async move {
             if let Err(e) = crate::commands::friends::update_specific_user_status(
                 launching_uuid.clone(),
@@ -1033,12 +1034,14 @@ impl InstanceManager {
             }
             
             {
-                let mut processes = crate::commands::instances::RUNNING_PROCESSES.lock().unwrap();
-                processes.remove(&instance_name_clone);
+                if let Ok(mut processes) = crate::commands::instances::RUNNING_PROCESSES.lock() {
+                    processes.remove(&instance_name_clone);
+                }
             }
 
-            let supabase_url = std::env::var("SUPABASE_URL").unwrap_or_default();
-            let supabase_key = std::env::var("SUPABASE_SERVICE_KEY").unwrap_or_default();
+            let config = app_handle_clone.state::<crate::models::AppConfig>();
+            let supabase_url = config.supabase_url.clone();
+            let supabase_key = config.supabase_key.clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = crate::commands::friends::update_specific_user_status(
                     launching_uuid.clone(),

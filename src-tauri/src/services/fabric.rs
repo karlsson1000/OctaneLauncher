@@ -9,16 +9,15 @@ pub struct FabricInstaller {
 }
 
 impl FabricInstaller {
-    pub fn new(launcher_dir: PathBuf) -> Self {
+    pub fn new(launcher_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let http_client = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
-            .build()
-            .unwrap();
+            .build()?;
 
-        Self {
+        Ok(Self {
             http_client,
             launcher_dir,
-        }
+        })
     }
 
     pub async fn get_loader_versions(&self) -> Result<Vec<FabricLoaderVersion>, Box<dyn std::error::Error>> {
