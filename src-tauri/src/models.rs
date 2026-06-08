@@ -67,18 +67,6 @@ pub enum RequestStatus {
     Rejected,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SendFriendRequestPayload {
-    pub username: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserStatusUpdate {
-    pub uuid: String,
-    pub status: FriendStatus,
-    pub current_server: Option<String>,
-}
-
 // ===== TEMPLATE MODELS =====
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -569,24 +557,3 @@ pub struct NeoForgeProfileLibrary {
     pub downloads: Option<serde_json::Value>,
 }
 
-// ===== CHAT =====
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChatMessage {
-    pub id: String,
-    pub from_uuid: String,
-    pub to_uuid: String,
-    pub content: String,
-    #[serde(with = "chrono::serde::ts_seconds")]
-    pub timestamp: DateTime<Utc>,
-    pub is_own: bool,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Snapshot {
-    pub id: String,
-    pub name: String,
-    pub created_at: String,
-    pub size_bytes: u64,
-    pub file_path: String,
-}

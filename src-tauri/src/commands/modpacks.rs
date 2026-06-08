@@ -7,24 +7,6 @@ use crate::utils::*;
 use crate::commands::validation::{sanitize_instance_name, validate_download_url};
 use tauri::Emitter;
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub struct ModpackVersion {
-    pub id: String,
-    pub project_id: String,
-    pub name: String,
-    pub version_number: String,
-    pub game_versions: Vec<String>,
-    pub loaders: Vec<String>,
-    pub files: Vec<ModpackFile>,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub struct ModpackFile {
-    pub url: String,
-    pub filename: String,
-    pub primary: bool,
-}
-
 #[tauri::command]
 pub async fn get_modpack_versions(
     id_or_slug: String,

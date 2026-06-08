@@ -1,15 +1,8 @@
 use crate::commands::validation::{sanitize_instance_name, sanitize_resourcepack_filename, sanitize_shaderpack_filename, validate_download_url};
 use crate::utils::{get_instance_dir, open_folder};
 use crate::utils::modrinth::ModrinthClient;
-use serde::{Deserialize, Serialize};
 
 // Resource Packs
-
-#[derive(Serialize, Deserialize)]
-pub struct ResourcePackFile {
-    pub filename: String,
-    pub size: u64,
-}
 
 #[tauri::command]
 pub async fn get_installed_resourcepacks(instance_name: String) -> Result<Vec<String>, String> {
@@ -129,12 +122,6 @@ pub fn open_resourcepacks_folder(instance_name: String) -> Result<(), String> {
 }
 
 // Shader Packs
-
-#[derive(Serialize, Deserialize)]
-pub struct ShaderPackFile {
-    pub filename: String,
-    pub size: u64,
-}
 
 #[tauri::command]
 pub async fn get_installed_shaderpacks(instance_name: String) -> Result<Vec<String>, String> {

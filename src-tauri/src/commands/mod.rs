@@ -11,8 +11,6 @@ pub mod skins;
 pub mod friends;
 pub mod screenshots;
 pub mod packs;
-pub mod chat;
-pub mod snapshot;
 
 pub use auth::*;
 pub use instances::*;
@@ -26,5 +24,3 @@ pub use skins::*;
 pub use friends::*;
 pub use screenshots::*;
 pub use packs::*;
-pub use chat::*;
-pub use snapshot::*;

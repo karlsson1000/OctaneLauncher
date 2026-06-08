@@ -370,7 +370,7 @@ impl MinecraftInstaller {
         url: &str,
         path: &PathBuf,
         expected_sha1: &str,
-        is_native: bool,
+        _is_native: bool,
     ) -> Result<bool, DownloadError> {
         if !Self::file_needs_download(path, Some(expected_sha1)) {
             return Ok(false);

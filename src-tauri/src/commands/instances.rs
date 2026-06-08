@@ -5,7 +5,6 @@ use crate::services::accounts::AccountManager;
 use crate::models::Instance;
 use crate::utils::*;
 use std::sync::Mutex;
-use tauri::State;
 use crate::commands::validation::sanitize_instance_name;
 use tauri::Emitter;
 use base64::{Engine as _, engine::general_purpose};
@@ -974,7 +973,6 @@ pub async fn export_instance(
     include_mods: bool,
     include_config: bool,
 ) -> Result<(), String> {
-    use std::io::Write;
     use zip::write::SimpleFileOptions;
     
     let safe_name = sanitize_instance_name(&instance_name)?;
@@ -1283,8 +1281,6 @@ fn add_dir_to_zip(
     zip_prefix: &str,
     options: zip::write::SimpleFileOptions,
 ) -> Result<(), String> {
-    use std::io::Write;
-    
     let entries = std::fs::read_dir(dir_path)
         .map_err(|e| format!("Failed to read directory: {}", e))?;
     

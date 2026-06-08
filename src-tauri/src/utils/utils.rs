@@ -1,4 +1,6 @@
-use std::{path::PathBuf, process::Command, fs};
+use std::path::PathBuf;
+use std::process::Command;
+use std::fs;
 
 pub fn get_current_os() -> String {
     #[cfg(target_os = "windows")]
@@ -31,10 +33,6 @@ pub fn get_launcher_dir() -> PathBuf {
 
 pub fn get_meta_dir() -> PathBuf {
     get_launcher_dir().join("meta")
-}
-
-pub fn get_logs_dir() -> PathBuf {
-    get_launcher_dir().join("logs")
 }
 
 pub fn get_instances_dir() -> PathBuf {

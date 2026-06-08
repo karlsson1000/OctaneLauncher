@@ -9,13 +9,8 @@ const MINECRAFT_SKIN_RESET_URL: &str = "https://api.minecraftservices.com/minecr
 const MINECRAFT_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft/profile";
 const MINECRAFT_SESSION_URL: &str = "https://sessionserver.mojang.com/session/minecraft/profile";
 
-#[derive(Serialize, Deserialize)]
-pub struct SkinUploadResponse {
-    pub success: bool,
-    pub message: String,
-}
-
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct ProfileResponse {
     id: String,
     name: String,
@@ -24,6 +19,7 @@ struct ProfileResponse {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct SkinInfo {
     id: String,
     state: String,
@@ -53,6 +49,7 @@ pub struct UserCapesResponse {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct SessionProfileResponse {
     id: String,
     name: String,
@@ -66,6 +63,7 @@ struct ProfileProperty {
 }
 
 #[derive(Deserialize, Debug)]
+#[allow(dead_code)]
 struct TexturesData {
     timestamp: u64,
     #[serde(rename = "profileId")]

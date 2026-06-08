@@ -1,4 +1,4 @@
-use crate::models::{Friend, FriendRequest, FriendStatus, RequestStatus, UserStatusUpdate};
+use crate::models::{Friend, FriendRequest, FriendStatus, RequestStatus};
 use chrono::Utc;
 use serde_json::json;
 
@@ -31,7 +31,7 @@ impl FriendsService {
             .send()
             .await?;
         
-        let existing_users: Vec<serde_json::Value> = existing.json().await?;
+        let _existing_users: Vec<serde_json::Value> = existing.json().await?;
 
         let payload = json!({
             "uuid": uuid,

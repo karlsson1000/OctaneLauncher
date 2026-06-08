@@ -174,14 +174,4 @@ impl FabricInstaller {
         Ok(fabric_id)
     }
 
-    #[allow(dead_code)]
-    pub fn check_fabric_installed(&self, minecraft_version: &str, loader_version: &str) -> bool {
-        let fabric_id = format!("fabric-loader-{}-{}", loader_version, minecraft_version);
-        let profile_path = self.launcher_dir
-            .join("versions")
-            .join(&fabric_id)
-            .join(format!("{}.json", fabric_id));
-        
-        profile_path.exists()
-    }
 }

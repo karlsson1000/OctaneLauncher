@@ -11,7 +11,6 @@ use std::sync::Arc;
 use tauri_plugin_updater::UpdaterExt;
 use services::accounts::AccountManager;
 use services::friends::FriendsService;
-use services::chat::ChatService;
 use models::FriendStatus;
 
 use commands::{
@@ -30,13 +29,6 @@ use commands::{
     update_user_status,
     update_specific_user_status,
     register_user_in_friends_system,
-    send_chat_message,
-    get_chat_messages,
-    get_unread_message_counts,
-    mark_messages_as_read,
-    cleanup_chat_messages,
-    search_gifs,
-    get_trending_gifs,
     create_instance,
     get_instances,
     delete_instance,
@@ -121,12 +113,6 @@ use commands::{
     create_instance_from_template,
     export_template,
     import_template,
-    create_launcher_snapshot,
-    get_launcher_snapshots,
-    restore_launcher_snapshot,
-    delete_launcher_snapshot,
-    export_launcher_snapshot,
-    import_launcher_snapshot,
     upload_skin,
     reset_skin,
     get_current_skin,
@@ -237,11 +223,7 @@ pub fn run() {
                             }
                         }
 
-                        if let Ok(Some(active)) = AccountManager::get_active_account() {
-                            if let Ok(chat) = ChatService::new() {
-                                let _ = chat.cleanup_messages_if_both_offline(&active.uuid).await;
-                            }
-                        }
+
                     });
                 }
             }
@@ -268,13 +250,6 @@ pub fn run() {
             update_user_status,
             update_specific_user_status,
             register_user_in_friends_system,
-            send_chat_message,
-            get_chat_messages,
-            get_unread_message_counts,
-            mark_messages_as_read,
-            cleanup_chat_messages,
-            search_gifs,
-            get_trending_gifs,
             upload_skin,
             reset_skin,
             get_current_skin,
@@ -365,12 +340,6 @@ pub fn run() {
             create_instance_from_template,
             export_template,
             import_template,
-            create_launcher_snapshot,
-            get_launcher_snapshots,
-            restore_launcher_snapshot,
-            delete_launcher_snapshot,
-            export_launcher_snapshot,
-            import_launcher_snapshot,
             open_url,
             get_system_info,
         ])

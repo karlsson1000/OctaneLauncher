@@ -985,7 +985,7 @@ impl InstanceManager {
                             }
                         }
                         
-                        println!("[STDERR] {}", line);
+
                         let _ = app_handle_clone.emit("console-log", serde_json::json!({
                             "instance": instance_name_clone,
                             "message": line,
@@ -1001,7 +1001,7 @@ impl InstanceManager {
         let updated_json = serde_json::to_string_pretty(&updated_instance)?;
         fs::write(instance_json, updated_json)?;
 
-        println!("Launch command completed successfully!");
+
 
         let instance_name_clone = instance_name.to_string();
         let app_handle_clone = app_handle.clone();
@@ -1012,7 +1012,7 @@ impl InstanceManager {
             let _ = child.wait();
             let play_duration = launch_time.elapsed().as_secs();
             
-            println!("Instance '{}' has exited after {} seconds", instance_name_clone, play_duration);
+
             
             let instance_dir = get_instance_dir(&instance_name_clone);
             let instance_json_path = instance_dir.join("instance.json");
@@ -1023,7 +1023,7 @@ impl InstanceManager {
                     
                     if let Ok(updated_json) = serde_json::to_string_pretty(&instance) {
                         let _ = fs::write(&instance_json_path, updated_json);
-                        println!("Updated total playtime: {} seconds", instance.total_playtime_seconds);
+    
                     }
                 }
             }

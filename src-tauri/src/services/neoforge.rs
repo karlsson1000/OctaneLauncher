@@ -1,10 +1,9 @@
-use crate::models::{NeoForgeVersion, NeoForgeProfileJson};
+use crate::models::NeoForgeVersion;
 use std::path::PathBuf;
 use reqwest::Client;
 use serde::Deserialize;
 use std::process::{Command, Stdio};
-use std::io::{BufRead, BufReader, Read};
-use zip::ZipArchive;
+
 
 const NEOFORGE_META_URL: &str = "https://maven.neoforged.net/api/maven/versions/releases/net/neoforged/neoforge";
 const NEOFORGE_MAVEN_URL: &str = "https://maven.neoforged.net/releases";
@@ -117,6 +116,7 @@ impl NeoForgeInstaller {
         Ok(mc_versions)
     }
 
+    #[allow(dead_code)]
     pub async fn get_compatible_loader_for_minecraft(
         &self,
         minecraft_version: &str,
@@ -220,7 +220,6 @@ impl NeoForgeInstaller {
         let json_path = version_dir.join(format!("{}.json", version_id));
         
         if json_path.exists() {
-            println!("NeoForge {} already installed", version_id);
             return Ok(version_id);
         }
         
@@ -229,24 +228,18 @@ impl NeoForgeInstaller {
             NEOFORGE_MAVEN_URL, full_version, full_version
         );
 
-        println!("Downloading NeoForge installer from: {}", installer_url);
-        
         let installer_response = self.http_client.get(&installer_url).send().await?;
         
         if !installer_response.status().is_success() {
             return Err(format!("Failed to download NeoForge installer: HTTP {}", installer_response.status()).into());
         }
         
-        println!("Downloading installer file...");
         let installer_bytes = installer_response.bytes().await?;
 
-        println!("Saving installer to temp directory...");
         let temp_dir = std::env::temp_dir();
         let installer_path = temp_dir.join(format!("neoforge-{}-installer.jar", full_version));
         std::fs::write(&installer_path, installer_bytes)?;
 
-        println!("Running NeoForge installer...");
-        
         let mut cmd = Command::new("java");
         cmd.arg("-jar")
             .arg(&installer_path)
@@ -262,21 +255,10 @@ impl NeoForgeInstaller {
             cmd.creation_flags(CREATE_NO_WINDOW);
         }
 
-        let mut child = cmd.spawn()?;
-        
-        // Read stdout to show progress
-        if let Some(stdout) = child.stdout.take() {
-            let reader = BufReader::new(stdout);
-            for line in reader.lines() {
-                if let Ok(line) = line {
-                    println!("NeoForge Installer: {}", line);
-                }
-            }
-        }
+        let child = cmd.spawn()?;
         
         let output = child.wait_with_output()?;
 
-        println!("Installer finished, cleaning up...");
         let _ = std::fs::remove_file(&installer_path);
 
         if !output.status.success() {
@@ -303,98 +285,6 @@ impl NeoForgeInstaller {
         }
 
         Ok(version_id)
-    }
-
-    async fn download_neoforge_library(
-        &self,
-        name: &str,
-        base_url: &Option<String>,
-        libraries_dir: &PathBuf,
-    ) -> Result<(), NeoForgeError> {
-        let parts: Vec<&str> = name.split(':').collect();
-        if parts.len() < 3 || parts.len() > 4 {
-            return Err(format!("Invalid library name format: {}", name).into());
-        }
-
-        let (group, artifact, version) = (parts[0], parts[1], parts[2]);
-        let classifier = if parts.len() == 4 { Some(parts[3]) } else { None };
-        
-        let group_path = group.replace('.', "/");
-        
-        let jar_name = if let Some(cls) = classifier {
-            format!("{}-{}-{}.jar", artifact, version, cls)
-        } else {
-            format!("{}-{}.jar", artifact, version)
-        };
-        
-        let lib_path = libraries_dir
-            .join(group.replace('.', std::path::MAIN_SEPARATOR_STR))
-            .join(artifact)
-            .join(version)
-            .join(&jar_name);
-
-        if lib_path.exists() {
-            return Ok(());
-        }
-
-        let url = if let Some(base) = base_url {
-            if base.is_empty() {
-                format!(
-                    "https://libraries.minecraft.net/{}/{}/{}/{}",
-                    group_path, artifact, version, jar_name
-                )
-            } else {
-                let clean_base = base.trim_end_matches('/');
-                format!(
-                    "{}/{}/{}/{}/{}",
-                    clean_base, group_path, artifact, version, jar_name
-                )
-            }
-        } else {
-            format!(
-                "https://maven.neoforged.net/releases/{}/{}/{}/{}",
-                group_path, artifact, version, jar_name
-            )
-        };
-
-        if let Some(parent) = lib_path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-
-        let response = self.http_client.get(&url).send().await?;
-        
-        if !response.status().is_success() {
-            let alternate_urls = vec![
-                format!("https://maven.neoforged.net/releases/{}/{}/{}/{}", group_path, artifact, version, jar_name),
-                format!("https://libraries.minecraft.net/{}/{}/{}/{}", group_path, artifact, version, jar_name),
-                format!("https://repo1.maven.org/maven2/{}/{}/{}/{}", group_path, artifact, version, jar_name),
-            ];
-
-            let mut downloaded = false;
-            for alt_url in alternate_urls {
-                if alt_url == url {
-                    continue;
-                }
-                
-                if let Ok(alt_response) = self.http_client.get(&alt_url).send().await {
-                    if alt_response.status().is_success() {
-                        let bytes = alt_response.bytes().await?;
-                        std::fs::write(&lib_path, bytes)?;
-                        downloaded = true;
-                        break;
-                    }
-                }
-            }
-
-            if !downloaded {
-                return Err(format!("Failed to download library {} from any source", name).into());
-            }
-        } else {
-            let bytes = response.bytes().await?;
-            std::fs::write(&lib_path, bytes)?;
-        }
-
-        Ok(())
     }
 
     pub async fn get_loader_versions(&self) -> Result<Vec<NeoForgeVersion>, NeoForgeError> {

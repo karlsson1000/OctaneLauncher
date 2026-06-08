@@ -2,7 +2,6 @@ use crate::commands::validation::{sanitize_instance_name, sanitize_mod_filename,
 use crate::utils::{get_instance_dir, open_folder};
 use crate::utils::modrinth::{ModrinthClient, ModrinthProjectDetails, ModrinthSearchResult, ModrinthVersion};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
 
 #[derive(Serialize, Deserialize)]
 pub struct ModFile {

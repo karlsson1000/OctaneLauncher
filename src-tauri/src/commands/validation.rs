@@ -29,37 +29,6 @@ pub fn sanitize_instance_name(name: &str) -> Result<String, String> {
     Ok(name.to_string())
 }
 
-/// Sanitize filenames to prevent path traversal
-pub fn sanitize_filename(filename: &str) -> Result<String, String> {
-    if filename.is_empty() {
-        return Err("Filename cannot be empty".to_string());
-    }
-
-    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
-        return Err("Filename contains invalid characters".to_string());
-    }
-
-    if filename.starts_with('.') {
-        return Err("Filename cannot start with a dot".to_string());
-    }
-
-    if filename.contains('\0') {
-        return Err("Filename contains null bytes".to_string());
-    }
-
-    let valid_extensions = [".jar", ".zip", ".mrpack", ".json", ".txt", ".toml", ".properties"];
-    let has_valid_extension = valid_extensions.iter().any(|ext| filename.to_lowercase().ends_with(ext));
-
-    if !has_valid_extension {
-        return Err(format!(
-            "Invalid file extension. Allowed: {}",
-            valid_extensions.join(", ")
-        ));
-    }
-
-    Ok(filename.to_string())
-}
-
 /// Sanitize mod filenames (only .jar files)
 pub fn sanitize_mod_filename(filename: &str) -> Result<String, String> {
     if filename.is_empty() {
