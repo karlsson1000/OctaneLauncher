@@ -6,7 +6,6 @@ use oauth2::{
     RefreshToken, Scope, TokenResponse, TokenUrl,
 };
 use std::time::Duration;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use url::Url;
 
 const AUTH_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
@@ -15,7 +14,7 @@ const REDIRECT_URL: &str = "http://localhost:3160/auth";
 const SERVER_ADDRESS: &str = "127.0.0.1:3160";
 const XBOX_AUTHENTICATE_URL: &str = "https://user.auth.xboxlive.com/user/authenticate";
 const XSTS_AUTHORIZE_URL: &str = "https://xsts.auth.xboxlive.com/xsts/authorize";
-const MINECRAFT_LOGIN_URL: &str = "https://api.minecraftservices.com/authentication/login_with_xbox";
+const MINECRAFT_LOGIN_URL: &str = "https://api.minecraftservices.com/launcher/login";
 const MINECRAFT_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft/profile";
 const AUTH_SUCCESS_HTML: &str = include_str!("../../../auth.html");
 
@@ -61,63 +60,50 @@ impl Authenticator {
     }
 
     pub async fn wait_for_callback(&self, expected_csrf: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let listener = tokio::net::TcpListener::bind(SERVER_ADDRESS).await?;
+        let expected_csrf = expected_csrf.to_string();
 
-        let (mut stream, _) = listener.accept().await?;
-        let mut buf = [0u8; 2048];
-        let n = stream.read(&mut buf).await?;
+        let result: Result<String, String> = tokio::task::spawn_blocking(move || {
+            let server = tiny_http::Server::http(SERVER_ADDRESS)
+                .map_err(|e| e.to_string())?;
+            let request = server.recv()
+                .map_err(|e| e.to_string())?;
 
-        let request = String::from_utf8_lossy(&buf[..n]);
-        let first_line = request.lines().next().unwrap_or("");
-        let path = first_line.split_whitespace().nth(1).unwrap_or("");
+            let url = Url::parse(&format!("http://localhost{}", request.url()))
+                .map_err(|e| e.to_string())?;
 
-        let url = Url::parse(&format!("http://localhost{}", path))?;
+            let mut code = None;
+            let mut state = None;
 
-        let mut code = None;
-        let mut state = None;
-
-        for (key, value) in url.query_pairs() {
-            match key.as_ref() {
-                "code" => code = Some(value.to_string()),
-                "state" => state = Some(value.to_string()),
-                _ => {}
+            for (key, value) in url.query_pairs() {
+                match key.as_ref() {
+                    "code" => code = Some(value.to_string()),
+                    "state" => state = Some(value.to_string()),
+                    _ => {}
+                }
             }
-        }
-        let received_state = state.ok_or("No state in callback")?;
-        
-        if received_state != expected_csrf {
-            let error_response = b"HTTP/1.1 400 Bad Request\r\n\
-    Content-Type: text/html; charset=utf-8\r\n\
-    Connection: close\r\n\
-    \r\n\
-    <!DOCTYPE html>\
-    <html>\
-        <p>Authentication error. Invalid authentication state. Please try again.</p>\
-    </html>";
-            
-            stream.write_all(error_response).await?;
-            stream.flush().await?;
-            
-            return Err("CSRF token mismatch".into());
-        }
 
-        let auth_code = code.ok_or("No code in callback")?;
+            let received_state = state.ok_or("No state in callback")?;
 
-        let success_response = format!(
-            "HTTP/1.1 200 OK\r\n\
-            Content-Type: text/html; charset=utf-8\r\n\
-            Connection: close\r\n\
-            \r\n\
-            {}",
-            AUTH_SUCCESS_HTML
-        );
+            if received_state != expected_csrf {
+                let response = tiny_http::Response::from_string(
+                    "<!DOCTYPE html><html><p>Authentication error. Invalid authentication state. Please try again.</p></html>"
+                ).with_status_code(400);
+                request.respond(response)
+                    .map_err(|e| e.to_string())?;
+                return Err("CSRF token mismatch".to_string());
+            }
 
-        stream.write_all(success_response.as_bytes()).await?;
-        stream.flush().await?;
+            let auth_code = code.ok_or("No code in callback")?;
 
-        tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+            let response = tiny_http::Response::from_string(AUTH_SUCCESS_HTML.to_string())
+                .with_header("Content-Type: text/html; charset=utf-8".parse::<tiny_http::Header>().unwrap());
+            request.respond(response)
+                .map_err(|e| e.to_string())?;
 
-        Ok(auth_code)
+            Ok(auth_code)
+        }).await.map_err(|e| e.to_string())?;
+
+        Ok(result?)
     }
 
     pub async fn exchange_code(
@@ -221,7 +207,8 @@ impl Authenticator {
         userhash: &str,
     ) -> Result<TokenWithExpiry, Box<dyn std::error::Error>> {
         let request = MinecraftLoginRequest {
-            identity_token: &format!("XBL3.0 x={};{}", userhash, xsts_token),
+            xtoken: &format!("XBL3.0 x={};{}", userhash, xsts_token),
+            platform: "PC_LAUNCHER",
         };
 
         let response = self

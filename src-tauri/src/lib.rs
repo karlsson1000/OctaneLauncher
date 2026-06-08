@@ -215,6 +215,7 @@ pub fn run() {
                 .or_else(|| std::env::var("SUPABASE_SERVICE_KEY").ok())
                 .expect("SUPABASE_SERVICE_KEY must be set in .env file or store");
 
+            let client_id = microsoft_client_id.clone();
             app.manage(AppConfig {
                 microsoft_client_id,
                 supabase_url,
@@ -230,6 +231,19 @@ pub fn run() {
                 let rpc: tauri::State<Arc<DiscordRpc>> = app.state();
                 rpc.set_activity("Playing Minecraft", None, "grass", "Minecraft");
             }
+
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+                let account = AccountManager::get_active_account()
+                    .map_err(|e| e.to_string())
+                    .ok()
+                    .flatten();
+                if let Some(account) = account {
+                    let _ = AccountManager::get_valid_token(&account.uuid, &client_id)
+                        .await
+                        .map_err(|e| e.to_string());
+                }
+            });
 
             Ok(())
         })

@@ -319,7 +319,8 @@ pub struct DisplayClaims {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MinecraftLoginRequest<'a> {
-    pub identity_token: &'a str,
+    pub xtoken: &'a str,
+    pub platform: &'a str,
 }
 
 #[derive(Deserialize)]
