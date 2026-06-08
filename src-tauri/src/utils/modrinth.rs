@@ -205,7 +205,8 @@ impl ModrinthClient {
     ) -> Result<Vec<ModrinthVersion>, Box<dyn std::error::Error>> {
         let url = format!("{}/project/{}/version", MODRINTH_API_BASE, id_or_slug);
 
-        let mut params = Vec::new();
+        let mut params: Vec<(&str, String)> = Vec::new();
+        params.push(("include_changelog", "false".to_string()));
 
         if let Some(loaders) = loaders {
             params.push(("loaders", format!("[\"{}\"]", loaders.join("\",\""))));
