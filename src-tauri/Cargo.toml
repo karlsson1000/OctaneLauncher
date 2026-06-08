@@ -30,7 +30,6 @@ url = "2.5"
 uuid = { version = "1.0", features = ["serde"] }
 tiny_http = "0.12"
 urlencoding = "2.1"
-dotenv = "0.15"
 sha1 = "0.10"
 tauri-plugin-shell = "2"
 zip = "2.2"
