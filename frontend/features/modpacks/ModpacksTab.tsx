@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Search, Download, Loader2, Package, ChevronLeft, ChevronRight, CheckCircle, AlertCircle, X, Check } from "lucide-react"
 import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion, ModrinthProjectDetails } from "../../types"
@@ -190,7 +190,7 @@ export function ModpacksTab({
     setTimeout(() => handleSearch(newPage), 100)
   }
 
-  const getFilteredModpacks = () => {
+  const filteredModpacks = useMemo(() => {
     if (!searchResults) return []
     
     const modpacks = searchResults.hits
@@ -198,21 +198,20 @@ export function ModpacksTab({
     const shouldShowCustomModpack = currentPage === 1 && !searchQuery.trim() && customModpack
     
     if (shouldShowCustomModpack) {
-      const filteredModpacks = modpacks.filter(m => m.project_id !== customModpack!.project_id)
-      return [customModpack!, ...filteredModpacks]
+      const filtered = modpacks.filter(m => m.project_id !== customModpack!.project_id)
+      return [customModpack!, ...filtered]
     }
     
     return modpacks
-  }
+  }, [searchResults, customModpack, currentPage, searchQuery])
 
-  const getPaginatedModpacks = () => {
-    const filtered = getFilteredModpacks()
+  const paginatedModpacks = useMemo(() => {
     if (!searchQuery.trim() && currentPage === 1 && customModpack) {
-      return filtered.slice(0, itemsPerPage)
+      return filteredModpacks.slice(0, itemsPerPage)
     }
     
-    return filtered
-  }
+    return filteredModpacks
+  }, [filteredModpacks, searchQuery, currentPage, customModpack, itemsPerPage])
 
   const openModpackModal = async (modpack: ModrinthProject) => {
     setSelectedModpack(modpack)
@@ -383,106 +382,6 @@ export function ModpacksTab({
 
   return (
     <div className="max-w-7xl mx-auto">
-      <style>{`
-        .blur-border-input::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-
-        .blur-border-input:focus-within::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
-        }
-
-        .blur-border {
-          position: relative;
-        }
-
-        .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-
-        .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes fadeOut {
-          from { opacity: 1; }
-          to { opacity: 0; }
-        }
-        @keyframes scaleIn {
-          from { 
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to { 
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        @keyframes scaleOut {
-          from { 
-            opacity: 1;
-            transform: scale(1);
-          }
-          to { 
-            opacity: 0;
-            transform: scale(0.95);
-          }
-        }
-        .modal-backdrop {
-          animation: fadeIn 0.15s ease-out forwards;
-        }
-        .modal-backdrop.closing {
-          animation: fadeOut 0.15s ease-in forwards;
-        }
-        .modal-content {
-          animation: scaleIn 0.15s ease-out forwards;
-        }
-        .modal-content.closing {
-          animation: scaleOut 0.15s ease-in forwards;
-        }
-      `}</style>
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 blur-border-input rounded-md bg-[#22252b]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
@@ -504,7 +403,7 @@ export function ModpacksTab({
       {searchResults && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {getPaginatedModpacks().map((modpack) => {
+            {paginatedModpacks.map((modpack) => {
               const isInstalling = installingModpacks.has(modpack.project_id)
               const status = installationStatus[modpack.project_id]
               const gallery = modpackGalleries[modpack.project_id] || []
@@ -696,93 +595,6 @@ export function ModpacksTab({
 
       {selectedModpack && (
         <>
-          <style>{`
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes fadeOut {
-              from { opacity: 1; }
-              to { opacity: 0; }
-            }
-            @keyframes scaleIn {
-              from { 
-                opacity: 0;
-                transform: scale(0.95);
-              }
-              to { 
-                opacity: 1;
-                transform: scale(1);
-              }
-            }
-            @keyframes scaleOut {
-              from { 
-                opacity: 1;
-                transform: scale(1);
-              }
-              to { 
-                opacity: 0;
-                transform: scale(0.95);
-              }
-            }
-            .modal-backdrop {
-              animation: fadeIn 0.15s ease-out forwards;
-            }
-            .modal-backdrop.closing {
-              animation: fadeOut 0.15s ease-in forwards;
-            }
-            .modal-content {
-              animation: scaleIn 0.15s ease-out forwards;
-            }
-            .modal-content.closing {
-              animation: scaleOut 0.15s ease-in forwards;
-            }
-            .custom-scrollbar::-webkit-scrollbar {
-              width: 8px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-track {
-              background: transparent;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-              background: #3a3f4b;
-              border-radius: 4px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-              background: #454a58;
-            }
-            
-            .blur-border {
-              position: relative;
-            }
-
-            .blur-border::before {
-              content: '';
-              position: absolute;
-              inset: 0;
-              border-radius: inherit;
-              padding: 2px;
-              background: linear-gradient(
-                180deg,
-                rgba(255, 255, 255, 0.08),
-                rgba(255, 255, 255, 0.04)
-              );
-              -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-              -webkit-mask-composite: xor;
-              mask-composite: exclude;
-              pointer-events: none;
-              backdrop-filter: blur(8px);
-              z-index: 10;
-              transition: none !important;
-            }
-            
-            .blur-border:hover::before {
-              background: linear-gradient(
-                180deg,
-                rgba(255, 255, 255, 0.08),
-                rgba(255, 255, 255, 0.04)
-              );
-            }
-          `}</style>
           <div 
             className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isModalClosing ? 'closing' : ''}`} 
             onClick={handleCloseModal}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2, RefreshCw, Search, X } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "../../components/ui/ConfirmModal"
@@ -422,31 +422,25 @@ export function InstanceDetailsTab({
 
   const fabricLoaderVersion = getFabricLoaderVersion(instance)
   const neoforgeVersion = getNeoForgeVersion(instance)
-  // Derived during render — no effect/state needed
-  const modsWithProjectId = installedMods.filter(mod => mod.project_id && !mod.disabled).length
-  const filteredMods = installedMods.filter(mod => {
-    if (!modSearchQuery.trim()) return true
-    const query = modSearchQuery.toLowerCase()
-    return (mod.name || mod.filename).toLowerCase().includes(query) || mod.filename.toLowerCase().includes(query)
-  })
-  const filteredWorlds = worlds.filter(world => {
-    if (!worldSearchQuery.trim()) return true
-    return world.name.toLowerCase().includes(worldSearchQuery.toLowerCase())
-  })
+  const modsWithProjectId = useMemo(() =>
+    installedMods.filter(mod => mod.project_id && !mod.disabled).length
+  , [installedMods])
+  const filteredMods = useMemo(() =>
+    installedMods.filter(mod => {
+      if (!modSearchQuery.trim()) return true
+      const query = modSearchQuery.toLowerCase()
+      return (mod.name || mod.filename).toLowerCase().includes(query) || mod.filename.toLowerCase().includes(query)
+    })
+  , [installedMods, modSearchQuery])
+  const filteredWorlds = useMemo(() =>
+    worlds.filter(world => {
+      if (!worldSearchQuery.trim()) return true
+      return world.name.toLowerCase().includes(worldSearchQuery.toLowerCase())
+    })
+  , [worlds, worldSearchQuery])
 
   return (
     <>
-      <style>{`
-        .blur-border { position: relative; }
-        .blur-border::before {
-          content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 2px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor; mask-composite: exclude;
-          pointer-events: none; backdrop-filter: blur(8px); z-index: 10;
-        }
-        .blur-border:hover::before { background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08)); }
-      `}</style>
       <div className="p-6 space-y-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-6">

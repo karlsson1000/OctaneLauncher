@@ -337,43 +337,6 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, sc
 
   return (
     <div className="max-w-7xl mx-auto">
-      <style>{`
-        .blur-border-input::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-        .blur-border-input:focus-within::before {
-          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
-        }
-        .blur-border { position: relative; }
-        .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-        .blur-border:hover::before {
-          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
-        }
-      `}</style>
       {!favoritesOnly && (
         <div className="flex gap-2 mb-4">
           <div className="relative flex-1 blur-border-input rounded-md bg-[#22252b]">

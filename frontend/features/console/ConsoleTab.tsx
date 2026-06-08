@@ -132,61 +132,6 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
 
   return (
     <div className="p-6 space-y-4">
-      <style>{`
-        .blur-border {
-          position: relative;
-        }
-
-        .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-
-        .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.14),
-            rgba(255, 255, 255, 0.08)
-          );
-        }
-
-        .console-border {
-          position: relative;
-        }
-
-        .console-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-      `}</style>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4">
@@ -218,7 +163,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
         </div>
 
         {/* Console Display */}
-        <div className="console-border bg-[#1a1d23] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 225px)' }}>
+        <div className="blur-border bg-[#1a1d23] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 225px)' }}>
           {consoleLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">

@@ -1,24 +1,33 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, lazy, Suspense } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Terminal, Settings, Camera, Download } from "lucide-react"
-import { HomeTab } from "./features/home/HomeTab"
-import { InstancesTab } from "./features/instances/InstancesTab"
-import { BrowseTab } from "./features/browse/BrowseTab"
-import { ConsoleTab } from "./features/console/ConsoleTab"
+import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Terminal, Settings, Camera, Download, Loader2 } from "lucide-react"
 import { SettingsModal } from "./features/settings/SettingsModal"
-import { ServersTab } from "./features/servers/ServersTab"
-import { SkinsTab } from "./features/skins/SkinsTab"
 import { CreateInstanceModal } from "./features/instances/CreateInstanceModal"
 import { CreationProgressToast } from "./features/instances/CreationProgressToast"
 import { UpdateDropdown } from "./features/instances/UpdateDropdown"
 import { InstanceDetailsTab } from "./features/instances/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./components/ui/ConfirmModal"
-import { ScreenshotsTab } from "./features/screenshots/ScreenshotsTab"
 import { Sidebar } from "./components/layout/Sidebar"
 import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } from "./types"
 import type { CSSProperties } from "react"
+
+const HomeTab = lazy(() => import("./features/home/HomeTab").then(m => ({ default: m.HomeTab })))
+const InstancesTab = lazy(() => import("./features/instances/InstancesTab").then(m => ({ default: m.InstancesTab })))
+const BrowseTab = lazy(() => import("./features/browse/BrowseTab").then(m => ({ default: m.BrowseTab })))
+const ConsoleTab = lazy(() => import("./features/console/ConsoleTab").then(m => ({ default: m.ConsoleTab })))
+const ServersTab = lazy(() => import("./features/servers/ServersTab").then(m => ({ default: m.ServersTab })))
+const SkinsTab = lazy(() => import("./features/skins/SkinsTab").then(m => ({ default: m.SkinsTab })))
+const ScreenshotsTab = lazy(() => import("./features/screenshots/ScreenshotsTab").then(m => ({ default: m.ScreenshotsTab })))
+
+function Loader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[200px]">
+      <Loader2 size={32} className="animate-spin text-[#16a34a]" />
+    </div>
+  )
+}
 
 function App() {
   const [isReady, setIsReady] = useState(false)
@@ -214,19 +223,22 @@ function App() {
   }, [activeTab, showInstanceDetails, selectedInstance?.name])
 
   useEffect(() => {
+    if (instances.length === 0) return
+    let cancelled = false
     const loadIcons = async () => {
+      const results = await Promise.all(
+        instances.map(instance =>
+          invoke<string | null>("get_instance_icon", { instanceName: instance.name })
+            .catch(() => null as string | null)
+        )
+      )
+      if (cancelled) return
       const icons: Record<string, string | null> = {}
-      for (const instance of instances) {
-        try {
-          const icon = await invoke<string | null>("get_instance_icon", { instanceName: instance.name })
-          icons[instance.name] = icon
-        } catch {
-          icons[instance.name] = null
-        }
-      }
+      instances.forEach((instance, i) => { icons[instance.name] = results[i] })
       setInstanceIcons(icons)
     }
-    if (instances.length > 0) loadIcons()
+    loadIcons()
+    return () => { cancelled = true }
   }, [instances])
 
   useEffect(() => {
@@ -610,6 +622,7 @@ function App() {
           ) : (
             <>
               {activeTab === "home" && (
+                <Suspense fallback={<Loader />}>
                 <HomeTab
                   instances={instances}
                   isAuthenticated={isAuthenticated}
@@ -623,9 +636,11 @@ function App() {
                   onDuplicateInstance={handleDuplicateInstance}
                   onKillInstance={handleKillInstance}
                 />
+                </Suspense>
               )}
 
               {activeTab === "instances" && (
+                <Suspense fallback={<Loader />}>
                 <InstancesTab
                   instances={instances}
                   isAuthenticated={isAuthenticated}
@@ -640,9 +655,11 @@ function App() {
                   onDeleteInstance={handleDeleteInstance}
                   onKillInstance={handleKillInstance}
                 />
+                </Suspense>
               )}
 
               {activeTab === "browse" && (
+                <Suspense fallback={<Loader />}>
                 <BrowseTab
                   selectedInstance={selectedInstance}
                   instances={instances}
@@ -650,30 +667,40 @@ function App() {
                   onRefreshInstances={loadInstances}
                   onShowCreationToast={handleStartCreating}
                 />
+                </Suspense>
               )}
 
               {activeTab === "servers" && (
+                <Suspense fallback={<Loader />}>
                 <ServersTab
                   runningInstances={runningInstances}
                 />
+                </Suspense>
               )}
 
               {activeTab === "skins" && (
+                <Suspense fallback={<Loader />}>
                 <SkinsTab
                   activeAccount={activeAccount}
                   isAuthenticated={isAuthenticated}
-                  invoke={invoke}
                 />
+                </Suspense>
               )}
 
-              {activeTab === "screenshots" && <ScreenshotsTab />}
+              {activeTab === "screenshots" && (
+                <Suspense fallback={<Loader />}>
+                <ScreenshotsTab />
+                </Suspense>
+              )}
               {activeTab === "console" && (
+                <Suspense fallback={<Loader />}>
                 <ConsoleTab
                   consoleLogs={consoleLogs}
                   onClearConsole={(instanceName: string) => {
                     setConsoleLogs(prev => prev.filter(log => log.instance !== instanceName))
                   }}
                 />
+                </Suspense>
               )}
             </>
           )}

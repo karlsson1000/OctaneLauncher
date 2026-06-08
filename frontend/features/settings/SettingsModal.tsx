@@ -230,29 +230,6 @@ export function SettingsModal({
 
   return (
     <>
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        @keyframes scaleOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
-        .modal-backdrop { animation: fadeIn 0.15s ease-out forwards; }
-        .modal-backdrop.closing { animation: fadeOut 0.15s ease-in forwards; }
-        .modal-content { animation: scaleIn 0.15s ease-out forwards; }
-        .modal-content.closing { animation: scaleOut 0.15s ease-in forwards; }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3d424d; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4d525d; }
-        .blur-border { position: relative; }
-        .blur-border::before {
-          content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 2px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor; mask-composite: exclude;
-          pointer-events: none; backdrop-filter: blur(8px); z-index: 10; transition: none !important;
-        }
-        .blur-border:hover::before { background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)); }
-      `}</style>
       <div
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
         onClick={handleClose}

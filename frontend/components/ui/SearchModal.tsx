@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Search, X, Package, Settings, Server, User, Puzzle, Home, Terminal, ChevronRight, Clock, FileArchive, FolderOpen, Copy, Trash2, Play, Plus, LogIn } from "lucide-react"
 
 interface SearchResult {
@@ -100,8 +100,7 @@ export function GlobalSearchModal({
     }, 150)
   }
 
-  const allResults: SearchResult[] = [
-    // Pages
+  const staticResults = useMemo<SearchResult[]>(() => [
     {
       type: "page",
       title: "Home",
@@ -187,7 +186,6 @@ export function GlobalSearchModal({
       keywords: ["console", "logs", "debug", "output", "terminal", "crash"]
     },
 
-    // Settings
     {
       type: "setting",
       title: "Settings",
@@ -261,7 +259,6 @@ export function GlobalSearchModal({
       keywords: ["directory", "folder", "location", "path", "storage", "files"]
     },
 
-    // Quick Actions
     {
       type: "action",
       title: "Create New Instance",
@@ -309,7 +306,34 @@ export function GlobalSearchModal({
       keywords: ["sign in", "login", "account", "microsoft", "authenticate", "auth"]
     }]),
 
-    // Instance Actions
+    // Console Actions
+    {
+      type: "action",
+      title: "View Console Logs",
+      description: "View game output and debug logs",
+      icon: <Terminal size={18} />,
+      action: () => {
+        onNavigateToTab("console")
+        handleClose()
+      },
+      category: "Quick Actions",
+      keywords: ["console", "logs", "output", "debug", "crash", "error", "view"]
+    },
+    {
+      type: "action",
+      title: "Upload Logs to mclo.gs",
+      description: "Share console logs online",
+      icon: <Terminal size={18} />,
+      action: () => {
+        onNavigateToTab("console")
+        handleClose()
+      },
+      category: "Quick Actions",
+      keywords: ["upload", "logs", "share", "mclo.gs", "paste", "console"]
+    },
+  ], [isAuthenticated, onNavigateToTab, handleClose, onOpenSettings, onCreateInstance, onAddAccount, onAddServer])
+
+  const instanceResults = useMemo(() => [
     ...instances.map(instance => ({
       type: "instance" as const,
       title: instance.name,
@@ -402,35 +426,11 @@ export function GlobalSearchModal({
       category: "Instance Actions",
       keywords: ["delete", "remove", "uninstall", instance.name.toLowerCase()]
     })),
+  ], [instances, onNavigateToInstance, handleClose, onLaunchInstance, onOpenInstanceFolder, onExportInstance, onDuplicateInstance, onDeleteInstance])
 
-    // Console Actions
-    {
-      type: "action",
-      title: "View Console Logs",
-      description: "View game output and debug logs",
-      icon: <Terminal size={18} />,
-      action: () => {
-        onNavigateToTab("console")
-        handleClose()
-      },
-      category: "Quick Actions",
-      keywords: ["console", "logs", "output", "debug", "crash", "error", "view"]
-    },
-    {
-      type: "action",
-      title: "Upload Logs to mclo.gs",
-      description: "Share console logs online",
-      icon: <Terminal size={18} />,
-      action: () => {
-        onNavigateToTab("console")
-        handleClose()
-      },
-      category: "Quick Actions",
-      keywords: ["upload", "logs", "share", "mclo.gs", "paste", "console"]
-    },
-  ]
+  const allResults = useMemo(() => [...staticResults, ...instanceResults], [staticResults, instanceResults])
 
-  const filteredResults = searchQuery.trim()
+  const filteredResults = useMemo(() => searchQuery.trim()
     ? allResults.filter(result => {
         const query = searchQuery.toLowerCase()
         const searchableText = [
@@ -443,14 +443,17 @@ export function GlobalSearchModal({
         return searchableText.includes(query)
       })
     : allResults.slice(0, 8)
+  , [allResults, searchQuery])
 
-  const groupedResults = filteredResults.reduce((acc, result) => {
+  const groupedResults = useMemo(() => filteredResults.reduce((acc, result) => {
     if (!acc[result.category]) {
       acc[result.category] = []
     }
     acc[result.category].push(result)
     return acc
-  }, {} as Record<string, SearchResult[]>)
+  }, {} as Record<string, SearchResult[]>), [filteredResults])
+
+  const resultIndexMap = useMemo(() => new Map(filteredResults.map((r, i) => [r, i])), [filteredResults])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
@@ -488,94 +491,6 @@ export function GlobalSearchModal({
 
   return (
     <>
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes fadeOut {
-          from { opacity: 1; }
-          to { opacity: 0; }
-        }
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-        @keyframes scaleOut {
-          from {
-            opacity: 1;
-            transform: scale(1);
-          }
-          to {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-        }
-        .modal-backdrop {
-          animation: fadeIn 0.15s ease-out forwards;
-        }
-        .modal-backdrop.closing {
-          animation: fadeOut 0.15s ease-in forwards;
-        }
-        .modal-content {
-          animation: scaleIn 0.15s ease-out forwards;
-        }
-        .modal-content.closing {
-          animation: scaleOut 0.15s ease-in forwards;
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #3a3f4b;
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #454a58;
-        }
-
-        .blur-border {
-          position: relative;
-        }
-
-        .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-          transition: none !important;
-        }
-
-        .blur-border:hover::before {
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.08),
-            rgba(255, 255, 255, 0.04)
-          );
-        }
-      `}</style>
-
       <div
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-start justify-center pt-24 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`}
         onClick={handleClose}
@@ -643,7 +558,7 @@ export function GlobalSearchModal({
                     {category}
                   </div>
                   {results.map((result) => {
-                    const globalIndex = filteredResults.indexOf(result)
+                    const globalIndex = resultIndexMap.get(result) ?? 0
                     const isSelected = globalIndex === selectedIndex
 
                     return (

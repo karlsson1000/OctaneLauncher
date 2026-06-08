@@ -148,26 +148,6 @@ export function FavoritesTab({ selectedInstance }: FavoritesTabProps) {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <style>{`
-        .blur-border { position: relative; }
-        .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-        .blur-border:hover::before {
-          background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
-        }
-      `}</style>
 
       {totalFavorites === 0 ? (
         <div className="text-center py-16">

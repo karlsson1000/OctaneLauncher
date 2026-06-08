@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react"
+import { invoke } from "@tauri-apps/api/core"
 import { Upload, RotateCcw, Loader2, User, X, Rotate3d } from "lucide-react"
 import type { CachedSkin, RecentSkin, Cape } from "../../types"
 
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
   isAuthenticated?: boolean
-  invoke?: <T>(command: string, args?: Record<string, unknown>) => Promise<T>
 }
 
 export function SkinsTab(props: SkinsTabProps) {
-  const { activeAccount, isAuthenticated, invoke } = props
+  const { activeAccount, isAuthenticated } = props
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -251,31 +251,6 @@ export function SkinsTab(props: SkinsTabProps) {
 
   return (
     <div className="p-6 space-y-4">
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        @keyframes scaleOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
-        .modal-backdrop { animation: fadeIn 0.15s ease-out forwards; }
-        .modal-backdrop.closing { animation: fadeOut 0.15s ease-in forwards; }
-        .modal-content { animation: scaleIn 0.15s ease-out forwards; }
-        .modal-content.closing { animation: scaleOut 0.15s ease-in forwards; }
-        .blur-border { position: relative; }
-        .blur-border::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          padding: 2px;
-          background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          pointer-events: none;
-          backdrop-filter: blur(8px);
-          z-index: 10;
-        }
-      `}</style>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
