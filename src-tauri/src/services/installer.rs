@@ -1,7 +1,7 @@
 use crate::models::*;
 use crate::utils::get_current_os;
 use sha1::{Digest, Sha1};
-use std::{fs, path::PathBuf, sync::Arc, time::Duration};
+use std::{fs, path::PathBuf, sync::Arc};
 use tokio::sync::Semaphore;
 
 const VERSION_MANIFEST_URL: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
@@ -16,17 +16,8 @@ pub struct MinecraftInstaller {
 
 impl MinecraftInstaller {
     pub fn new(launcher_dir: PathBuf) -> Result<Self, DownloadError> {
-        let http_client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(300))
-            .pool_max_idle_per_host(MAX_CONCURRENT_DOWNLOADS * 2)
-            .pool_idle_timeout(Duration::from_secs(90))
-            .tcp_keepalive(Duration::from_secs(60))
-            .http2_keep_alive_interval(Duration::from_secs(30))
-            .http2_keep_alive_timeout(Duration::from_secs(10))
-            .build()?;
-
         Ok(Self {
-            http_client,
+            http_client: crate::utils::http::get_client(),
             launcher_dir,
         })
     }

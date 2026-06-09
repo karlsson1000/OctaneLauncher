@@ -146,7 +146,6 @@ function InnerModal({
         const newSettings: LauncherSettings = {
           memory_mb: memoryMb,
           java_path: currentSettings?.java_path ?? null,
-          discord_rpc_enabled: currentSettings?.discord_rpc_enabled ?? true,
           language: currentSettings?.language,
           auto_navigate_to_console: currentSettings?.auto_navigate_to_console ?? true,
         }

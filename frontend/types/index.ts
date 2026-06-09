@@ -37,7 +37,6 @@ export interface NeoForgeVersion {
 export interface LauncherSettings {
   memory_mb: number
   java_path: string | null
-  discord_rpc_enabled: boolean
   language?: string
   auto_navigate_to_console?: boolean
 }

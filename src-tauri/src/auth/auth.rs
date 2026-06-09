@@ -5,7 +5,6 @@ use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl, 
     RefreshToken, Scope, TokenResponse, TokenUrl,
 };
-use std::time::Duration;
 use url::Url;
 
 const AUTH_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
@@ -33,13 +32,9 @@ impl Authenticator {
         )
         .set_redirect_uri(RedirectUrl::new(REDIRECT_URL.to_string()).unwrap());
 
-        let http_client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()?;
-
         Ok(Self {
             oauth_client,
-            http_client,
+            http_client: crate::utils::http::get_client(),
         })
     }
 

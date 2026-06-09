@@ -219,7 +219,7 @@ pub async fn upload_skin(
         return Err(format!("Invalid skin dimensions ({}x{}). Must be 64x64 or 64x32", width, height));
     }
     
-    let client = reqwest::Client::new();
+    let client = crate::utils::http::get_client();
     
     let part = reqwest::multipart::Part::bytes(image_bytes)
         .file_name("skin.png")
@@ -307,8 +307,8 @@ pub async fn reset_skin(app_handle: tauri::AppHandle) -> Result<(), String> {
         .await
         .map_err(|e| e.to_string())?;
     
-    let client = reqwest::Client::new();
-    
+    let client = crate::utils::http::get_client();
+
     let response = client
         .delete(MINECRAFT_SKIN_RESET_URL)
         .bearer_auth(&access_token)
@@ -337,7 +337,7 @@ pub async fn get_current_skin(app_handle: tauri::AppHandle) -> Result<Option<Cur
         .await
         .map_err(|e| e.to_string())?;
     
-    let client = reqwest::Client::new();
+    let client = crate::utils::http::get_client();
     
     let response = client
         .get(MINECRAFT_PROFILE_URL)
@@ -382,7 +382,7 @@ pub async fn get_user_capes(app_handle: tauri::AppHandle) -> Result<UserCapesRes
         .await
         .map_err(|e| e.to_string())?;
     
-    let client = reqwest::Client::new();
+    let client = crate::utils::http::get_client();
     
     let response = client
         .get(MINECRAFT_PROFILE_URL)
@@ -408,7 +408,7 @@ pub async fn get_user_capes(app_handle: tauri::AppHandle) -> Result<UserCapesRes
 }
 
 async fn get_player_cape(uuid: &str) -> Result<String, String> {
-    let client = reqwest::Client::new();
+    let client = crate::utils::http::get_client();
     
     let uuid_no_dashes = uuid.replace("-", "");
     let url = format!("{}/{}", MINECRAFT_SESSION_URL, uuid_no_dashes);
@@ -463,7 +463,7 @@ pub async fn equip_cape(cape_id: String, app_handle: tauri::AppHandle) -> Result
         .await
         .map_err(|e| e.to_string())?;
     
-    let client = reqwest::Client::new();
+    let client = crate::utils::http::get_client();
     
     let url = "https://api.minecraftservices.com/minecraft/profile/capes/active";
     
@@ -500,7 +500,7 @@ pub async fn remove_cape(app_handle: tauri::AppHandle) -> Result<(), String> {
         .await
         .map_err(|e| e.to_string())?;
     
-    let client = reqwest::Client::new();
+    let client = crate::utils::http::get_client();
     
     let url = "https://api.minecraftservices.com/minecraft/profile/capes/active";
     

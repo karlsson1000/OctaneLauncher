@@ -3,11 +3,8 @@ mod commands;
 mod services;
 mod utils;
 mod models;
-mod discord_rpc;
 
-use discord_rpc::DiscordRpc;
 use tauri::Manager;
-use std::sync::Arc;
 use tauri_plugin_updater::UpdaterExt;
 use services::accounts::AccountManager;
 use services::friends::FriendsService;
@@ -164,24 +161,6 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-async fn update_discord_rpc_mode(app: tauri::AppHandle) -> Result<(), String> {
-    use crate::services::settings::SettingsManager;
-
-    let settings = SettingsManager::load()
-        .map_err(|e| format!("Failed to load settings: {}", e))?;
-
-    let discord_rpc: tauri::State<Arc<DiscordRpc>> = app.state();
-
-    if settings.discord_rpc_enabled {
-        discord_rpc.set_activity("Playing Minecraft", None, "grass", "Minecraft");
-    } else {
-        discord_rpc.clear_activity();
-    }
-
-    Ok(())
-}
-
-#[tauri::command]
 async fn save_secrets(
     app: tauri::AppHandle,
     microsoft_client_id: String,
@@ -213,14 +192,11 @@ pub fn run() {
         eprintln!("Warning: Could not load .env file: {}", e);
     }
 
-    let discord_rpc = Arc::new(DiscordRpc::new("1457530211968221184"));
-
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .manage(discord_rpc.clone())
         .setup(move |app| {
             let store = app.store("secrets.json")?;
 
@@ -245,16 +221,6 @@ pub fn run() {
                 supabase_url,
                 supabase_key,
             });
-
-            use crate::services::settings::SettingsManager;
-            let should_enable_rpc = SettingsManager::load()
-                .map(|s| s.discord_rpc_enabled)
-                .unwrap_or(true);
-
-            if should_enable_rpc {
-                let rpc: tauri::State<Arc<DiscordRpc>> = app.state();
-                rpc.set_activity("Playing Minecraft", None, "grass", "Minecraft");
-            }
 
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
@@ -379,7 +345,6 @@ pub fn run() {
             set_sidebar_background,
             get_sidebar_background,
             remove_sidebar_background,
-            update_discord_rpc_mode,
             get_installed_mods,
             delete_mod,
             open_mods_folder,

@@ -1,5 +1,5 @@
 use crate::models::*;
-use std::{fs, path::PathBuf, time::Duration};
+use std::{fs, path::PathBuf};
 
 const FABRIC_META_URL: &str = "https://meta.fabricmc.net/v2";
 
@@ -10,12 +10,8 @@ pub struct FabricInstaller {
 
 impl FabricInstaller {
     pub fn new(launcher_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let http_client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
-            .build()?;
-
         Ok(Self {
-            http_client,
+            http_client: crate::utils::http::get_client(),
             launcher_dir,
         })
     }

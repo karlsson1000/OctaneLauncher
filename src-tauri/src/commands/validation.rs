@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use crate::models::DetectedJava;
 
 /// Validate  Minecraft/Microsoft account UUID
 pub fn validate_uuid(uuid: &str) -> Result<(), String> {
@@ -144,8 +145,8 @@ pub fn validate_server_address(address: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Validate Java executable path
-pub fn validate_java_path(path: &str) -> Result<(), String> {
+/// Validate Java executable path and return version + architecture info
+pub fn get_java_info(path: &str) -> Result<DetectedJava, String> {
     let path_buf = PathBuf::from(path);
 
     if !path_buf.exists() {
@@ -174,19 +175,72 @@ pub fn validate_java_path(path: &str) -> Result<(), String> {
         ));
     }
 
-    let output = std::process::Command::new(path)
-        .arg("-version")
+    let mut cmd = std::process::Command::new(path);
+    cmd.arg("-XshowSettings:properties").arg("-version");
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000);
+    }
+
+    let output = cmd
         .output()
         .map_err(|e| format!("Failed to execute Java: {}", e))?;
 
-    let version_output = String::from_utf8_lossy(&output.stderr);
-    if !version_output.to_lowercase().contains("java")
-        && !version_output.to_lowercase().contains("openjdk")
-    {
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let combined = format!("{}{}", stdout, stderr);
+
+    if !combined.to_lowercase().contains("java") && !combined.to_lowercase().contains("openjdk") {
         return Err("Not a valid Java executable".to_string());
     }
 
-    Ok(())
+    let mut java_version = String::new();
+    let mut full_version = String::new();
+    let mut architecture = String::new();
+
+    for line in combined.lines() {
+        let line = line.trim();
+        if let Some(val) = line.strip_prefix("java.version = ") {
+            full_version = val.to_string();
+            java_version = parse_major_version_str(&full_version);
+        } else if let Some(val) = line.strip_prefix("java.version=") {
+            if full_version.is_empty() {
+                full_version = val.to_string();
+            }
+            java_version = parse_major_version_str(&full_version);
+        } else if let Some(val) = line.strip_prefix("os.arch = ") {
+            architecture = val.to_string();
+        } else if let Some(val) = line.strip_prefix("os.arch=") {
+            if architecture.is_empty() {
+                architecture = val.to_string();
+            }
+        }
+    }
+
+    let major_version: u32 = java_version.parse().map_err(|_| {
+        format!("Could not parse Java major version from: {}", full_version)
+    })?;
+
+    Ok(DetectedJava {
+        major_version,
+        full_version,
+        architecture,
+        path: path_buf.to_string_lossy().to_string(),
+    })
+}
+
+fn parse_major_version_str(version_str: &str) -> String {
+    let parts: Vec<&str> = version_str.split('.').collect();
+    if parts.is_empty() {
+        return "0".to_string();
+    }
+    if parts[0] == "1" && parts.len() > 1 {
+        parts[1].to_string()
+    } else {
+        parts[0].to_string()
+    }
 }
 
 /// Validate download URL is from trusted sources

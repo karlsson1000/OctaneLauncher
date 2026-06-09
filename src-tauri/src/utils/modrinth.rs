@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 
 const MODRINTH_API_BASE: &str = "https://api.modrinth.com/v2";
 
@@ -129,12 +128,7 @@ pub struct ModrinthClient {
 
 impl ModrinthClient {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        let http_client = reqwest::Client::builder()
-            .timeout(Duration::from_secs(30))
-            .user_agent("OctaneLauncher/1.0")
-            .build()?;
-
-        Ok(Self { http_client })
+        Ok(Self { http_client: crate::utils::http::get_client() })
     }
 
     pub async fn search_projects(

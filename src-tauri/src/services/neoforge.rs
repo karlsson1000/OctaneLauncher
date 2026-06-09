@@ -1,6 +1,5 @@
 use crate::models::NeoForgeVersion;
 use std::path::PathBuf;
-use reqwest::Client;
 use serde::Deserialize;
 use std::process::{Command, Stdio};
 
@@ -16,18 +15,14 @@ struct NeoForgeMavenResponse {
 }
 
 pub struct NeoForgeInstaller {
-    http_client: Client,
+    http_client: reqwest::Client,
     meta_dir: PathBuf,
 }
 
 impl NeoForgeInstaller {
     pub fn new(meta_dir: PathBuf) -> Result<Self, NeoForgeError> {
-        let http_client = Client::builder()
-            .timeout(std::time::Duration::from_secs(300))
-            .build()?;
-
         Ok(Self {
-            http_client,
+            http_client: crate::utils::http::get_client(),
             meta_dir,
         })
     }

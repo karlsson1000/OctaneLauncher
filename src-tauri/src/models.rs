@@ -231,8 +231,6 @@ pub struct LauncherSettings {
     pub java_path: Option<String>,
     #[serde(default = "default_memory")]
     pub memory_mb: u32,
-    #[serde(default = "default_discord_rpc_enabled")]
-    pub discord_rpc_enabled: bool,
     #[serde(default)]
     pub language: Option<String>,
     #[serde(default = "default_auto_navigate_to_console")]
@@ -240,7 +238,6 @@ pub struct LauncherSettings {
 }
 
 fn default_memory() -> u32 { 2048 }
-fn default_discord_rpc_enabled() -> bool { true }
 fn default_auto_navigate_to_console() -> bool { true }
 
 impl Default for LauncherSettings {
@@ -248,7 +245,6 @@ impl Default for LauncherSettings {
         Self {
             java_path: None,
             memory_mb: 2048,
-            discord_rpc_enabled: true,
             language: None,
             auto_navigate_to_console: true,
         }
@@ -412,6 +408,23 @@ pub struct VersionDetails {
     #[serde(rename = "minecraftArguments")]
     pub minecraft_arguments: Option<String>,
     pub arguments: Option<Arguments>,
+    #[serde(rename = "javaVersion", default)]
+    pub java_version: Option<JavaVersion>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct JavaVersion {
+    pub component: String,
+    #[serde(rename = "majorVersion")]
+    pub major_version: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DetectedJava {
+    pub major_version: u32,
+    pub full_version: String,
+    pub architecture: String,
+    pub path: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

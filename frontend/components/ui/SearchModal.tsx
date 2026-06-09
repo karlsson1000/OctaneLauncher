@@ -236,18 +236,6 @@ export function GlobalSearchModal({
     },
     {
       type: "setting",
-      title: "Discord Integration",
-      description: "Configure Discord Rich Presence",
-      icon: <Settings size={18} />,
-      action: () => {
-        onOpenSettings()
-        handleClose()
-      },
-      category: "Settings",
-      keywords: ["discord", "rich presence", "integration", "status", "activity"]
-    },
-    {
-      type: "setting",
       title: "Game Directory",
       description: "Change where instances are stored",
       icon: <Settings size={18} />,
