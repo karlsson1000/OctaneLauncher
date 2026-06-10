@@ -504,7 +504,7 @@ function App() {
                     activeTab === tab.id ? "bg-[#181a1f] text-[#e6e6e6]" : "text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b]"
                   }`}
                 >
-                  <Icon size={16} strokeWidth={1.5} />
+                  <Icon size={18} strokeWidth={2} />
                   <span>{tab.label}</span>
                 </button>
               )
@@ -518,10 +518,10 @@ function App() {
               <button
                 data-update-button
                 onClick={() => setShowUpdateDropdown(!showUpdateDropdown)}
-                className="flex items-center justify-center px-3 py-1.5 rounded text-[#16a34a] hover:text-[#15803d] hover:bg-[#3a3f4b] transition-all cursor-pointer"
+                className="flex items-center justify-center px-3 py-1.5 rounded text-[#16a34a] hover:text-[#16a34a] hover:bg-[#3a3f4b] transition-all cursor-pointer"
                 title={`Update available: ${updateInfo.new_version}`}
               >
-                <Download size={16} strokeWidth={1.5} />
+                <Download size={18} strokeWidth={2} />
               </button>
 
               {showUpdateDropdown && (
@@ -539,17 +539,17 @@ function App() {
             className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-all cursor-pointer"
             title="Settings"
           >
-            <Settings size={16} strokeWidth={1.5} />
+            <Settings size={18} strokeWidth={2} />
           </button>
           <div className="w-px h-6 bg-[#3a3f4b] mx-2" style={{ pointerEvents: 'none' } as CSSProperties} />
           <button onClick={() => appWindow.minimize()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors">
-            <Minus size={16} strokeWidth={1.5} />
+            <Minus size={18} strokeWidth={2} />
           </button>
           <button onClick={() => appWindow.toggleMaximize()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors">
-            <Square size={14} strokeWidth={1.5} />
+            <Square size={14} strokeWidth={2} />
           </button>
           <button onClick={() => appWindow.close()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-red-500 transition-colors">
-            <X size={16} strokeWidth={1.5} />
+            <X size={18} strokeWidth={2} />
           </button>
         </div>
       </div>
