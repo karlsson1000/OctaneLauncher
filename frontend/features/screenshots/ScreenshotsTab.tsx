@@ -291,7 +291,7 @@ const ScreenshotCard = memo(function ScreenshotCard({ screenshot, index, getImag
     <div
       ref={containerRef}
       onClick={() => openViewer(index)}
-      className="group relative bg-[#22252b] rounded-lg overflow-hidden cursor-pointer transition-all hover:ring-2 hover:ring-[#4572e3]"
+      className="group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all hover:bg-[#2a2e36]"
     >
       <div className="aspect-video bg-[#181a1f] overflow-hidden relative">
         {imageLoading && (

@@ -224,11 +224,9 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   const getSkinRenderUrl = () => {
-    if (!currentSkinHash) return null
-    const variant = skinVariant === "slim" ? "slim" : "wide"
-    const capeParam = activeCape ? "" : "&no=cape"
+    if (!activeAccount?.username) return null
     const angleParam = showBack ? "&y=180" : ""
-    return `https://vzge.me/full/512/${currentSkinHash}?${variant}${capeParam}${angleParam}`
+    return `https://renders.stellarmc.gg/full/${activeAccount.username}?${angleParam}`
   }
 
   if (!isAuthenticated) {
@@ -277,7 +275,7 @@ export function SkinsTab(props: SkinsTabProps) {
                   </div>
                 )}
                 {!loading && currentSkinHash && (
-                  <img src={getSkinRenderUrl() || ''} alt="Minecraft skin render" className="w-[250px] h-[406px]" style={{ imageRendering: 'pixelated' }} />
+                  <img src={getSkinRenderUrl() || ''} alt="Minecraft skin render" className="w-[250px] h-auto object-contain" style={{ imageRendering: 'pixelated' }} />
                 )}
                 {!loading && !currentSkinHash && (
                   <div className="w-[250px] h-[406px] flex items-center justify-center">

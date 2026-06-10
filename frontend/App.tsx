@@ -626,6 +626,7 @@ function App() {
                 <HomeTab
                   instances={instances}
                   isAuthenticated={isAuthenticated}
+                  activeAccount={activeAccount}
                   launchingInstanceName={launchingInstanceName}
                   runningInstances={runningInstances}
                   onLaunch={handleLaunch}
@@ -635,6 +636,7 @@ function App() {
                   onOpenFolderByInstance={handleOpenInstanceFolderByInstance}
                   onDuplicateInstance={handleDuplicateInstance}
                   onKillInstance={handleKillInstance}
+                  onNavigateToInstances={() => setActiveTab("instances")}
                 />
                 </Suspense>
               )}

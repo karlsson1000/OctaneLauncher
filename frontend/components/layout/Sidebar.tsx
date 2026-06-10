@@ -443,7 +443,7 @@ export function Sidebar(props: SidebarProps) {
               {recentInstances.length > 0 && (
                 <div className="flex-shrink-0 overflow-y-auto px-2 pb-3">
                   <div className="py-2">
-                    <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider mb-2 px-2">
+                    <h3 className="text-[15px] font-semibold text-[#e6e6e6] mb-2 px-2 flex items-center gap-2">
                       Recently Played
                     </h3>
                     <div className="space-y-1">
@@ -483,13 +483,13 @@ export function Sidebar(props: SidebarProps) {
                                   else onQuickLaunch(instance)
                                 }}
                                 disabled={launchingInstanceName !== null && !isLaunching && !isRunning}
-                                className={`absolute right-1.5 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all ${
-                                  isRunning || isLaunching
-                                    ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20 cursor-pointer"
-                                    : launchingInstanceName !== null
-                                    ? "opacity-0 pointer-events-none"
-                                    : "opacity-0 group-hover:opacity-100 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"
-                                }`}
+                                className={`absolute right-1.5 flex-shrink-0 w-8 h-8 flex items-center justify-center rounded transition-all active:scale-90 ${
+                                   isRunning || isLaunching
+                                     ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20 cursor-pointer"
+                                     : launchingInstanceName !== null
+                                     ? "opacity-0 pointer-events-none"
+                                     : "opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f] cursor-pointer"
+                                 }`}
                                 title={isRunning ? "Stop instance" : "Launch instance"}
                               >
                                 {isLaunching || isRunning ? (
@@ -511,8 +511,8 @@ export function Sidebar(props: SidebarProps) {
                 <div className="flex-1 overflow-y-auto px-2 pb-3">
                   <div className="py-2">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xs font-semibold text-[#7d8590] uppercase tracking-wider px-2">
-                        {"Friends"}
+                      <h3 className="text-[15px] font-semibold text-[#e6e6e6] px-2 flex items-center gap-2">
+                        Friends
                       </h3>
                       <div className="flex items-center gap-1 px-2">
                         {friendRequests.length > 0 && (
@@ -521,7 +521,7 @@ export function Sidebar(props: SidebarProps) {
                             className="relative text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
                             title="Friend Requests"
                           >
-                            <Mail size={14} strokeWidth={2} />
+                            <Mail size={15} strokeWidth={2.5} />
                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold">
                               {friendRequests.length}
                             </div>
@@ -532,7 +532,7 @@ export function Sidebar(props: SidebarProps) {
                           className="text-[#7d8590] hover:text-[#e6e6e6] transition-colors cursor-pointer"
                           title="Add Friend"
                         >
-                          <UserPlus size={14} strokeWidth={2} />
+                          <UserPlus size={15} strokeWidth={2.5} />
                         </button>
                       </div>
                     </div>
@@ -578,7 +578,7 @@ export function Sidebar(props: SidebarProps) {
                             value={friendUsername}
                             onChange={(e) => setFriendUsername(e.target.value)}
                             placeholder="Username..."
-                            className="flex-1 min-w-0 bg-[#181a1f] border border-[#3a3f4b] rounded px-2 py-1 text-xs text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none focus:border-[#3a3f4b]"
+                            className="flex-1 min-w-0 bg-[#181a1f] rounded px-2 py-1 text-xs text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none"
                             onKeyDown={(e) => { if (e.key === 'Enter' && friendUsername.trim()) handleSendFriendRequest() }}
                           />
                           <button
@@ -715,8 +715,6 @@ export function Sidebar(props: SidebarProps) {
         onConfirm={confirmRemove}
         onCancel={() => setConfirmRemoveFriend(null)}
       />
-
-
     </>
   )
 }

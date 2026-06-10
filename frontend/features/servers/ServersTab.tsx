@@ -320,11 +320,11 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                     <button
                       onClick={(e) => handleLaunchServer(server, e)}
                       disabled={server.status !== "online" || isLaunching || isAnyInstanceRunning}
-                      className={`w-full py-2.5 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all relative z-20 ${
+                      className={`w-full py-2 rounded font-semibold text-base flex items-center justify-center gap-2 transition-all active:scale-95 relative z-20 ${
                         isAnyInstanceRunning || isLaunching
                           ? "bg-red-500/10 text-red-400 cursor-not-allowed"
                           : server.status === "online"
-                          ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a] cursor-pointer"
+                          ? "bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f] cursor-pointer"
                           : "bg-[#3a3f4b] text-[#7d8590] cursor-not-allowed"
                       }`}
                     >

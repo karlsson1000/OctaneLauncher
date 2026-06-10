@@ -278,8 +278,7 @@ export function InstancesTab({
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Instances</h1>
-              <p className="text-sm text-[#7d8590] mt-0.5">Manage all your instances</p>
+              <h1 className="text-3xl font-semibold text-[#e6e6e6] tracking-tight">Instances</h1>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -331,7 +330,7 @@ export function InstancesTab({
               <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {filteredInstances.map((instance) => {
                 const icon = instanceIcons[instance.name]
                 const isLaunching = launchingInstanceName === instance.name
@@ -341,51 +340,55 @@ export function InstancesTab({
                     key={instance.name}
                     onClick={() => { onSetSelectedInstance(instance); onShowDetails(instance) }}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="blur-border group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all"
+                    className="blur-border bg-[#22252b] rounded-md p-2 flex items-center gap-4 hover:bg-[#2a2e36] transition-all cursor-pointer group relative"
                   >
-                    <div className="aspect-square bg-[#181a1f] flex items-center justify-center overflow-hidden relative z-0">
+                    <div className="relative flex-shrink-0">
                       {icon ? (
-                        <img src={icon} alt={instance.name} className="w-full h-full object-cover" />
+                        <img src={icon} alt={instance.name} className="w-14 h-14 rounded object-cover" />
                       ) : (
-                        <Package size={88} className="text-[#3a3f4b]" strokeWidth={1.5} />
-                      )}
-                    </div>
-
-                    <div className="bg-[#22252b] p-3 flex items-center justify-between gap-2 relative z-0">
-                      <div className={`flex-1 min-w-0 transition-all ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
-                        <h3 className="text-sm font-semibold text-[#e6e6e6] truncate mb-0.5">{instance.name}</h3>
-                        <div className="flex items-center gap-1.5 text-xs min-w-0">
-                          <span className="text-[#7d8590] truncate">{getMinecraftVersion(instance)}</span>
-                          <span className="text-[#3a3f4b] flex-shrink-0">•</span>
-                          {getLoaderBadge(instance)}
+                        <div className="w-14 h-14 bg-[#181a1f] rounded flex items-center justify-center">
+                          <Package size={28} className="text-[#3a3f4b]" />
                         </div>
-                      </div>
-
-                      {isAuthenticated && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (isRunning && onKillInstance) onKillInstance(instance)
-                            else handleQuickLaunch(instance)
-                          }}
-                          disabled={launchingInstanceName !== null && !isRunning}
-                          className={`absolute right-3 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all cursor-pointer ${
-                            isRunning || isLaunching
-                              ? "bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20"
-                              : launchingInstanceName !== null
-                              ? "opacity-0 pointer-events-none"
-                              : "opacity-0 group-hover:opacity-100 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
-                          } disabled:opacity-50`}
-                          title={isRunning ? "Stop instance" : "Launch instance"}
-                        >
-                          {isLaunching || isRunning ? (
-                            <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                          ) : (
-                            <Play size={18} fill="currentColor" strokeWidth={0} />
-                          )}
-                        </button>
                       )}
                     </div>
+
+                    <div className={`flex-1 min-w-0 ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
+                      <div className="text-base font-medium text-[#e6e6e6] truncate leading-tight">{instance.name}</div>
+                      <div className="flex items-center gap-2 text-sm text-[#7d8590] mt-0.5">
+                        <span>{getMinecraftVersion(instance)}</span>
+                        <span className="text-[#3a3f4b]">•</span>
+                        {getLoaderBadge(instance)}
+                      </div>
+                    </div>
+
+                    {isAuthenticated && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (isRunning && onKillInstance) onKillInstance(instance)
+                          else handleQuickLaunch(instance)
+                        }}
+                        disabled={launchingInstanceName !== null && !isRunning}
+                        className={`flex-shrink-0 px-4 h-10 mr-2 flex items-center gap-2 rounded transition-all active:scale-95 cursor-pointer text-base font-semibold ${
+                          isRunning || isLaunching
+                            ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                            : "opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
+                        } disabled:opacity-50`}
+                        title={isRunning ? "Stop instance" : "Launch instance"}
+                      >
+                        {isLaunching || isRunning ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                            <span>Stop</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play size={18} fill="currentColor" strokeWidth={0} />
+                            <span>Play</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )
               })}
