@@ -107,6 +107,7 @@ impl MinecraftInstaller {
         let versions: Vec<String> = manifest
             .versions
             .iter()
+            .filter(|v| v.r#type == "release" || v.r#type == "snapshot")
             .take(500)
             .map(|v| v.id.clone())
             .collect();
@@ -121,6 +122,7 @@ impl MinecraftInstaller {
         let versions: Vec<MinecraftVersion> = manifest
             .versions
             .into_iter()
+            .filter(|v| v.r#type == "release" || v.r#type == "snapshot")
             .take(500)
             .collect();
 

@@ -7,7 +7,7 @@ import type { FabricVersion, NeoForgeVersion, Instance } from "../../types"
 
 interface MinecraftVersion {
   id: string
-  type: "release" | "snapshot" | "old_beta" | "old_alpha"
+  type: "release" | "snapshot"
   url: string
   time: string
   releaseTime: string
@@ -110,7 +110,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   const getFilteredVersions = (): MinecraftVersion[] => {
     let filtered = versionFilter === "snapshot"
       ? allVersions.filter(v => v.type === "snapshot")
-      : allVersions.filter(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+      : allVersions.filter(v => v.type === "release")
 
     if (loaderType === "fabric" && versionFilter === "release") {
       filtered = filtered.filter(v => fabricSupportedVersions.includes(v.id))
@@ -167,7 +167,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         || allVersions.find(v => v.id === selectedVersion)?.type === "snapshot"
       if (currentIsUnsupported && fabricSupportedVersions.length > 0 && allVersions.length > 0) {
         const firstSupported = allVersions.find(v =>
-          (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") &&
+          v.type === "release" &&
           fabricSupportedVersions.includes(v.id)
         )
         if (firstSupported) setSelectedVersion(firstSupported.id)
@@ -183,7 +183,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         || allVersions.find(v => v.id === selectedVersion)?.type === "snapshot"
       if (currentIsUnsupported && neoforgeSupportedVersions.length > 0 && allVersions.length > 0) {
         const firstSupported = allVersions.find(v =>
-          (v.type === "release" || v.type === "old_beta" || v.type === "old_alpha") &&
+          v.type === "release" &&
           neoforgeSupportedVersions.includes(v.id)
         )
         if (firstSupported) {
@@ -279,7 +279,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     setVersionFilter(filter)
     const available = (filter === "snapshot"
       ? allVersions.filter(v => v.type === "snapshot")
-      : allVersions.filter(v => v.type === "release" || v.type === "old_beta" || v.type === "old_alpha")
+      : allVersions.filter(v => v.type === "release")
     ).filter(v => {
       if (loaderType === "fabric" && filter === "release") return fabricSupportedVersions.includes(v.id)
       if (loaderType === "neoforge" && filter === "release") return neoforgeSupportedVersions.includes(v.id)

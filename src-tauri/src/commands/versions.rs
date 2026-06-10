@@ -26,7 +26,7 @@ pub async fn get_minecraft_versions_with_metadata() -> Result<Vec<crate::models:
 
 #[tauri::command]
 pub async fn get_minecraft_versions_by_type(version_type: String) -> Result<Vec<String>, String> {
-    let valid_types = ["release", "snapshot", "old_beta", "old_alpha"];
+    let valid_types = ["release", "snapshot"];
     if !valid_types.contains(&version_type.as_str()) {
         return Err(format!("Invalid version type. Must be one of: {}", valid_types.join(", ")));
     }
