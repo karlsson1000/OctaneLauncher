@@ -154,7 +154,7 @@ export function HomeTab({
   const isLastPlayedLaunching = lastPlayedInstance ? launchingInstanceName === lastPlayedInstance.name : false
 
   return (
-    <div className="p-8 pt-[94px] space-y-10">
+    <div className="p-8 pt-[90px] space-y-10">
       <div className="max-w-7xl mx-auto">
 
         {/* Bento hero */}

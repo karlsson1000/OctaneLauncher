@@ -373,33 +373,30 @@ function InnerModal({
               {/* Icon */}
               <div>
                 <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Icon</label>
-                <div className="flex items-start gap-4 h-20">
+                <div className="flex items-center gap-4">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
                   {localIcon ? (
-                    <div className="relative group flex-shrink-0">
-                      <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-20 h-20 rounded overflow-hidden relative cursor-pointer bg-transparent">
-                        <img src={localIcon} alt={instance.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Camera size={24} className="text-white" />
-                        </div>
-                      </button>
-                    </div>
+                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-12 h-12 flex-shrink-0 rounded overflow-hidden relative cursor-pointer group bg-[#22252b]">
+                      <img src={localIcon} alt={instance.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera size={16} className="text-white" />
+                      </div>
+                    </button>
                   ) : (
-                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-20 h-20 flex-shrink-0 border-2 border-dashed border-[#3a3f4b] hover:border-[#4572e3]/50 rounded flex items-center justify-center transition-all bg-[#22252b] cursor-pointer">
-                      {isUploadingIcon ? <Loader2 size={28} className="text-[#4572e3] animate-spin" /> : <ImagePlus size={28} className="text-[#3a3f4b]" />}
+                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[#3a3f4b] hover:border-[#4572e3]/50 rounded flex items-center justify-center transition-all bg-[#22252b] cursor-pointer">
+                      {isUploadingIcon ? <Loader2 size={18} className="text-[#4572e3] animate-spin" /> : <ImagePlus size={18} className="text-[#3a3f4b]" />}
                     </button>
                   )}
                   
-                  <div className="flex-1 flex flex-col gap-2 h-full">
-                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="flex-1 w-full px-4 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
-                      {localIcon ? "Change Icon" : "Upload Icon"}
+                  {localIcon ? (
+                    <button onClick={handleRemoveIcon} disabled={isUploadingIcon} className="px-4 py-3.5 bg-[#22252b] hover:bg-red-500/10 text-[#e6e6e6] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                      Remove Icon
                     </button>
-                    {localIcon && (
-                      <button onClick={handleRemoveIcon} disabled={isUploadingIcon} className="flex-1 w-full px-4 bg-[#22252b] hover:bg-red-500/10 text-[#e6e6e6] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
-                        Remove Icon
-                      </button>
-                    )}
-                  </div>
+                  ) : (
+                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="px-4 py-3.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                      Upload Icon
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -554,7 +551,7 @@ function InnerModal({
               </div>
 
               {/* Delete */}
-              <div className="col-span-2 pt-3 border-t border-[#3a3f4b]">
+              <div className="col-span-2 pt-3">
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}

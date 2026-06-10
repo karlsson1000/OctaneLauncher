@@ -340,19 +340,19 @@ export function InstancesTab({
                     key={instance.name}
                     onClick={() => { onSetSelectedInstance(instance); onShowDetails(instance) }}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="blur-border bg-[#22252b] rounded-md p-2 flex items-center gap-4 hover:bg-[#2a2e36] transition-all cursor-pointer group relative"
+                    className="blur-border bg-[#22252b] rounded-md flex items-center hover:bg-[#2a2e36] transition-all cursor-pointer group relative overflow-hidden"
                   >
                     <div className="relative flex-shrink-0">
                       {icon ? (
-                        <img src={icon} alt={instance.name} className="w-14 h-14 rounded object-cover" />
+                        <img src={icon} alt={instance.name} className="w-20 h-20 object-cover" />
                       ) : (
-                        <div className="w-14 h-14 bg-[#181a1f] rounded flex items-center justify-center">
-                          <Package size={28} className="text-[#3a3f4b]" />
+                        <div className="w-20 h-20 bg-[#181a1f] flex items-center justify-center">
+                          <Package size={36} className="text-[#3a3f4b]" />
                         </div>
                       )}
                     </div>
 
-                    <div className={`flex-1 min-w-0 ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
+                    <div className={`py-2 pr-2 pl-4 flex-1 min-w-0 ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
                       <div className="text-base font-medium text-[#e6e6e6] truncate leading-tight">{instance.name}</div>
                       <div className="flex items-center gap-2 text-sm text-[#7d8590] mt-0.5">
                         <span>{getMinecraftVersion(instance)}</span>
@@ -369,7 +369,7 @@ export function InstancesTab({
                           else handleQuickLaunch(instance)
                         }}
                         disabled={launchingInstanceName !== null && !isRunning}
-                        className={`flex-shrink-0 px-4 h-10 mr-2 flex items-center gap-2 rounded transition-all active:scale-95 cursor-pointer text-base font-semibold ${
+                        className={`flex-shrink-0 w-12 h-12 mr-4 flex items-center justify-center rounded transition-all active:scale-95 cursor-pointer ${
                           isRunning || isLaunching
                             ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
                             : "opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
@@ -377,15 +377,9 @@ export function InstancesTab({
                         title={isRunning ? "Stop instance" : "Launch instance"}
                       >
                         {isLaunching || isRunning ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                            <span>Stop</span>
-                          </>
+                          <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
                         ) : (
-                          <>
-                            <Play size={18} fill="currentColor" strokeWidth={0} />
-                            <span>Play</span>
-                          </>
+                          <Play size={24} fill="currentColor" strokeWidth={0} />
                         )}
                       </button>
                     )}
