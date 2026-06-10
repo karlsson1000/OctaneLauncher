@@ -2,11 +2,56 @@ use crate::commands::validation::{sanitize_instance_name, sanitize_mod_filename,
 use crate::utils::{get_instance_dir, open_folder};
 use crate::utils::modrinth::{ModrinthClient, ModrinthProjectDetails, ModrinthSearchResult, ModrinthVersion};
 use serde::{Deserialize, Serialize};
+use sha1::{Digest, Sha1};
+use std::collections::HashMap;
+use std::time::UNIX_EPOCH;
+
+fn cache_path(instance_dir: &std::path::Path) -> std::path::PathBuf {
+    instance_dir.join(".mod_cache.json")
+}
+
+fn invalidate_mod_cache(instance_name: &str) {
+    let instance_dir = get_instance_dir(instance_name);
+    let path = cache_path(&instance_dir);
+    if path.exists() {
+        let _ = std::fs::remove_file(&path);
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+struct CacheEntry {
+    mtime: u128,
+    size: u64,
+    sha1_hash: String,
+    metadata: Option<ModFileWithMetadata>,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct ModFile {
     pub filename: String,
     pub size: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ModHash {
+    pub filename: String,
+    pub size: u64,
+    pub disabled: bool,
+    pub sha1_hash: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ModFileWithMetadata {
+    pub filename: String,
+    pub size: u64,
+    pub project_id: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub icon_url: Option<String>,
+    pub author: Option<String>,
+    pub downloads: Option<u64>,
+    pub disabled: bool,
+    pub current_version_id: Option<String>,
 }
 
 #[tauri::command]
@@ -79,7 +124,11 @@ pub async fn delete_mod(instance_name: String, filename: String) -> Result<(), S
     }
     
     std::fs::remove_file(&canonical_mod_path)
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    invalidate_mod_cache(&safe_name);
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -96,6 +145,260 @@ pub fn open_mods_folder(instance_name: String) -> Result<(), String> {
     
     open_folder(mods_dir)
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_installed_mod_hashes(instance_name: String) -> Result<Vec<ModHash>, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    let instance_dir = get_instance_dir(&safe_name);
+    let mods_dir = instance_dir.join("mods");
+
+    if !mods_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut disk_cache = load_cache(&instance_dir);
+    let mut mods = Vec::new();
+    let mut changed = false;
+
+    for entry in std::fs::read_dir(&mods_dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if !path.is_file() { continue; }
+
+        let filename = match path.file_name().and_then(|n| n.to_str()) {
+            Some(f) if f.ends_with(".jar") || f.ends_with(".jar.disabled") => f.to_string(),
+            _ => continue,
+        };
+
+        let meta = match std::fs::metadata(&path) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+
+        let size = meta.len();
+        let mtime = meta.modified()
+            .ok()
+            .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let disabled = filename.ends_with(".disabled");
+
+        let sha1_hash = match disk_cache.get(&filename) {
+            Some(entry) if entry.mtime == mtime && entry.size == size => {
+                entry.sha1_hash.clone()
+            }
+            _ => {
+                changed = true;
+                match std::fs::read(&path) {
+                    Ok(bytes) => format!("{:x}", Sha1::digest(&bytes)),
+                    Err(_) => continue,
+                }
+            }
+        };
+
+        let existing_metadata = disk_cache.get(&filename).and_then(|e| e.metadata.clone());
+        disk_cache.insert(filename.clone(), CacheEntry {
+            mtime,
+            size,
+            sha1_hash: sha1_hash.clone(),
+            metadata: existing_metadata,
+        });
+
+        mods.push(ModHash {
+            filename,
+            size,
+            disabled,
+            sha1_hash,
+        });
+    }
+
+    let current_filenames: std::collections::HashSet<String> = mods.iter().map(|m| m.filename.clone()).collect();
+    disk_cache.retain(|k, _| current_filenames.contains(k));
+
+    if changed {
+        save_cache(&instance_dir, &disk_cache);
+    }
+
+    mods.sort_by(|a, b| a.filename.to_lowercase().cmp(&b.filename.to_lowercase()));
+    Ok(mods)
+}
+
+fn load_cache(instance_dir: &std::path::Path) -> HashMap<String, CacheEntry> {
+    let cache_file = cache_path(instance_dir);
+    if cache_file.exists() {
+        std::fs::read_to_string(&cache_file)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default()
+    } else {
+        HashMap::new()
+    }
+}
+
+fn save_cache(instance_dir: &std::path::Path, cache: &HashMap<String, CacheEntry>) {
+    if let Ok(json) = serde_json::to_string(cache) {
+        let _ = std::fs::write(cache_path(instance_dir), json);
+    }
+}
+
+#[tauri::command]
+pub async fn get_installed_mods_with_metadata(instance_name: String) -> Result<Vec<ModFileWithMetadata>, String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    let instance_dir = get_instance_dir(&safe_name);
+    let mods_dir = instance_dir.join("mods");
+
+    if !mods_dir.exists() {
+        return Ok(Vec::new());
+    }
+
+    let cache_file = cache_path(&instance_dir);
+    let mut disk_cache: HashMap<String, CacheEntry> = if cache_file.exists() {
+        std::fs::read_to_string(&cache_file)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default()
+    } else {
+        HashMap::new()
+    };
+
+    let mut mods = Vec::new();
+    let mut hashes_needing_metadata: Vec<String> = Vec::new();
+
+    for entry in std::fs::read_dir(&mods_dir).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if !path.is_file() { continue; }
+
+        let filename = match path.file_name().and_then(|n| n.to_str()) {
+            Some(f) if f.ends_with(".jar") || f.ends_with(".jar.disabled") => f.to_string(),
+            _ => continue,
+        };
+
+        let meta = match std::fs::metadata(&path) {
+            Ok(m) => m,
+            Err(_) => continue,
+        };
+
+        let size = meta.len();
+        let mtime = meta.modified()
+            .ok()
+            .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let disabled = filename.ends_with(".disabled");
+
+        let (_, metadata) = match disk_cache.get(&filename) {
+            Some(entry) if entry.mtime == mtime && entry.size == size => {
+                let hash = entry.sha1_hash.clone();
+                let meta = entry.metadata.clone();
+                (hash, meta)
+            }
+            _ => {
+                let hash = match std::fs::read(&path) {
+                    Ok(bytes) => format!("{:x}", Sha1::digest(&bytes)),
+                    Err(_) => continue,
+                };
+                hashes_needing_metadata.push(hash.clone());
+                let existing_meta = disk_cache.get(&filename).and_then(|e| e.metadata.clone());
+                disk_cache.insert(filename.clone(), CacheEntry {
+                    mtime,
+                    size,
+                    sha1_hash: hash.clone(),
+                    metadata: existing_meta.clone(),
+                });
+                (hash, existing_meta)
+            }
+        };
+
+        mods.push(ModFileWithMetadata {
+            filename: filename.clone(),
+            size,
+            project_id: metadata.as_ref().and_then(|m| m.project_id.clone()),
+            name: metadata.as_ref().and_then(|m| m.name.clone()),
+            description: metadata.as_ref().and_then(|m| m.description.clone()),
+            icon_url: metadata.as_ref().and_then(|m| m.icon_url.clone()),
+            author: metadata.as_ref().and_then(|m| m.author.clone()),
+            downloads: metadata.as_ref().and_then(|m| m.downloads),
+            disabled,
+            current_version_id: metadata.as_ref().and_then(|m| m.current_version_id.clone()),
+        });
+
+    }
+
+
+    if !hashes_needing_metadata.is_empty() {
+        let client = ModrinthClient::new().map_err(|e| e.to_string())?;
+        let mut project_ids: Vec<String> = Vec::new();
+        let mut hash_to_version_and_project: HashMap<String, (String, String)> = HashMap::new();
+
+        for chunk in hashes_needing_metadata.chunks(100) {
+            if let Ok(version_files) = client.get_version_files_by_hashes(chunk).await {
+                for (hash, vf) in &version_files {
+                    hash_to_version_and_project.insert(hash.clone(), (vf.project_id.clone(), vf.id.clone()));
+                    if !project_ids.contains(&vf.project_id) {
+                        project_ids.push(vf.project_id.clone());
+                    }
+                }
+            }
+        }
+
+        if !project_ids.is_empty() {
+            if let Ok(projects) = client.get_projects_batch(&project_ids).await {
+                let project_map: HashMap<String, ModrinthProjectDetails> =
+                    projects.into_iter().map(|p| (p.id.clone(), p)).collect();
+
+                for (hash, (proj_id, version_id)) in &hash_to_version_and_project {
+                    if let Some(project) = project_map.get(proj_id) {
+                        let metadata = ModFileWithMetadata {
+                            filename: String::new(),
+                            size: 0,
+                            project_id: Some(proj_id.clone()),
+                            name: Some(project.title.clone()),
+                            description: Some(project.description.clone()),
+                            icon_url: project.icon_url.clone(),
+                            author: None,
+                            downloads: Some(project.downloads),
+                            disabled: false,
+                            current_version_id: Some(version_id.clone()),
+                        };
+
+                        for entry in disk_cache.values_mut() {
+                            if entry.sha1_hash == *hash {
+                                entry.metadata = Some(ModFileWithMetadata {
+                                    filename: String::new(),
+                                    size: entry.size,
+                                    ..metadata.clone()
+                                });
+                            }
+                        }
+
+                        for mod_entry in mods.iter_mut() {
+                            if disk_cache.get(&mod_entry.filename)
+                                .map(|e| e.sha1_hash == *hash)
+                                .unwrap_or(false)
+                            {
+                                mod_entry.project_id = Some(proj_id.clone());
+                                mod_entry.name = Some(project.title.clone());
+                                mod_entry.description = Some(project.description.clone());
+                                mod_entry.icon_url = project.icon_url.clone();
+                                mod_entry.author = None;
+                                mod_entry.downloads = Some(project.downloads);
+                                mod_entry.current_version_id = Some(version_id.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Ok(json) = serde_json::to_string(&disk_cache) {
+            let _ = std::fs::write(&cache_file, json);
+        }
+    }
+
+    mods.sort_by(|a, b| a.filename.to_lowercase().cmp(&b.filename.to_lowercase()));
+    Ok(mods)
 }
 
 #[tauri::command]
@@ -134,7 +437,11 @@ pub async fn toggle_mod(instance_name: String, filename: String, disable: bool) 
     }
     
     std::fs::rename(&old_path, &new_path)
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    invalidate_mod_cache(&safe_name);
+
+    Ok(())
 }
 
 #[tauri::command]

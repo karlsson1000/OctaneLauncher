@@ -3,20 +3,9 @@ import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Tras
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "../../components/ui/ConfirmModal"
 import { InstanceSettingsModal } from "./InstanceSettingsModal"
-import type { Instance, ModrinthSearchResult, ModrinthVersion, ModrinthFile } from "../../types"
+import type { Instance, ModFileWithMetadata, ModrinthVersion, ModrinthFile } from "../../types"
 
-interface InstalledMod {
-  filename: string
-  size: number
-  name?: string
-  description?: string
-  icon_url?: string
-  downloads?: number
-  author?: string
-  disabled?: boolean
-  project_id?: string
-  current_version_id?: string
-}
+type InstalledMod = ModFileWithMetadata
 
 interface ModUpdate {
   filename: string
@@ -122,78 +111,8 @@ export function InstanceDetailsTab({
   const loadInstalledMods = async () => {
     setIsLoadingMods(true)
     try {
-      const mods = await invoke<InstalledMod[]>("get_installed_mods", { instanceName: instance.name })
-
-      const modsWithMetadata = await Promise.all(
-        mods.map(async (mod) => {
-          const isDisabled = mod.filename.endsWith('.disabled')
-          const actualFilename = isDisabled ? mod.filename.replace('.disabled', '') : mod.filename
-
-          try {
-            let slug = actualFilename.replace(/\.jar$/i, '').toLowerCase()
-            slug = slug
-              .replace(/[-_]((\d+\.)+\d+)[-_+]?.*$/i, '')
-              .replace(/[-_]v?((\d+\.)+\d+)$/i, '')
-              .replace(/[-_]mc((\d+\.)+\d+)$/i, '')
-              .replace(/[-_](forge|fabric|quilt|neoforge)$/i, '')
-              .replace(/[-_]\d+$/i, '')
-              .trim()
-
-            if (!slug) return { ...mod, disabled: isDisabled }
-
-            const facets = JSON.stringify([["project_type:mod"]])
-            const result = await invoke<ModrinthSearchResult>("search_mods", { query: slug, facets, index: "relevance", offset: 0, limit: 20 })
-
-            if (result.hits && result.hits.length > 0) {
-              const slugNormalized = slug.replace(/[-_\s]/g, '').toLowerCase()
-              const bestMatch = result.hits.find((hit) => {
-                const hitSlug = hit.slug.toLowerCase().replace(/[-_\s]/g, '')
-                const hitTitle = hit.title.toLowerCase().replace(/[-_\s]/g, '')
-                return hitSlug === slugNormalized || hitTitle === slugNormalized
-              })
-
-              if (bestMatch) {
-                const mcVersion = getMinecraftVersion(instance)
-                try {
-                  const versions = await invoke<ModrinthVersion[]>("get_mod_versions", {
-                    idOrSlug: bestMatch.project_id,
-                    loaders: [instance.loader],
-                    gameVersions: [mcVersion],
-                  })
-
-                  if (versions && versions.length > 0) {
-                    const currentVersion = versions.find((v) =>
-                      v.files.some((f: ModrinthFile) => f.filename === actualFilename)
-                    )
-                    
-                    return {
-                      ...mod, disabled: isDisabled,
-                      name: bestMatch.title, description: bestMatch.description,
-                  icon_url: bestMatch.icon_url ?? undefined, downloads: bestMatch.downloads,
-                      author: bestMatch.author, project_id: bestMatch.project_id,
-                      current_version_id: currentVersion?.id,
-                    }
-                  }
-                } catch (versionError) {
-                  console.error(`Failed to fetch versions for ${bestMatch.title}:`, versionError)
-                }
-                
-                return {
-                  ...mod, disabled: isDisabled,
-                  name: bestMatch.title, description: bestMatch.description,
-                  icon_url: bestMatch.icon_url ?? undefined, downloads: bestMatch.downloads,
-                  author: bestMatch.author, project_id: bestMatch.project_id,
-                }
-              }
-            }
-          } catch (error) {
-            console.error(`Failed to fetch metadata for ${mod.filename}:`, error)
-          }
-          return { ...mod, disabled: isDisabled }
-        })
-      )
-
-      setInstalledMods(modsWithMetadata)
+      const mods = await invoke<InstalledMod[]>("get_installed_mods_with_metadata", { instanceName: instance.name })
+      setInstalledMods(mods)
     } catch (error) {
       console.error("Failed to load installed mods:", error)
       setInstalledMods([])
@@ -483,7 +402,7 @@ export function InstanceDetailsTab({
                   <button
                     onClick={onLaunch}
                     disabled={!isAuthenticated || isLaunching || isRunning}
-                    className={`px-6 py-2.5 rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer ${isLaunching || isRunning ? "bg-red-500/10 text-red-400" : "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"} disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`px-6 py-2 rounded-md font-semibold text-base flex items-center gap-2 transition-all active:scale-95 cursor-pointer ${isLaunching || isRunning ? "bg-red-500/10 text-red-400" : "bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"} disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {isLaunching || isRunning ? (
                       <><div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" /><span>Running...</span></>

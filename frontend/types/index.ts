@@ -193,6 +193,26 @@ export interface ModFile {
   size: number
 }
 
+export interface ModHash {
+  filename: string
+  size: number
+  disabled: boolean
+  sha1_hash: string
+}
+
+export interface ModFileWithMetadata {
+  filename: string
+  size: number
+  project_id: string | null
+  name: string | null
+  description: string | null
+  icon_url: string | null
+  author: string | null
+  downloads: number | null
+  disabled: boolean
+  current_version_id: string | null
+}
+
 export interface AccountInfo {
   uuid: string
   username: string

@@ -122,6 +122,13 @@ pub struct Dependency {
     pub dependency_type: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct VersionFileResponse {
+    pub id: String,
+    pub project_id: String,
+    pub files: Vec<VersionFile>,
+}
+
 pub struct ModrinthClient {
     http_client: reqwest::Client,
 }
@@ -129,6 +136,41 @@ pub struct ModrinthClient {
 impl ModrinthClient {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         Ok(Self { http_client: crate::utils::http::get_client() })
+    }
+
+    pub async fn get_version_files_by_hashes(
+        &self,
+        hashes: &[String],
+    ) -> Result<std::collections::HashMap<String, VersionFileResponse>, Box<dyn std::error::Error>> {
+        let url = format!("{}/version_files", MODRINTH_API_BASE);
+        #[derive(Serialize)]
+        struct HashRequest<'a> {
+            hashes: &'a [String],
+            algorithm: &'a str,
+        }
+        let body = HashRequest { hashes, algorithm: "sha1" };
+        let response = self.http_client.post(&url).json(&body).send().await?;
+        if !response.status().is_success() {
+            let error_text = response.text().await?;
+            return Err(format!("Modrinth API error: {}", error_text).into());
+        }
+        let result: std::collections::HashMap<String, VersionFileResponse> = response.json().await?;
+        Ok(result)
+    }
+
+    pub async fn get_projects_batch(
+        &self,
+        project_ids: &[String],
+    ) -> Result<Vec<ModrinthProjectDetails>, Box<dyn std::error::Error>> {
+        let url = format!("{}/projects", MODRINTH_API_BASE);
+        let ids_json = serde_json::to_string(project_ids)?;
+        let response = self.http_client.get(&url).query(&[("ids", &ids_json)]).send().await?;
+        if !response.status().is_success() {
+            let error_text = response.text().await?;
+            return Err(format!("Modrinth API error: {}", error_text).into());
+        }
+        let result: Vec<ModrinthProjectDetails> = response.json().await?;
+        Ok(result)
     }
 
     pub async fn search_projects(
