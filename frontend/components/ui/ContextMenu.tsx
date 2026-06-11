@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
 interface ContextMenuItem {
@@ -18,6 +18,7 @@ interface ContextMenuProps {
 
 export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState({ x, y })
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -25,61 +26,44 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
         onClose()
       }
     }
-
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose()
-      }
+      if (e.key === "Escape") onClose()
     }
 
     document.addEventListener("mousedown", handleClickOutside)
     document.addEventListener("keydown", handleEscape)
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside)
       document.removeEventListener("keydown", handleEscape)
     }
   }, [onClose])
 
-  // Adjust position to keep menu on screen
-  useEffect(() => {
-    if (menuRef.current) {
-      const rect = menuRef.current.getBoundingClientRect()
-      const viewportWidth = window.innerWidth
-      const viewportHeight = window.innerHeight
+  useLayoutEffect(() => {
+    if (!menuRef.current) return
+    const { width, height } = menuRef.current.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
 
-      let adjustedX = x
-      let adjustedY = y
-
-      if (rect.right > viewportWidth) {
-        adjustedX = viewportWidth - rect.width - 8
-      }
-
-      if (rect.bottom > viewportHeight) {
-        adjustedY = viewportHeight - rect.height - 8
-      }
-
-      menuRef.current.style.left = `${adjustedX}px`
-      menuRef.current.style.top = `${adjustedY}px`
-    }
+    setPosition({
+      x: x + width  > vw ? vw - width  - 8 : x,
+      y: y + height > vh ? vh - height - 8 : y,
+    })
   }, [x, y])
 
-  const menuContent = useMemo(() => (
+  return createPortal(
     <div
       ref={menuRef}
       className="fixed z-[100] bg-[#181a1f] rounded-md overflow-hidden min-w-[180px] border border-[#ffffff14]"
-      style={{ left: x, top: y }}
+      style={{ left: position.x, top: position.y }}
     >
-      {items.map((item, index) => (
+      {items.map((item, index) =>
         item.separator ? (
           <div key={index} className="h-px bg-[#22252b] my-1 mx-2" />
         ) : (
           <button
             key={index}
             onClick={() => {
-              if (item.onClick) {
-                item.onClick()
-              }
+              item.onClick?.()
               onClose()
             }}
             className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
@@ -92,9 +76,8 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
             <span>{item.label}</span>
           </button>
         )
-      ))}
-    </div>
-  ), [x, y, items, onClose])
-
-  return createPortal(menuContent, document.body)
+      )}
+    </div>,
+    document.body
+  )
 }
