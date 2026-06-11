@@ -225,7 +225,7 @@ export function SkinsTab(props: SkinsTabProps) {
 
   const getSkinRenderUrl = () => {
     if (!activeAccount?.username) return null
-    const angleParam = showBack ? "&y=180" : ""
+    const angleParam = showBack ? "&y=200" : ""
     return `https://renders.stellarmc.gg/full/${activeAccount.username}?${angleParam}`
   }
 
