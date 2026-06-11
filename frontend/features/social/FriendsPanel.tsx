@@ -109,7 +109,7 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
     <div
       ref={panelRef}
       className={`flex-shrink-0 bg-[#15171c] flex flex-col h-full overflow-hidden transition-all duration-200 ease-in-out ${
-        isOpen ? "w-60" : "w-0"
+        isOpen ? "w-60" : "w-0 -mr-4"
       }`}
     >
       <div className="flex items-center gap-2 px-2 pt-2 pb-1">
