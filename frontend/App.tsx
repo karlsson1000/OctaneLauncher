@@ -574,7 +574,7 @@ function App() {
           )}
         </div>
 
-        <div className="flex items-center mr-0.5" style={noDragRegion}>
+        <div className="flex items-center" style={noDragRegion}>
           <button
             data-friends-toggle
             onClick={() => setShowFriendsPanel(!showFriendsPanel)}
@@ -587,7 +587,7 @@ function App() {
           </button>
         </div>
 
-        <div className="flex items-center mr-0.5" style={noDragRegion}>
+        <div className="flex items-center" style={noDragRegion}>
           <button onClick={() => appWindow.minimize()} className="h-9 w-9 flex items-center justify-center text-[#8a94a6] hover:text-[#e6e6e6] transition-colors cursor-pointer">
             <Minus size={18} strokeWidth={3} />
           </button>
