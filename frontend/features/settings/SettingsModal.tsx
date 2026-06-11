@@ -229,11 +229,11 @@ export function SettingsModal({
         onClick={handleClose}
       >
         <div
-          className={`blur-border bg-[#1a1d23] rounded w-full max-w-3xl h-[500px] flex flex-col shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border bg-[#1a1d23] rounded w-full max-w-3xl h-[460px] flex flex-col shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-[#252932]">
+          <div className="flex items-center justify-between px-5 pt-4 pb-1">
             <h2 className="text-xl font-semibold text-white">Settings</h2>
             <div className="flex items-center gap-3">
               {appVersion && (
@@ -250,14 +250,14 @@ export function SettingsModal({
           {/* Content */}
           <div className="flex flex-1 min-h-0">
             {/* Sidebar */}
-            <div className="w-48 border-r border-[#252932] p-3 space-y-1">
+            <div className="w-48 p-3 space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-colors cursor-pointer ${activeTab === tab.id ? 'bg-[#4572e3] text-white' : 'text-gray-400 hover:bg-[#252932] hover:text-white'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer ${activeTab === tab.id ? 'bg-[#4572e3] text-white' : 'text-gray-400 hover:bg-[#252932] hover:text-white'}`}
                   >
                     <Icon size={18} />
                     <span>{tab.label}</span>
@@ -267,7 +267,7 @@ export function SettingsModal({
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 p-5 min-w-0 max-w-full overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-5 pt-5 min-w-0 max-w-full overflow-y-auto custom-scrollbar">
               {activeTab === "game" && (
                 <div className="space-y-5">
                   {/* Memory */}
@@ -289,7 +289,7 @@ export function SettingsModal({
                         style={{ background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${ramPercent}%, #1a1d23 ${ramPercent}%, #1a1d23 100%)` }}
                       />
                       {systemInfo && (
-                        <div className="pt-2 border-t border-[#1a1d23] space-y-1">
+                        <div className="pt-2 space-y-1">
                           <div className="flex justify-between text-xs">
                             <span className="text-gray-400">System Total</span>
                             <span className="text-white font-medium">{(systemInfo.total_memory_mb / 1024).toFixed(1)} GB</span>
