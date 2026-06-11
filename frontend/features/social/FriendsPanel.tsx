@@ -112,7 +112,7 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
         isOpen ? "w-60" : "w-0 -mr-4"
       }`}
     >
-      <div className="flex items-center gap-2 px-2 pt-2 pb-1">
+      <div className="flex items-center gap-2 px-1 pt-2 pb-1">
         <span className="text-xl font-semibold text-[#e6e6e6]">Friends</span>
         {friends.length > 0 && (
           <span className="text-xs text-[#7d8590]">({friends.filter(f => f.status === "online" || f.status === "ingame").length} online)</span>
@@ -120,13 +120,13 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
       </div>
 
       {!isAuthenticated ? (
-        <div className="flex-1 flex flex-col items-center justify-center px-2 py-6 text-center">
+        <div className="flex-1 flex flex-col items-center justify-center px-1 py-6 text-center">
           <LogIn size={32} className="text-[#3a3f4b] mb-3" />
           <p className="text-sm text-[#7d8590]">Sign in to see your friends</p>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="px-2 pt-1 pb-1 space-y-1">
+          <div className="px-1 pt-1 pb-1 space-y-1">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#4a4f5b]" />
               <input
@@ -147,23 +147,23 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
               <button
                 onClick={() => handleSendRequest(searchQuery.trim())}
                 disabled={sending}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-[#7d8590] hover:bg-[#22252b] hover:text-[#e6e6e6] transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2 px-1 py-1.5 rounded text-xs text-[#7d8590] hover:bg-[#22252b] hover:text-[#e6e6e6] transition-colors cursor-pointer"
               >
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} strokeWidth={3} />}
                 Send friend request to "{searchQuery.trim()}"
               </button>
             )}
-            {sendError && <p className="text-xs text-red-400 px-2">{sendError}</p>}
+            {sendError && <p className="text-xs text-red-400 px-1">{sendError}</p>}
           </div>
 
           {requests.length > 0 && (
             <div>
-              <div className="px-2 py-2 text-xs font-semibold text-[#7d8590] uppercase tracking-wider">
+              <div className="px-1 py-2 text-xs font-semibold text-[#7d8590] uppercase tracking-wider">
                 Pending Requests ({requests.length})
               </div>
               <div className="max-h-40 overflow-y-auto">
                 {requests.map(req => (
-                  <div key={req.id} className="flex items-center gap-2 px-2 py-2 hover:bg-[#22252b] transition-colors">
+                  <div key={req.id} className="flex items-center gap-2 px-1 py-2 hover:bg-[#22252b] transition-colors">
                     <div className="w-6 h-6 rounded bg-[#22252b] flex items-center justify-center flex-shrink-0">
                       <span className="text-xs font-semibold text-[#7d8590]">
                         {req.from_username.charAt(0).toUpperCase()}
@@ -198,7 +198,7 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
                 <Loader2 size={20} className="animate-spin text-[#16a34a]" />
               </div>
             ) : sortedFriends.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center px-2">
+              <div className="flex flex-col items-center justify-center py-8 text-center px-1">
                 <Users size={32} className="text-[#3a3f4b] mb-3" />
                 <p className="text-sm text-[#7d8590]">No friends yet</p>
                 <p className="text-xs text-[#3a3f4b] mt-1">Send a friend request to get started</p>
@@ -208,7 +208,7 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
                 {sortedFriends.map(friend => (
                   <div
                     key={friend.uuid}
-                    className="group flex items-center gap-2.5 px-2 py-1.5"
+                    className="group flex items-center gap-2.5 px-1 py-1.5"
                   >
                     <div className="relative flex-shrink-0">
                       <img
