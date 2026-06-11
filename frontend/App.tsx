@@ -624,8 +624,16 @@ function App() {
           onCreateNew={() => setShowCreateModal(true)}
         />
 
-        <div className="flex-1 rounded-xl overflow-hidden flex flex-col relative" style={background ? { backgroundImage: `url(${background})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { backgroundColor: '#181a1f' }}>
+        <div
+          className="flex-1 rounded-xl overflow-hidden flex flex-col relative"
+          style={
+            background
+              ? { backgroundImage: `url(${background})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : { backgroundColor: '#181a1f' }
+          }
+        >
           {background && <div className="absolute inset-0 bg-black/80" />}
+
           <main className="flex-1 overflow-y-auto relative z-10">
             {showInstanceDetails && selectedInstance ? (
               <InstanceDetailsTab
@@ -716,6 +724,16 @@ function App() {
               </>
             )}
           </main>
+
+          {creatingInstanceName && (
+            <div className="absolute bottom-0 left-0 right-0 z-20">
+              <CreationProgressToast
+                instanceName={creatingInstanceName}
+                onError={handleCreationError}
+                onDismiss={() => setCreatingInstanceName(null)}
+              />
+            </div>
+          )}
         </div>
 
         <FriendsPanel
@@ -728,14 +746,6 @@ function App() {
         <div className="w-14 flex-shrink-0" />
         <div className="flex-1 h-0" />
       </div>
-
-      {creatingInstanceName && (
-        <CreationProgressToast
-          instanceName={creatingInstanceName}
-          onError={handleCreationError}
-          onDismiss={() => setCreatingInstanceName(null)}
-        />
-      )}
 
       {confirmModal && (
         <ConfirmModal
