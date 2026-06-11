@@ -75,13 +75,13 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
     <div className="relative self-center" ref={instanceSelectorRef}>
       <button
         onClick={() => setShowInstanceSelector(!showInstanceSelector)}
-        className="flex items-center gap-2 px-3 py-2 bg-[#22252b] hover:bg-[#2a2f3b] rounded-md text-sm transition-colors cursor-pointer"
+        className="flex items-center gap-3 px-2 py-1.5 bg-[#22252b] hover:bg-[#2a2f3b] rounded-md text-sm transition-colors cursor-pointer"
       >
         {instanceIcons[selectedInstance.name] ? (
-          <img src={instanceIcons[selectedInstance.name]!} alt={selectedInstance.name} className="w-7 h-7 rounded object-cover flex-shrink-0" />
+          <img src={instanceIcons[selectedInstance.name]!} alt={selectedInstance.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
         ) : (
-          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
-            <Package size={24} className="text-[#7d8590]" strokeWidth={1.5} />
+          <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
+            <Package size={26} className="text-[#7d8590]" strokeWidth={2} />
           </div>
         )}
         <div className="text-left min-w-0">
@@ -92,7 +92,7 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
             <span className={loaderInfo.color}>{loaderInfo.name}</span>
           </div>
         </div>
-        <ChevronDown size={16} className={`text-[#7d8590] ml-auto transition-transform ${showInstanceSelector ? 'rotate-180' : ''}`} strokeWidth={2} />
+        <ChevronDown size={16} className={`text-[#7d8590] ml-auto transition-transform ${showInstanceSelector ? 'rotate-180' : ''}`} strokeWidth={3} />
       </button>
       {showInstanceSelector && (
         <div className="absolute top-full mt-1 right-0 bg-[#22252b] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto">
@@ -126,7 +126,7 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
                       <span className={loader.color}>{loader.name}</span>
                     </div>
                   </div>
-                  {selectedInstance.name === instance.name && <Check size={16} className="flex-shrink-0" strokeWidth={2} />}
+                  {selectedInstance.name === instance.name && <Check size={16} className="flex-shrink-0 text-[#16a34a]" strokeWidth={3} />}
                 </button>
               )
             })
