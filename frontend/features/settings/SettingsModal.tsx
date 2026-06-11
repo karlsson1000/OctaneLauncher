@@ -194,6 +194,15 @@ export function SettingsModal({
     }
   }
 
+  const handleOpenDirectory = async (path: string) => {
+    try {
+      await invoke("open_directory", { path })
+    } catch (error) {
+      console.error("Failed to open directory:", error)
+      setAlertModal({ isOpen: true, title: "An error occurred", message: "Failed to open directory" + `: ${error}`, type: "danger" })
+    }
+  }
+
   const handleClose = () => {
     setIsClosing(true)
     setTimeout(() => { setIsClosing(false); onClose() }, 150)
@@ -405,8 +414,16 @@ export function SettingsModal({
                       <FolderOpen size={18} className="text-[#4572e3]" />
                       <span className="font-medium">Game Directory</span>
                     </div>
-                    <div className="bg-[#252932] rounded p-4">
-                      <p className="text-xs text-gray-400 font-mono break-all">{launcherDirectory || "Loading..."}</p>
+                    <div className="bg-[#252932] rounded p-4 flex items-center justify-between gap-3">
+                      <p className="text-xs text-gray-400 font-mono break-all flex-1">{launcherDirectory || "Loading..."}</p>
+                      <button
+                        onClick={() => handleOpenDirectory(launcherDirectory)}
+                        disabled={!launcherDirectory}
+                        className="flex-shrink-0 px-3 py-1.5 bg-[#2d3139] hover:bg-[#353a44] disabled:opacity-50 rounded text-xs font-medium text-white cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
+                      >
+                        <FolderOpen size={13} />
+                        Open
+                      </button>
                     </div>
                   </div>
 
