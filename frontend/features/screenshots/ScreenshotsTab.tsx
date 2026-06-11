@@ -125,7 +125,7 @@ export function ScreenshotsTab() {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-8 space-y-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -291,7 +291,7 @@ const ScreenshotCard = memo(function ScreenshotCard({ screenshot, index, getImag
     <div
       ref={containerRef}
       onClick={() => openViewer(index)}
-      className="group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all hover:bg-[#2a2e36]"
+      className="group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all hover:bg-[#2a2e36] screenshot-card"
     >
       <div className="aspect-video bg-[#181a1f] overflow-hidden relative">
         {imageLoading && (

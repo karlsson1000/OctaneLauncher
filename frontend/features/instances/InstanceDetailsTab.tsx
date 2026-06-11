@@ -142,10 +142,10 @@ export function InstanceDetailsTab({
 
           if (versions && versions.length > 0) {
             const latestVersion = versions[0]
-            
+
             if (latestVersion.id !== mod.current_version_id) {
               const primaryFile = latestVersion.files.find((f: ModrinthFile) => f.primary) || latestVersion.files[0]
-              
+
               if (primaryFile) {
                 updates.push({
                   filename: mod.filename,
@@ -172,7 +172,7 @@ export function InstanceDetailsTab({
 
   const updateAllMods = async () => {
     if (availableUpdates.length === 0) return
-    
+
     setIsUpdatingMods(true)
 
     for (const update of availableUpdates) {
@@ -190,7 +190,7 @@ export function InstanceDetailsTab({
 
     setIsUpdatingMods(false)
     setAvailableUpdates([])
-    
+
     await loadInstalledMods()
   }
 
@@ -211,11 +211,11 @@ export function InstanceDetailsTab({
   const formatDate = (timestamp?: number): string => {
     if (!timestamp) return "Unknown"
     const date = new Date(timestamp * 1000)
-    
+
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-    
+
     let hours = date.getHours()
     const minutes = String(date.getMinutes()).padStart(2, '0')
     const ampm = hours >= 12 ? 'PM' : 'AM'
@@ -360,9 +360,10 @@ export function InstanceDetailsTab({
 
   return (
     <>
-      <div className="p-6 space-y-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-col h-full overflow-hidden">
+
+        <div className="flex-shrink-0 px-8 pt-8 pb-6 max-w-7xl w-full mx-auto">
+          <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
               {instanceIcon ? (
                 <div className="w-16 h-16 rounded-md overflow-hidden bg-[#181a1f]">
@@ -420,164 +421,173 @@ export function InstanceDetailsTab({
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="border-t border-[#3a3f4b] my-6" />
+        <div className="flex-1 overflow-hidden px-8 max-w-7xl w-full mx-auto">
+          <div className="grid grid-cols-2 gap-0 h-full">
 
-          <div className="grid grid-cols-2 gap-0 relative">
             {/* Mods column */}
-            <div className="pr-6 border-r border-[#3a3f4b]">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Installed Mods</h2>
-                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">{installedMods.length} mod{installedMods.length === 1 ? '' : 's'}</span>
+            <div className="pr-6 flex flex-col h-full overflow-hidden">
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Installed Mods</h2>
+                    <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">{installedMods.length} mod{installedMods.length === 1 ? '' : 's'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {(instance.loader === "fabric" || instance.loader === "neoforge") && modsWithProjectId > 0 && (
+                      availableUpdates.length > 0 ? (
+                        <button onClick={updateAllMods} disabled={isUpdatingMods} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                          {isUpdatingMods ? <><Loader2 size={14} className="animate-spin" /><span>Updating...</span></> : <><RefreshCw size={14} /><span>Update All ({availableUpdates.length})</span></>}
+                        </button>
+                      ) : (
+                        <button onClick={checkForUpdates} disabled={isCheckingUpdates} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded text-xs transition-colors cursor-pointer">
+                          {isCheckingUpdates ? <><Loader2 size={14} className="animate-spin" /><span>Checking...</span></> : <><RefreshCw size={14} /><span>Check for Updates</span></>}
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {(instance.loader === "fabric" || instance.loader === "neoforge") && modsWithProjectId > 0 && (
-                    availableUpdates.length > 0 ? (
-                      <button onClick={updateAllMods} disabled={isUpdatingMods} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                        {isUpdatingMods ? <><Loader2 size={14} className="animate-spin" /><span>Updating...</span></> : <><RefreshCw size={14} /><span>Update All ({availableUpdates.length})</span></>}
-                      </button>
-                    ) : (
-                      <button onClick={checkForUpdates} disabled={isCheckingUpdates} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 text-[#7d8590] hover:text-[#e6e6e6] rounded text-xs transition-colors cursor-pointer">
-                        {isCheckingUpdates ? <><Loader2 size={14} className="animate-spin" /><span>Checking...</span></> : <><RefreshCw size={14} /><span>Check for Updates</span></>}
-                      </button>
-                    )
-                  )}
-                </div>
+
+                {installedMods.length > 0 && (
+                  <div className="relative mb-3">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7d8590] pointer-events-none" />
+                    <input type="text" value={modSearchQuery} onChange={(e) => setModSearchQuery(e.target.value)} placeholder="Search mods..." className="w-full bg-[#22252b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#7d8590] placeholder-[#7d8590] focus:outline-none transition-colors" />
+                    {modSearchQuery && <button onClick={() => setModSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"><X size={14} /></button>}
+                  </div>
+                )}
               </div>
 
-              {/* Search field */}
-              {installedMods.length > 0 && (
-                <div className="relative mb-3">
-                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] pointer-events-none" />
-                  <input type="text" value={modSearchQuery} onChange={(e) => setModSearchQuery(e.target.value)} placeholder="Search mods..." className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors" />
-                  {modSearchQuery && <button onClick={() => setModSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"><X size={14} /></button>}
-                </div>
-              )}
+              <div className="flex-1 overflow-y-auto min-h-0">
+                {isLoadingMods ? (
+                  <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
+                ) : installedMods.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                    <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No mods installed</h3>
+                    <p className="text-sm text-[#7d8590]">Browse the mods tab to add mods</p>
+                  </div>
+                ) : filteredMods.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Search size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
+                    <p className="text-sm text-[#7d8590]">No mods match your search</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pr-1">
+                    {filteredMods.map((mod) => {
+                      const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
 
-              {isLoadingMods ? (
-                <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
-              ) : installedMods.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
-                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No mods installed</h3>
-                  <p className="text-sm text-[#7d8590]">Browse the mods tab to add mods</p>
+                      return (
+                        <div key={mod.filename} className={`bg-[#22252b] rounded-md overflow-hidden transition-all ${mod.disabled ? 'opacity-60' : ''} ${hasUpdate ? 'ring-2 ring-[#4572e3]/50' : ''}`}>
+                          <div className="flex min-h-0">
+                            {mod.icon_url ? (
+                              <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
+                                <img src={mod.icon_url} alt={mod.name || mod.filename} className={`w-full h-full object-contain ${mod.disabled ? 'grayscale' : ''}`} />
+                              </div>
+                            ) : (
+                              <div className="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                                <Package size={36} className="text-[#3a3f4b]" strokeWidth={2} />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{mod.name || mod.filename}</h3>
+                                  {hasUpdate && <span className="px-1.5 py-0.5 bg-[#4572e3] text-white text-xs rounded font-medium">Update</span>}
+                                </div>
+                                <p className="text-sm text-[#7d8590] truncate">{mod.filename}</p>
+                                <p className="text-sm text-[#3a3f4b] mt-0.5">{formatFileSize(mod.size)}</p>
+                              </div>
+                              <div className="flex flex-col items-center gap-1">
+                                <button onClick={() => handleToggleMod(mod)} className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${mod.disabled ? 'bg-[#3a3f4b] border-[#3a3f4b]' : 'bg-[#16a34a] border-[#16a34a]'}`}>
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M10 3L4.5 8.5L2 6" stroke={mod.disabled ? '#7d8590' : '#0f1115'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                </button>
+                                <button onClick={() => handleDeleteMod(mod.filename)} className="p-1.5 mt-1 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer">
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Worlds column */}
+            <div className="pl-6 flex flex-col h-full overflow-hidden">
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Worlds</h2>
+                    <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">{worlds.length} world{worlds.length === 1 ? '' : 's'}</span>
+                  </div>
+                  <button onClick={handleOpenWorldsFolder} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded text-xs transition-colors cursor-pointer">
+                    <ExternalLink size={14} /><span>Open Folder</span>
+                  </button>
                 </div>
-              ) : filteredMods.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Search size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
-                  <p className="text-sm text-[#7d8590]">No mods match your search</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredMods.map((mod) => {
-                    const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
-                    
-                    return (
-                      <div key={mod.filename} className={`blur-border bg-[#22252b] rounded-md overflow-hidden transition-all ${mod.disabled ? 'opacity-60' : ''} ${hasUpdate ? 'ring-2 ring-[#4572e3]/50' : ''}`}>
+
+                {worlds.length > 0 && (
+                  <div className="relative mb-3">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7d8590] pointer-events-none" />
+                    <input type="text" value={worldSearchQuery} onChange={(e) => setWorldSearchQuery(e.target.value)} placeholder="Search worlds..." className="w-full bg-[#22252b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#7d8590] placeholder-[#7d8590] focus:outline-none transition-colors" />
+                    {worldSearchQuery && <button onClick={() => setWorldSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"><X size={14} /></button>}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 overflow-y-auto min-h-0">
+                {isLoadingWorlds ? (
+                  <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
+                ) : worlds.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                    <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No worlds yet</h3>
+                    <p className="text-sm text-[#7d8590]">Launch the game to create a world</p>
+                  </div>
+                ) : filteredWorlds.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <Search size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
+                    <p className="text-sm text-[#7d8590]">No worlds match your search</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pr-1">
+                    {filteredWorlds.map((world) => (
+                      <div key={world.folder_name} className="bg-[#22252b] rounded-md overflow-hidden transition-all">
                         <div className="flex min-h-0">
-                          {mod.icon_url ? (
+                          {world.icon ? (
                             <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
-                              <img src={mod.icon_url} alt={mod.name || mod.filename} className={`w-full h-full object-contain ${mod.disabled ? 'grayscale' : ''}`} />
+                              <img src={world.icon} alt={world.name} className="w-full h-full object-contain" />
                             </div>
                           ) : (
                             <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
-                              <Package size={32} className="text-[#3a3f4b]" strokeWidth={1.5} />
+                              <Globe size={32} className="text-[#3a3f4b]" strokeWidth={1.5} />
                             </div>
                           )}
                           <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{mod.name || mod.filename}</h3>
-                                {hasUpdate && <span className="px-1.5 py-0.5 bg-[#4572e3] text-white text-xs rounded font-medium">Update</span>}
+                              <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{world.name}</h3>
+                              <p className="text-xs text-[#7d8590] mt-0.5">Created {formatDate(world.created)}</p>
+                              <div className="flex items-center gap-2 text-sm text-[#7d8590] mt-0.5">
+                                <span>{formatFileSize(world.size)}</span>
+                                {world.game_mode && <><span>•</span><span className="capitalize">{world.game_mode}</span></>}
                               </div>
-                              <p className="text-sm text-[#7d8590] truncate">{mod.filename}</p>
-                              <p className="text-sm text-[#3a3f4b] mt-0.5">{formatFileSize(mod.size)}</p>
                             </div>
-                            <div className="flex flex-col items-center gap-1">
-                              <button onClick={() => handleToggleMod(mod)} className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${mod.disabled ? 'bg-[#3a3f4b] border-[#3a3f4b]' : 'bg-[#16a34a] border-[#16a34a]'}`}>
-                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M10 3L4.5 8.5L2 6" stroke={mod.disabled ? '#7d8590' : '#0f1115'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </button>
-                              <button onClick={() => handleDeleteMod(mod.filename)} className="p-1.5 mt-1 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer">
-                                <Trash2 size={16} />
-                              </button>
+                            <div className="flex flex-col items-end gap-1">
+                              <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded-md transition-all cursor-pointer"><FolderOpen size={16} /></button>
+                              <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={16} /></button>
                             </div>
                           </div>
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="pl-6">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold text-[#e6e6e6] tracking-tight">Worlds</h2>
-                  <span className="px-2 py-0.5 bg-[#22252b] text-[#7d8590] text-xs rounded">{worlds.length} world{worlds.length === 1 ? '' : 's'}</span>
-                </div>
-                <button onClick={handleOpenWorldsFolder} className="flex items-center gap-1.5 px-2 py-0.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded text-xs transition-colors cursor-pointer">
-                  <ExternalLink size={14} /><span>Open Folder</span>
-                </button>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              {worlds.length > 0 && (
-                <div className="relative mb-3">
-                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] pointer-events-none" />
-                  <input type="text" value={worldSearchQuery} onChange={(e) => setWorldSearchQuery(e.target.value)} placeholder="Search worlds..." className="w-full bg-[#181a1f] border border-[#3a3f4b] rounded-md pl-8 pr-8 py-1.5 text-sm text-[#e6e6e6] placeholder-[#3a3f4b] focus:outline-none focus:border-[#4572e3] transition-colors" />
-                  {worldSearchQuery && <button onClick={() => setWorldSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#3a3f4b] hover:text-[#7d8590] transition-colors cursor-pointer"><X size={14} /></button>}
-                </div>
-              )}
-
-              {isLoadingWorlds ? (
-                <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
-              ) : worlds.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
-                  <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No worlds yet</h3>
-                  <p className="text-sm text-[#7d8590]">Launch the game to create a world</p>
-                </div>
-              ) : filteredWorlds.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Search size={32} className="text-[#3a3f4b] mb-3" strokeWidth={1.5} />
-                  <p className="text-sm text-[#7d8590]">No worlds match your search</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredWorlds.map((world) => (
-                    <div key={world.folder_name} className="blur-border bg-[#22252b] rounded-md overflow-hidden transition-all">
-                      <div className="flex min-h-0">
-                        {world.icon ? (
-                          <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
-                            <img src={world.icon} alt={world.name} className="w-full h-full object-contain" />
-                          </div>
-                        ) : (
-                          <div className="w-22 bg-[#181a1f] flex items-center justify-center flex-shrink-0 self-stretch">
-                            <Globe size={32} className="text-[#3a3f4b]" strokeWidth={1.5} />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{world.name}</h3>
-                            <p className="text-xs text-[#7d8590] mt-0.5">Created {formatDate(world.created)}</p>
-                            <div className="flex items-center gap-2 text-sm text-[#7d8590] mt-0.5">
-                              <span>{formatFileSize(world.size)}</span>
-                              {world.game_mode && <><span>•</span><span className="capitalize">{world.game_mode}</span></>}
-                            </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded-md transition-all cursor-pointer"><FolderOpen size={16} /></button>
-                            <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[#7d8590] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={16} /></button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </div>

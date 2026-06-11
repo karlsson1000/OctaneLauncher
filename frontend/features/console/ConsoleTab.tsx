@@ -131,7 +131,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-8 space-y-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4">
@@ -163,7 +163,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
         </div>
 
         {/* Console Display */}
-        <div className="blur-border bg-[#1a1d23] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 225px)' }}>
+        <div className="bg-[#1a1d23] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 250px)' }}>
           {consoleLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">

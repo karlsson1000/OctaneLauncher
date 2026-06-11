@@ -1,4 +1,4 @@
-import { Package, Plus, ExternalLink, FileArchive, FolderOpen, Copy, Trash2, Play, ChevronRight } from "lucide-react"
+import { Package, ExternalLink, FileArchive, FolderOpen, Copy, Trash2, Play, ChevronRight } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import type { Instance, Snapshot, SnapshotsResponse, AccountInfo } from "../../types"
@@ -13,7 +13,6 @@ interface HomeTabProps {
   runningInstances: Set<string>
   onLaunch: (instance: Instance) => void | Promise<void>
   onDeleteInstance: (name: string) => void
-  onCreateNew: () => void
   onShowDetails: (instance: Instance) => void
   onOpenFolderByInstance?: (instance: Instance) => void
   onDuplicateInstance?: (instance: Instance) => void
@@ -28,7 +27,6 @@ export function HomeTab({
   launchingInstanceName,
   runningInstances,
   onLaunch,
-  onCreateNew,
   onShowDetails,
   onOpenFolderByInstance,
   onDuplicateInstance,
@@ -154,11 +152,11 @@ export function HomeTab({
   const isLastPlayedLaunching = lastPlayedInstance ? launchingInstanceName === lastPlayedInstance.name : false
 
   return (
-    <div className="p-8 pt-[90px] space-y-10">
+    <div className="p-12 pt-[75px] space-y-10">
       <div className="max-w-7xl mx-auto">
 
         {/* Bento hero */}
-        <div className="w-full h-36 bg-[#22252b] rounded-md blur-border relative flex items-center justify-between px-8">
+        <div className="w-full h-36 bg-[#22252b] rounded-md relative flex items-center justify-between px-8">
           {activeAccount && (
             <div className="absolute left-12 bottom-0" style={{ zIndex: 10 }}>
               <img
@@ -170,13 +168,20 @@ export function HomeTab({
             </div>
           )}
 
-          {isAuthenticated && activeAccount && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {isAuthenticated && activeAccount ? (
               <h2 className="text-3xl font-semibold text-[#e6e6e6] tracking-tight">
                 {getGreeting()}, {activeAccount.username}
               </h2>
-            </div>
-          )}
+            ) : (
+              <div className="text-center">
+                <h2 className="text-3xl font-semibold text-[#e6e6e6] tracking-tight">
+                  Welcome to Octane Launcher
+                </h2>
+                <p className="text-sm text-[#8a94a6] mt-1">Sign in to get started</p>
+              </div>
+            )}
+          </div>
 
           <div className="flex-1" />
 
@@ -224,13 +229,6 @@ export function HomeTab({
                   </h2>
                 )}
               </div>
-              <button
-                onClick={onCreateNew}
-                className="px-4 h-7 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
-              >
-                <Plus size={16} />
-                New
-              </button>
             </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
@@ -254,7 +252,7 @@ export function HomeTab({
                 >
                   {tooltipInstance === instance && (
                     <div className="absolute bottom-full left-0 right-0 mb-2 z-50 pointer-events-none">
-                      <div className="bg-[#181a1f] rounded-md p-3 mx-2 shadow-xl border border-[#2a2e36]">
+                      <div className="bg-[#181a1f] rounded-md p-3 mx-2 border border-[#2a2e36]">
                         <div className="text-sm font-medium text-[#e6e6e6] mb-1.5">{instance.name}</div>
                         <div className="space-y-1 text-xs text-[#7d8590]">
                           <div className="flex justify-between gap-4">
@@ -332,7 +330,7 @@ export function HomeTab({
         </div>
         {loadingSnapshots ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
+            <div className="w-8 h-8 rounded-full animate-spin" />
           </div>
         ) : snapshots.length === 0 ? (
           <div className="bg-[#22252b] rounded-md p-8 text-center">
@@ -346,7 +344,7 @@ export function HomeTab({
                 onClick={async () => {
                   try { await invoke('open_url', { url: getVersionUrl(snapshot.version) }) } catch {}
                 }}
-                className="blur-border bg-[#22252b] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col"
+                className="bg-[#22252b] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col"
               >
                 <div className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity">
                   <ExternalLink size={14} className="text-[#e6e6e6]" />

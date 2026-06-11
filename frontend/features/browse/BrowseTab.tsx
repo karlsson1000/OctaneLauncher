@@ -1,10 +1,9 @@
-import { useState, useRef } from "react"
+import { useState, useRef, Fragment } from "react"
 import { ModsTab, ModsSelector } from "../mods/ModsTab"
 import { ModpacksTab } from "../modpacks/ModpacksTab"
 import { ResourcePacksTab } from "../resourcepacks/ResourcePacksTab"
 import { ShaderPacksTab } from "../shaderpacks/ShaderPacksTab"
-import { FavoritesTab } from "../favorites/FavoritesTab"
-import { Puzzle, Layers, Image, Sparkles, Heart } from "lucide-react"
+import { Puzzle, Layers, Image, Sparkles } from "lucide-react"
 import type { Instance } from "../../types"
 
 interface BrowseTabProps {
@@ -13,6 +12,8 @@ interface BrowseTabProps {
   onSetSelectedInstance: (instance: Instance) => void
   onRefreshInstances?: () => void
   onShowCreationToast?: (instanceName: string) => void
+  activeSubTab: "mods" | "modpacks" | "resourcepacks" | "shaderpacks"
+  onSubTabChange: (tab: "mods" | "modpacks" | "resourcepacks" | "shaderpacks") => void
 }
 
 export function BrowseTab({ 
@@ -20,9 +21,10 @@ export function BrowseTab({
   instances, 
   onSetSelectedInstance, 
   onRefreshInstances, 
-  onShowCreationToast 
+  onShowCreationToast,
+  activeSubTab,
+  onSubTabChange,
 }: BrowseTabProps) {
-  const [activeSubTab, setActiveSubTab] = useState<"mods" | "modpacks" | "resourcepacks" | "shaderpacks" | "favorites">("mods")
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const [selectedModpackVersion, setSelectedModpackVersion] = useState<string | null>(null)
@@ -58,19 +60,12 @@ export function BrowseTab({
       icon: Sparkles,
       color: "text-[#f59e0b]"
     },
-    { 
-      id: "favorites" as const, 
-      label: "", 
-      subtitle: "Your favorited content",
-      icon: Heart,
-      color: "text-[#ef4444]"
-    },
   ]
 
   const activeTab = tabs.find(tab => tab.id === activeSubTab)
 
   return (
-    <div className="p-6 space-y-4" ref={scrollContainerRef}>
+    <div className="p-8 space-y-4" ref={scrollContainerRef}>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -79,10 +74,9 @@ export function BrowseTab({
                 const Icon = tab.icon
                 const isActive = activeSubTab === tab.id
                 return (
-                  <>
+                  <Fragment key={tab.id}>
                     <button
-                      key={tab.id}
-                      onClick={() => setActiveSubTab(tab.id)}
+                      onClick={() => onSubTabChange(tab.id)}
                       className={`flex items-center gap-2 text-2xl font-semibold tracking-tight transition-colors cursor-pointer ${
                         isActive ? tab.color : "text-[#7d8590] hover:text-[#e6e6e6]"
                       }`}
@@ -93,7 +87,7 @@ export function BrowseTab({
                     {index < tabs.length - 1 && (
                       <div className="h-8 w-px bg-[#3a3f4b]" />
                     )}
-                  </>
+                  </Fragment>
                 )
               })}
             </div>
@@ -102,7 +96,7 @@ export function BrowseTab({
             </p>
           </div>
           
-          {(activeSubTab === "mods" || activeSubTab === "resourcepacks" || activeSubTab === "shaderpacks" || activeSubTab === "favorites") && (
+          {(activeSubTab === "mods" || activeSubTab === "resourcepacks" || activeSubTab === "shaderpacks") && (
             <ModsSelector 
               instances={instances}
               selectedInstance={selectedInstance}
@@ -154,11 +148,6 @@ export function BrowseTab({
         />
       )}
 
-      {activeSubTab === "favorites" && (
-        <FavoritesTab
-          selectedInstance={selectedInstance}
-        />
-      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Package, Plus, Search, FolderOpen, Copy, Trash2, FileText, Download, ChevronDown, Play, FileDown, FileUp, FileArchive } from "lucide-react"
+import { Package, Plus, Search, FolderOpen, Copy, Trash2, FileText, Download, ChevronDown, Play, FileDown, FileUp, FileArchive, ChevronUp } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { invoke } from "@tauri-apps/api/core"
@@ -7,6 +7,16 @@ import type { Instance, InstanceTemplate } from "../../types"
 import { ContextMenu } from "../../components/ui/ContextMenu"
 import { AlertModal } from "../../components/ui/ConfirmModal"
 import { ExportModal } from "./ExportModal"
+
+type SortOption = "recently-played" | "name-asc" | "name-desc"
+
+const SORT_CYCLE: SortOption[] = ["recently-played", "name-asc", "name-desc"]
+
+const SORT_LABELS: Record<SortOption, string> = {
+  "recently-played": "Recently played",
+  "name-asc": "Name (A–Z)",
+  "name-desc": "Name (Z–A)",
+}
 
 interface InstancesTabProps {
   instances: Instance[]
@@ -42,6 +52,7 @@ export function InstancesTab({
   const [instanceIcons, setInstanceIcons] = useState<Record<string, string | null>>({})
   const [showTemplateMenu, setShowTemplateMenu] = useState(false)
   const [showApplyMenu, setShowApplyMenu] = useState(false)
+  const [sortBy, setSortBy] = useState<SortOption>("recently-played")
   const [templates, setTemplates] = useState<InstanceTemplate[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [alertModal, setAlertModal] = useState<{
@@ -55,6 +66,11 @@ export function InstancesTab({
   const applyButtonRef = useRef<HTMLButtonElement>(null)
   const templateMenuRef = useRef<HTMLDivElement>(null)
   const applyMenuRef = useRef<HTMLDivElement>(null)
+
+  const handleCycleSort = () => {
+    const currentIndex = SORT_CYCLE.indexOf(sortBy)
+    setSortBy(SORT_CYCLE[(currentIndex + 1) % SORT_CYCLE.length])
+  }
 
   const getMinecraftVersion = (instance: Instance): string => {
     if (instance.loader === "fabric") {
@@ -82,18 +98,18 @@ export function InstancesTab({
   const getLoaderBadge = (instance: Instance) => {
     if (instance.loader === "fabric") {
       return (
-          <span className="text-[#3b82f6] flex-shrink-0 flex items-center gap-1">
-            <img src="/loaders/fabric.png" alt="Fabric" className="w-3.5 h-3.5" />
-            Fabric
-          </span>
+        <span className="text-[#3b82f6] flex-shrink-0 flex items-center gap-1">
+          <img src="/loaders/fabric.png" alt="Fabric" className="w-3.5 h-3.5" />
+          Fabric
+        </span>
       )
     }
     if (instance.loader === "neoforge") {
       return (
-          <span className="text-[#f97316] flex-shrink-0 flex items-center gap-1">
-            <img src="/loaders/neoforge.png" alt="NeoForge" className="w-3 h-3" />
-            NeoForge
-          </span>
+        <span className="text-[#f97316] flex-shrink-0 flex items-center gap-1">
+          <img src="/loaders/neoforge.png" alt="NeoForge" className="w-3 h-3" />
+          NeoForge
+        </span>
       )
     }
     return <span className="text-[#16a34a] flex-shrink-0">Vanilla</span>
@@ -193,8 +209,8 @@ export function InstancesTab({
         await invoke("export_template", { templateId, exportPath: filePath })
         setAlertModal({
           isOpen: true,
-        title: "Success",
-        message: `Template "${templateName}" exported successfully!`,
+          title: "Success",
+          message: `Template "${templateName}" exported successfully!`,
           type: "success"
         })
       }
@@ -216,8 +232,8 @@ export function InstancesTab({
         await loadTemplates()
         setAlertModal({
           isOpen: true,
-        title: "Success",
-        message: "Template imported successfully!",
+          title: "Success",
+          message: "Template imported successfully!",
           type: "success"
         })
       }
@@ -268,19 +284,58 @@ export function InstancesTab({
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
 
-  const filteredInstances = instances.filter(instance =>
-    instance.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const sortedAndFilteredInstances = instances
+    .filter(instance => instance.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "name-asc":
+          return a.name.localeCompare(b.name)
+        case "name-desc":
+          return b.name.localeCompare(a.name)
+        case "recently-played":
+        default: {
+          const aTime = (a as any).last_played ? new Date((a as any).last_played).getTime() : 0
+          const bTime = (b as any).last_played ? new Date((b as any).last_played).getTime() : 0
+          return bTime - aTime
+        }
+      }
+    })
+
+  const sortIsDesc = sortBy === "recently-played" || sortBy === "name-desc"
 
   return (
     <>
-      <div className="p-6 space-y-4">
+      <div className="p-8 space-y-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-semibold text-[#e6e6e6] tracking-tight">Instances</h1>
+            <div className="flex items-center gap-2">
+              {instances.length > 0 && (
+                <div className="relative rounded-md bg-[#22252b]">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
+                  <input
+                    type="text"
+                    placeholder="Search instances..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-72 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
+                  />
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
+              {instances.length > 0 && (
+                <button
+                  onClick={handleCycleSort}
+                  className="h-8 px-2.5 hover:bg-[#22252b] rounded flex items-center gap-1.5 transition-colors cursor-pointer group"
+                >
+                  <span className="text-sm text-[#4a4f5b] group-hover:text-[#7d8590] transition-colors font-medium">Sort by:</span>
+                  <span className="text-sm text-[#7d8590] group-hover:text-[#e6e6e6] transition-colors font-semibold">{SORT_LABELS[sortBy]}</span>
+                  {sortIsDesc
+                    ? <ChevronDown size={14} className="text-[#7d8590] group-hover:text-[#e6e6e6] transition-colors" strokeWidth={2.5} />
+                    : <ChevronUp size={14} className="text-[#7d8590] group-hover:text-[#e6e6e6] transition-colors" strokeWidth={2.5} />
+                  }
+                </button>
+              )}
               <button
                 ref={templateButtonRef}
                 onClick={() => { setShowTemplateMenu(!showTemplateMenu); setShowApplyMenu(false) }}
@@ -288,18 +343,6 @@ export function InstancesTab({
               >
                 <FileText size={22} strokeWidth={2} />
               </button>
-              {instances.length > 0 && (
-                <div className="relative blur-border-input rounded-md bg-[#22252b]">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-56 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
-                  />
-                </div>
-              )}
               <button
                 onClick={onCreateNew}
                 className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
@@ -323,7 +366,7 @@ export function InstancesTab({
                 <span>Create Instance</span>
               </button>
             </div>
-          ) : filteredInstances.length === 0 ? (
+          ) : sortedAndFilteredInstances.length === 0 ? (
             <div className="rounded-md p-8 flex flex-col items-center justify-center">
               <Search size={48} className="text-[#e6e6e6] mb-3" strokeWidth={1.5} />
               <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No instances found</h3>
@@ -331,7 +374,7 @@ export function InstancesTab({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {filteredInstances.map((instance) => {
+              {sortedAndFilteredInstances.map((instance) => {
                 const icon = instanceIcons[instance.name]
                 const isLaunching = launchingInstanceName === instance.name
                 const isRunning = runningInstances.has(instance.name)
@@ -340,14 +383,14 @@ export function InstancesTab({
                     key={instance.name}
                     onClick={() => { onSetSelectedInstance(instance); onShowDetails(instance) }}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="blur-border bg-[#22252b] rounded-md flex items-center hover:bg-[#2a2e36] transition-all cursor-pointer group relative overflow-hidden"
+                    className="bg-[#22252b] rounded-md flex items-center hover:bg-[#2a2e36] transition-all cursor-pointer group relative overflow-hidden"
                   >
                     <div className="relative flex-shrink-0">
                       {icon ? (
                         <img src={icon} alt={instance.name} className="w-20 h-20 object-cover" />
                       ) : (
-                        <div className="w-20 h-20 bg-[#181a1f] flex items-center justify-center">
-                          <Package size={36} className="text-[#3a3f4b]" />
+                        <div className="w-20 h-20 flex items-center justify-center">
+                          <Package size={36} className="text-[#4a4f5b]" />
                         </div>
                       )}
                     </div>
@@ -454,7 +497,7 @@ export function InstancesTab({
                       <button
                         key={instance.name}
                         onClick={() => handleCreateTemplate(instance.name)}
-                        className="w-full p-3 hover:bg-[#22252b] transition-colors text-left cursor-pointer flex items-center gap-3 group border-b border-[#22252b] last:border-0"
+                        className="w-full p-3 hover:bg-[#22252b] transition-colors text-left cursor-pointer flex items-center gap-3 group last:border-0"
                       >
                         <div className="w-10 h-10 bg-[#22252b] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {icon ? (
@@ -465,7 +508,7 @@ export function InstancesTab({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-[#e6e6e6] truncate">{instance.name}</div>
-                                  <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : instance.loader === "neoforge" ? "NeoForge" : "Vanilla"}</div>
+                          <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : instance.loader === "neoforge" ? "NeoForge" : "Vanilla"}</div>
                         </div>
                         <Plus size={16} className="text-[#3a3f4b] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
                       </button>
@@ -567,7 +610,7 @@ export function InstancesTab({
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <div className="text-sm font-medium text-[#e6e6e6] truncate">{instance.name}</div>
-                          <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : instance.loader === "neoforge" ? "NeoForge" : "Vanilla"}</div>
+                                  <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : instance.loader === "neoforge" ? "NeoForge" : "Vanilla"}</div>
                                 </div>
                                 <Download size={16} className="text-[#7d8590] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
                               </button>

@@ -212,8 +212,8 @@ export function CreationProgressToast({
 
   return (
     <>
-      <div className="fixed top-14 right-4 z-40 w-[330px] animate-in slide-in-from-right-4 duration-300">
-        <div className="blur-border bg-[#181a1f] rounded overflow-hidden">
+      <div className="fixed top-12 right-8 z-40 w-[330px] animate-in slide-in-from-right-4 duration-300">
+        <div className="bg-[#181a1f] rounded overflow-hidden">
           <div className="p-4 relative z-0">
           <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">

@@ -2,14 +2,14 @@ import { useState, useEffect, lazy, Suspense } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { Minus, Square, X, ChevronLeft, ChevronRight, Home, Package, Puzzle, Server, HatGlasses, Terminal, Settings, Camera, Download, Loader2 } from "lucide-react"
+import { Minus, Square, X, ChevronLeft, ChevronRight, ChevronDown, Loader2, LogIn, LogOut, Check, Users } from "lucide-react"
 import { SettingsModal } from "./features/settings/SettingsModal"
 import { CreateInstanceModal } from "./features/instances/CreateInstanceModal"
 import { CreationProgressToast } from "./features/instances/CreationProgressToast"
-import { UpdateDropdown } from "./features/instances/UpdateDropdown"
 import { InstanceDetailsTab } from "./features/instances/InstanceDetailsTab"
 import { ConfirmModal, AlertModal } from "./components/ui/ConfirmModal"
 import { Sidebar } from "./components/layout/Sidebar"
+import { FriendsPanel } from "./features/social/FriendsPanel"
 import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } from "./types"
 import type { CSSProperties } from "react"
 
@@ -63,7 +63,7 @@ function App() {
   const [navigationHistory, setNavigationHistory] = useState<Array<{tab: typeof activeTab, showDetails: boolean, instance: Instance | null}>>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isNavigating, setIsNavigating] = useState(false)
-  const [sidebarBackground, setSidebarBackground] = useState<string | null>(null)
+  const [background, setBackground] = useState<string | null>(null)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [sidebarContextMenu, setSidebarContextMenu] = useState<{
     x: number
@@ -71,10 +71,24 @@ function App() {
     instance: Instance
   } | null>(null)
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
-  const [showUpdateDropdown, setShowUpdateDropdown] = useState(false)
   const [isInstallingUpdate, setIsInstallingUpdate] = useState(false)
+  const [showAccountDropdown, setShowAccountDropdown] = useState(false)
+  const [showFriendsPanel, setShowFriendsPanel] = useState(false)
+  const [browseSubTab, setBrowseSubTab] = useState<"mods" | "modpacks" | "resourcepacks" | "shaderpacks">("mods")
 
   const appWindow = getCurrentWindow()
+
+  useEffect(() => {
+    if (!showAccountDropdown) return
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest("[data-account-dropdown]") && !target.closest("[data-account-button]")) {
+        setShowAccountDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [showAccountDropdown])
 
   const dragRegion = { WebkitAppRegion: 'drag' as const } as CSSProperties
   const noDragRegion = { WebkitAppRegion: 'no-drag' as const } as CSSProperties
@@ -150,19 +164,8 @@ function App() {
         type: "danger"
       })
       setIsInstallingUpdate(false)
-      setShowUpdateDropdown(false)
     }
   }
-
-  const tabs = [
-    { id: "home" as const, icon: Home, label: "Home" },
-    { id: "instances" as const, icon: Package, label: "Instances" },
-    { id: "browse" as const, icon: Puzzle, label: "Addons" },
-    { id: "servers" as const, icon: Server, label: "Servers" },
-    { id: "skins" as const, icon: HatGlasses, label: "Skins" },
-    { id: "screenshots" as const, icon: Camera, label: "Screenshots" },
-    { id: "console" as const, icon: Terminal, label: "Console" },
-  ]
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -187,8 +190,8 @@ function App() {
     loadLauncherDirectory()
     loadSettings()
     loadAccounts()
-    loadSidebarBackground()
-    
+    loadBackground()
+
     const unlistenConsole = listen<ConsoleLog>("console-log", (event) => {
       setConsoleLogs((prev) => [...prev, event.payload])
     })
@@ -241,20 +244,6 @@ function App() {
     return () => { cancelled = true }
   }, [instances])
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (showUpdateDropdown) {
-        const target = e.target as HTMLElement
-        if (!target.closest('[data-update-dropdown]') && !target.closest('[data-update-button]')) {
-          setShowUpdateDropdown(false)
-        }
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showUpdateDropdown])
-
   const loadVersions = async () => {
     try {
       const versionList = await invoke<string[]>("get_minecraft_versions")
@@ -298,12 +287,12 @@ function App() {
     }
   }
 
-  const loadSidebarBackground = async () => {
+  const loadBackground = async () => {
     try {
-      const bg = await invoke<string | null>("get_sidebar_background")
-      setSidebarBackground(bg)
+      const bg = await invoke<string | null>("get_background")
+      setBackground(bg)
     } catch (error) {
-      console.error("Failed to load sidebar background:", error)
+      console.error("Failed to load background:", error)
     }
   }
 
@@ -314,6 +303,9 @@ function App() {
       const active = accountList.find(acc => acc.is_active)
       setActiveAccount(active || null)
       setIsAuthenticated(!!active)
+      if (active) {
+        invoke("register_user_in_friends_system").catch(() => {})
+      }
     } catch (error) {
       console.error("Failed to load accounts:", error)
     }
@@ -369,7 +361,6 @@ function App() {
       counter++
       newName = `${baseName} (Copy ${counter})`
     }
-
     setCreatingInstanceName(newName)
     try {
       await invoke("duplicate_instance", {
@@ -421,25 +412,6 @@ function App() {
     setCreatingInstanceName(null)
   }
 
-  const handleQuickLaunch = async (instance: Instance) => {
-    if (!activeAccount) return
-    setLaunchingInstanceName(instance.name)
-    setConsoleLogs([])
-    if (settings?.auto_navigate_to_console !== false) setActiveTab("console")
-    try {
-      await invoke<string>("launch_instance_with_active_account", {
-        instanceName: instance.name,
-        appHandle: appWindow,
-      })
-      await loadInstances()
-      setRunningInstances((prev) => new Set(prev).add(instance.name))
-      setLaunchingInstanceName(null)
-    } catch (error) {
-      console.error("Launch error:", error)
-      setLaunchingInstanceName(null)
-    }
-  }
-
   const handleKillInstance = async (instance: Instance) => {
     try {
       await invoke("kill_instance", { instanceName: instance.name })
@@ -459,99 +431,302 @@ function App() {
     }
   }
 
+  const tabLabels: Record<typeof activeTab, string> = {
+    home: "Home",
+    instances: "Instances",
+    browse: "Addons",
+    servers: "Servers",
+    skins: "Skins",
+    screenshots: "Screenshots",
+    console: "Console",
+  }
+
+  const browseSubTabLabels: Record<string, string> = {
+    mods: "Mods",
+    modpacks: "Modpacks",
+    resourcepacks: "Resource Packs",
+    shaderpacks: "Shader Packs",
+  }
+
   return (
-    <div className="flex flex-col h-screen bg-[#181a1f] text-[#e6e6e6] overflow-hidden font-sans">
+    <div className="flex flex-col h-screen bg-[#15171c] text-[#e6e6e6] overflow-hidden font-sans">
+
       <div
         data-tauri-drag-region
         style={{ userSelect: 'none', ...dragRegion } as CSSProperties}
-        className="h-10 bg-[#22252b] flex-shrink-0 fixed top-0 left-0 right-0 z-50 flex items-center"
+        className="h-9 flex-shrink-0 flex items-center px-5 gap-2"
       >
-        <div className="flex items-center gap-2 ml-4 mr-4">
-          <img src="/logo.png" alt="Octane Launcher" className="h-5 w-5" />
-          <span className="text-sm font-semibold text-[#e6e6e6]">Octane Launcher</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <img src="/logo.png" alt="Octane" className="h-4 w-4" />
+          <span className="text-sm font-semibold text-[#8a94a6]">Octane Launcher</span>
         </div>
 
-        <div className="flex items-center gap-1 mr-4" style={noDragRegion}>
+        <div className="flex items-center gap-0.5 ml-1" style={noDragRegion}>
           <button
             onClick={navigateBack}
             disabled={historyIndex <= 0}
-            className={`h-7 w-7 flex items-center justify-center rounded transition-colors ${
-              historyIndex > 0 ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" : "text-[#3a3f4b] cursor-not-allowed"
+            className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
+              historyIndex > 0 ? "text-[#8a94a6] hover:bg-[#1a1d24] hover:text-[#e6e6e6] cursor-pointer" : "text-[#2e3340] cursor-not-allowed"
             }`}
           >
-            <ChevronLeft size={16} strokeWidth={4} />
+            <ChevronLeft size={18} strokeWidth={3} />
           </button>
           <button
             onClick={navigateForward}
             disabled={historyIndex >= navigationHistory.length - 1}
-            className={`h-7 w-7 flex items-center justify-center rounded transition-colors ${
-              historyIndex < navigationHistory.length - 1 ? "text-[#e6e6e6] hover:bg-[#3a3f4b] cursor-pointer" : "text-[#3a3f4b] cursor-not-allowed"
+            className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
+              historyIndex < navigationHistory.length - 1 ? "text-[#8a94a6] hover:bg-[#1a1d24] hover:text-[#e6e6e6] cursor-pointer" : "text-[#2e3340] cursor-not-allowed"
             }`}
           >
-            <ChevronRight size={16} strokeWidth={4} />
+            <ChevronRight size={18} strokeWidth={3} />
           </button>
         </div>
 
-        <div className="flex-1 flex items-center justify-center" style={dragRegion}>
-          <nav className="flex items-center gap-1" style={noDragRegion}>
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => { setActiveTab(tab.id); setShowInstanceDetails(false) }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-all cursor-pointer ${
-                    activeTab === tab.id ? "bg-[#181a1f] text-[#e6e6e6]" : "text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b]"
-                  }`}
-                >
-                  <Icon size={18} strokeWidth={2} />
-                  <span>{tab.label}</span>
-                </button>
-              )
-            })}
-          </nav>
-        </div>
+        <span className="text-sm font-medium text-[#8a94a6] ml-1 select-none" style={dragRegion}>
+          {showInstanceDetails && selectedInstance
+            ? `Instances / ${selectedInstance.name}`
+            : activeTab === "browse"
+            ? `Addons / ${browseSubTabLabels[browseSubTab]}`
+            : tabLabels[activeTab]}
+        </span>
 
-        <div className="flex items-center ml-auto relative" style={noDragRegion}>
-          {updateInfo && (
-            <div className="relative">
+        <div className="flex-1" style={dragRegion} />
+
+        <div className="relative flex items-center mr-1" style={noDragRegion}>
+          {isAuthenticated && activeAccount ? (
+            <>
               <button
-                data-update-button
-                onClick={() => setShowUpdateDropdown(!showUpdateDropdown)}
-                className="flex items-center justify-center px-3 py-1.5 rounded text-[#16a34a] hover:text-[#16a34a] hover:bg-[#3a3f4b] transition-all cursor-pointer"
-                title={`Update available: ${updateInfo.new_version}`}
+                data-account-button
+                onClick={() => setShowAccountDropdown(!showAccountDropdown)}
+                className="flex items-center gap-1.5 px-2 h-7 rounded text-sm font-medium text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1a1d24] transition-all cursor-pointer"
               >
-                <Download size={18} strokeWidth={2} />
-              </button>
-
-              {showUpdateDropdown && (
-                <UpdateDropdown
-                  newVersion={updateInfo.new_version}
-                  isInstalling={isInstallingUpdate}
-                  onInstall={handleInstallUpdate}
+                <img
+                  src={`https://avatar.mcindex.net/avatar/${activeAccount.username}/16`}
+                  alt={activeAccount.username}
+                  className="w-4 h-4 rounded object-cover flex-shrink-0"
+                  style={{ imageRendering: "pixelated" }}
                 />
+                <span>{activeAccount.username}</span>
+                <ChevronDown size={14} strokeWidth={3} className={`transition-transform ${showAccountDropdown ? "rotate-180" : ""}`} />
+              </button>
+              {showAccountDropdown && (
+                <div
+                  data-account-dropdown
+                  className="absolute top-full mt-1 w-48 bg-[#22252b] rounded shadow-lg overflow-hidden z-50 left-1/2 -translate-x-1/2"
+                >
+                  <div>
+                    {accounts.map(acc => (
+                      <button
+                        key={acc.uuid}
+                        onClick={async () => {
+                          if (!acc.is_active) {
+                            try { await invoke("switch_account", { uuid: acc.uuid }); await loadAccounts() } catch {}
+                          }
+                          setShowAccountDropdown(false)
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#2a2d35] transition-colors cursor-pointer"
+                      >
+                        <img
+                          src={`https://avatar.mcindex.net/avatar/${acc.username}/24`}
+                          alt={acc.username}
+                          className="w-6 h-6 rounded object-cover flex-shrink-0"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                        <span className="flex-1 text-left">{acc.username}</span>
+                        {acc.is_active && <Check size={14} strokeWidth={3} className="text-[#16a34a]" />}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="border-t border-[#2a2d35]" />
+                  <div>
+                    <button
+                      onClick={async () => {
+                        try { await invoke("microsoft_login_and_store"); await loadAccounts(); setShowAccountDropdown(false) } catch {}
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#2a2d35] transition-colors cursor-pointer"
+                    >
+                      <LogIn size={16} strokeWidth={3} className="text-[#16a34a]" />
+                      Add Account
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try { await invoke("remove_account", { uuid: activeAccount.uuid }); await loadAccounts(); setShowAccountDropdown(false) } catch {}
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-[#2a2d35] transition-colors cursor-pointer"
+                    >
+                      <LogOut size={16} strokeWidth={3} />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
               )}
-            </div>
+            </>
+          ) : (
+            <button
+              onClick={async () => {
+                try { await invoke("microsoft_login_and_store"); await loadAccounts() } catch {}
+              }}
+              className="flex items-center gap-1.5 px-2 h-6 rounded text-xs font-medium text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1a1d24] transition-all cursor-pointer"
+            >
+              <LogIn size={14} strokeWidth={2} className="text-[#16a34a]" />
+              Sign in
+            </button>
           )}
+        </div>
 
+        <div className="flex items-center mr-0.5" style={noDragRegion}>
           <button
-            onClick={() => setShowSettingsModal(true)}
-            className="flex items-center justify-center px-3 py-1.5 rounded text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-all cursor-pointer"
-            title="Settings"
+            data-friends-toggle
+            onClick={() => setShowFriendsPanel(!showFriendsPanel)}
+            className={`h-7 w-7 flex items-center justify-center rounded transition-colors cursor-pointer ${
+              showFriendsPanel ? "bg-[#22252b] text-[#e6e6e6]" : "text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1a1d24]"
+            }`}
+            title="Friends"
           >
-            <Settings size={18} strokeWidth={2} />
-          </button>
-          <div className="w-px h-6 bg-[#3a3f4b] mx-2" style={{ pointerEvents: 'none' } as CSSProperties} />
-          <button onClick={() => appWindow.minimize()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors">
-            <Minus size={18} strokeWidth={2} />
-          </button>
-          <button onClick={() => appWindow.toggleMaximize()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#3a3f4b] transition-colors">
-            <Square size={14} strokeWidth={2} />
-          </button>
-          <button onClick={() => appWindow.close()} className="h-10 w-12 flex items-center justify-center text-[#7d8590] hover:text-[#e6e6e6] hover:bg-red-500 transition-colors">
-            <X size={18} strokeWidth={2} />
+            <Users size={16} strokeWidth={2} />
           </button>
         </div>
+
+        <div className="flex items-center mr-0.5" style={noDragRegion}>
+          <button onClick={() => appWindow.minimize()} className="h-9 w-9 flex items-center justify-center text-[#8a94a6] hover:text-[#e6e6e6] transition-colors cursor-pointer">
+            <Minus size={18} strokeWidth={3} />
+          </button>
+          <button onClick={() => appWindow.toggleMaximize()} className="h-9 w-9 flex items-center justify-center text-[#8a94a6] hover:text-[#e6e6e6] transition-colors cursor-pointer">
+            <Square size={14} strokeWidth={3} />
+          </button>
+          <button onClick={() => appWindow.close()} className="h-9 w-9 flex items-center justify-center text-[#8a94a6] hover:text-red-500 transition-colors cursor-pointer">
+            <X size={18} strokeWidth={3} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden px-4 gap-4">
+
+        <Sidebar
+          setActiveTab={setActiveTab}
+          setShowInstanceDetails={setShowInstanceDetails}
+          activeTab={activeTab}
+          instances={instances}
+          instanceIcons={instanceIcons}
+          runningInstances={runningInstances}
+          launchingInstanceName={launchingInstanceName}
+          isAuthenticated={isAuthenticated}
+          sidebarContextMenu={sidebarContextMenu}
+          setSidebarContextMenu={setSidebarContextMenu}
+          setSelectedInstance={setSelectedInstance}
+          onOpenInstanceFolder={handleOpenInstanceFolderByInstance}
+          onDuplicateInstance={handleDuplicateInstance}
+          onDeleteInstance={handleDeleteInstance}
+          updateInfo={updateInfo}
+          isInstallingUpdate={isInstallingUpdate}
+          onInstallUpdate={handleInstallUpdate}
+          onOpenSettings={() => setShowSettingsModal(true)}
+          onCreateNew={() => setShowCreateModal(true)}
+        />
+
+        <div className="flex-1 rounded-xl overflow-hidden flex flex-col relative" style={background ? { backgroundImage: `url(${background})`, backgroundSize: 'cover', backgroundPosition: 'center' } : { backgroundColor: '#181a1f' }}>
+          {background && <div className="absolute inset-0 bg-black/80" />}
+          <main className="flex-1 overflow-y-auto relative z-10">
+            {showInstanceDetails && selectedInstance ? (
+              <InstanceDetailsTab
+                instance={selectedInstance}
+                isAuthenticated={isAuthenticated}
+                isLaunching={launchingInstanceName === selectedInstance.name}
+                isRunning={runningInstances.has(selectedInstance.name)}
+                onLaunch={() => handleLaunch(selectedInstance)}
+                onBack={handleCloseDetails}
+                onInstanceUpdated={loadInstances}
+              />
+            ) : (
+              <>
+                {activeTab === "home" && (
+                  <Suspense fallback={<Loader />}>
+                    <HomeTab
+                      instances={instances}
+                      isAuthenticated={isAuthenticated}
+                      activeAccount={activeAccount}
+                      launchingInstanceName={launchingInstanceName}
+                      runningInstances={runningInstances}
+                      onLaunch={handleLaunch}
+                      onDeleteInstance={handleDeleteInstance}
+                      onShowDetails={handleShowDetails}
+                      onOpenFolderByInstance={handleOpenInstanceFolderByInstance}
+                      onDuplicateInstance={handleDuplicateInstance}
+                      onKillInstance={handleKillInstance}
+                      onNavigateToInstances={() => setActiveTab("instances")}
+                    />
+                  </Suspense>
+                )}
+                {activeTab === "instances" && (
+                  <Suspense fallback={<Loader />}>
+                    <InstancesTab
+                      instances={instances}
+                      isAuthenticated={isAuthenticated}
+                      launchingInstanceName={launchingInstanceName}
+                      runningInstances={runningInstances}
+                      onSetSelectedInstance={setSelectedInstance}
+                      onLaunch={(instance: Instance) => { handleLaunch(instance) }}
+                      onCreateNew={() => setShowCreateModal(true)}
+                      onShowDetails={handleShowDetails}
+                      onOpenFolder={handleOpenInstanceFolderByInstance}
+                      onDuplicateInstance={handleDuplicateInstance}
+                      onDeleteInstance={handleDeleteInstance}
+                      onKillInstance={handleKillInstance}
+                    />
+                  </Suspense>
+                )}
+                {activeTab === "browse" && (
+                  <Suspense fallback={<Loader />}>
+                    <BrowseTab
+                      selectedInstance={selectedInstance}
+                      instances={instances}
+                      onSetSelectedInstance={setSelectedInstance}
+                      onRefreshInstances={loadInstances}
+                      onShowCreationToast={handleStartCreating}
+                      activeSubTab={browseSubTab}
+                      onSubTabChange={setBrowseSubTab}
+                    />
+                  </Suspense>
+                )}
+                {activeTab === "servers" && (
+                  <Suspense fallback={<Loader />}>
+                    <ServersTab runningInstances={runningInstances} />
+                  </Suspense>
+                )}
+                {activeTab === "skins" && (
+                  <Suspense fallback={<Loader />}>
+                    <SkinsTab activeAccount={activeAccount} isAuthenticated={isAuthenticated} />
+                  </Suspense>
+                )}
+                {activeTab === "screenshots" && (
+                  <Suspense fallback={<Loader />}>
+                    <ScreenshotsTab />
+                  </Suspense>
+                )}
+                {activeTab === "console" && (
+                  <Suspense fallback={<Loader />}>
+                    <ConsoleTab
+                      consoleLogs={consoleLogs}
+                      onClearConsole={(instanceName: string) => {
+                        setConsoleLogs(prev => prev.filter(log => log.instance !== instanceName))
+                      }}
+                    />
+                  </Suspense>
+                )}
+              </>
+            )}
+          </main>
+        </div>
+
+        <FriendsPanel
+          isOpen={showFriendsPanel}
+          isAuthenticated={isAuthenticated}
+        />
+      </div>
+
+      <div className="flex flex-shrink-0 px-4 pb-4">
+        <div className="w-14 flex-shrink-0" />
+        <div className="flex-1 h-0" />
       </div>
 
       {creatingInstanceName && (
@@ -584,138 +759,13 @@ function App() {
         />
       )}
 
-      <div className="flex flex-1 overflow-hidden mt-10">
-        <Sidebar
-          setActiveTab={setActiveTab}
-          setShowInstanceDetails={setShowInstanceDetails}
-          instances={instances}
-          instanceIcons={instanceIcons}
-          runningInstances={runningInstances}
-          launchingInstanceName={launchingInstanceName}
-          isAuthenticated={isAuthenticated}
-          activeAccount={activeAccount}
-          accounts={accounts}
-          sidebarBackground={sidebarBackground}
-          sidebarContextMenu={sidebarContextMenu}
-          setSidebarContextMenu={setSidebarContextMenu}
-          setSelectedInstance={setSelectedInstance}
-          setShowSettingsModal={setShowSettingsModal}
-          onQuickLaunch={handleQuickLaunch}
-          onKillInstance={handleKillInstance}
-          onOpenInstanceFolder={handleOpenInstanceFolderByInstance}
-          onDuplicateInstance={handleDuplicateInstance}
-          onDeleteInstance={handleDeleteInstance}
-          loadAccounts={loadAccounts}
-        />
-
-        <main className="flex-1 overflow-y-auto bg-[#181a1f]">
-          {showInstanceDetails && selectedInstance ? (
-            <InstanceDetailsTab
-              instance={selectedInstance}
-              isAuthenticated={isAuthenticated}
-              isLaunching={launchingInstanceName === selectedInstance.name}
-              isRunning={runningInstances.has(selectedInstance.name)}
-              onLaunch={() => handleLaunch(selectedInstance)}
-              onBack={handleCloseDetails}
-              onInstanceUpdated={loadInstances}
-            />
-          ) : (
-            <>
-              {activeTab === "home" && (
-                <Suspense fallback={<Loader />}>
-                <HomeTab
-                  instances={instances}
-                  isAuthenticated={isAuthenticated}
-                  activeAccount={activeAccount}
-                  launchingInstanceName={launchingInstanceName}
-                  runningInstances={runningInstances}
-                  onLaunch={handleLaunch}
-                  onDeleteInstance={handleDeleteInstance}
-                  onCreateNew={() => setShowCreateModal(true)}
-                  onShowDetails={handleShowDetails}
-                  onOpenFolderByInstance={handleOpenInstanceFolderByInstance}
-                  onDuplicateInstance={handleDuplicateInstance}
-                  onKillInstance={handleKillInstance}
-                  onNavigateToInstances={() => setActiveTab("instances")}
-                />
-                </Suspense>
-              )}
-
-              {activeTab === "instances" && (
-                <Suspense fallback={<Loader />}>
-                <InstancesTab
-                  instances={instances}
-                  isAuthenticated={isAuthenticated}
-                  launchingInstanceName={launchingInstanceName}
-                  runningInstances={runningInstances}
-                  onSetSelectedInstance={setSelectedInstance}
-                  onLaunch={(instance: Instance) => { handleLaunch(instance) }}
-                  onCreateNew={() => setShowCreateModal(true)}
-                  onShowDetails={handleShowDetails}
-                  onOpenFolder={handleOpenInstanceFolderByInstance}
-                  onDuplicateInstance={handleDuplicateInstance}
-                  onDeleteInstance={handleDeleteInstance}
-                  onKillInstance={handleKillInstance}
-                />
-                </Suspense>
-              )}
-
-              {activeTab === "browse" && (
-                <Suspense fallback={<Loader />}>
-                <BrowseTab
-                  selectedInstance={selectedInstance}
-                  instances={instances}
-                  onSetSelectedInstance={setSelectedInstance}
-                  onRefreshInstances={loadInstances}
-                  onShowCreationToast={handleStartCreating}
-                />
-                </Suspense>
-              )}
-
-              {activeTab === "servers" && (
-                <Suspense fallback={<Loader />}>
-                <ServersTab
-                  runningInstances={runningInstances}
-                />
-                </Suspense>
-              )}
-
-              {activeTab === "skins" && (
-                <Suspense fallback={<Loader />}>
-                <SkinsTab
-                  activeAccount={activeAccount}
-                  isAuthenticated={isAuthenticated}
-                />
-                </Suspense>
-              )}
-
-              {activeTab === "screenshots" && (
-                <Suspense fallback={<Loader />}>
-                <ScreenshotsTab />
-                </Suspense>
-              )}
-              {activeTab === "console" && (
-                <Suspense fallback={<Loader />}>
-                <ConsoleTab
-                  consoleLogs={consoleLogs}
-                  onClearConsole={(instanceName: string) => {
-                    setConsoleLogs(prev => prev.filter(log => log.instance !== instanceName))
-                  }}
-                />
-                </Suspense>
-              )}
-            </>
-          )}
-        </main>
-      </div>
-
       <SettingsModal
         isOpen={showSettingsModal}
         settings={settings}
         launcherDirectory={launcherDirectory}
         onClose={() => setShowSettingsModal(false)}
         onSettingsChange={setSettings}
-        onBackgroundChanged={loadSidebarBackground}
+        onBackgroundChanged={loadBackground}
       />
 
       {showCreateModal && (

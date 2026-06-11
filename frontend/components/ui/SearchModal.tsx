@@ -213,7 +213,7 @@ export function GlobalSearchModal({
     {
       type: "setting",
       title: "Appearance Settings",
-      description: "Customize launcher appearance and sidebar background",
+      description: "Customize launcher appearance and background",
       icon: <Settings size={18} />,
       action: () => {
         onOpenSettings()

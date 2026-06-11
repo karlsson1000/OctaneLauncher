@@ -184,7 +184,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
   return (
     <>
-      <div className="p-6 space-y-4">
+      <div className="p-8 space-y-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-4">
             <div>
@@ -193,7 +193,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
             </div>
             <div className="flex items-center gap-2">
               {servers.length > 0 && (
-                <div className="relative blur-border-input rounded-md bg-[#22252b]">
+                <div className="relative rounded-md bg-[#22252b]">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
                   <input
                     type="text"
@@ -242,8 +242,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                 return (
                   <div
                     key={server.name}
-                    onClick={() => setSelectedServer(server)}
-                    className="blur-border group bg-[#22252b] rounded-md p-4 cursor-pointer transition-all relative"
+                    className="group bg-[#22252b] rounded-md p-4 transition-all relative"
                   >
                     <button
                       onClick={(e) => { e.stopPropagation(); setServerToDelete(server.name) }}
@@ -294,7 +293,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                                     src={`https://avatar.mcindex.net/avatar/${player.name}/32`}
                                     alt={player.name}
                                     title={player.name}
-                                    className="w-5 h-5 rounded border-2 border-[#22252b] relative"
+                                    className="w-5 h-5 rounded relative"
                                     style={{ zIndex: 5 - index }}
                                   />
                                 ))}

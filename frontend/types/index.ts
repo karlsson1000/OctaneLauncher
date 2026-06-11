@@ -313,3 +313,24 @@ export interface SnapshotsResponse {
   version: number
   entries: Snapshot[]
 }
+
+export type FriendStatus = "online" | "offline" | "ingame"
+
+export interface Friend {
+  uuid: string
+  username: string
+  status: FriendStatus
+  last_seen: string
+  current_instance: string | null
+}
+
+export type RequestStatus = "pending" | "accepted" | "rejected"
+
+export interface FriendRequest {
+  id: string
+  from_uuid: string
+  from_username: string
+  to_uuid: string
+  status: RequestStatus
+  created_at: string
+}

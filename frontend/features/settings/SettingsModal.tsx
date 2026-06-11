@@ -111,10 +111,10 @@ export function SettingsModal({
 
   const loadSidebarBackground = async () => {
     try {
-      const bg = await invoke<string | null>("get_sidebar_background")
+      const bg = await invoke<string | null>("get_background")
       setSidebarBgPreview(bg)
     } catch (error) {
-      console.error("Failed to load sidebar background:", error)
+      console.error("Failed to load background:", error)
     }
   }
 
@@ -166,11 +166,11 @@ export function SettingsModal({
         const base64 = e.target?.result as string
         
         try {
-          await invoke("set_sidebar_background", { imageData: base64 })
+          await invoke("set_background", { imageData: base64 })
           setSidebarBgPreview(base64)
           onBackgroundChanged?.()
         } catch (error) {
-          console.error("Failed to save sidebar background:", error)
+          console.error("Failed to save background:", error)
           setAlertModal({ isOpen: true, title: "An error occurred", message: "Failed to save background" + `: ${error}`, type: "danger" })
         }
       }
@@ -185,11 +185,11 @@ export function SettingsModal({
 
   const handleRemoveBackground = async () => {
     try {
-      await invoke("remove_sidebar_background")
+      await invoke("remove_background")
       setSidebarBgPreview(null)
       onBackgroundChanged?.()
     } catch (error) {
-      console.error("Failed to remove sidebar background:", error)
+      console.error("Failed to remove background:", error)
       setAlertModal({ isOpen: true, title: "An error occurred", message: "Failed to remove background" + `: ${error}`, type: "danger" })
     }
   }
@@ -375,7 +375,7 @@ export function SettingsModal({
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-white">
                     <ImagePlus size={18} className="text-[#4572e3]" />
-                    <span className="font-medium">Sidebar Background</span>
+                    <span className="font-medium">Background</span>
                   </div>
                   {sidebarBgPreview ? (
                     <div className="relative group">

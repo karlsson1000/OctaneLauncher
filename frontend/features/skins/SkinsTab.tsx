@@ -231,7 +231,7 @@ export function SkinsTab(props: SkinsTabProps) {
 
   if (!isAuthenticated) {
     return (
-      <div className="p-6 space-y-4">
+      <div className="p-8 space-y-4">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Skins</h1>
@@ -248,7 +248,7 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-8 space-y-4">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -266,22 +266,20 @@ export function SkinsTab(props: SkinsTabProps) {
                 <Rotate3d size={20} />
               </button>
               <div className="rounded-md overflow-hidden bg-[#181a1f] p-4">
-                {loading && (
-                  <div className="w-[250px] h-[406px] flex items-center justify-center bg-[#181a1f] rounded-md">
+                <div className="w-[250px] h-[406px] flex items-center justify-center">
+                  {loading && (
                     <div className="text-center">
                       <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto mb-3" />
                       <p className="text-sm text-[#7d8590]">Loading skin...</p>
                     </div>
-                  </div>
-                )}
-                {!loading && currentSkinHash && (
-                  <img src={getSkinRenderUrl() || ''} alt="Minecraft skin render" className="w-[250px] h-auto object-contain" style={{ imageRendering: 'pixelated' }} />
-                )}
-                {!loading && !currentSkinHash && (
-                  <div className="w-[250px] h-[406px] flex items-center justify-center">
+                  )}
+                  {!loading && currentSkinHash && (
+                    <img src={getSkinRenderUrl() || ''} alt="Minecraft skin render" className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
+                  )}
+                  {!loading && !currentSkinHash && (
                     <p className="text-sm text-[#7d8590]">No skin loaded</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               <button onClick={() => setCapeModalOpen(true)} className="mt-3 px-4 py-2 bg-[#22252b] hover:bg-[#2a2d35] text-[#e6e6e6] rounded-md text-sm font-medium transition-all cursor-pointer">
                 {"Manage Capes"} {capes.length > 0 && `(${capes.length})`}
@@ -290,7 +288,7 @@ export function SkinsTab(props: SkinsTabProps) {
           </div>
 
           <div className="flex-1 max-w-sm space-y-4">
-            <div className="blur-border bg-[#22252b] rounded-md p-5">
+            <div className="bg-[#22252b] rounded-md p-5">
               <div className="mb-4">
                 <h3 className="text-base font-semibold text-[#e6e6e6]">Skin Model</h3>
               </div>
@@ -314,7 +312,7 @@ export function SkinsTab(props: SkinsTabProps) {
             </div>
 
             {recentSkins.length > 0 && (
-              <div className="blur-border bg-[#22252b] rounded-md p-5">
+              <div className="bg-[#22252b] rounded-md p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <h3 className="text-base font-semibold text-[#e6e6e6]">Recent Skins</h3>
                 </div>
@@ -334,7 +332,7 @@ export function SkinsTab(props: SkinsTabProps) {
             )}
 
             {error && (
-              <div className="blur-border bg-[#22252b] rounded-md p-4">
+              <div className="bg-[#22252b] rounded-md p-4">
                 <p className="text-xs text-red-400 leading-relaxed">{error}</p>
               </div>
             )}
@@ -344,7 +342,7 @@ export function SkinsTab(props: SkinsTabProps) {
 
       {capeModalOpen && (
         <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 modal-backdrop ${isClosingModal ? 'closing' : ''}`} onClick={handleCloseCapeModal}>
-          <div className={`blur-border bg-[#181a1f] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto modal-content ${isClosingModal ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div className={`bg-[#181a1f] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto modal-content ${isClosingModal ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-[#e6e6e6]">Manage Capes</h2>
               <button onClick={handleCloseCapeModal} className="p-1 hover:bg-[#22252b] rounded-md transition-colors cursor-pointer">

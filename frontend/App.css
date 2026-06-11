@@ -30,6 +30,15 @@
   scrollbar-color: #3d424d #1a1d23;
 }
 
+.screenshot-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px;
+}
+
+.cursor-pointer:active:not(.no-scale) {
+  transform: scale(0.97);
+}
+
 input[type="range"]::-webkit-slider-thumb {
   appearance: none;
   width: 16px;
@@ -67,51 +76,6 @@ input[type="range"]::-moz-range-thumb:hover {
   overflow: hidden;
 }
 
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Sidebar background image */
-.sidebar-bg {
-  position: relative;
-}
-
-.sidebar-bg:not([data-custom-bg])::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: url('/sidebarbg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0.1;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.sidebar-bg:not([data-custom-bg])::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
-  pointer-events: none;
-  z-index: 0;
-}
-
-.sidebar-bg > * {
-  position: relative;
-  z-index: 1;
-}
-
 /* Shared blur-border component style */
 .blur-border {
   position: relative;
@@ -135,26 +99,6 @@ input[type="range"]::-moz-range-thumb:hover {
 
 .blur-border:hover::before {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
-}
-
-/* Shared blur-border-input component style */
-.blur-border-input::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 2px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-  backdrop-filter: blur(8px);
-  z-index: 10;
-}
-
-.blur-border-input:focus-within::before {
-  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.08));
 }
 
 /* Shared custom scrollbar */

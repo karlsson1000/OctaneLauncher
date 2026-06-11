@@ -114,10 +114,15 @@ impl AccountManager {
     pub fn remove_account(uuid: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut data = Self::load_accounts()?;
         
+        let was_active = data.active_account_uuid.as_ref() == Some(&uuid.to_string());
         data.accounts.remove(uuid);
         
-        if data.active_account_uuid.as_ref() == Some(&uuid.to_string()) {
-            data.active_account_uuid = None;
+        if was_active {
+            if let Some(first_remaining) = data.accounts.keys().next().cloned() {
+                data.active_account_uuid = Some(first_remaining);
+            } else {
+                data.active_account_uuid = None;
+            }
         }
 
         Self::save_accounts(&data)?;
