@@ -6,9 +6,10 @@ import type { Friend, FriendRequest } from "../../types"
 interface FriendsPanelProps {
   isOpen: boolean
   isAuthenticated: boolean
+  activeAccountUuid?: string
 }
 
-export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
+export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: FriendsPanelProps) {
   const [friends, setFriends] = useState<Friend[]>([])
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -22,7 +23,7 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
       loadFriends()
       loadRequests()
     }
-  }, [isOpen, isAuthenticated])
+  }, [isOpen, isAuthenticated, activeAccountUuid])
 
   const loadFriends = async () => {
     setIsLoading(true)

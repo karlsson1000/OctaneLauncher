@@ -748,6 +748,7 @@ function App() {
         <FriendsPanel
           isOpen={showFriendsPanel}
           isAuthenticated={isAuthenticated}
+          activeAccountUuid={activeAccount?.uuid}
         />
       </div>
 
