@@ -462,7 +462,7 @@ function App() {
       <div
         data-tauri-drag-region
         style={{ userSelect: 'none', ...dragRegion } as CSSProperties}
-        className="h-9 flex-shrink-0 flex items-center px-5 gap-2"
+        className="h-9 flex-shrink-0 flex items-center pl-5 pr-3 gap-2"
       >
         <div className="flex items-center gap-2 flex-shrink-0">
           <img src="/logo.png" alt="Octane" className="h-4 w-4" />
