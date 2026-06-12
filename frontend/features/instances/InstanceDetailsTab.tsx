@@ -39,6 +39,7 @@ interface InstanceDetailsTabProps {
   onLaunch: () => void
   onBack: () => void
   onInstanceUpdated: () => void
+  onInstanceRenamed?: (oldName: string, newName: string) => void
 }
 
 export function InstanceDetailsTab({
@@ -49,6 +50,7 @@ export function InstanceDetailsTab({
   onLaunch,
   onBack,
   onInstanceUpdated,
+  onInstanceRenamed,
 }: InstanceDetailsTabProps) {
   const [installedMods, setInstalledMods] = useState<InstalledMod[]>([])
   const [worlds, setWorlds] = useState<World[]>([])
@@ -593,7 +595,7 @@ export function InstanceDetailsTab({
         </div>
       </div>
 
-      <InstanceSettingsModal isOpen={isSettingsOpen} instance={instance} instanceIcon={instanceIcon} onClose={() => setIsSettingsOpen(false)} onInstanceUpdated={handleInstanceUpdated} onInstanceDeleted={handleInstanceDeleted} />
+      <InstanceSettingsModal isOpen={isSettingsOpen} instance={instance} instanceIcon={instanceIcon} onClose={() => setIsSettingsOpen(false)} onInstanceUpdated={handleInstanceUpdated} onInstanceDeleted={handleInstanceDeleted} onInstanceRenamed={onInstanceRenamed} />
 
       {confirmModal && (
         <ConfirmModal isOpen={confirmModal.isOpen} title={confirmModal.title} message={confirmModal.message} type={confirmModal.type} confirmText={confirmModal.type === "danger" ? "Delete" : "Confirm"} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal(null)} />

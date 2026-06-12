@@ -17,6 +17,7 @@ interface InstanceSettingsModalProps {
   onClose: () => void
   onInstanceUpdated: () => void
   onInstanceDeleted: () => void
+  onInstanceRenamed?: (oldName: string, newName: string) => void
 }
 
 export function InstanceSettingsModal(props: InstanceSettingsModalProps) {
@@ -30,6 +31,7 @@ function InnerModal({
   onClose,
   onInstanceUpdated,
   onInstanceDeleted,
+  onInstanceRenamed,
 }: InstanceSettingsModalProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [newName, setNewName] = useState(instance.name)
@@ -312,7 +314,7 @@ function InnerModal({
     try {
       await invoke("rename_instance", { oldName: instance.name, newName: trimmedName })
       setRenameError(null)
-      onInstanceUpdated()
+      onInstanceRenamed?.(instance.name, trimmedName)
       onClose()
     } catch (error) {
       setRenameError(error as string)

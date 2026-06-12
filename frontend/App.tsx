@@ -253,12 +253,16 @@ function App() {
     }
   }
 
-  const loadInstances = async () => {
+  const loadInstances = async (renamedFrom?: string, renamedTo?: string) => {
     try {
       const instanceList = await invoke<Instance[]>("get_instances")
       setInstances(instanceList)
       if (selectedInstance) {
-        const updated = instanceList.find(i => i.name === selectedInstance.name)
+        let searchName = selectedInstance.name
+        if (renamedFrom && renamedTo && selectedInstance.name === renamedFrom) {
+          searchName = renamedTo
+        }
+        const updated = instanceList.find(i => i.name === searchName)
         if (updated) setSelectedInstance(updated)
         else setSelectedInstance(instanceList[0] || null)
       } else if (instanceList.length > 0 && !selectedInstance) {
@@ -267,6 +271,10 @@ function App() {
     } catch (error) {
       console.error("Failed to load instances:", error)
     }
+  }
+
+  const handleInstanceRenamed = (oldName: string, newName: string) => {
+    loadInstances(oldName, newName)
   }
 
   const loadLauncherDirectory = async () => {
@@ -644,6 +652,7 @@ function App() {
                 onLaunch={() => handleLaunch(selectedInstance)}
                 onBack={handleCloseDetails}
                 onInstanceUpdated={loadInstances}
+                onInstanceRenamed={handleInstanceRenamed}
               />
             ) : (
               <>
