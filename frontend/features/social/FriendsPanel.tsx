@@ -208,7 +208,7 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
                 {sortedFriends.map(friend => (
                   <div
                     key={friend.uuid}
-                    className="group flex items-center gap-2.5 px-1 py-1.5"
+                    className="group flex items-center gap-2.5 px-1 py-1.5 relative"
                   >
                     <div className="relative flex-shrink-0">
                       <img
@@ -232,7 +232,7 @@ export function FriendsPanel({ isOpen, isAuthenticated }: FriendsPanelProps) {
                     </div>
                     <button
                       onClick={() => handleRemoveFriend(friend.uuid)}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-[#7d8590] hover:text-red-400 transition-all cursor-pointer"
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-[#7d8590] hover:text-red-400 transition-all cursor-pointer absolute right-1"
                       title="Remove friend"
                     >
                       <UserX size={16} strokeWidth={3} />
