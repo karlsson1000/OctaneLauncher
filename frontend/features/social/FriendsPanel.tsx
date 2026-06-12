@@ -209,25 +209,25 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
                 {sortedFriends.map(friend => (
                   <div
                     key={friend.uuid}
-                    className="group flex items-center gap-2.5 px-1 py-1.5 relative"
+                    className="group flex items-center gap-3 px-1 py-1 relative"
                   >
                     <div className="relative flex-shrink-0">
                       <img
-                        src={`https://avatar.mcindex.net/avatar/${friend.username}/28`}
+                        src={`https://avatar.mcindex.net/avatar/${friend.username}/32`}
                         alt={friend.username}
-                        className="w-7 h-7 rounded object-cover"
+                        className="w-8 h-8 rounded object-cover"
                       />
                       <div className="absolute -bottom-0.5 -right-0.5">
                         {statusIcon(friend.status)}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#e6e6e6] truncate font-medium">{friend.username}</div>
-                      <div className="text-[13px] text-[#7d8590] truncate -mt-0.5">
+                      <div className="text-base text-[#e6e6e6] truncate font-medium">{friend.username}</div>
+                      <div className="text-[13px] text-[#7d8590] truncate -mt-0.75">
                         {friend.status === "ingame" && friend.current_instance
-                          ? `Playing ${friend.current_instance}`
+                          ? <span>Playing <span className="text-[#3b82f6] font-semibold">{friend.current_instance}</span></span>
                           : friend.status === "online"
-                          ? "Online"
+                          ? "In Launcher"
                           : "Offline"}
                       </div>
                     </div>
