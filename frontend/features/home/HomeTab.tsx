@@ -156,7 +156,7 @@ export function HomeTab({
       <div className="max-w-7xl mx-auto">
 
         {/* Bento hero */}
-        <div className="w-full h-36 bg-[#22252b] rounded-md relative flex items-center justify-between px-8">
+        <div className="w-full h-36 bg-[#22252b] rounded-md relative flex items-center px-8">
           {activeAccount && (
             <div className="absolute left-12 bottom-0" style={{ zIndex: 10 }}>
               <img
@@ -168,7 +168,9 @@ export function HomeTab({
             </div>
           )}
 
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className={`${activeAccount ? 'w-44' : 'w-0'} flex-shrink-0`} />
+
+          <div className="flex-1 flex justify-center">
             {isAuthenticated && activeAccount ? (
               <h2 className="text-3xl font-semibold text-[#e6e6e6] tracking-tight">
                 {getGreeting()}, {activeAccount.username}
@@ -183,29 +185,29 @@ export function HomeTab({
             )}
           </div>
 
-          <div className="flex-1" />
-
-          {isAuthenticated && lastPlayedInstance && (
-            <button
-            onClick={() => isLastPlayedRunning && onKillInstance
-              ? onKillInstance(lastPlayedInstance)
-              : onLaunch(lastPlayedInstance)
-            }
-            disabled={launchingInstanceName !== null && !isLastPlayedRunning && !isLastPlayedLaunching}
-            className={`h-11 px-5 rounded-md flex items-center justify-center gap-3 text-lg font-semibold transition-all active:scale-95 cursor-pointer ${
-              isLastPlayedRunning || isLastPlayedLaunching
-                ? "bg-red-500/15 text-red-400 hover:bg-red-500/25"
-                : "bg-[#16a34a] text-[#181a1f] hover:bg-[#15803d]"
-            } disabled:opacity-40`}
-            title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
-          >
-            {isLastPlayedLaunching || isLastPlayedRunning
-              ? <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-              : <Play size={24} fill="currentColor" strokeWidth={0} />
-            }
-            <span>{isLastPlayedRunning ? "Stop" : isLastPlayedLaunching ? "Launching..." : lastPlayedInstance.name}</span>
-          </button>
-          )}
+          <div className={`${isAuthenticated && lastPlayedInstance ? 'w-auto' : (activeAccount ? 'w-44' : 'w-0')} flex-shrink-0 flex items-center justify-end`}>
+            {isAuthenticated && lastPlayedInstance && (
+              <button
+              onClick={() => isLastPlayedRunning && onKillInstance
+                ? onKillInstance(lastPlayedInstance)
+                : onLaunch(lastPlayedInstance)
+              }
+              disabled={launchingInstanceName !== null && !isLastPlayedRunning && !isLastPlayedLaunching}
+              className={`h-11 px-5 rounded-md flex items-center justify-center gap-3 text-lg font-semibold transition-all active:scale-95 cursor-pointer ${
+                isLastPlayedRunning || isLastPlayedLaunching
+                  ? "bg-red-500/15 text-red-400 hover:bg-red-500/25"
+                  : "bg-[#16a34a] text-[#181a1f] hover:bg-[#15803d]"
+              } disabled:opacity-40`}
+              title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
+            >
+              {isLastPlayedLaunching || isLastPlayedRunning
+                ? <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                : <Play size={24} fill="currentColor" strokeWidth={0} />
+              }
+              <span className="truncate max-w-[140px]">{isLastPlayedRunning ? "Stop" : isLastPlayedLaunching ? "Launching..." : lastPlayedInstance.name}</span>
+            </button>
+            )}
+          </div>
         </div>
 
       </div>
