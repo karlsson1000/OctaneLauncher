@@ -61,14 +61,6 @@ export interface MinecraftOptions {
   keybinds: Record<string, string> | null
 }
 
-export interface InstanceTemplate {
-  id: string
-  name: string
-  description: string | null
-  created_at: string
-  launcher_settings: LauncherSettings | null
-}
-
 export interface ModrinthSearchResult {
   hits: ModrinthProject[]
   offset: number

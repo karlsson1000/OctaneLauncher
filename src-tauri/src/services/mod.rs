@@ -3,7 +3,6 @@ pub mod instance_launch;
 pub mod fabric;
 pub mod neoforge;
 pub mod installer;
-pub mod template;
 pub mod settings;
 pub mod accounts;
 pub mod friends;

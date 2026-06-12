@@ -1,11 +1,8 @@
-import { Package, Plus, Search, FolderOpen, Copy, Trash2, FileText, Download, ChevronDown, Play, FileDown, FileUp, FileArchive, ChevronUp } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
-import { createPortal } from "react-dom"
+import { Package, Plus, Search, FolderOpen, Copy, Trash2, ChevronDown, Play, FileArchive, ChevronUp } from "lucide-react"
+import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { open, save } from '@tauri-apps/plugin-dialog'
-import type { Instance, InstanceTemplate } from "../../types"
+import type { Instance } from "../../types"
 import { ContextMenu } from "../../components/ui/ContextMenu"
-import { AlertModal } from "../../components/ui/ConfirmModal"
 import { ExportModal } from "./ExportModal"
 
 type SortOption = "recently-played" | "name-asc" | "name-desc"
@@ -50,22 +47,8 @@ export function InstancesTab({
   const [searchQuery, setSearchQuery] = useState("")
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; instance: Instance } | null>(null)
   const [instanceIcons, setInstanceIcons] = useState<Record<string, string | null>>({})
-  const [showTemplateMenu, setShowTemplateMenu] = useState(false)
-  const [showApplyMenu, setShowApplyMenu] = useState(false)
   const [sortBy, setSortBy] = useState<SortOption>("recently-played")
-  const [templates, setTemplates] = useState<InstanceTemplate[]>([])
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
-  const [alertModal, setAlertModal] = useState<{
-    isOpen: boolean
-    title: string
-    message: string
-    type: "warning" | "danger" | "success" | "info"
-  } | null>(null)
   const [exportModalInstance, setExportModalInstance] = useState<Instance | null>(null)
-  const templateButtonRef = useRef<HTMLButtonElement>(null)
-  const applyButtonRef = useRef<HTMLButtonElement>(null)
-  const templateMenuRef = useRef<HTMLDivElement>(null)
-  const applyMenuRef = useRef<HTMLDivElement>(null)
 
   const handleCycleSort = () => {
     const currentIndex = SORT_CYCLE.indexOf(sortBy)
@@ -136,153 +119,10 @@ export function InstancesTab({
     if (instances.length > 0) loadIcons()
   }, [instances])
 
-  const loadTemplates = async () => {
-    try {
-      const templateList = await invoke<InstanceTemplate[]>("get_templates")
-      setTemplates(templateList)
-    } catch (error) {
-      console.error("Failed to load templates:", error)
-    }
-  }
-
-  useEffect(() => { loadTemplates() }, [])
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        templateMenuRef.current &&
-        !templateMenuRef.current.contains(event.target as Node) &&
-        !templateButtonRef.current?.contains(event.target as Node)
-      ) {
-        setShowTemplateMenu(false)
-      }
-      if (
-        applyMenuRef.current &&
-        !applyMenuRef.current.contains(event.target as Node) &&
-        !applyButtonRef.current?.contains(event.target as Node)
-      ) {
-        setShowApplyMenu(false)
-        setSelectedTemplateId(null)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
-
   const handleContextMenu = (e: React.MouseEvent, instance: Instance) => {
     e.preventDefault()
     setContextMenu({ x: e.clientX, y: e.clientY, instance })
   }
-
-  const handleCreateTemplate = async (instanceName: string) => {
-    setShowTemplateMenu(false)
-    try {
-      await invoke("create_template_from_instance", {
-        instanceName,
-        templateName: `${instanceName} Template`,
-        description: `Template created from ${instanceName}`
-      })
-      await loadTemplates()
-      setAlertModal({
-        isOpen: true,
-        title: "Success",
-        message: `Template created from "${instanceName}" successfully!`,
-        type: "success"
-      })
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        title: "An error occurred",
-        message: `Failed to create template: ${String(error)}`,
-        type: "danger"
-      })
-    }
-  }
-
-  const handleExportTemplate = async (templateId: string, templateName: string) => {
-    try {
-      const filePath = await save({
-        defaultPath: `${templateName}.json`,
-        filters: [{ name: 'Template', extensions: ['json'] }]
-      })
-      if (filePath) {
-        await invoke("export_template", { templateId, exportPath: filePath })
-        setAlertModal({
-          isOpen: true,
-          title: "Success",
-          message: `Template "${templateName}" exported successfully!`,
-          type: "success"
-        })
-      }
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        title: "An error occurred",
-        message: `Failed to export template: ${String(error)}`,
-        type: "danger"
-      })
-    }
-  }
-
-  const handleImportTemplate = async () => {
-    try {
-      const selected = await open({ multiple: false, filters: [{ name: 'Template', extensions: ['json'] }] })
-      if (selected && typeof selected === 'string') {
-        await invoke("import_template", { importPath: selected })
-        await loadTemplates()
-        setAlertModal({
-          isOpen: true,
-          title: "Success",
-          message: "Template imported successfully!",
-          type: "success"
-        })
-      }
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        title: "An error occurred",
-        message: `Failed to import template: ${String(error)}`,
-        type: "danger"
-      })
-    }
-  }
-
-  const handleDeleteTemplate = async (templateId: string) => {
-    try {
-      await invoke("delete_template", { templateId })
-      await loadTemplates()
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        title: "An error occurred",
-        message: `Failed to delete template: ${String(error)}`,
-        type: "danger"
-      })
-    }
-  }
-
-  const handleApplyTemplate = async (templateId: string, instanceName: string) => {
-    try {
-      await invoke("apply_template_to_instance", { templateId, instanceName })
-      setShowApplyMenu(false)
-      setSelectedTemplateId(null)
-      setAlertModal({
-        isOpen: true,
-        title: "Success",
-        message: `Template applied to ${instanceName} successfully!`,
-        type: "success"
-      })
-    } catch (error) {
-      setAlertModal({
-        isOpen: true,
-        title: "An error occurred",
-        message: `Failed to apply template: ${String(error)}`,
-        type: "danger"
-      })
-    }
-  }
-
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString()
 
   const sortedAndFilteredInstances = instances
     .filter(instance => instance.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -336,13 +176,6 @@ export function InstancesTab({
                   }
                 </button>
               )}
-              <button
-                ref={templateButtonRef}
-                onClick={() => { setShowTemplateMenu(!showTemplateMenu); setShowApplyMenu(false) }}
-                className="w-8 h-8 hover:bg-[#22252b] text-[#7d8590] hover:text-[#e6e6e6] rounded flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <FileText size={22} strokeWidth={2} />
-              </button>
               <button
                 onClick={onCreateNew}
                 className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
@@ -434,200 +267,6 @@ export function InstancesTab({
         </div>
       </div>
 
-      {showTemplateMenu && !showApplyMenu && createPortal(
-        <div
-          ref={templateMenuRef}
-          className="fixed w-96 bg-[#22252b] border border-[#3a3f4b] rounded z-[9999] overflow-hidden"
-          style={{
-            top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
-            right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
-          }}
-        >
-          <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-[#e6e6e6]">Template Manager</h3>
-            <p className="text-xs text-[#7d8590] mt-1">Create, apply, and manage templates</p>
-          </div>
-          <div className="h-px bg-[#3a3f4b]" />
-          <div className="p-3 space-y-2">
-            <button
-              onClick={() => { setShowTemplateMenu(false); setShowApplyMenu(true) }}
-              disabled={templates.length === 0 || instances.length === 0}
-              className="w-full p-3 bg-[#16a34a]/10 hover:bg-[#16a34a]/20 disabled:bg-[#3a3f4b] disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-left cursor-pointer flex items-center gap-3"
-            >
-              <div className="w-10 h-10 bg-[#16a34a]/20 rounded flex items-center justify-center flex-shrink-0">
-                <Download size={20} className="text-[#16a34a]" strokeWidth={2} />
-              </div>
-              <div>
-                <div className="text-sm font-medium text-[#e6e6e6]">Apply Template to Instance</div>
-                <div className="text-xs text-[#7d8590] mt-0.5">
-                  {templates.length === 0 ? "No templates available" : `${templates.length} template${templates.length === 1 ? '' : 's'} available`}
-                </div>
-              </div>
-            </button>
-            <button
-              onClick={handleImportTemplate}
-              className="w-full p-3 bg-[#3a3f4b] hover:bg-[#4a4f5b] rounded transition-colors text-left cursor-pointer flex items-center gap-3"
-            >
-              <div className="w-10 h-10 bg-[#4a4f5b] rounded flex items-center justify-center flex-shrink-0">
-                <FileDown size={20} className="text-[#e6e6e6]" strokeWidth={2} />
-              </div>
-              <div>
-                <div className="text-sm font-medium text-[#e6e6e6]">Import Template</div>
-                <div className="text-xs text-[#7d8590] mt-0.5">From JSON file</div>
-              </div>
-            </button>
-          </div>
-          <div className="h-px bg-[#3a3f4b]" />
-          <div className="p-3 pb-2">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">Create New Template</h4>
-              <span className="text-xs text-[#3a3f4b]">{instances.length} instance{instances.length === 1 ? '' : 's'}</span>
-            </div>
-            <div className="bg-[#181a1f] rounded overflow-hidden">
-              <div className="max-h-64 overflow-y-auto">
-                {instances.length === 0 ? (
-                  <div className="p-6 text-center">
-                    <Package size={32} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
-                    <p className="text-xs text-[#7d8590]">No instances available</p>
-                  </div>
-                ) : (
-                  instances.map((instance) => {
-                    const icon = instanceIcons[instance.name]
-                    return (
-                      <button
-                        key={instance.name}
-                        onClick={() => handleCreateTemplate(instance.name)}
-                        className="w-full p-3 hover:bg-[#22252b] transition-colors text-left cursor-pointer flex items-center gap-3 group last:border-0"
-                      >
-                        <div className="w-10 h-10 bg-[#22252b] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
-                          {icon ? (
-                            <img src={icon} alt={instance.name} className="w-full h-full object-contain p-1" />
-                          ) : (
-                            <Package size={20} className="text-[#3a3f4b]" strokeWidth={1.5} />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#e6e6e6] truncate">{instance.name}</div>
-                          <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : instance.loader === "neoforge" ? "NeoForge" : "Vanilla"}</div>
-                        </div>
-                        <Plus size={16} className="text-[#3a3f4b] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
-                      </button>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {showApplyMenu && createPortal(
-        <div
-          ref={applyMenuRef}
-          className="fixed w-96 bg-[#22252b] border border-[#3a3f4b] rounded z-[9999] overflow-hidden"
-          style={{
-            top: `${(templateButtonRef.current?.getBoundingClientRect().bottom || 0) + 8}px`,
-            right: `${window.innerWidth - (templateButtonRef.current?.getBoundingClientRect().right || 0)}px`
-          }}
-        >
-          <div className="p-4 pb-3">
-            <h3 className="text-base font-semibold text-[#e6e6e6]">Apply Template</h3>
-            <p className="text-xs text-[#7d8590] mt-1">Select a template and instance</p>
-          </div>
-          <div className="h-px bg-[#3a3f4b]" />
-          <div className="p-3 pb-2">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide">Available Templates</h4>
-              <span className="text-xs text-[#3a3f4b]">{templates.length} template{templates.length === 1 ? '' : 's'}</span>
-            </div>
-            <div className="bg-[#181a1f] rounded overflow-hidden">
-              <div className="max-h-96 overflow-y-auto">
-                {templates.length === 0 ? (
-                  <div className="p-6 text-center">
-                    <FileText size={32} className="text-[#3a3f4b] mx-auto mb-2" strokeWidth={1.5} />
-                    <p className="text-xs text-[#7d8590]">No templates available</p>
-                  </div>
-                ) : (
-                  templates.map((template) => (
-                    <div key={template.id} className="border-b border-[#22252b] last:border-0">
-                      <button
-                        onClick={() => setSelectedTemplateId(selectedTemplateId === template.id ? null : template.id)}
-                        className="w-full p-3 hover:bg-[#22252b] transition-colors text-left cursor-pointer"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <div className="w-10 h-10 bg-[#16a34a]/20 rounded flex items-center justify-center flex-shrink-0">
-                              <FileText size={20} className="text-[#16a34a]" strokeWidth={2} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-[#e6e6e6] truncate">{template.name}</div>
-                              <div className="text-xs text-[#7d8590]">{formatDate(template.created_at)}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleExportTemplate(template.id, template.name) }}
-                              className="p-1.5 hover:bg-[#2a2f3b] text-[#7d8590] hover:text-[#16a34a] rounded transition-all cursor-pointer"
-                              title="Export Template"
-                            >
-                              <FileUp size={16} strokeWidth={2} />
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id) }}
-                              className="p-1.5 hover:bg-[#2a2f3b] text-[#7d8590] hover:text-red-400 rounded transition-all cursor-pointer"
-                              title="Delete Template"
-                            >
-                              <Trash2 size={16} strokeWidth={2} />
-                            </button>
-                            <ChevronDown
-                              size={16}
-                              className={`text-[#7d8590] transition-transform ml-1 ${selectedTemplateId === template.id ? 'rotate-180' : ''}`}
-                            />
-                          </div>
-                        </div>
-                      </button>
-
-                      {selectedTemplateId === template.id && (
-                        <div className="bg-[#181a1f]">
-                          <div className="px-3 py-2">
-                            <h5 className="text-xs font-medium text-[#7d8590] uppercase tracking-wide mb-2">Apply to Instance</h5>
-                          </div>
-                          {instances.map((instance) => {
-                            const icon = instanceIcons[instance.name]
-                            return (
-                              <button
-                                key={instance.name}
-                                onClick={() => handleApplyTemplate(template.id, instance.name)}
-                                className="w-full p-3 hover:bg-[#22252b] transition-colors text-left cursor-pointer flex items-center gap-3 group border-t border-[#22252b] first:border-0"
-                              >
-                                <div className="w-10 h-10 bg-[#22252b] rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                  {icon ? (
-                                    <img src={icon} alt={instance.name} className="w-full h-full object-contain p-1" />
-                                  ) : (
-                                    <Package size={20} className="text-[#3a3f4b]" strokeWidth={1.5} />
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-sm font-medium text-[#e6e6e6] truncate">{instance.name}</div>
-                                  <div className="text-xs text-[#7d8590]">{getMinecraftVersion(instance)} • {instance.loader === "fabric" ? "Fabric" : instance.loader === "neoforge" ? "NeoForge" : "Vanilla"}</div>
-                                </div>
-                                <Download size={16} className="text-[#7d8590] group-hover:text-[#16a34a] transition-colors flex-shrink-0" strokeWidth={2} />
-                              </button>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -641,16 +280,6 @@ export function InstancesTab({
             { separator: true },
             { label: "Delete", icon: <Trash2 size={16} />, onClick: () => onDeleteInstance?.(contextMenu.instance.name), danger: true },
           ]}
-        />
-      )}
-
-      {alertModal && (
-        <AlertModal
-          isOpen={alertModal.isOpen}
-          title={alertModal.title}
-          message={alertModal.message}
-          type={alertModal.type}
-          onClose={() => setAlertModal(null)}
         />
       )}
 
