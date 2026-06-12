@@ -1,4 +1,5 @@
 pub mod instance;
+pub mod instance_launch;
 pub mod fabric;
 pub mod neoforge;
 pub mod installer;

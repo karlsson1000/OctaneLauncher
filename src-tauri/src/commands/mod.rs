@@ -1,6 +1,7 @@
 pub mod validation;
 pub mod auth;
 pub mod instances;
+pub mod instance_export;
 pub mod versions;
 pub mod mods;
 pub mod modpacks;
@@ -14,6 +15,7 @@ pub mod packs;
 
 pub use auth::*;
 pub use instances::*;
+pub use instance_export::*;
 pub use versions::*;
 pub use mods::*;
 pub use modpacks::*;
