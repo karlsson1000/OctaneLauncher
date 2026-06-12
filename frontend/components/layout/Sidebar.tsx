@@ -1,6 +1,6 @@
-import { Home, Package, Puzzle, Server, HatGlasses, Camera, Terminal, Settings, Download, Plus } from "lucide-react"
+import { Home, Package, Puzzle, Server, HatGlasses, Camera, Terminal, Settings, Download, Plus, FolderOpen, Copy, Trash2 } from "lucide-react"
 import { ContextMenu } from "../ui/ContextMenu"
-import { FolderOpen, Copy, Trash2 } from "lucide-react"
+import { Tooltip } from "../ui/Tooltip"
 import type { Instance, UpdateInfo } from "../../types"
 
 interface SidebarProps {
@@ -61,18 +61,20 @@ export function Sidebar(props: SidebarProps) {
           {tabs.map((tab) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
+            const label = tab.id.charAt(0).toUpperCase() + tab.id.slice(1)
             return (
-              <button
-                key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setShowInstanceDetails(false) }}
-                className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#1F2229] text-[#e6e6e6]"
-                    : "text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1F2229]"
-                }`}
-              >
-                <Icon size={26} strokeWidth={isActive ? 2.5 : 2} />
-              </button>
+              <Tooltip key={tab.id} text={label}>
+                <button
+                  onClick={() => { setActiveTab(tab.id); setShowInstanceDetails(false) }}
+                  className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                    isActive
+                      ? "bg-[#1F2229] text-[#e6e6e6]"
+                      : "text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1F2229]"
+                  }`}
+                >
+                  <Icon size={26} strokeWidth={isActive ? 2.5 : 2} />
+                </button>
+              </Tooltip>
             )
           })}
         </div>
@@ -80,34 +82,38 @@ export function Sidebar(props: SidebarProps) {
         {/* Bottom controls */}
         <div className="flex flex-col items-center gap-2">
           {updateInfo && (
-            <button
-              onClick={onInstallUpdate}
-              disabled={isInstallingUpdate}
-              title={isInstallingUpdate ? "Installing update..." : `Update available: ${updateInfo.new_version}`}
-              className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
-                isInstallingUpdate
-                  ? "text-[#16a34a] animate-pulse"
-                  : "text-[#16a34a] hover:bg-[#22262f]"
-              }`}
-            >
-              <Download size={26} strokeWidth={2} />
-            </button>
+            <Tooltip text={isInstallingUpdate ? "Installing update..." : `Update available: ${updateInfo.new_version}`}>
+              <button
+                onClick={onInstallUpdate}
+                disabled={isInstallingUpdate}
+                className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                  isInstallingUpdate
+                    ? "text-[#16a34a] animate-pulse"
+                    : "text-[#16a34a] hover:bg-[#1F2229]"
+                }`}
+              >
+                <Download size={26} strokeWidth={2} />
+              </button>
+            </Tooltip>
           )}
 
-          <button
-            onClick={onCreateNew}
-            title="New instance"
-            className="w-12 h-12 flex items-center justify-center rounded-lg text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#22262f] transition-all cursor-pointer"
-          >
-            <Plus size={26} strokeWidth={2} />
-          </button>
+          <Tooltip text="New instance">
+            <button
+              onClick={onCreateNew}
+              className="w-12 h-12 flex items-center justify-center rounded-lg text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1F2229] transition-all cursor-pointer"
+            >
+              <Plus size={26} strokeWidth={2} />
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={onOpenSettings}
-            className="w-12 h-12 flex items-center justify-center rounded-lg text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#22262f] transition-all cursor-pointer"
-          >
-            <Settings size={26} strokeWidth={2} />
-          </button>
+          <Tooltip text="Settings">
+            <button
+              onClick={onOpenSettings}
+              className="w-12 h-12 flex items-center justify-center rounded-lg text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1F2229] transition-all cursor-pointer"
+            >
+              <Settings size={26} strokeWidth={2} />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
