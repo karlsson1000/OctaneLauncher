@@ -12,6 +12,10 @@ export function Tooltip({ text, children }: TooltipProps) {
 
   const rect = ref.current?.getBoundingClientRect()
 
+  const themeClass = typeof document !== "undefined"
+    ? Array.from(document.querySelector("[class*='theme-']")?.classList ?? []).find(c => c.startsWith("theme-")) ?? ""
+    : ""
+
   return (
     <div
       ref={ref}
@@ -21,7 +25,7 @@ export function Tooltip({ text, children }: TooltipProps) {
       {children}
       {show && rect && createPortal(
         <div
-          className="fixed z-[100] pointer-events-none whitespace-nowrap"
+          className={`fixed z-[100] pointer-events-none whitespace-nowrap ${themeClass}`}
           style={{ left: rect.right + 8, top: rect.top + rect.height / 2 }}
         >
           <div className="bg-[var(--bg-secondary)] rounded-md px-2 py-1 border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] -translate-y-1/2">
