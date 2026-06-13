@@ -484,13 +484,13 @@ export function GlobalSearchModal({
         onClick={handleClose}
       >
         <div
-          className={`blur-border w-full max-w-2xl bg-[#181a1f] rounded shadow-2xl overflow-hidden modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border w-full max-w-2xl bg-[var(--bg-primary)] rounded shadow-2xl overflow-hidden modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
           style={{ pointerEvents: 'auto' }}
         >
           {/* Search Input */}
           <div className="flex items-center gap-3 px-4 py-3">
-            <Search size={20} className="text-[#7d8590] flex-shrink-0" />
+            <Search size={20} className="text-[var(--text-muted)] flex-shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -498,11 +498,11 @@ export function GlobalSearchModal({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Search instances, settings, and more..."
-              className="flex-1 bg-transparent text-[#e6e6e6] placeholder-[#7d8590] outline-none text-base"
+              className="flex-1 bg-transparent text-[var(--text-primary)] placeholder-[#7d8590] outline-none text-base"
             />
             <button
               onClick={handleClose}
-              className="p-1 hover:bg-[#3a3f4b] rounded transition-colors text-[#7d8590] hover:text-[#e6e6e6] cursor-pointer"
+              className="p-1 hover:bg-[var(--bg-hover)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
               <X size={18} />
             </button>
@@ -515,7 +515,7 @@ export function GlobalSearchModal({
           >
             {!searchQuery.trim() && recentSearches.length > 0 && (
               <div className="px-4 py-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#7d8590] uppercase tracking-wider mb-2">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
                   <Clock size={12} />
                   Recent Searches
                 </div>
@@ -524,7 +524,7 @@ export function GlobalSearchModal({
                     <button
                       key={index}
                       onClick={() => setSearchQuery(search)}
-                      className="px-2 py-1 bg-[#22252b] hover:bg-[#3a3f4b] text-[#7d8590] hover:text-[#e6e6e6] rounded text-sm transition-colors cursor-pointer"
+                      className="px-2 py-1 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-sm transition-colors cursor-pointer"
                     >
                       {search}
                     </button>
@@ -536,13 +536,13 @@ export function GlobalSearchModal({
             {filteredResults.length === 0 ? (
               <div className="px-4 py-12 text-center">
                 <Search size={48} className="text-[#3a3f4b] mx-auto mb-3" />
-                <p className="text-[#7d8590] text-sm">No results found</p>
+                <p className="text-[var(--text-muted)] text-sm">No results found</p>
                 <p className="text-[#3a3f4b] text-xs mt-1">Try a different search term</p>
               </div>
             ) : (
               Object.entries(groupedResults).map(([category, results]) => (
                 <div key={category} className="last:border-b-0">
-                  <div className="px-4 py-2 bg-[#22252b] text-xs font-semibold text-[#7d8590] uppercase tracking-wider">
+                  <div className="px-4 py-2 bg-[var(--bg-elevated)] text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                     {category}
                   </div>
                   {results.map((result) => {
@@ -556,24 +556,24 @@ export function GlobalSearchModal({
                         onClick={() => handleResultClick(result)}
                         className={`w-full flex items-center gap-3 px-4 py-3 transition-colors text-left cursor-pointer ${
                           isSelected
-                            ? "bg-[#3a3f4b]"
-                            : "hover:bg-[#2a2f3b]"
+                            ? "bg-[var(--bg-hover)]"
+                            : "hover:bg-[var(--bg-hover)]"
                         }`}
                       >
                         <div className={`flex-shrink-0 ${
                           result.type === "instance" ? "text-[#16a34a]" :
                           result.type === "setting" ? "text-[#3b82f6]" :
-                          result.type === "page" ? "text-[#7d8590]" :
+                          result.type === "page" ? "text-[var(--text-muted)]" :
                           "text-[#f97316]"
                         }`}>
                           {result.icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-[#e6e6e6] truncate">
+                          <div className="text-sm font-medium text-[var(--text-primary)] truncate">
                             {result.title}
                           </div>
                           {result.description && (
-                            <div className="text-xs text-[#7d8590] truncate mt-0.5">
+                            <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
                               {result.description}
                             </div>
                           )}
@@ -588,19 +588,19 @@ export function GlobalSearchModal({
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-2 bg-[#22252b] flex items-center justify-between text-xs text-[#7d8590]">
+          <div className="px-4 py-2 bg-[var(--bg-elevated)] flex items-center justify-between text-xs text-[var(--text-muted)]">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-[#181a1f] rounded border border-[#3a3f4b]">↑</kbd>
-                <kbd className="px-1.5 py-0.5 bg-[#181a1f] rounded border border-[#3a3f4b]">↓</kbd>
+                <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded border border-[#3a3f4b]">↑</kbd>
+                <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded border border-[#3a3f4b]">↓</kbd>
                 to navigate
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-[#181a1f] rounded border border-[#3a3f4b]">Enter</kbd>
+                <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded border border-[#3a3f4b]">Enter</kbd>
                 to select
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-[#181a1f] rounded border border-[#3a3f4b]">Esc</kbd>
+                <kbd className="px-1.5 py-0.5 bg-[var(--bg-primary)] rounded border border-[#3a3f4b]">Esc</kbd>
                 to close
               </span>
             </div>

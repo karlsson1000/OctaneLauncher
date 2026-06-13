@@ -111,7 +111,7 @@ export function CreationProgressToast({
   return (
     <div>
       {/* Info row */}
-      <div className="flex items-center justify-between px-4 py-1.5 bg-[#181a1f]">
+      <div className="flex items-center justify-between px-4 py-1.5 bg-[var(--bg-secondary)]">
         <div className="flex items-center gap-2 min-w-0">
           {status === "creating" && (
             <Loader2 size={12} className="animate-spin text-[#16a34a] flex-shrink-0" />
@@ -122,19 +122,19 @@ export function CreationProgressToast({
           {status === "error" && (
             <XCircle size={12} className="text-red-500 flex-shrink-0" />
           )}
-          <span className="text-xs text-[#8a94a6] truncate">
-            <span className="text-[#e6e6e6]">{instanceName}</span>
+          <span className="text-xs text-[var(--text-secondary)] truncate">
+            <span className="text-[var(--text-primary)]">{instanceName}</span>
             {" - "}
             {label}
           </span>
         </div>
-        <span className="text-xs text-[#8a94a6] flex-shrink-0 ml-4 tabular-nums">
+        <span className="text-xs text-[var(--text-secondary)] flex-shrink-0 ml-4 tabular-nums">
           {Math.round(progress)}%
         </span>
       </div>
 
       {/* Progress bar track */}
-      <div className="h-[3px] bg-[#22252b] w-full">
+      <div className="h-[3px] bg-[var(--bg-tertiary)] w-full">
         <div
           className={`h-full transition-all duration-300 ease-out ${barColor}`}
           style={{ width: `${progress}%` }}

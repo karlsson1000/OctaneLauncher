@@ -358,13 +358,13 @@ function InnerModal({
         onClick={handleClose}
       >
         <div
-          className={`blur-border bg-[#181a1f] rounded w-full max-w-2xl shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border bg-[var(--bg-secondary)] rounded w-full max-w-2xl shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
           style={{ pointerEvents: 'auto' }}
         >
           <div className="flex items-center justify-between px-6 pt-6 pb-5">
-            <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Instance Settings</h2>
-            <button onClick={handleClose} className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer">
+            <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Instance Settings</h2>
+            <button onClick={handleClose} className="p-1.5 hover:bg-[var(--bg-hover-strong)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
               <X size={18} strokeWidth={2} />
             </button>
           </div>
@@ -374,28 +374,28 @@ function InnerModal({
 
               {/* Icon */}
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Icon</label>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Instance Icon</label>
                 <div className="flex items-center gap-4">
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
                   {localIcon ? (
-                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-12 h-12 flex-shrink-0 rounded overflow-hidden relative cursor-pointer group bg-[#22252b]">
+                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-12 h-12 flex-shrink-0 rounded overflow-hidden relative cursor-pointer group bg-[var(--bg-tertiary)]">
                       <img src={localIcon} alt={instance.name} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Camera size={16} className="text-white" />
+                        <Camera size={16} className="text-[var(--text-muted)]" />
                       </div>
                     </button>
                   ) : (
-                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[#3a3f4b] hover:border-[#4572e3]/50 rounded flex items-center justify-center transition-all bg-[#22252b] cursor-pointer">
-                      {isUploadingIcon ? <Loader2 size={18} className="text-[#4572e3] animate-spin" /> : <ImagePlus size={18} className="text-[#3a3f4b]" />}
+                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-muted)] hover:border-[var(--accent-primary)]/50 rounded flex items-center justify-center transition-all bg-[var(--bg-tertiary)] cursor-pointer">
+                      {isUploadingIcon ? <Loader2 size={18} className="text-[var(--accent-primary)] animate-spin" /> : <ImagePlus size={18} className="text-[var(--text-muted)]" />}
                     </button>
                   )}
                   
                   {localIcon ? (
-                    <button onClick={handleRemoveIcon} disabled={isUploadingIcon} className="px-4 py-3.5 bg-[#22252b] hover:bg-red-500/10 text-[#e6e6e6] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                    <button onClick={handleRemoveIcon} disabled={isUploadingIcon} className="px-4 py-3.5 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
                       Remove Icon
                     </button>
                   ) : (
-                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="px-4 py-3.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                    <button onClick={handleIconClick} disabled={isUploadingIcon} className="px-4 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
                       Upload Icon
                     </button>
                   )}
@@ -404,7 +404,7 @@ function InnerModal({
 
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Instance Name</label>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Instance Name</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -412,13 +412,13 @@ function InnerModal({
                     onChange={(e) => { setNewName(e.target.value); setRenameError(null) }}
                     onBlur={(e) => { const trimmed = e.target.value.trim(); if (trimmed && trimmed !== instance.name) handleRename(trimmed) }}
                     onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
-                    className="w-full bg-[#22252b] rounded px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all"
+                    className="w-full bg-[var(--bg-tertiary)] rounded px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all"
                     placeholder="Enter instance name"
                     disabled={isRenamingInstance}
                   />
                   {isRenamingInstance && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <Loader2 size={14} className="animate-spin text-[#4572e3]" />
+                      <Loader2 size={14} className="animate-spin text-[var(--accent-primary)]" />
                     </div>
                   )}
                 </div>
@@ -427,10 +427,10 @@ function InnerModal({
 
               {/* Minecraft Version */}
               <div>
-                <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Minecraft Version</label>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Minecraft Version</label>
                 {isLoadingVersions ? (
-                  <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
-                    <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                  <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+                    <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
                     <span>Loading...</span>
                   </div>
                 ) : (
@@ -438,30 +438,30 @@ function InnerModal({
                     <button
                       type="button"
                       onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
-                      className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${isVersionDropdownOpen ? 'rounded-t' : 'rounded'}`}
+                      className={`w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer ${isVersionDropdownOpen ? 'rounded-t' : 'rounded'}`}
                       disabled={isUpdatingVersion}
                     >
                       {selectedMinecraftVersion}
                     </button>
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                       {isUpdatingVersion
-                        ? <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                        ? <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
                         : isVersionDropdownOpen
-                          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
-                          : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                          ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+                          : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
                       }
                     </div>
                     {isVersionDropdownOpen && (
-                      <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                      <div className="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                         {minecraftVersions.map((version) => (
                           <button
                             key={version}
                             type="button"
                             onClick={() => handleVersionSelect(version)}
-                            className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                            className="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                           >
                             <span>{version}</span>
-                            {selectedMinecraftVersion === version && <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />}
+                            {selectedMinecraftVersion === version && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
                           </button>
                         ))}
                       </div>
@@ -474,10 +474,10 @@ function InnerModal({
               <div>
                 {isFabricInstance && (
                   <>
-                    <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Fabric Loader Version</label>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Fabric Loader Version</label>
                     {isLoadingFabric ? (
-                      <div className="flex items-center gap-2 text-gray-400 text-sm py-3.5 px-4 bg-[#22252b] rounded">
-                        <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                      <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+                        <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
                     <span>Loading...</span>
                       </div>
                     ) : (
@@ -485,30 +485,30 @@ function InnerModal({
                         <button
                           type="button"
                           onClick={() => setIsFabricDropdownOpen(!isFabricDropdownOpen)}
-                          className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${isFabricDropdownOpen ? 'rounded-t' : 'rounded'}`}
+                          className={`w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer ${isFabricDropdownOpen ? 'rounded-t' : 'rounded'}`}
                           disabled={isUpdatingFabric}
                         >
                           {selectedFabricVersion} {fabricVersions.find(v => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
                         </button>
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                           {isUpdatingFabric
-                            ? <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                            ? <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
                             : isFabricDropdownOpen
-                              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
-                              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+                              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
                           }
                         </div>
                         {isFabricDropdownOpen && (
-                          <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[#181a1f]">
+                          <div className="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                             {fabricVersions.map((version) => (
                               <button
                                 key={version.version}
                                 type="button"
                                 onClick={() => handleFabricSelect(version.version)}
-                                className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                                className="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                               >
                                 <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
-                                {selectedFabricVersion === version.version && <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />}
+                                {selectedFabricVersion === version.version && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
                               </button>
                             ))}
                           </div>
@@ -522,22 +522,22 @@ function InnerModal({
               {/* RAM Allocation */}
               <div className="col-span-2">
                 <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-2 text-[#e6e6e6]">
-                    <Cpu size={18} className="text-[#4572e3]" />
+                  <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <Cpu size={18} className="text-[var(--accent-primary)]" />
                     <span className="text-sm font-medium">RAM Allocation</span>
                   </div>
                   <button
                     onClick={() => { const next = !useCustomRam; setUseCustomRam(next); handleSaveRam(instanceMemoryMb, next) }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 ${useCustomRam ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'}`}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 ${useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover)]'}`}
                   >
                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useCustomRam ? 'translate-x-6' : 'translate-x-1'}`} />
                   </button>
                 </div>
                 <div className={`transition-opacity ${useCustomRam ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-                  <div className="bg-[#22252b] rounded p-4 space-y-3">
+                  <div className="bg-[var(--bg-tertiary)] rounded p-4 space-y-3">
                     <div className="flex items-baseline justify-between">
-                      <span className="text-2xl font-bold text-[#e6e6e6]">{(instanceMemoryMb / 1024).toFixed(1)} GB</span>
-                      <span className="text-xs text-gray-400">{systemInfo ? `of ${(systemInfo.total_memory_mb / 1024).toFixed(0)} GB total` : ''}</span>
+                      <span className="text-2xl font-bold text-[var(--text-primary)]">{(instanceMemoryMb / 1024).toFixed(1)} GB</span>
+                      <span className="text-xs text-[var(--text-muted)]">{systemInfo ? `of ${(systemInfo.total_memory_mb / 1024).toFixed(0)} GB total` : ''}</span>
                     </div>
                     <input
                       type="range" min={minMem} max={maxMem} step="512"
@@ -545,8 +545,8 @@ function InnerModal({
                       onChange={(e) => setInstanceMemoryMb(parseInt(e.target.value))}
                       onMouseUp={(e) => { if (useCustomRam) handleSaveRam(parseInt((e.target as HTMLInputElement).value), true) }}
                       onTouchEnd={(e) => { if (useCustomRam) handleSaveRam(parseInt((e.target as HTMLInputElement).value), true) }}
-                      className="w-full h-2 bg-[#181a1f] rounded-full appearance-none cursor-pointer"
-                      style={{ background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${ramPercent}%, #181a1f ${ramPercent}%, #181a1f 100%)` }}
+                      className="w-full h-2 bg-[var(--bg-secondary)] rounded-full appearance-none cursor-pointer"
+                      style={{ background: `linear-gradient(to right, var(--accent-primary) 0%, var(--accent-primary) ${ramPercent}%, var(--bg-elevated) ${ramPercent}%, var(--bg-elevated) 100%)` }}
                     />
                   </div>
                 </div>

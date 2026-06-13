@@ -163,14 +163,14 @@ export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex gap-2 mb-4">
-        <div className="relative flex-1 rounded-md bg-[#22252b]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
+        <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
           <input
             type="text"
             placeholder="Search shader packs..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
+            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
@@ -185,7 +185,7 @@ export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
             {hits.map((shader) => (
               <div
                 key={shader.project_id}
-                className={`rounded-md overflow-hidden cursor-pointer transition-all ${selectedShader?.project_id === shader.project_id ? "bg-[#2a2f3b]" : "bg-[#22252b]"}`}
+                className={`rounded-md overflow-hidden cursor-pointer transition-all ${selectedShader?.project_id === shader.project_id ? "bg-[var(--bg-elevated)]" : "bg-[var(--bg-tertiary)]"}`}
                 onClick={() => handleShaderSelect(shader)}
               >
                 <div className="flex min-h-0 relative z-0">
@@ -201,17 +201,17 @@ export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
                   <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-0">
-                        <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{shader.title}</h3>
-                        <span className="text-xs text-[#7d8590] whitespace-nowrap">by {shader.author}</span>
+                        <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{shader.title}</h3>
+                        <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">by {shader.author}</span>
                       </div>
-                      <p className="text-sm text-[#7d8590] line-clamp-2 mb-2">{shader.description}</p>
+                      <p className="text-sm text-[var(--text-muted)] line-clamp-2 mb-2">{shader.description}</p>
                       <div className="flex items-center gap-2 text-xs flex-wrap">
-                        <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                        <span className="flex items-center gap-1 bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
                           <Download size={12} />
                           {formatDownloads(shader.downloads)}
                         </span>
                         {shader.categories.slice(0, 2).map((category) => (
-                          <span key={category} className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{category}</span>
+                          <span key={category} className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">{category}</span>
                         ))}
                       </div>
                     </div>
@@ -226,47 +226,47 @@ export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
           </div>
 
           {selectedShader && (
-            <div className="bg-[#22252b] rounded-md p-5 sticky top-4 self-start">
+            <div className="bg-[var(--bg-tertiary)] rounded-md p-5 sticky top-4 self-start">
               <div className="flex gap-3 mb-4">
                 {selectedShader.icon_url && (
                   <img src={selectedShader.icon_url} alt={selectedShader.title} className="w-16 h-16 rounded" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedShader.title}</h2>
-                  <p className="text-sm text-[#7d8590]">by {selectedShader.author}</p>
+                  <h2 className="text-xl font-semibold text-[var(--text-primary)] truncate">{selectedShader.title}</h2>
+                  <p className="text-sm text-[var(--text-muted)]">by {selectedShader.author}</p>
                 </div>
               </div>
 
-              <p className="text-sm text-[#7d8590] mb-4 leading-relaxed">{selectedShader.description}</p>
+              <p className="text-sm text-[var(--text-muted)] mb-4 leading-relaxed">{selectedShader.description}</p>
 
               <div className="flex gap-2 mb-5 text-xs flex-wrap">
-                <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                <span className="flex items-center gap-1 bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
                   <Download size={12} />
                   {formatDownloads(selectedShader.downloads)}
                 </span>
-                <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                <span className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
                   {selectedShader.follows.toLocaleString()} followers
                 </span>
               </div>
 
               <div className="pt-4">
-                <h3 className="font-semibold text-sm text-[#e6e6e6] mb-3">Versions</h3>
+                <h3 className="font-semibold text-sm text-[var(--text-primary)] mb-3">Versions</h3>
                 {isLoadingVersions ? (
                   <div className="text-center py-6">
                     <Loader2 size={20} className="animate-spin text-[#f59e0b] mx-auto" />
                   </div>
                 ) : shaderVersions.length === 0 ? (
-                  <p className="text-sm text-[#3a3f4b] text-center py-3">No compatible versions</p>
+                  <p className="text-sm text-[var(--text-muted)] text-center py-3">No compatible versions</p>
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {shaderVersions.map((version) => {
                       const installed = isShaderInstalled(version)
                       const downloading = downloadingShaders.has(version.id)
                       return (
-                        <div key={version.id} className="bg-[#181a1f] rounded p-3 flex items-center justify-between gap-2">
+                        <div key={version.id} className="bg-[var(--bg-secondary)] rounded p-3 flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-[#e6e6e6] truncate">{version.name}</div>
-                            <div className="text-xs text-[#3a3f4b] truncate mt-0.5">
+                            <div className="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
+                            <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
                               {version.game_versions[0]}
                             </div>
                           </div>

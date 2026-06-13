@@ -139,17 +139,17 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
         onClick={handleClose}
       >
         <div 
-          className={`blur-border bg-[#181a1f] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border bg-[var(--bg-secondary)] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
           style={{ pointerEvents: 'auto' }}
         >
           <div className="flex items-center justify-between px-6 pt-6 pb-5">
             <div>
-              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Add Server</h2>
+              <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Add Server</h2>
             </div>
             <button 
               onClick={handleClose} 
-              className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
+              className="p-1.5 hover:bg-[var(--bg-hover-strong)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
               <X size={18} strokeWidth={2} />
             </button>
@@ -157,13 +157,13 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
 
           <div className="px-6 pb-4 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Server Name</label>
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Server Name</label>
               <input
                 type="text"
                 value={serverName}
                 onChange={(e) => setServerName(e.target.value)}
                 placeholder="My Server"
-                className={`w-full bg-[#22252b] rounded px-4 py-3.5 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all ${
+                className={`w-full bg-[var(--bg-tertiary)] rounded px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all ${
                   serverExists && serverName.trim()
                     ? 'ring-2 ring-red-500'
                     : ''
@@ -179,25 +179,25 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Server Address</label>
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Server Address</label>
               <input
                 type="text"
                 value={serverAddress}
                 onChange={(e) => setServerAddress(e.target.value)}
                 placeholder="mc.hypixel.net"
-                className="w-full bg-[#22252b] rounded px-4 py-3.5 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all"
+                className="w-full bg-[var(--bg-tertiary)] rounded px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all"
                 disabled={isCreating}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Server Port (Optional)</label>
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Server Port (Optional)</label>
               <input
                 type="text"
                 value={serverPort}
                 onChange={(e) => setServerPort(e.target.value)}
                 placeholder="25565"
-                className={`w-full bg-[#22252b] rounded px-4 py-3.5 text-sm text-[#e6e6e6] placeholder-gray-500 focus:outline-none transition-all ${
+                className={`w-full bg-[var(--bg-tertiary)] rounded px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all ${
                   serverPort && !isValidPort
                     ? 'ring-2 ring-red-500'
                     : ''
@@ -215,7 +215,7 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
             <button
               onClick={testConnection}
               disabled={!serverAddress.trim() || !isValidPort || isTesting}
-              className="w-full px-4 py-3 bg-[#22252b] hover:bg-[#3a3f4b] disabled:opacity-50 disabled:cursor-not-allowed text-[#e6e6e6] rounded font-medium text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              className="w-full px-4 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded font-medium text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               {isTesting ? (
                 <>
@@ -246,14 +246,14 @@ export function CreateServerModal({ servers, onClose, onSuccess }: CreateServerM
             <button
               onClick={handleClose}
               disabled={isCreating}
-              className="px-5 py-3 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="px-5 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleCreateServer}
               disabled={isCreateDisabled}
-              className="px-5 py-3 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-5 py-3 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isCreating ? (
                 <>

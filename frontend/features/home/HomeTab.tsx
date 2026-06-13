@@ -156,7 +156,7 @@ export function HomeTab({
       <div className="max-w-7xl mx-auto">
 
         {/* Bento hero */}
-        <div className="w-full h-36 bg-[#22252b] rounded-md relative flex items-center px-8">
+        <div className="w-full h-36 bg-[var(--bg-tertiary)] rounded-md relative flex items-center px-8">
           {activeAccount && (
             <div className="absolute left-12 bottom-0" style={{ zIndex: 10 }}>
               <img
@@ -172,15 +172,15 @@ export function HomeTab({
 
           <div className="flex-1 flex justify-center">
             {isAuthenticated && activeAccount ? (
-              <h2 className="text-3xl font-semibold text-[#e6e6e6] tracking-tight">
+              <h2 className="text-3xl font-semibold text-[var(--text-primary)] tracking-tight">
                 {getGreeting()}, {activeAccount.username}
               </h2>
             ) : (
               <div className="text-center">
-                <h2 className="text-3xl font-semibold text-[#e6e6e6] tracking-tight">
+                <h2 className="text-3xl font-semibold text-[var(--text-primary)] tracking-tight">
                   Welcome to Octane Launcher
                 </h2>
-                <p className="text-sm text-[#8a94a6] mt-1">Sign in to get started</p>
+                <p className="text-sm text-[var(--text-secondary)] mt-1">Sign in to get started</p>
               </div>
             )}
           </div>
@@ -220,13 +220,13 @@ export function HomeTab({
               <div className="flex items-center gap-2">
                 {onNavigateToInstances ? (
                   <button onClick={onNavigateToInstances} className="flex items-center gap-2 cursor-pointer group">
-                    <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight group-hover:text-white transition-colors">
+                    <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--text-primary)] transition-colors">
                       Recently Played
                     </h2>
-                    <ChevronRight size={18} className="text-[#7d8590] group-hover:text-white transition-colors" />
+                    <ChevronRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
                   </button>
                 ) : (
-                  <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">
+                  <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">
                     Recently Played
                   </h2>
                 )}
@@ -250,31 +250,31 @@ export function HomeTab({
                     if (tooltipTimerRef.current) clearTimeout(tooltipTimerRef.current)
                     setTooltipInstance(null)
                   }}
-                  className="bg-[#22252b] rounded-md p-2 flex items-center gap-2 hover:bg-[#2a2e36] transition-all cursor-pointer group relative"
+                  className="bg-[var(--bg-tertiary)] rounded-md p-2 flex items-center gap-2 hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative"
                 >
                   {tooltipInstance === instance && (
                     <div className="absolute bottom-full left-0 right-0 mb-2 z-50 pointer-events-none">
-                      <div className="bg-[#181a1f] rounded-md p-3 mx-2 border border-[#2a2e36]">
-                        <div className="text-sm font-medium text-[#e6e6e6] mb-1.5">{instance.name}</div>
-                        <div className="space-y-1 text-xs text-[#7d8590]">
+                      <div className="bg-[var(--bg-secondary)] rounded-md p-3 mx-2 border border-[var(--border-default)]">
+                        <div className="text-sm font-medium text-[var(--text-primary)] mb-1.5">{instance.name}</div>
+                        <div className="space-y-1 text-xs text-[var(--text-muted)]">
                           <div className="flex justify-between gap-4">
                             <span>Version</span>
-                            <span className="text-[#e6e6e6]">{getMinecraftVersion(instance)}</span>
+                            <span className="text-[var(--text-primary)]">{getMinecraftVersion(instance)}</span>
                           </div>
                           {instance.loader && (
                             <div className="flex justify-between gap-4">
                               <span>Loader</span>
-                              <span className="text-[#e6e6e6] capitalize">{instance.loader}{instance.loader_version ? ` ${instance.loader_version}` : ''}</span>
+                              <span className="text-[var(--text-primary)] capitalize">{instance.loader}{instance.loader_version ? ` ${instance.loader_version}` : ''}</span>
                             </div>
                           )}
                           <div className="flex justify-between gap-4">
                             <span>Created</span>
-                            <span className="text-[#e6e6e6]">{formatDate(instance.created_at)}</span>
+                            <span className="text-[var(--text-primary)]">{formatDate(instance.created_at)}</span>
                           </div>
                           {instance.total_playtime_seconds !== undefined && instance.total_playtime_seconds > 0 && (
                             <div className="flex justify-between gap-4">
                               <span>Playtime</span>
-                              <span className="text-[#e6e6e6]">{formatPlaytime(instance.total_playtime_seconds)}</span>
+                              <span className="text-[var(--text-primary)]">{formatPlaytime(instance.total_playtime_seconds)}</span>
                             </div>
                           )}
                         </div>
@@ -285,14 +285,14 @@ export function HomeTab({
                     {icon ? (
                       <img src={icon} alt={instance.name} className="w-10 h-10 rounded object-cover" />
                     ) : (
-                      <div className="w-10 h-10 bg-[#181a1f] rounded flex items-center justify-center">
-                        <Package size={20} className="text-[#3a3f4b]" />
+                      <div className="w-10 h-10 bg-[var(--bg-secondary)] rounded flex items-center justify-center">
+                        <Package size={20} className="text-[var(--text-muted)]" />
                       </div>
                     )}
                   </div>
                   <div className={`flex-1 min-w-0 ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
-                    <div className="text-sm font-medium text-[#e6e6e6] truncate leading-tight">{instance.name}</div>
-                    <div className="text-xs text-[#7d8590] truncate leading-tight mt-0.5">
+                    <div className="text-sm font-medium text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
+                    <div className="text-xs text-[var(--text-muted)] truncate leading-tight mt-0.5">
                       {instance.last_played && formatDate(instance.last_played)}
                     </div>
                   </div>
@@ -328,15 +328,15 @@ export function HomeTab({
       {/* Snapshots */}
       <div className="max-w-7xl mx-auto">
         <div className="mb-4">
-          <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Latest Snapshots</h2>
+          <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Latest Snapshots</h2>
         </div>
         {loadingSnapshots ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 rounded-full animate-spin" />
           </div>
         ) : snapshots.length === 0 ? (
-          <div className="bg-[#22252b] rounded-md p-8 text-center">
-            <p className="text-[#7d8590]">Unable to load snapshots</p>
+          <div className="bg-[var(--bg-tertiary)] rounded-md p-8 text-center">
+            <p className="text-[var(--text-muted)]">Unable to load snapshots</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-4">
@@ -346,27 +346,27 @@ export function HomeTab({
                 onClick={async () => {
                   try { await invoke('open_url', { url: getVersionUrl(snapshot.version) }) } catch {}
                 }}
-                className="bg-[#22252b] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col"
+                className="bg-[var(--bg-tertiary)] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col"
               >
                 <div className="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ExternalLink size={14} className="text-[#e6e6e6]" />
+                  <ExternalLink size={14} className="text-[var(--text-primary)]" />
                 </div>
-                <div className="h-40 bg-[#181a1f] overflow-hidden relative flex-shrink-0 z-0">
+                <div className="h-40 bg-[var(--bg-secondary)] overflow-hidden relative flex-shrink-0 z-0">
                   {snapshot.image?.url ? (
                     <img src={`https://launchercontent.mojang.com${snapshot.image.url}`} alt={snapshot.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Package size={48} className="text-[#3a3f4b]" strokeWidth={2} />
+                      <Package size={48} className="text-[var(--text-muted)]" strokeWidth={2} />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 <div className="p-4 flex-1 flex flex-col relative z-0">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <h3 className="text-sm font-semibold text-[#e6e6e6] truncate">{cleanVersionName(snapshot.version)}</h3>
-                    {snapshot.date && <span className="text-xs text-[#7d8590] whitespace-nowrap">{formatDate(snapshot.date)}</span>}
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)] truncate">{cleanVersionName(snapshot.version)}</h3>
+                    {snapshot.date && <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">{formatDate(snapshot.date)}</span>}
                   </div>
-                  {snapshot.shortText && <p className="text-xs text-[#7d8590] line-clamp-2 leading-snug">{snapshot.shortText}</p>}
+                  {snapshot.shortText && <p className="text-xs text-[var(--text-muted)] line-clamp-2 leading-snug">{snapshot.shortText}</p>}
                 </div>
               </div>
             ))}

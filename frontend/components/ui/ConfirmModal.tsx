@@ -75,7 +75,7 @@ export function ConfirmModal({
         return "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
       case "warning":
       default:
-        return "bg-[#4572e3] hover:bg-[#3461d1] text-white"
+        return "bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white"
     }
   }
 
@@ -83,7 +83,7 @@ export function ConfirmModal({
     <>
       <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
         <div 
-          className={`blur-border bg-[#181a1f] rounded w-full max-w-md modal-content ${isClosing ? 'closing' : ''}`} 
+          className={`blur-border bg-[var(--bg-secondary)] rounded w-full max-w-md modal-content ${isClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
           style={{ pointerEvents: 'auto' }}
         >
@@ -93,25 +93,25 @@ export function ConfirmModal({
                 {getIcon()}
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{title}</h2>
+                <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">{title}</h2>
               </div>
             </div>
             <button 
               onClick={handleClose} 
-              className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
+              className="p-1.5 hover:bg-[var(--bg-hover-strong)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
               <X size={18} strokeWidth={2} />
             </button>
           </div>
 
           <div className="px-6 pb-5">
-            <p className="text-sm text-[#e6e6e6] whitespace-pre-line leading-snug">{message}</p>
+            <p className="text-sm text-[var(--text-primary)] whitespace-pre-line leading-snug">{message}</p>
           </div>
 
           <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">
             <button
               onClick={handleClose}
-              className="px-5 py-3 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors cursor-pointer"
+              className="px-5 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded font-medium text-sm transition-colors cursor-pointer"
             >
               {cancelText || "Cancel"}
             </button>
@@ -172,7 +172,7 @@ export function AlertModal({
         return "bg-blue-500/10 hover:bg-blue-500/20 text-blue-400"
       case "warning":
       default:
-        return "bg-[#4572e3] hover:bg-[#3461d1] text-white"
+        return "bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white"
     }
   }
 
@@ -180,7 +180,7 @@ export function AlertModal({
     <>
       <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
         <div 
-          className={`blur-border bg-[#181a1f] rounded w-full max-w-md modal-content ${isClosing ? 'closing' : ''}`} 
+          className={`blur-border bg-[var(--bg-secondary)] rounded w-full max-w-md modal-content ${isClosing ? 'closing' : ''}`} 
           onClick={(e) => e.stopPropagation()}
           style={{ pointerEvents: 'auto' }}
         >
@@ -190,19 +190,19 @@ export function AlertModal({
                 {getIcon()}
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">{title}</h2>
+                <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">{title}</h2>
               </div>
             </div>
             <button 
               onClick={handleClose} 
-              className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
+              className="p-1.5 hover:bg-[var(--bg-hover-strong)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
               <X size={18} strokeWidth={2} />
             </button>
           </div>
 
           <div className="px-6 pb-5">
-            <p className="text-sm text-[#e6e6e6] whitespace-pre-line leading-snug">{message}</p>
+            <p className="text-sm text-[var(--text-primary)] whitespace-pre-line leading-snug">{message}</p>
           </div>
 
           <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">

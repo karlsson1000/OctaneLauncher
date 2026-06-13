@@ -91,18 +91,18 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
         onClick={handleClose}
       >
         <div 
-          className={`blur-border bg-[#181a1f] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border bg-[var(--bg-secondary)] rounded w-full max-w-md shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
           style={{ pointerEvents: 'auto' }}
         >
           <div className="flex items-center justify-between px-6 pt-6 pb-5">
             <div>
-              <h2 className="text-xl font-semibold text-[#e6e6e6] tracking-tight">Export Instance</h2>
-              <p className="text-sm text-[#7d8590] mt-0.5">{instanceName}</p>
+              <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Export Instance</h2>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">{instanceName}</p>
             </div>
             <button 
               onClick={handleClose} 
-              className="p-1.5 hover:bg-[#3a3f4b] rounded transition-colors text-gray-400 hover:text-[#e6e6e6] cursor-pointer"
+              className="p-1.5 hover:bg-[var(--bg-hover-strong)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
             >
               <X size={18} strokeWidth={2} />
             </button>
@@ -110,21 +110,21 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
 
           <div className="px-6 pb-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Export Format</label>
-              <div className="bg-[#22252b] rounded p-4 space-y-3">
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Export Format</label>
+              <div className="bg-[var(--bg-tertiary)] rounded p-4 space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
                     type="radio"
                     checked={exportFormat === 'mrpack'}
                     onChange={() => setExportFormat('mrpack')}
                     disabled={isExporting}
-                    className="w-4 h-4 text-[#4572e3] border-gray-500 focus:ring-[#4572e3] cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
+                    className="w-4 h-4 text-[var(--accent-primary)] border-gray-500 focus:ring-[var(--accent-primary)] cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors">
                       Modrinth Modpack (.mrpack)
                     </span>
-                    <p className="text-xs text-[#7d8590] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       Standard modpack format
                     </p>
                   </div>
@@ -136,13 +136,13 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                     checked={exportFormat === 'zip'}
                     onChange={() => setExportFormat('zip')}
                     disabled={isExporting}
-                    className="w-4 h-4 text-[#4572e3] border-gray-500 focus:ring-[#4572e3] cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
+                    className="w-4 h-4 text-[var(--accent-primary)] border-gray-500 focus:ring-[var(--accent-primary)] cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors">
                       Standard ZIP Archive (.zip)
                     </span>
-                    <p className="text-xs text-[#7d8590] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       Direct backup of instance folder structure
                     </p>
                   </div>
@@ -151,21 +151,21 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#e6e6e6] mb-2.5">Include in Export</label>
-              <div className="bg-[#22252b] rounded p-4 space-y-3">
+              <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Include in Export</label>
+              <div className="bg-[var(--bg-tertiary)] rounded p-4 space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <input
                     type="checkbox"
                     checked={includeWorlds}
                     onChange={(e) => setIncludeWorlds(e.target.checked)}
                     disabled={isExporting}
-                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[var(--accent-primary)] checked:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors">
                       Worlds (saves/)
                     </span>
-                    <p className="text-xs text-[#7d8590] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       Include all saved worlds and maps
                     </p>
                   </div>
@@ -177,13 +177,13 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                     checked={includeResourcePacks}
                     onChange={(e) => setIncludeResourcePacks(e.target.checked)}
                     disabled={isExporting}
-                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[var(--accent-primary)] checked:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors">
                       Resource Packs
                     </span>
-                    <p className="text-xs text-[#7d8590] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       Include installed resource packs
                     </p>
                   </div>
@@ -195,13 +195,13 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                     checked={includeShaderPacks}
                     onChange={(e) => setIncludeShaderPacks(e.target.checked)}
                     disabled={isExporting}
-                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[var(--accent-primary)] checked:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors">
                       Shader Packs
                     </span>
-                    <p className="text-xs text-[#7d8590] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       Include installed shader packs
                     </p>
                   </div>
@@ -213,13 +213,13 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                     checked={includeMods}
                     onChange={(e) => setIncludeMods(e.target.checked)}
                     disabled={isExporting}
-                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[var(--accent-primary)] checked:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors">
                       Mods
                     </span>
-                    <p className="text-xs text-[#7d8590] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       Include all installed mods
                     </p>
                   </div>
@@ -231,13 +231,13 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
                     checked={includeConfig}
                     onChange={(e) => setIncludeConfig(e.target.checked)}
                     disabled={isExporting}
-                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[#4572e3] checked:border-[#4572e3] focus:ring-2 focus:ring-[#4572e3] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
+                    className="w-4 h-4 rounded border-2 border-gray-500 bg-transparent checked:bg-[var(--accent-primary)] checked:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)] focus:ring-offset-0 transition-all cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1">
-                    <span className="text-sm font-medium text-[#e6e6e6] group-hover:text-white transition-colors">
+                    <span className="text-sm font-medium text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition-colors">
                       Configuration
                     </span>
-                    <p className="text-xs text-[#7d8590] mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       Include config files and settings
                     </p>
                   </div>
@@ -251,14 +251,14 @@ export function ExportModal({ instanceName, onClose }: ExportModalProps) {
             <button
               onClick={handleClose}
               disabled={isExporting}
-              className="px-5 py-3 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="px-5 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleExport}
               disabled={isExporting}
-              className="px-5 py-3 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-5 py-3 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {isExporting ? (
                 <>

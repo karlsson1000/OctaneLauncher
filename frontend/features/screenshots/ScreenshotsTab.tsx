@@ -130,13 +130,13 @@ export function ScreenshotsTab() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Screenshots</h1>
-            <p className="text-sm text-[#7d8590] mt-0.5">{filteredScreenshots.length} screenshot{filteredScreenshots.length !== 1 ? 's' : ''}</p>
+            <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Screenshots</h1>
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">{filteredScreenshots.length} screenshot{filteredScreenshots.length !== 1 ? 's' : ''}</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleOpenScreenshotsFolder}
-              className="w-8 h-8 bg-[#22252b] hover:bg-[#2a2e35] text-[#e6e6e6] rounded flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded flex items-center justify-center transition-colors cursor-pointer"
               title="Open screenshots folder"
             >
               <FolderOpen size={16} />
@@ -151,7 +151,7 @@ export function ScreenshotsTab() {
               />
             <button
               onClick={() => setSortBy(sortBy === "date" ? "instance" : "date")}
-              className="px-3 h-8 bg-[#22252b] hover:bg-[#2a2e35] text-[#e6e6e6] rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
+              className="px-3 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
             >
               {sortBy === "date" ? <Calendar size={14} /> : <Package size={14} />}
               {sortBy === "date" ? "Date" : "Instance"}
@@ -162,10 +162,10 @@ export function ScreenshotsTab() {
         {filteredScreenshots.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <Camera size={56} className="text-[#3a3f4b] mb-4" strokeWidth={1.5} />
-            <h3 className="text-lg font-semibold text-[#e6e6e6] mb-2">
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
               {screenshots.length === 0 ? "No screenshots yet" : "No results found"}
             </h3>
-            <p className="text-sm text-[#7d8590] text-center max-w-md">
+            <p className="text-sm text-[var(--text-muted)] text-center max-w-md">
               {screenshots.length === 0 ? "Take some screenshots in-game using F2 to see them here." : "Try selecting a different instance or clearing your filter."}
             </p>
           </div>
@@ -222,7 +222,7 @@ function InstanceDropdown({ selectedInstance, setSelectedInstance, instanceCount
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`h-8 bg-[#22252b] px-3 pr-8 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${isOpen ? 'rounded-t' : 'rounded'}`}
+        className={`h-8 bg-[var(--bg-tertiary)] px-3 pr-8 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer ${isOpen ? 'rounded-t' : 'rounded'}`}
       >
         {selectedInstance ? `${selectedInstance} (${instanceCounts[selectedInstance]})` : `All Instances (${screenshots.length})`}
       </button>
@@ -232,24 +232,24 @@ function InstanceDropdown({ selectedInstance, setSelectedInstance, instanceCount
         </svg>
       </div>
       {isOpen && (
-        <div className="absolute z-10 min-w-full w-max bg-[#22252b] rounded-b max-h-60 overflow-y-auto">
+        <div className="absolute z-10 min-w-full w-max bg-[var(--bg-tertiary)] rounded-b max-h-60 overflow-y-auto">
           <button
             type="button"
             onClick={() => { setSelectedInstance(null); setIsOpen(false) }}
-            className="w-full px-3 py-2 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+            className="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
           >
             <span>{`All Instances (${screenshots.length})`}</span>
-            {!selectedInstance && <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />}
+            {!selectedInstance && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
           </button>
           {Object.entries(instanceCounts).sort(([a], [b]) => a.localeCompare(b)).map(([instanceName, count]) => (
             <button
               key={instanceName}
               type="button"
               onClick={() => { setSelectedInstance(instanceName); setIsOpen(false) }}
-              className="w-full px-3 py-2 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+              className="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
             >
               <span>{instanceName} ({count})</span>
-              {selectedInstance === instanceName && <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />}
+              {selectedInstance === instanceName && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
             </button>
           ))}
         </div>
@@ -292,9 +292,9 @@ const ScreenshotCard = memo(function ScreenshotCard({ screenshot, index, getImag
     <div
       ref={containerRef}
       onClick={() => openViewer(index)}
-      className="group relative bg-[#22252b] rounded-md overflow-hidden cursor-pointer transition-all hover:bg-[#2a2e36] screenshot-card"
+      className="group relative bg-[var(--bg-tertiary)] rounded-md overflow-hidden cursor-pointer transition-all hover:bg-[var(--bg-hover)] screenshot-card"
     >
-      <div className="aspect-video bg-[#181a1f] overflow-hidden relative">
+      <div className="aspect-video bg-[var(--bg-secondary)] overflow-hidden relative">
         {imageLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
@@ -305,8 +305,8 @@ const ScreenshotCard = memo(function ScreenshotCard({ screenshot, index, getImag
         )}
       </div>
       <div className="p-2">
-        <p className="text-xs font-medium text-[#e6e6e6] truncate mb-0.5">{screenshot.instance_name}</p>
-        <div className="flex items-center justify-between text-xs text-[#7d8590]">
+        <p className="text-xs font-medium text-[var(--text-primary)] truncate mb-0.5">{screenshot.instance_name}</p>
+        <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
           <span>{formatDate(screenshot.timestamp)}</span>
           <span>{formatFileSize(screenshot.size)}</span>
         </div>
@@ -314,10 +314,10 @@ const ScreenshotCard = memo(function ScreenshotCard({ screenshot, index, getImag
       <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
         <button
           onClick={(e) => { e.stopPropagation(); onOpen(screenshot) }}
-          className="w-7 h-7 bg-[#22252b]/90 hover:bg-[#2a2e35] rounded flex items-center justify-center transition-colors cursor-pointer"
+          className="w-7 h-7 bg-[var(--bg-tertiary)]/90 hover:bg-[var(--bg-hover)] rounded flex items-center justify-center transition-colors cursor-pointer"
           title="Open in default viewer"
         >
-          <ExternalLink size={14} className="text-[#e6e6e6]" />
+          <ExternalLink size={14} className="text-[var(--text-primary)]" />
         </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(screenshot) }}
@@ -377,16 +377,16 @@ function ImageViewer({ screenshot, currentImageIndex, totalImages, getImageData,
           )}
         </div>
       </div>
-      <button onClick={closeViewer} className="absolute top-4 left-4 w-9 h-9 bg-[#22252b]/90 hover:bg-[#2a2e35] text-white rounded flex items-center justify-center transition-colors cursor-pointer z-10">
+      <button onClick={closeViewer} className="absolute top-4 left-4 w-9 h-9 bg-[var(--bg-tertiary)]/90 hover:bg-[var(--bg-hover)] text-white rounded flex items-center justify-center transition-colors cursor-pointer z-10">
         <X size={16} />
       </button>
       {totalImages > 1 && (
-        <div className="absolute top-4 left-[72px] px-3 py-2 bg-[#22252b]/90 rounded-full text-sm text-white pointer-events-none z-10">
+        <div className="absolute top-4 left-[72px] px-3 py-2 bg-[var(--bg-tertiary)]/90 rounded-full text-sm text-white pointer-events-none z-10">
           {currentImageIndex + 1} / {totalImages}
         </div>
       )}
       <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-        <button onClick={() => onOpen(screenshot)} className="px-3 py-2 bg-[#22252b]/90 hover:bg-[#2a2e35] text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer">
+        <button onClick={() => onOpen(screenshot)} className="px-3 py-2 bg-[var(--bg-tertiary)]/90 hover:bg-[var(--bg-hover)] text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer">
           <ExternalLink size={14} />
           {"Open"}
         </button>
@@ -397,11 +397,11 @@ function ImageViewer({ screenshot, currentImageIndex, totalImages, getImageData,
       </div>
       {totalImages > 1 && (
         <>
-          <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[#22252b]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10">
-            <ChevronLeft size={32} className="text-[#e6e6e6]" />
+          <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[var(--bg-tertiary)]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10">
+            <ChevronLeft size={32} className="text-[var(--text-primary)]" />
           </button>
-          <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[#22252b]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10">
-            <ChevronRight size={32} className="text-[#e6e6e6]" />
+          <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[var(--bg-tertiary)]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10">
+            <ChevronRight size={32} className="text-[var(--text-primary)]" />
           </button>
         </>
       )}

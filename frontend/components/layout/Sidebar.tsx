@@ -68,8 +68,8 @@ export function Sidebar(props: SidebarProps) {
                   onClick={() => { setActiveTab(tab.id); setShowInstanceDetails(false) }}
                   className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                     isActive
-                      ? "bg-[#1F2229] text-[#e6e6e6]"
-                      : "text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1F2229]"
+                      ? "bg-[var(--bg-active)] text-[var(--text-primary)]"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)]"
                   }`}
                 >
                   <Icon size={26} strokeWidth={isActive ? 2.5 : 2} />
@@ -89,7 +89,7 @@ export function Sidebar(props: SidebarProps) {
                 className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                   isInstallingUpdate
                     ? "text-[#16a34a] animate-pulse"
-                    : "text-[#16a34a] hover:bg-[#1F2229]"
+                    : "text-[#16a34a] hover:bg-[var(--bg-active)]"
                 }`}
               >
                 <Download size={26} strokeWidth={2} />
@@ -100,7 +100,7 @@ export function Sidebar(props: SidebarProps) {
           <Tooltip text="New instance">
             <button
               onClick={onCreateNew}
-              className="w-12 h-12 flex items-center justify-center rounded-lg text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1F2229] transition-all cursor-pointer"
+              className="w-12 h-12 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-all cursor-pointer"
             >
               <Plus size={26} strokeWidth={2} />
             </button>
@@ -109,7 +109,7 @@ export function Sidebar(props: SidebarProps) {
           <Tooltip text="Settings">
             <button
               onClick={onOpenSettings}
-              className="w-12 h-12 flex items-center justify-center rounded-lg text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1F2229] transition-all cursor-pointer"
+              className="w-12 h-12 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-all cursor-pointer"
             >
               <Settings size={26} strokeWidth={2} />
             </button>

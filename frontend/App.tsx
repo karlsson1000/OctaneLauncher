@@ -461,7 +461,7 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#15171c] text-[#e6e6e6] overflow-hidden font-sans">
+    <div className={`flex flex-col h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden font-sans ${settings?.theme ? `theme-${settings.theme}` : 'theme-octane'}`}>
 
       <div
         data-tauri-drag-region
@@ -470,7 +470,7 @@ function App() {
       >
         <div className="flex items-center gap-2 flex-shrink-0">
           <img src="/logo.png" alt="Octane" className="h-4 w-4" />
-          <span className="text-sm font-semibold text-[#8a94a6]">Octane Launcher</span>
+          <span className="text-sm font-semibold text-[var(--text-secondary)]">Octane Launcher</span>
         </div>
 
         <div className="flex items-center gap-0.5 ml-1" style={noDragRegion}>
@@ -478,7 +478,7 @@ function App() {
             onClick={navigateBack}
             disabled={historyIndex <= 0}
             className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
-              historyIndex > 0 ? "text-[#8a94a6] hover:bg-[#1a1d24] hover:text-[#e6e6e6] cursor-pointer" : "text-[#2e3340] cursor-not-allowed"
+              historyIndex > 0 ? "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] cursor-pointer" : "text-[var(--text-disabled)] cursor-not-allowed"
             }`}
           >
             <ChevronLeft size={18} strokeWidth={3} />
@@ -487,14 +487,14 @@ function App() {
             onClick={navigateForward}
             disabled={historyIndex >= navigationHistory.length - 1}
             className={`h-6 w-6 flex items-center justify-center rounded transition-colors ${
-              historyIndex < navigationHistory.length - 1 ? "text-[#8a94a6] hover:bg-[#1a1d24] hover:text-[#e6e6e6] cursor-pointer" : "text-[#2e3340] cursor-not-allowed"
+              historyIndex < navigationHistory.length - 1 ? "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] cursor-pointer" : "text-[var(--text-disabled)] cursor-not-allowed"
             }`}
           >
             <ChevronRight size={18} strokeWidth={3} />
           </button>
         </div>
 
-        <span className="text-sm font-medium text-[#8a94a6] ml-1 select-none" style={dragRegion}>
+        <span className="text-sm font-medium text-[var(--text-secondary)] ml-1 select-none" style={dragRegion}>
           {showInstanceDetails && selectedInstance
             ? `Instances / ${selectedInstance.name}`
             : activeTab === "browse"
@@ -510,7 +510,7 @@ function App() {
               <button
                 data-account-button
                 onClick={() => setShowAccountDropdown(!showAccountDropdown)}
-                className="flex items-center gap-1.5 px-2 h-7 rounded text-sm font-medium text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1a1d24] transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-2 h-7 rounded text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all cursor-pointer"
               >
                 <img
                   src={`https://avatar.mcindex.net/avatar/${activeAccount.username}/16`}
@@ -524,7 +524,7 @@ function App() {
               {showAccountDropdown && (
                 <div
                   data-account-dropdown
-                  className="absolute top-full mt-1 w-48 bg-[#22252b] rounded shadow-lg overflow-hidden z-50 left-1/2 -translate-x-1/2"
+                  className="absolute top-full mt-1 w-48 bg-[var(--bg-tertiary)] rounded shadow-lg overflow-hidden z-50 left-1/2 -translate-x-1/2"
                 >
                   <div>
                     {accounts.map(acc => (
@@ -536,7 +536,7 @@ function App() {
                           }
                           setShowAccountDropdown(false)
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#2a2d35] transition-colors cursor-pointer"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                       >
                         <img
                           src={`https://avatar.mcindex.net/avatar/${acc.username}/24`}
@@ -549,13 +549,13 @@ function App() {
                       </button>
                     ))}
                   </div>
-                  <div className="border-t border-[#2a2d35]" />
+                  <div className="border-t border-[var(--border-default)]" />
                   <div>
                     <button
                       onClick={async () => {
                         try { await invoke("microsoft_login_and_store"); await loadAccounts(); setShowAccountDropdown(false) } catch {}
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#2a2d35] transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                     >
                       <LogIn size={16} strokeWidth={3} className="text-[#16a34a]" />
                       Add Account
@@ -564,7 +564,7 @@ function App() {
                       onClick={async () => {
                         try { await invoke("remove_account", { uuid: activeAccount.uuid }); await loadAccounts(); setShowAccountDropdown(false) } catch {}
                       }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-[#2a2d35] transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                     >
                       <LogOut size={16} strokeWidth={3} />
                       Sign Out
@@ -578,7 +578,7 @@ function App() {
               onClick={async () => {
                 try { await invoke("microsoft_login_and_store"); await loadAccounts() } catch {}
               }}
-              className="flex items-center gap-1.5 px-2 h-6 rounded text-xs font-medium text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1a1d24] transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2 h-6 rounded text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all cursor-pointer"
             >
               <LogIn size={14} strokeWidth={2} className="text-[#16a34a]" />
               Sign in
@@ -591,7 +591,7 @@ function App() {
             data-friends-toggle
             onClick={() => setShowFriendsPanel(!showFriendsPanel)}
             className={`h-7 w-7 flex items-center justify-center rounded transition-colors cursor-pointer ${
-              showFriendsPanel ? "bg-[#22252b] text-[#e6e6e6]" : "text-[#8a94a6] hover:text-[#e6e6e6] hover:bg-[#1a1d24]"
+              showFriendsPanel ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             }`}
             title="Friends"
           >
@@ -600,13 +600,13 @@ function App() {
         </div>
 
         <div className="flex items-center" style={noDragRegion}>
-          <button onClick={() => appWindow.minimize()} className="h-9 w-9 flex items-center justify-center text-[#8a94a6] hover:text-[#e6e6e6] transition-colors cursor-pointer">
+          <button onClick={() => appWindow.minimize()} className="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer">
             <Minus size={18} strokeWidth={3} />
           </button>
-          <button onClick={() => appWindow.toggleMaximize()} className="h-9 w-9 flex items-center justify-center text-[#8a94a6] hover:text-[#e6e6e6] transition-colors cursor-pointer">
+          <button onClick={() => appWindow.toggleMaximize()} className="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer">
             <Square size={14} strokeWidth={3} />
           </button>
-          <button onClick={() => appWindow.close()} className="h-9 w-9 flex items-center justify-center text-[#8a94a6] hover:text-red-500 transition-colors cursor-pointer">
+          <button onClick={() => appWindow.close()} className="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 transition-colors cursor-pointer">
             <X size={18} strokeWidth={3} />
           </button>
         </div>
@@ -641,7 +641,7 @@ function App() {
           style={
             background
               ? { backgroundImage: `url(${background})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-              : { backgroundColor: '#181a1f' }
+              : { backgroundColor: 'var(--content-bg)' }
           }
         >
           {background && <div className="absolute inset-0 bg-black/80" />}

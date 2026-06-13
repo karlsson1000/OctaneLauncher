@@ -53,12 +53,12 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   return createPortal(
     <div
       ref={menuRef}
-      className="fixed z-[100] bg-[#181a1f] rounded-md overflow-hidden min-w-[180px] border border-[#ffffff14]"
+      className="fixed z-[100] bg-[var(--bg-secondary)] rounded-md overflow-hidden min-w-[180px] border border-[var(--border-subtle)]"
       style={{ left: position.x, top: position.y }}
     >
       {items.map((item, index) =>
         item.separator ? (
-          <div key={index} className="h-px bg-[#22252b] my-1 mx-2" />
+          <div key={index} className="h-px bg-[var(--bg-tertiary)] my-1 mx-2" />
         ) : (
           <button
             key={index}
@@ -69,7 +69,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
             className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors cursor-pointer ${
               item.danger
                 ? "text-red-400 hover:bg-red-500/10"
-                : "text-[#e6e6e6] hover:bg-[#3a3f4b]"
+                : "text-[var(--text-primary)] hover:bg-[var(--bg-hover-strong)]"
             }`}
           >
             {item.icon && <span className="flex-shrink-0">{item.icon}</span>}

@@ -150,14 +150,14 @@ export function InstancesTab({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               {instances.length > 0 && (
-                <div className="relative rounded-md bg-[#22252b]">
-                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
+                <div className="relative rounded-md bg-[var(--bg-tertiary)]">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
                   <input
                     type="text"
                     placeholder="Search instances..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-72 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
+                    className="w-72 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
                   />
                 </div>
               )}
@@ -166,19 +166,19 @@ export function InstancesTab({
               {instances.length > 0 && (
                 <button
                   onClick={handleCycleSort}
-                  className="h-8 px-2.5 hover:bg-[#22252b] rounded flex items-center gap-1.5 transition-colors cursor-pointer group"
+                  className="h-8 px-2.5 hover:bg-[var(--bg-tertiary)] rounded flex items-center gap-1.5 transition-colors cursor-pointer group"
                 >
-                  <span className="text-sm text-[#4a4f5b] group-hover:text-[#7d8590] transition-colors font-medium">Sort by:</span>
-                  <span className="text-sm text-[#7d8590] group-hover:text-[#e6e6e6] transition-colors font-semibold">{SORT_LABELS[sortBy]}</span>
+                  <span className="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-muted)] transition-colors font-medium">Sort by:</span>
+                  <span className="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors font-semibold">{SORT_LABELS[sortBy]}</span>
                   {sortIsDesc
-                    ? <ChevronDown size={14} className="text-[#7d8590] group-hover:text-[#e6e6e6] transition-colors" strokeWidth={2.5} />
-                    : <ChevronUp size={14} className="text-[#7d8590] group-hover:text-[#e6e6e6] transition-colors" strokeWidth={2.5} />
+                    ? <ChevronDown size={14} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" strokeWidth={2.5} />
+                    : <ChevronUp size={14} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" strokeWidth={2.5} />
                   }
                 </button>
               )}
               <button
                 onClick={onCreateNew}
-                className="px-4 h-8 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
+                className="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} />
                 New
@@ -188,12 +188,12 @@ export function InstancesTab({
 
           {instances.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14">
-              <Package size={48} className="text-[#7d8590] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No instances yet</h3>
-              <p className="text-sm text-[#7d8590] mb-4">Create your first instance to get started</p>
+              <Package size={48} className="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
+              <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No instances yet</h3>
+              <p className="text-sm text-[var(--text-muted)] mb-4">Create your first instance to get started</p>
               <button
                 onClick={onCreateNew}
-                className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d1] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+                className="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Plus size={16} strokeWidth={2} />
                 <span>Create Instance</span>
@@ -201,9 +201,9 @@ export function InstancesTab({
             </div>
           ) : sortedAndFilteredInstances.length === 0 ? (
             <div className="rounded-md p-8 flex flex-col items-center justify-center">
-              <Search size={48} className="text-[#e6e6e6] mb-3" strokeWidth={1.5} />
-              <h3 className="text-base font-semibold text-[#e6e6e6] mb-1">No instances found</h3>
-              <p className="text-sm text-[#7d8590]">Try adjusting your search query</p>
+              <Search size={48} className="text-[var(--text-primary)] mb-3" strokeWidth={1.5} />
+              <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No instances found</h3>
+              <p className="text-sm text-[var(--text-muted)]">Try adjusting your search query</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -216,23 +216,23 @@ export function InstancesTab({
                     key={instance.name}
                     onClick={() => { onSetSelectedInstance(instance); onShowDetails(instance) }}
                     onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="bg-[#22252b] rounded-md flex items-center hover:bg-[#2a2e36] transition-all cursor-pointer group relative overflow-hidden"
+                    className="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative overflow-hidden"
                   >
                     <div className="relative flex-shrink-0">
                       {icon ? (
                         <img src={icon} alt={instance.name} className="w-20 h-20 object-cover" />
                       ) : (
                         <div className="w-20 h-20 flex items-center justify-center">
-                          <Package size={36} className="text-[#4a4f5b]" />
+                          <Package size={36} className="text-[var(--text-muted)]" />
                         </div>
                       )}
                     </div>
 
                     <div className={`py-2 pr-2 pl-4 flex-1 min-w-0 ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
-                      <div className="text-base font-medium text-[#e6e6e6] truncate leading-tight">{instance.name}</div>
-                      <div className="flex items-center gap-2 text-sm text-[#7d8590] mt-0.5">
+                      <div className="text-base font-medium text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
+                      <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-0.5">
                         <span>{getMinecraftVersion(instance)}</span>
-                        <span className="text-[#3a3f4b]">•</span>
+                        <span className="text-[var(--text-muted)]">•</span>
                         {getLoaderBadge(instance)}
                       </div>
                     </div>

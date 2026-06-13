@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Terminal } from "lucide-react"
+import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Terminal, Paintbrush } from "lucide-react"
 import { AlertModal } from "../../components/ui/ConfirmModal"
 import type { LauncherSettings } from "../../types"
 
@@ -49,7 +49,7 @@ export function SettingsModal({
   const [isJavaDropdownOpen, setIsJavaDropdownOpen] = useState(false)
   const javaDropdownRef = useRef<HTMLDivElement>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  // Load data on open
+
   useEffect(() => {
     if (isOpen) {
       setActiveTab("game")
@@ -133,6 +133,7 @@ export function SettingsModal({
   const handleSettingChange = async (newSettings: LauncherSettings) => {
     try {
       await invoke("save_settings", { settings: newSettings })
+      localStorage.setItem('octane_theme', newSettings.theme ?? 'octane')
       onSettingsChange(newSettings)
     } catch (error) {
       console.error("Failed to save settings:", error)
@@ -213,8 +214,8 @@ export function SettingsModal({
   if (!settings) {
     return (
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-[#1a1d23] rounded p-8">
-          <div className="flex items-center gap-2 text-gray-400 text-base">
+        <div className="bg-[var(--bg-primary)] rounded p-8">
+          <div className="flex items-center gap-2 text-[var(--text-muted)] text-base">
             <Loader2 size={20} className="animate-spin" />
             <span>Loading settings...</span>
           </div>
@@ -238,19 +239,19 @@ export function SettingsModal({
         onClick={handleClose}
       >
         <div
-          className={`blur-border bg-[#1a1d23] rounded w-full max-w-3xl h-[460px] flex flex-col shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
+          className={`blur-border bg-[var(--bg-primary)] rounded w-full max-w-3xl h-[460px] flex flex-col shadow-2xl modal-content ${isClosing ? 'closing' : ''}`}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-4 pb-1">
-            <h2 className="text-xl font-semibold text-white">Settings</h2>
+            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Settings</h2>
             <div className="flex items-center gap-3">
               {appVersion && (
-                <span className="bg-[#252932] px-2.5 py-1 rounded text-xs text-gray-400">
+                <span className="bg-[var(--bg-elevated)] px-2.5 py-1 rounded text-xs text-[var(--text-muted)]">
                   {"Build"} {appVersion.split('-')[1] || appVersion}
                 </span>
               )}
-              <button onClick={handleClose} className="p-2 hover:bg-[#252932] rounded transition-colors text-gray-400 hover:text-white cursor-pointer">
+              <button onClick={handleClose} className="p-2 hover:bg-[var(--bg-hover)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
                 <X size={18} />
               </button>
             </div>
@@ -266,7 +267,7 @@ export function SettingsModal({
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer ${activeTab === tab.id ? 'bg-[#4572e3] text-white' : 'text-gray-400 hover:bg-[#252932] hover:text-white'}`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded text-sm font-medium transition-colors cursor-pointer ${activeTab === tab.id ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'}`}
                   >
                     <Icon size={18} />
                     <span>{tab.label}</span>
@@ -281,31 +282,31 @@ export function SettingsModal({
                 <div className="space-y-5">
                   {/* Memory */}
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-white">
-                      <Cpu size={18} className="text-[#4572e3]" />
+                    <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Cpu size={18} className="text-[var(--accent-primary)]" />
                       <span className="font-medium">Memory Allocation</span>
                     </div>
-                    <div className="bg-[#252932] rounded p-4 space-y-3">
+                    <div className="bg-[var(--bg-elevated)] rounded p-4 space-y-3">
                       <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-bold text-white">{(settings.memory_mb / 1024).toFixed(1)} GB</span>
-                        <span className="text-xs text-gray-400">of {systemInfo ? (systemInfo.total_memory_mb / 1024).toFixed(0) : '16'} GB total</span>
+                        <span className="text-2xl font-bold text-[var(--text-primary)]">{(settings.memory_mb / 1024).toFixed(1)} GB</span>
+                        <span className="text-xs text-[var(--text-muted)]">of {systemInfo ? (systemInfo.total_memory_mb / 1024).toFixed(0) : '16'} GB total</span>
                       </div>
                       <input
                         type="range" min="1024" max={systemInfo?.total_memory_mb || 32768} step="512"
                         value={settings.memory_mb}
                         onChange={(e) => handleSettingChangeDebounced({ ...settings, memory_mb: parseInt(e.target.value) })}
-                        className="w-full h-2 bg-[#1a1d23] rounded-full appearance-none cursor-pointer"
-                        style={{ background: `linear-gradient(to right, #4572e3 0%, #4572e3 ${ramPercent}%, #1a1d23 ${ramPercent}%, #1a1d23 100%)` }}
+                        className="w-full h-2 bg-[var(--bg-primary)] rounded-full appearance-none cursor-pointer"
+                        style={{ background: `linear-gradient(to right, var(--accent-primary) 0%, var(--accent-primary) ${ramPercent}%, var(--bg-primary) ${ramPercent}%, var(--bg-primary) 100%)` }}
                       />
                       {systemInfo && (
                         <div className="pt-2 space-y-1">
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">System Total</span>
-                            <span className="text-white font-medium">{(systemInfo.total_memory_mb / 1024).toFixed(1)} GB</span>
+                            <span className="text-[var(--text-muted)]">System Total</span>
+                            <span className="text-[var(--text-primary)] font-medium">{(systemInfo.total_memory_mb / 1024).toFixed(1)} GB</span>
                           </div>
                           <div className="flex justify-between text-xs">
-                            <span className="text-gray-400">Available</span>
-                            <span className="text-white font-medium">{(systemInfo.available_memory_mb / 1024).toFixed(1)} GB</span>
+                            <span className="text-[var(--text-muted)]">Available</span>
+                            <span className="text-[var(--text-primary)] font-medium">{(systemInfo.available_memory_mb / 1024).toFixed(1)} GB</span>
                           </div>
                         </div>
                       )}
@@ -314,15 +315,15 @@ export function SettingsModal({
 
                   {/* Java */}
                   <div className="space-y-3 min-w-0">
-                    <div className="flex items-center gap-2 text-white">
-                      <Coffee size={18} className="text-[#4572e3]" />
+                    <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Coffee size={18} className="text-[var(--accent-primary)]" />
                       <span className="font-medium">Java Runtime</span>
                     </div>
                     <div className="flex gap-2 min-w-0">
                       <div className="relative flex-1 min-w-0" ref={javaDropdownRef}>
                         <button
                           onClick={() => setIsJavaDropdownOpen(!isJavaDropdownOpen)}
-                          className={`w-full bg-[#252932] px-4 py-2.5 text-sm text-white text-left flex items-center justify-between cursor-pointer min-w-0 ${isJavaDropdownOpen ? 'rounded-b' : 'rounded'}`}
+                          className={`w-full bg-[var(--bg-elevated)] px-4 py-2.5 text-sm text-[var(--text-primary)] text-left flex items-center justify-between cursor-pointer min-w-0 ${isJavaDropdownOpen ? 'rounded-b' : 'rounded'}`}
                         >
                           <span className="truncate">
                             {showCustomPath ? "Custom Path..." : (settings.java_path || "Auto-detect (Recommended)")}
@@ -331,36 +332,36 @@ export function SettingsModal({
                         </button>
 
                         {isJavaDropdownOpen && (
-                          <div className="absolute z-[60] w-full bg-[#252932] rounded-t shadow-lg max-h-64 overflow-y-auto custom-scrollbar border-b border-[#1a1d23] bottom-full">
+                          <div className="absolute z-[60] w-full bg-[var(--bg-elevated)] rounded-t shadow-lg max-h-64 overflow-y-auto custom-scrollbar border-b border-[#1a1d23] bottom-full">
                             <button
                               onClick={() => { setShowCustomPath(false); setCustomPathValue(""); handleSettingChange({ ...settings, java_path: null }); setIsJavaDropdownOpen(false) }}
-                              className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
+                              className="w-full px-4 py-2.5 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between cursor-pointer"
                             >
                               <span>Auto-detect (Recommended)</span>
-                              {!settings.java_path && !showCustomPath && <Check size={16} className="text-white" />}
+                              {!settings.java_path && !showCustomPath && <Check size={16} className="text-[var(--text-primary)]" />}
                             </button>
                             {javaInstallations.map((path) => (
                               <button
                                 key={path}
                                 onClick={() => { setShowCustomPath(false); setCustomPathValue(""); handleSettingChange({ ...settings, java_path: path }); setIsJavaDropdownOpen(false) }}
-                                className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
+                                className="w-full px-4 py-2.5 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between cursor-pointer"
                               >
                                 <span className="truncate">{path}</span>
-                                {settings.java_path === path && !showCustomPath && <Check size={16} className="text-white flex-shrink-0 ml-2" />}
+                                {settings.java_path === path && !showCustomPath && <Check size={16} className="text-[var(--text-primary)] flex-shrink-0 ml-2" />}
                               </button>
                             ))}
                             <button
                               onClick={() => { setShowCustomPath(true); setCustomPathValue(settings.java_path || ""); setIsJavaDropdownOpen(false) }}
-                              className="w-full px-4 py-2.5 text-sm text-left hover:bg-[#2d3139] text-white flex items-center justify-between cursor-pointer"
+                              className="w-full px-4 py-2.5 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between cursor-pointer"
                             >
                               <span>Custom Path...</span>
-                              {showCustomPath && <Check size={16} className="text-white" />}
+                              {showCustomPath && <Check size={16} className="text-[var(--text-primary)]" />}
                             </button>
                           </div>
                         )}
                       </div>
 
-                      <button onClick={loadJavaInstallations} disabled={isLoadingJava} className="px-4 py-2.5 bg-[#252932] hover:bg-[#2d3139] disabled:opacity-50 rounded text-sm font-medium text-white cursor-pointer disabled:cursor-not-allowed">
+                      <button onClick={loadJavaInstallations} disabled={isLoadingJava} className="px-4 py-2.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] disabled:opacity-50 rounded text-sm font-medium text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed">
                         {isLoadingJava ? <Loader2 size={16} className="animate-spin" /> : "Scan"}
                       </button>
                     </div>
@@ -368,7 +369,7 @@ export function SettingsModal({
                     {showCustomPath && (
                       <input
                         type="text"
-                        className="w-full bg-[#252932] rounded px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#4572e3] font-mono min-w-0"
+                        className="w-full bg-[var(--bg-elevated)] rounded px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono min-w-0"
                         placeholder="C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
                         value={customPathValue}
                         onChange={(e) => setCustomPathValue(e.target.value)}
@@ -382,25 +383,54 @@ export function SettingsModal({
 
               {activeTab === "appearance" && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-white">
-                    <ImagePlus size={18} className="text-[#4572e3]" />
+                  <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <Paintbrush size={18} className="text-[var(--accent-primary)]" />
+                    <span className="font-medium">Theme</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { id: "octane", label: "Octane", colors: ["#1a1d23", "#252932", "#4572e3", "#e6e6e6"] },
+                      { id: "light", label: "Light", colors: ["#ffffff", "#f0f0f0", "#4361ee", "#1a1d23"] },
+                      { id: "rose", label: "Rosé", colors: ["#1a1423", "#2a1a33", "#f472b6", "#e6e6e6"] },
+                      { id: "cherry", label: "Cherry", colors: ["#1a0d0f", "#2a1417", "#dc2626", "#e6e6e6"] },
+                    ].map((theme) => (
+                      <button
+                        key={theme.id}
+                        onClick={() => settings && handleSettingChange({ ...settings, theme: theme.id })}
+                        className={`relative flex items-center justify-between gap-2 p-3 rounded-lg transition-all cursor-pointer border ${
+                          settings?.theme === theme.id
+                            ? "border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)]"
+                            : "border-transparent hover:border-[var(--border-default)]"
+                        }`}
+                      >
+                        <span className="text-sm font-medium text-[var(--text-primary)]">{theme.label}</span>
+                        <div className="flex items-center gap-1">
+                          {theme.colors.map((color, i) => (
+                            <div key={i} className="w-4 h-4 rounded-full border border-white/10" style={{ backgroundColor: color }} />
+                          ))}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                    <ImagePlus size={18} className="text-[var(--accent-primary)]" />
                     <span className="font-medium">Background</span>
                   </div>
                   {sidebarBgPreview ? (
                     <div className="relative group">
-                      <div className="h-48 rounded overflow-hidden bg-[#252932]">
+                      <div className="h-38 rounded overflow-hidden bg-[var(--bg-elevated)]">
                         <img src={sidebarBgPreview} alt="Background" className="w-full h-full object-cover" />
                       </div>
                       <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center gap-2">
-                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-[#4572e3] hover:bg-[#3461d9] text-white rounded text-sm font-medium cursor-pointer">Change</button>
+                        <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded text-sm font-medium cursor-pointer">Change</button>
                         <button onClick={handleRemoveBackground} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-medium cursor-pointer">Remove</button>
                       </div>
                     </div>
                   ) : (
-                    <button onClick={() => fileInputRef.current?.click()} className="w-full h-48 bg-[#252932] hover:bg-[#2d3139] border-2 border-dashed border-[#2a2e36] hover:border-[#4572e3] rounded transition-all flex flex-col items-center justify-center gap-2 cursor-pointer">
-                      <ImagePlus size={32} className="text-gray-500" />
-                      <span className="text-sm text-gray-400">Click to upload image</span>
-                      <span className="text-xs text-gray-500">PNG, JPG up to 10MB</span>
+                    <button onClick={() => fileInputRef.current?.click()} className="w-full h-38 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] border-2 border-dashed border-[var(--border-default)] hover:border-[var(--accent-primary)] rounded transition-all flex flex-col items-center justify-center gap-2 cursor-pointer">
+                      <ImagePlus size={32} className="text-[var(--text-muted)]" />
+                      <span className="text-sm text-[var(--text-muted)]">Click to upload image</span>
+                      <span className="text-xs text-[var(--text-muted)]">PNG, JPG up to 10MB</span>
                     </button>
                   )}
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
@@ -410,16 +440,16 @@ export function SettingsModal({
               {activeTab === "about" && (
                 <div className="space-y-5">
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-white">
-                      <FolderOpen size={18} className="text-[#4572e3]" />
+                    <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <FolderOpen size={18} className="text-[var(--accent-primary)]" />
                       <span className="font-medium">Game Directory</span>
                     </div>
-                    <div className="bg-[#252932] rounded p-4 flex items-center justify-between gap-3">
-                      <p className="text-xs text-gray-400 font-mono break-all flex-1">{launcherDirectory || "Loading..."}</p>
+                    <div className="bg-[var(--bg-elevated)] rounded p-4 flex items-center justify-between gap-3">
+                      <p className="text-xs text-[var(--text-muted)] font-mono break-all flex-1">{launcherDirectory || "Loading..."}</p>
                       <button
                         onClick={() => handleOpenDirectory(launcherDirectory)}
                         disabled={!launcherDirectory}
-                        className="flex-shrink-0 px-3 py-1.5 bg-[#2d3139] hover:bg-[#353a44] disabled:opacity-50 rounded text-xs font-medium text-white cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
+                        className="flex-shrink-0 px-3 py-1.5 bg-[var(--bg-hover)] hover:bg-[var(--bg-hover)] disabled:opacity-50 rounded text-xs font-medium text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
                       >
                         <FolderOpen size={13} />
                         Open
@@ -428,34 +458,33 @@ export function SettingsModal({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-white">
-                      <Info size={18} className="text-[#4572e3]" />
+                    <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Info size={18} className="text-[var(--accent-primary)]" />
                       <span className="font-medium">Version Information</span>
                     </div>
-                    <div className="bg-[#252932] rounded p-4 space-y-2">
+                    <div className="bg-[var(--bg-elevated)] rounded p-4 space-y-2">
                       <div className="flex justify-between text-sm">
-                        <span className="text-gray-400">Launcher Version</span>
-                        <span className="text-white font-medium">{semanticVersion || "Loading..."}</span>
+                        <span className="text-[var(--text-muted)]">Launcher Version</span>
+                        <span className="text-[var(--text-primary)] font-medium">{semanticVersion || "Loading..."}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Auto Navigate to Console */}
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-white">
-                      <Terminal size={18} className="text-[#4572e3]" />
+                    <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <Terminal size={18} className="text-[var(--accent-primary)]" />
                       <span className="font-medium">Console Navigation</span>
                     </div>
-                    <div className="flex items-center justify-between bg-[#252932] rounded p-4">
+                    <div className="flex items-center justify-between bg-[var(--bg-elevated)] rounded p-4">
                       <div>
-                        <span className="text-sm font-medium text-white">Auto-Navigate to Console</span>
-                        <p className="text-xs text-gray-400">
+                        <span className="text-sm font-medium text-[var(--text-primary)]">Auto-Navigate to Console</span>
+                        <p className="text-xs text-[var(--text-muted)]">
                           {(settings.auto_navigate_to_console ?? true) ? "Automatically switch to Console tab when launching" : "Stay on current tab when launching"}
                         </p>
                       </div>
                       <button
                         onClick={() => handleSettingChange({ ...settings, auto_navigate_to_console: !(settings.auto_navigate_to_console ?? true) })}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${(settings.auto_navigate_to_console ?? true) ? 'bg-[#4572e3]' : 'bg-[#2a2e36]'}`}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer ${(settings.auto_navigate_to_console ?? true) ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover)]'}`}
                       >
                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${(settings.auto_navigate_to_console ?? true) ? 'translate-x-6' : 'translate-x-1'}`} />
                       </button>

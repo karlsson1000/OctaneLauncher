@@ -87,10 +87,13 @@ pub struct LauncherSettings {
     pub language: Option<String>,
     #[serde(default = "default_auto_navigate_to_console")]
     pub auto_navigate_to_console: bool,
+    #[serde(default = "default_theme")]
+    pub theme: String,
 }
 
 fn default_memory() -> u32 { 2048 }
 fn default_auto_navigate_to_console() -> bool { true }
+fn default_theme() -> String { "octane".to_string() }
 
 impl Default for LauncherSettings {
     fn default() -> Self {
@@ -99,6 +102,7 @@ impl Default for LauncherSettings {
             memory_mb: 2048,
             language: None,
             auto_navigate_to_console: true,
+            theme: "default".to_string(),
         }
     }
 }

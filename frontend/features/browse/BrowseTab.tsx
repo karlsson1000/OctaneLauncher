@@ -78,20 +78,20 @@ export function BrowseTab({
                     <button
                       onClick={() => onSubTabChange(tab.id)}
                       className={`flex items-center gap-2 text-2xl font-semibold tracking-tight transition-colors cursor-pointer ${
-                        isActive ? tab.color : "text-[#7d8590] hover:text-[#e6e6e6]"
+                        isActive ? tab.color : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                       }`}
                     >
                       <Icon size={24} strokeWidth={2} />
                       {tab.label && <span>{tab.label}</span>}
                     </button>
                     {index < tabs.length - 1 && (
-                      <div className="h-8 w-px bg-[#3a3f4b]" />
+                      <div className="h-8 w-px bg-[var(--bg-hover-strong)]" />
                     )}
                   </Fragment>
                 )
               })}
             </div>
-            <p className="text-sm text-[#7d8590] mt-0.5">
+            <p className="text-sm text-[var(--text-muted)] mt-0.5">
               {activeTab?.subtitle}
             </p>
           </div>

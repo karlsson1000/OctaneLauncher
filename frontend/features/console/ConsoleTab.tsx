@@ -137,21 +137,21 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
         <div className="mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-[#e6e6e6] tracking-tight">Console</h1>
-              <p className="text-sm text-[#7d8590] mt-0.5">View game output and logs</p>
+              <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Console</h1>
+              <p className="text-sm text-[var(--text-muted)] mt-0.5">View game output and logs</p>
             </div>
             
             {/* Instance Tabs */}
             {instances.length > 0 && (
-              <div className="flex items-center gap-1.5 bg-[#181a1f] rounded-lg p-1">
+              <div className="flex items-center gap-1.5 bg-[var(--bg-secondary)] rounded-lg p-1">
                 {instances.map((instance) => (
                   <button
                     key={instance}
                     onClick={() => setActiveInstance(instance)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
                       activeInstance === instance
-                        ? "bg-[#4572e3] text-white"
-                        : "text-[#7d8590] hover:text-[#e6e6e6] hover:bg-[#22252b]"
+                        ? "bg-[var(--accent-primary)] text-white"
+                        : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
                     }`}
                   >
                     {instance}
@@ -163,21 +163,21 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
         </div>
 
         {/* Console Display */}
-        <div className="bg-[#1a1d23] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 250px)' }}>
+        <div className="bg-[var(--bg-tertiary)] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 250px)' }}>
           {consoleLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
-                <Terminal size={48} className="text-[#4572e3] mx-auto mb-3" strokeWidth={1.5} />
-                <p className="text-base text-[#e6e6e6] mb-1">No console output yet</p>
-                <p className="text-sm text-[#7d8590]">Launch an instance to see logs</p>
+                <Terminal size={48} className="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
+                <p className="text-base text-[var(--text-primary)] mb-1">No console output yet</p>
+                <p className="text-sm text-[var(--text-muted)]">Launch an instance to see logs</p>
               </div>
             </div>
           ) : !activeInstance ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
-                <Terminal size={48} className="text-[#7d8590] mx-auto mb-3" strokeWidth={1.5} />
-                <p className="text-base text-[#e6e6e6] mb-1">No instance selected</p>
-                <p className="text-sm text-[#7d8590]">Select an instance tab above</p>
+                <Terminal size={48} className="text-[var(--text-muted)] mx-auto mb-3" strokeWidth={1.5} />
+                <p className="text-base text-[var(--text-primary)] mb-1">No instance selected</p>
+                <p className="text-sm text-[var(--text-muted)]">Select an instance tab above</p>
               </div>
             </div>
           ) : (
@@ -194,10 +194,10 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
                         ? "text-red-400" 
                         : isWarning 
                         ? "text-yellow-400" 
-                        : "text-[#e6e6e6]"
+                        : "text-[var(--text-primary)]"
                     }`}
                   >
-                    <span className="text-[#7d8590] mr-2">{new Date().toLocaleTimeString()}</span>
+                    <span className="text-[var(--text-muted)] mr-2">{new Date().toLocaleTimeString()}</span>
                     <span className="text-[#16a34a] mr-2">[{log.instance}]</span>
                     <span>{log.message}</span>
                   </div>
@@ -218,7 +218,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
                 ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
                 : uploadState.error
                 ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
-                : "bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6]"
+                : "bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)]"
             }`}
             title="Upload logs to mclo.gs"
           >
@@ -244,7 +244,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
           <button
             onClick={handleClearConsole}
             disabled={!activeInstance || activeLogs.length === 0}
-            className="px-4 py-2 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 size={16} strokeWidth={2} />
             <span>Clear {activeInstance || "Console"}</span>

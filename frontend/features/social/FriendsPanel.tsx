@@ -91,9 +91,9 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
 
   const statusIcon = (status: string) => {
     switch (status) {
-      case "online": return <span title="Online"><div className="w-2 h-2 rounded-full bg-[#16a34a] ring-2 ring-[#15171c]" /></span>
-      case "ingame": return <span title="In Game"><div className="w-2 h-2 rounded-full bg-[#3b82f6] ring-2 ring-[#15171c]" /></span>
-      default: return <span title="Offline"><div className="w-2 h-2 rounded-full bg-[#4a4f5b] ring-2 ring-[#15171c]" /></span>
+      case "online": return <span title="Online"><div className="w-2 h-2 rounded-full bg-[#16a34a] ring-2 ring-[var(--bg-primary)]" /></span>
+      case "ingame": return <span title="In Game"><div className="w-2 h-2 rounded-full bg-[#3b82f6] ring-2 ring-[var(--bg-primary)]" /></span>
+      default: return <span title="Offline"><div className="w-2 h-2 rounded-full bg-[var(--bg-hover-strong)] ring-2 ring-[var(--bg-primary)]" /></span>
     }
   }
 
@@ -109,27 +109,27 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
   return (
     <div
       ref={panelRef}
-      className={`flex-shrink-0 bg-[#15171c] flex flex-col h-full overflow-hidden transition-all duration-200 ease-in-out ${
+      className={`flex-shrink-0 bg-[var(--bg-primary)] flex flex-col h-full overflow-hidden transition-all duration-200 ease-in-out ${
         isOpen ? "w-60" : "w-0 -mr-4"
       }`}
     >
       <div className="flex items-center gap-2 px-1 pt-2 pb-1">
-        <span className="text-xl font-semibold text-[#e6e6e6]">Friends</span>
+        <span className="text-xl font-semibold text-[var(--text-primary)]">Friends</span>
         {friends.length > 0 && (
-          <span className="text-xs text-[#7d8590]">({friends.filter(f => f.status === "online" || f.status === "ingame").length} online)</span>
+          <span className="text-xs text-[var(--text-muted)]">({friends.filter(f => f.status === "online" || f.status === "ingame").length} online)</span>
         )}
       </div>
 
       {!isAuthenticated ? (
         <div className="flex-1 flex flex-col items-center justify-center px-1 py-6 text-center">
-          <LogIn size={32} className="text-[#3a3f4b] mb-3" />
-          <p className="text-sm text-[#7d8590]">Sign in to see your friends</p>
+          <LogIn size={32} className="text-[var(--text-muted)] mb-3" />
+          <p className="text-sm text-[var(--text-muted)]">Sign in to see your friends</p>
         </div>
       ) : (
         <div className="flex-1 flex flex-col min-h-0">
           <div className="px-1 pt-1 pb-1 space-y-1">
             <div className="relative">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#4a4f5b]" />
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 type="text"
                 placeholder="Search or add friends..."
@@ -140,7 +140,7 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
                     handleSendRequest(searchQuery.trim())
                   }
                 }}
-                className="w-full bg-[#22252b] rounded pl-8 pr-2 py-1.5 text-xs text-[#e6e6e6] placeholder-[#4a4f5b] focus:outline-none"
+                className="w-full bg-[var(--bg-tertiary)] rounded pl-8 pr-2 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
               />
             </div>
 
@@ -148,7 +148,7 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
               <button
                 onClick={() => handleSendRequest(searchQuery.trim())}
                 disabled={sending}
-                className="w-full flex items-center gap-2 px-1 py-1.5 rounded text-xs text-[#7d8590] hover:bg-[#22252b] hover:text-[#e6e6e6] transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2 px-1 py-1.5 rounded text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} strokeWidth={3} />}
                 Send friend request to "{searchQuery.trim()}"
@@ -159,30 +159,30 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
 
           {requests.length > 0 && (
             <div>
-              <div className="px-1 py-2 text-xs font-semibold text-[#7d8590] uppercase tracking-wider">
+              <div className="px-1 py-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider">
                 Pending Requests ({requests.length})
               </div>
               <div className="max-h-40 overflow-y-auto">
                 {requests.map(req => (
-                  <div key={req.id} className="flex items-center gap-2 px-1 py-2 hover:bg-[#22252b] transition-colors">
-                    <div className="w-6 h-6 rounded bg-[#22252b] flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-semibold text-[#7d8590]">
+                  <div key={req.id} className="flex items-center gap-2 px-1 py-2 hover:bg-[var(--bg-tertiary)] transition-colors">
+                    <div className="w-6 h-6 rounded bg-[var(--bg-tertiary)] flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-semibold text-[var(--text-muted)]">
                         {req.from_username.charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-[#e6e6e6] truncate">{req.from_username}</div>
+                      <div className="text-sm text-[var(--text-primary)] truncate">{req.from_username}</div>
                     </div>
                     <button
                       onClick={() => handleAcceptRequest(req.id)}
-                      className="p-1 hover:bg-[#16a34a]/20 rounded text-[#7d8590] hover:text-[#16a34a] transition-colors cursor-pointer"
+                      className="p-1 hover:bg-[#16a34a]/20 rounded text-[var(--text-muted)] hover:text-[#16a34a] transition-colors cursor-pointer"
                       title="Accept"
                     >
                       <UserCheck size={16} strokeWidth={3} />
                     </button>
                     <button
                       onClick={() => handleRejectRequest(req.id)}
-                      className="p-1 hover:bg-red-500/20 rounded text-[#7d8590] hover:text-red-400 transition-colors cursor-pointer"
+                      className="p-1 hover:bg-red-500/20 rounded text-[var(--text-muted)] hover:text-red-400 transition-colors cursor-pointer"
                       title="Reject"
                     >
                       <UserX size={16} strokeWidth={3} />
@@ -200,9 +200,9 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
               </div>
             ) : sortedFriends.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center px-1">
-                <Users size={32} className="text-[#3a3f4b] mb-3" />
-                <p className="text-sm text-[#7d8590]">No friends yet</p>
-                <p className="text-xs text-[#3a3f4b] mt-1">Send a friend request to get started</p>
+                <Users size={32} className="text-[var(--text-muted)] mb-3" />
+                <p className="text-sm text-[var(--text-muted)]">No friends yet</p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">Send a friend request to get started</p>
               </div>
             ) : (
               <div className="py-1">
@@ -222,8 +222,8 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-base text-[#e6e6e6] truncate font-medium">{friend.username}</div>
-                      <div className="text-[13px] text-[#7d8590] truncate -mt-0.75">
+                      <div className="text-base text-[var(--text-primary)] truncate font-medium">{friend.username}</div>
+                      <div className="text-[13px] text-[var(--text-muted)] truncate -mt-0.75">
                         {friend.status === "ingame" && friend.current_instance
                           ? <span>Playing <span className="text-[#3b82f6] font-semibold">{friend.current_instance}</span></span>
                           : friend.status === "online"
@@ -233,7 +233,7 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
                     </div>
                     <button
                       onClick={() => handleRemoveFriend(friend.uuid)}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-[#7d8590] hover:text-red-400 transition-all cursor-pointer absolute right-1"
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-[var(--text-muted)] hover:text-red-400 transition-all cursor-pointer absolute right-1"
                       title="Remove friend"
                     >
                       <UserX size={16} strokeWidth={3} />

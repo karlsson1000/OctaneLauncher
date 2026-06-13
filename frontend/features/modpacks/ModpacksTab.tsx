@@ -301,14 +301,14 @@ export function ModpacksTab({
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 rounded-md bg-[#22252b]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
+        <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
           <input
             type="text"
             placeholder="Search modpacks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
+            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
@@ -326,33 +326,33 @@ export function ModpacksTab({
           const backgroundImage = gallery.length > 0 ? gallery[0] : null
 
           return (
-            <div key={modpack.project_id} className="relative bg-[#22252b] rounded-md overflow-hidden transition-all group">
+            <div key={modpack.project_id} className="relative bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all group">
               <div className="relative h-48 overflow-hidden z-0">
                 {backgroundImage ? (
                   <img src={backgroundImage} alt={modpack.title} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#22252b] via-[#181a1f] to-[#141414] flex items-center justify-center">
-                    <Package size={64} className="text-[#3a3f4b]" strokeWidth={1.5} />
+                  <div className="w-full h-full bg-gradient-to-br from-[var(--bg-tertiary)] via-[var(--bg-secondary)] to-[#141414] flex items-center justify-center">
+                    <Package size={64} className="text-[var(--text-muted)]" strokeWidth={1.5} />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               </div>
 
-              <div className="relative bg-[#22252b] p-4 flex items-center gap-4 z-0">
+              <div className="relative bg-[var(--bg-tertiary)] p-4 flex items-center gap-4 z-0">
                 <div className="w-14 h-14 rounded overflow-hidden flex-shrink-0">
                   {modpack.icon_url ? (
                     <img src={modpack.icon_url} alt={modpack.title} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-[#181a1f] flex items-center justify-center">
-                      <Package size={28} className="text-[#7d8590]" strokeWidth={1.5} />
+                    <div className="w-full h-full bg-[var(--bg-secondary)] flex items-center justify-center">
+                      <Package size={28} className="text-[var(--text-muted)]" strokeWidth={1.5} />
                     </div>
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-[#e6e6e6] leading-tight truncate">{modpack.title}</h3>
-                  <p className="text-sm text-[#7d8590] leading-tight">by {modpack.author}</p>
-                  <p className="text-sm text-[#3a3f4b] leading-tight">{formatDownloads(modpack.downloads)} downloads</p>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)] leading-tight truncate">{modpack.title}</h3>
+                  <p className="text-sm text-[var(--text-muted)] leading-tight">by {modpack.author}</p>
+                  <p className="text-sm text-[var(--text-muted)] leading-tight">{formatDownloads(modpack.downloads)} downloads</p>
                 </div>
 
                 {status === "success" ? (
@@ -364,13 +364,13 @@ export function ModpacksTab({
                     <span className="flex items-center gap-1.5"><AlertCircle size={16} />Error</span>
                   </div>
                 ) : isInstalling ? (
-                  <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[#181a1f] text-[#7d8590]">
+                  <div className="flex-shrink-0 px-4 py-2 rounded-md font-medium text-sm bg-[var(--bg-secondary)] text-[var(--text-muted)]">
                     <span className="flex items-center gap-1.5"><Loader2 size={16} className="animate-spin" />Installing...</span>
                   </div>
                 ) : (
                   <button
                     onClick={(e) => { e.stopPropagation(); openModpackModal(modpack) }}
-                    className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-[#4572e3] hover:bg-[#3461d1] text-white transition-colors cursor-pointer shadow-sm"
+                    className="flex-shrink-0 px-4 py-2 rounded font-medium text-sm bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white transition-colors cursor-pointer shadow-sm"
                   >
                     <span className="flex items-center gap-1.5"><Download size={16} />Install</span>
                   </button>
@@ -393,7 +393,7 @@ export function ModpacksTab({
           onClick={handleCloseModal}
         >
           <div
-            className={`bg-[#181a1f] rounded-md w-full max-w-2xl modal-content ${isModalClosing ? "closing" : ""}`}
+            className={`bg-[var(--bg-secondary)] rounded-md w-full max-w-2xl modal-content ${isModalClosing ? "closing" : ""}`}
             onClick={(e) => e.stopPropagation()}
             style={{ pointerEvents: "auto" }}
           >
@@ -401,16 +401,16 @@ export function ModpacksTab({
               {modpackGalleries[selectedModpack.project_id]?.[0] ? (
                 <img src={modpackGalleries[selectedModpack.project_id][0]} alt={selectedModpack.title} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-[#22252b] via-[#181a1f] to-[#141414] flex items-center justify-center">
-                  <Package size={80} className="text-[#3a3f4b]" strokeWidth={1.5} />
+                <div className="w-full h-full bg-gradient-to-br from-[var(--bg-tertiary)] via-[var(--bg-secondary)] to-[#141414] flex items-center justify-center">
+                  <Package size={80} className="text-[var(--text-muted)]" strokeWidth={1.5} />
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
               <button
                 onClick={handleCloseModal}
-                className="absolute top-4 right-4 p-1.5 bg-[#22252b]/80 hover:bg-[#3a3f4b] backdrop-blur-sm rounded transition-colors cursor-pointer"
+                className="absolute top-4 right-4 p-1.5 bg-[var(--bg-tertiary)]/80 hover:bg-[var(--bg-hover-strong)] backdrop-blur-sm rounded transition-colors cursor-pointer"
               >
-                <X size={20} className="text-[#e6e6e6]" strokeWidth={2} />
+                <X size={20} className="text-[var(--text-primary)]" strokeWidth={2} />
               </button>
             </div>
 
@@ -420,27 +420,27 @@ export function ModpacksTab({
                   {selectedModpack.icon_url ? (
                     <img src={selectedModpack.icon_url} alt={selectedModpack.title} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full bg-[#22252b] flex items-center justify-center">
-                      <Package size={32} className="text-[#7d8590]" strokeWidth={1.5} />
+                    <div className="w-full h-full bg-[var(--bg-tertiary)] flex items-center justify-center">
+                      <Package size={32} className="text-[var(--text-muted)]" strokeWidth={1.5} />
                     </div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-bold text-[#e6e6e6] leading-tight">{selectedModpack.title}</h2>
-                  <p className="text-sm text-[#7d8590] leading-tight">by {selectedModpack.author}</p>
-                  <p className="text-sm text-[#3a3f4b] leading-tight">{formatDownloads(selectedModpack.downloads)} downloads</p>
+                  <h2 className="text-xl font-bold text-[var(--text-primary)] leading-tight">{selectedModpack.title}</h2>
+                  <p className="text-sm text-[var(--text-muted)] leading-tight">by {selectedModpack.author}</p>
+                  <p className="text-sm text-[var(--text-muted)] leading-tight">{formatDownloads(selectedModpack.downloads)} downloads</p>
                 </div>
               </div>
 
               {selectedModpack.description && (
-                <p className="text-sm text-[#7d8590] leading-relaxed">{selectedModpack.description}</p>
+                <p className="text-sm text-[var(--text-muted)] leading-relaxed">{selectedModpack.description}</p>
               )}
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-[#e6e6e6]">Select version</label>
+                <label className="block text-sm font-medium text-[var(--text-primary)]">Select version</label>
                 {loadingVersions.has(selectedModpack.project_id) ? (
-                  <div className="flex items-center gap-2 text-[#7d8590] text-sm py-3.5 px-4 bg-[#22252b] rounded">
-                    <Loader2 size={16} className="animate-spin text-[#4572e3]" />
+                  <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+                    <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
                     <span>Loading versions...</span>
                   </div>
                 ) : modpackVersions[selectedModpack.project_id]?.length > 0 ? (
@@ -448,7 +448,7 @@ export function ModpacksTab({
                     <button
                       type="button"
                       onClick={() => setIsVersionDropdownOpen(!isVersionDropdownOpen)}
-                      className={`w-full bg-[#22252b] px-4 py-3.5 pr-10 text-sm text-[#e6e6e6] focus:outline-none transition-all text-left cursor-pointer ${isVersionDropdownOpen ? "rounded-t" : "rounded"}`}
+                      className={`w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer ${isVersionDropdownOpen ? "rounded-t" : "rounded"}`}
                     >
                       {(() => {
                         const version = modpackVersions[selectedModpack.project_id].find(v => v.id === selectedModpackVersion)
@@ -458,42 +458,42 @@ export function ModpacksTab({
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                       <ChevronDown
                         size={18}
-                        className={`text-[#e6e6e6] transition-transform ${isVersionDropdownOpen ? "rotate-180" : ""}`}
+                        className={`text-[var(--text-primary)] transition-transform ${isVersionDropdownOpen ? "rotate-180" : ""}`}
                         strokeWidth={3}
                       />
                     </div>
                     {isVersionDropdownOpen && (
-                      <div className="absolute z-10 w-full bg-[#22252b] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar">
+                      <div className="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar">
                         {modpackVersions[selectedModpack.project_id].map((version) => (
                           <button
                             key={version.id}
                             type="button"
                             onClick={() => { setSelectedModpackVersion(version.id); setIsVersionDropdownOpen(false) }}
-                            className="w-full px-4 py-3 text-sm text-left hover:bg-[#3a3f4b] transition-colors flex items-center justify-between cursor-pointer text-[#e6e6e6]"
+                            className="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                           >
                             <span>{version.name} - {version.game_versions?.join(", ")}</span>
-                            {selectedModpackVersion === version.id && <Check size={16} className="text-[#e6e6e6]" strokeWidth={2} />}
+                            {selectedModpackVersion === version.id && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-sm text-[#7d8590] py-3">No versions available</p>
+                  <p className="text-sm text-[var(--text-muted)] py-3">No versions available</p>
                 )}
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={handleCloseModal}
-                  className="px-5 py-2.5 bg-[#22252b] hover:bg-[#3a3f4b] text-[#e6e6e6] rounded font-medium text-sm transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded font-medium text-sm transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleInstallModpack}
                   disabled={!selectedModpackVersion || loadingVersions.has(selectedModpack.project_id)}
-                  className="px-5 py-2.5 bg-[#4572e3] hover:bg-[#3461d1] disabled:bg-[#22252b] disabled:cursor-not-allowed disabled:text-[#3a3f4b] text-white rounded font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                  className="px-5 py-2.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:bg-[var(--bg-tertiary)] disabled:cursor-not-allowed disabled:text-[var(--text-muted)] text-white rounded font-medium text-sm transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   <Download size={16} />
                   Install

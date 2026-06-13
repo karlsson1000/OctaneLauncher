@@ -75,30 +75,30 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
     <div className="relative self-center" ref={instanceSelectorRef}>
       <button
         onClick={() => setShowInstanceSelector(!showInstanceSelector)}
-        className="flex items-center gap-3 px-2 py-1.5 bg-[#22252b] hover:bg-[#2a2f3b] rounded-md text-sm transition-colors cursor-pointer"
+        className="flex items-center gap-3 px-2 py-1.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md text-sm transition-colors cursor-pointer"
       >
         {instanceIcons[selectedInstance.name] ? (
           <img src={instanceIcons[selectedInstance.name]!} alt={selectedInstance.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
         ) : (
           <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-            <Package size={26} className="text-[#7d8590]" strokeWidth={2} />
+            <Package size={26} className="text-[var(--text-muted)]" strokeWidth={2} />
           </div>
         )}
         <div className="text-left min-w-0">
-          <div className="font-semibold text-[#e6e6e6] whitespace-nowrap leading-tight">{selectedInstance.name}</div>
+          <div className="font-semibold text-[var(--text-primary)] whitespace-nowrap leading-tight">{selectedInstance.name}</div>
           <div className="flex items-center gap-1 text-xs leading-tight mt-0.5">
-            <span className="text-[#7d8590]">{getMinecraftVersion(selectedInstance)}</span>
+            <span className="text-[var(--text-muted)]">{getMinecraftVersion(selectedInstance)}</span>
             <span className="text-[#3a3f4b]">•</span>
             <span className={loaderInfo.color}>{loaderInfo.name}</span>
           </div>
         </div>
-        <ChevronDown size={16} className={`text-[#7d8590] ml-auto transition-transform ${showInstanceSelector ? 'rotate-180' : ''}`} strokeWidth={3} />
+        <ChevronDown size={16} className={`text-[var(--text-muted)] ml-auto transition-transform ${showInstanceSelector ? 'rotate-180' : ''}`} strokeWidth={3} />
       </button>
       {showInstanceSelector && (
-        <div className="absolute top-full mt-1 right-0 bg-[#22252b] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto">
+        <div className="absolute top-full mt-1 right-0 bg-[var(--bg-tertiary)] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto">
           {instances.filter(i => i.loader === "fabric" || i.loader === "neoforge").length === 0 ? (
-            <div className="px-3 py-4 text-center bg-[#22252b]">
-              <p className="text-sm text-[#7d8590] mb-1">No modded instances</p>
+            <div className="px-3 py-4 text-center bg-[var(--bg-tertiary)]">
+              <p className="text-sm text-[var(--text-muted)] mb-1">No modded instances</p>
               <p className="text-xs text-[#3a3f4b]">Create a Fabric or NeoForge instance to install mods</p>
             </div>
           ) : (
@@ -109,17 +109,17 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
                 <button
                   key={instance.name}
                   onClick={() => { onSetSelectedInstance(instance); setShowInstanceSelector(false) }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm cursor-pointer transition-colors ${selectedInstance.name === instance.name ? "bg-[#3b82f6]/10 text-[#e6e6e6]" : "text-[#7d8590] hover:bg-[#2a2f3b]"}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm cursor-pointer transition-colors ${selectedInstance.name === instance.name ? "bg-[#3b82f6]/10 text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"}`}
                 >
                   {icon ? (
                     <img src={icon} alt={instance.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                   ) : (
                     <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
-                      <Package size={24} className="text-[#7d8590]" strokeWidth={1.5} />
+                      <Package size={24} className="text-[var(--text-muted)]" strokeWidth={1.5} />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[#e6e6e6] truncate">{instance.name}</div>
+                    <div className="font-semibold text-[var(--text-primary)] truncate">{instance.name}</div>
                     <div className="flex items-center gap-1 text-xs">
                       <span>{getMinecraftVersion(instance)}</span>
                       <span>•</span>
@@ -311,14 +311,14 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
   return (
     <div className="max-w-7xl mx-auto">
       <div className="flex gap-2 mb-4">
-        <div className="relative flex-1 rounded-md bg-[#22252b]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7d8590] z-20 pointer-events-none" strokeWidth={2} />
+        <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
           <input
             type="text"
             placeholder="Search mods..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[#e6e6e6] placeholder-[#7d8590] focus:outline-none transition-all relative z-10"
+            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
@@ -333,7 +333,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
             {hits.map((mod) => (
               <div
                 key={mod.project_id}
-                className={`rounded-md overflow-hidden cursor-pointer transition-all ${selectedMod?.project_id === mod.project_id ? "bg-[#15171c]" : "bg-[#22252b]"}`}
+                className={`rounded-md overflow-hidden cursor-pointer transition-all ${selectedMod?.project_id === mod.project_id ? "bg-[var(--bg-elevated)]" : "bg-[var(--bg-tertiary)]"}`}
                 onClick={() => handleModSelect(mod)}
               >
                 <div className="flex min-h-0 relative z-0">
@@ -349,17 +349,17 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
                   <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-0">
-                        <h3 className="font-semibold text-base text-[#e6e6e6] truncate">{mod.title}</h3>
-                        <span className="text-xs text-[#7d8590] whitespace-nowrap">by {mod.author}</span>
+                        <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{mod.title}</h3>
+                        <span className="text-xs text-[var(--text-muted)] whitespace-nowrap">by {mod.author}</span>
                       </div>
-                      <p className="text-sm text-[#7d8590] line-clamp-2 mb-2">{mod.description}</p>
+                      <p className="text-sm text-[var(--text-muted)] line-clamp-2 mb-2">{mod.description}</p>
                       <div className="flex items-center gap-2 text-xs flex-wrap">
-                        <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                        <span className="flex items-center gap-1 bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
                           <Download size={12} />
                           {formatDownloads(mod.downloads)}
                         </span>
                         {mod.categories.slice(0, 2).map((category) => (
-                          <span key={category} className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{category}</span>
+                          <span key={category} className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">{category}</span>
                         ))}
                       </div>
                     </div>
@@ -374,24 +374,24 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
           </div>
 
           {selectedMod && (
-            <div className="bg-[#22252b] rounded-md p-5 sticky top-4 self-start">
+            <div className="bg-[var(--bg-tertiary)] rounded-md p-5 sticky top-4 self-start">
               <div className="flex gap-3 mb-4">
                 {selectedMod.icon_url && <img src={selectedMod.icon_url} alt={selectedMod.title} className="w-16 h-16 rounded" />}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-xl font-semibold text-[#e6e6e6] truncate">{selectedMod.title}</h2>
-                  <p className="text-sm text-[#7d8590]">by {selectedMod.author}</p>
+                  <h2 className="text-xl font-semibold text-[var(--text-primary)] truncate">{selectedMod.title}</h2>
+                  <p className="text-sm text-[var(--text-muted)]">by {selectedMod.author}</p>
                 </div>
               </div>
-              <p className="text-sm text-[#7d8590] mb-4 leading-relaxed">{selectedMod.description}</p>
+              <p className="text-sm text-[var(--text-muted)] mb-4 leading-relaxed">{selectedMod.description}</p>
               <div className="flex gap-2 mb-5 text-xs flex-wrap">
-                <span className="flex items-center gap-1 bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">
+                <span className="flex items-center gap-1 bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
                   <Download size={12} />
                   {formatDownloads(selectedMod.downloads)}
                 </span>
-                <span className="bg-[#181a1f] px-2 py-1 rounded text-[#7d8590]">{selectedMod.follows.toLocaleString()} followers</span>
+                <span className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">{selectedMod.follows.toLocaleString()} followers</span>
               </div>
               <div className="pt-1">
-                <h3 className="font-semibold text-sm text-[#e6e6e6] mb-3">Versions</h3>
+                <h3 className="font-semibold text-sm text-[var(--text-primary)] mb-3">Versions</h3>
                 {isLoadingVersions ? (
                   <div className="text-center py-6"><Loader2 size={20} className="animate-spin text-[#16a34a] mx-auto" /></div>
                 ) : modVersions.length === 0 ? (
@@ -402,9 +402,9 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
                       const installed = isModInstalled(version)
                       const downloading = downloadingMods.has(version.id)
                       return (
-                        <div key={version.id} className="bg-[#181a1f] rounded p-3 flex items-center justify-between gap-2">
+                        <div key={version.id} className="bg-[var(--bg-secondary)] rounded p-3 flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-[#e6e6e6] truncate">{version.name}</div>
+                            <div className="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
                             <div className="text-xs text-[#3a3f4b] truncate mt-0.5">
                               {version.loaders.join(', ')} • {selectedInstance ? getMinecraftVersion(selectedInstance) : version.game_versions[0]}
                             </div>

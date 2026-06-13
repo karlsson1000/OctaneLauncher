@@ -24,7 +24,7 @@ export function Tooltip({ text, children }: TooltipProps) {
           className="fixed z-[100] pointer-events-none whitespace-nowrap"
           style={{ left: rect.right + 8, top: rect.top + rect.height / 2 }}
         >
-          <div className="bg-[#181a1f] rounded-md px-2 py-1 border border-[#ffffff14] text-sm text-[#e6e6e6] -translate-y-1/2">
+          <div className="bg-[var(--bg-secondary)] rounded-md px-2 py-1 border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] -translate-y-1/2">
             {text}
           </div>
         </div>,

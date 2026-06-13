@@ -39,6 +39,7 @@ export interface LauncherSettings {
   java_path: string | null
   language?: string
   auto_navigate_to_console?: boolean
+  theme?: string
 }
 
 export interface MinecraftOptions {
