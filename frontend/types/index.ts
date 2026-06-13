@@ -233,8 +233,10 @@ export interface ServerInfo {
   players_list?: PlayerInfo[]
   version?: string
   motd?: string
+  motd_html?: string[]
   favicon?: string
   last_checked?: number
+  ping?: number
 }
 
 export interface McSrvStatResponse {
@@ -250,6 +252,7 @@ export interface McSrvStatResponse {
   icon?: string
   motd?: {
     clean?: string[]
+    html?: string[]
   }
   players?: {
     online: number

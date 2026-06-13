@@ -6,6 +6,8 @@ use crate::utils::{get_launcher_dir, get_instance_dir};
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 use std::io::Write;
+use std::net::{TcpStream, ToSocketAddrs};
+use std::time::{Duration, Instant};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct ServerInfo {
@@ -128,6 +130,28 @@ pub async fn update_server_status(
     
     std::fs::write(&servers_file, json)
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn ping_server(address: String, port: u16) -> Result<u32, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let addr_str = format!("{}:{}", address, port);
+
+        let socket_addr = addr_str
+            .to_socket_addrs()
+            .map_err(|e| format!("Failed to resolve address: {}", e))?
+            .next()
+            .ok_or_else(|| "No addresses found for host".to_string())?;
+
+        let start = Instant::now();
+
+        TcpStream::connect_timeout(&socket_addr, Duration::from_secs(5))
+            .map_err(|e| format!("Connection failed: {}", e))?;
+
+        Ok(start.elapsed().as_millis() as u32)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
