@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState } from "react"
-import { Terminal, Trash2, Upload, ExternalLink, Loader2, X, PictureInPicture2 } from "lucide-react"
+import { Terminal, Trash2, Upload, ExternalLink, Loader2, X, PictureInPicture } from "lucide-react"
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow"
 import type { ConsoleLog } from "../../types"
 
@@ -213,7 +213,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
                 title="Open in new window"
                 className="h-10 w-10 flex items-center justify-center rounded-md transition-colors cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
               >
-                <PictureInPicture2 size={24} strokeWidth={2} />
+                <PictureInPicture size={24} strokeWidth={2} />
               </button>
               )}
             </div>
@@ -226,7 +226,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
             /* Detached state */
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
-                <PictureInPicture2 size={48} className="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
+                <PictureInPicture size={48} className="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
                 <p className="text-base font-medium text-[var(--text-primary)] mb-1">Console detached</p>
                 <p className="text-sm text-[var(--text-muted)]">Logs are showing in the separate window</p>
               </div>
