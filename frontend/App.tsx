@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react"
+import { useState, useEffect, useRef, lazy, Suspense } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
@@ -42,6 +42,8 @@ function App() {
   const [selectedInstance, setSelectedInstance] = useState<Instance | null>(null)
   const [launcherDirectory, setLauncherDirectory] = useState("")
   const [settings, setSettings] = useState<LauncherSettings | null>(null)
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
   const [activeTab, setActiveTab] = useState<"home" | "instances" | "browse" | "console" | "servers" | "skins" | "screenshots">("home")
   const [consoleLogs, setConsoleLogs] = useState<ConsoleLog[]>([])
   const [showInstanceDetails, setShowInstanceDetails] = useState(false)
@@ -208,7 +210,7 @@ function App() {
     const unlistenServerLaunch = listen<{ instance: string, server: string }>("server-instance-launching", (event) => {
       setLaunchingInstanceName(event.payload.instance)
       setConsoleLogs([])
-      if (settings?.auto_navigate_to_console !== false) setActiveTab("console")
+      if (settingsRef.current?.auto_navigate_to_console !== false) setActiveTab("console")
       setRunningInstances((prev) => new Set(prev).add(event.payload.instance))
     })
 
@@ -323,8 +325,10 @@ function App() {
     if (!activeAccount) return
     setLaunchingInstanceName(instance.name)
     setConsoleLogs([])
-    if (settings?.auto_navigate_to_console !== false) setActiveTab("console")
-    setShowInstanceDetails(false)
+    if (settings?.auto_navigate_to_console !== false) {
+      setActiveTab("console")
+      setShowInstanceDetails(false)
+    }
     try {
       await invoke<string>("launch_instance_with_active_account", {
         instanceName: instance.name,
