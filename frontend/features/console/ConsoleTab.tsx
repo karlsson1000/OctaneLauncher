@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react"
-import { Terminal, Trash2, Upload, ExternalLink, Loader2, X } from "lucide-react"
+import { Terminal, Trash2, Upload, ExternalLink, Loader2, X, PictureInPicture2 } from "lucide-react"
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow"
 import type { ConsoleLog } from "../../types"
 
 interface ConsoleTabProps {
@@ -14,7 +15,23 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
     url: string | null
     error: string | null
   }>({ loading: false, url: null, error: null })
-  
+  const [isPopedOut, setIsPopedOut] = useState(false)
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined
+
+    WebviewWindow.getByLabel("console").then((win) => {
+      if (win) {
+        setIsPopedOut(true)
+        win.once("tauri://destroyed", () => setIsPopedOut(false)).then((fn) => {
+          unlisten = fn
+        })
+      }
+    })
+
+    return () => { unlisten?.() }
+  }, [])
+
   // Group logs by instance
   const instanceLogs = consoleLogs.reduce((acc, log) => {
     if (!acc[log.instance]) {
@@ -75,7 +92,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
 
   const formatLogs = () => {
     if (!activeInstance) return ""
-    return activeLogs.map(log => 
+    return activeLogs.map(log =>
       `${new Date().toLocaleTimeString()} [${log.instance}] ${log.message}`
     ).join('\n')
   }
@@ -97,9 +114,7 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
 
       const response = await fetch('https://api.mclo.gs/1/log', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: formData
       })
 
@@ -108,10 +123,8 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
       if (data.success) {
         // Auto-copy the URL to clipboard
         await navigator.clipboard.writeText(data.url)
-        // Open the link immediately
         window.open(data.url, '_blank')
         setUploadState({ loading: false, url: data.url, error: null })
-        // Clear success message after 3 seconds
         setTimeout(() => setUploadState({ loading: false, url: null, error: null }), 3000)
       } else {
         setUploadState({ loading: false, url: null, error: data.error || "Upload failed" })
@@ -130,6 +143,40 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
     }
   }
 
+  const handlePopOut = async () => {
+    const existing = await WebviewWindow.getByLabel("console")
+    if (existing) {
+      await existing.show()
+      await existing.setFocus()
+      setIsPopedOut(true)
+      return
+    }
+
+    const win = new WebviewWindow("console", {
+      url: "console.html",
+      title: "Console",
+      width: 600,
+      height: 800,
+      minWidth: 600,
+      minHeight: 400,
+      decorations: false,
+      center: true,
+    })
+
+    win.once("tauri://created", () => {
+      setIsPopedOut(true)
+    })
+
+    win.once("tauri://error", (e) => {
+      console.error("Failed to open console window:", e)
+      setIsPopedOut(false)
+    })
+
+    win.once("tauri://destroyed", () => {
+      setIsPopedOut(false)
+    })
+  }
+
   return (
     <div className="p-8 space-y-4">
       <div className="max-w-7xl mx-auto">
@@ -140,31 +187,51 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
               <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Console</h1>
               <p className="text-sm text-[var(--text-muted)] mt-0.5">View game output and logs</p>
             </div>
-            
-            {/* Instance Tabs */}
-            {instances.length > 0 && (
-              <div className="flex items-center gap-1.5 bg-[var(--bg-secondary)] rounded-lg p-1">
-                {instances.map((instance) => (
-                  <button
-                    key={instance}
-                    onClick={() => setActiveInstance(instance)}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
-                      activeInstance === instance
-                        ? "bg-[var(--accent-primary)] text-white"
-                        : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
-                    }`}
-                  >
-                    {instance}
-                  </button>
-                ))}
-              </div>
-            )}
+
+            <div className="flex items-center gap-2">
+              {!isPopedOut && instances.length > 0 && (
+                <div className="flex items-center gap-1.5 bg-[var(--bg-secondary)] rounded-lg p-1">
+                  {instances.map((instance) => (
+                    <button
+                      key={instance}
+                      onClick={() => setActiveInstance(instance)}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
+                        activeInstance === instance
+                          ? "bg-[var(--accent-primary)] text-white"
+                          : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+                      }`}
+                    >
+                      {instance}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {!isPopedOut && (
+              <button
+                onClick={handlePopOut}
+                title="Open in new window"
+                className="h-10 w-10 flex items-center justify-center rounded-md transition-colors cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+              >
+                <PictureInPicture2 size={24} strokeWidth={2} />
+              </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Console Display */}
         <div className="bg-[var(--bg-tertiary)] rounded-lg overflow-hidden" style={{ height: 'calc(100vh - 250px)' }}>
-          {consoleLogs.length === 0 ? (
+          {isPopedOut ? (
+            /* Detached state */
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <PictureInPicture2 size={48} className="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
+                <p className="text-base font-medium text-[var(--text-primary)] mb-1">Console detached</p>
+                <p className="text-sm text-[var(--text-muted)]">Logs are showing in the separate window</p>
+              </div>
+            </div>
+          ) : consoleLogs.length === 0 ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
                 <Terminal size={48} className="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
@@ -183,17 +250,17 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
           ) : (
             <div className="h-full overflow-y-auto p-4 font-mono text-sm" ref={containerRef} onScroll={handleScroll}>
               {activeLogs.map((log, index) => {
-                const isError = log.type === "stderr" || log.message.toLowerCase().includes("error") || log.message.toLowerCase().includes("failed");
-                const isWarning = log.message.toLowerCase().includes("warning") || log.message.toLowerCase().includes("warn");
-                
+                const isError = log.type === "stderr" || log.message.toLowerCase().includes("error") || log.message.toLowerCase().includes("failed")
+                const isWarning = log.message.toLowerCase().includes("warning") || log.message.toLowerCase().includes("warn")
+
                 return (
                   <div
                     key={index}
                     className={`py-0.5 leading-relaxed ${
-                      isError 
-                        ? "text-red-400" 
-                        : isWarning 
-                        ? "text-yellow-400" 
+                      isError
+                        ? "text-red-400"
+                        : isWarning
+                        ? "text-yellow-400"
                         : "text-[var(--text-primary)]"
                     }`}
                   >
@@ -201,55 +268,56 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
                     <span className="text-[#16a34a] mr-2">[{log.instance}]</span>
                     <span>{log.message}</span>
                   </div>
-                );
+                )
               })}
               <div ref={consoleEndRef} />
             </div>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2 mt-4">
-          <button
-            onClick={handleUploadToMcLogs}
-            disabled={!activeInstance || activeLogs.length === 0 || uploadState.loading}
-            className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
-              uploadState.url
-                ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
-                : uploadState.error
-                ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
-                : "bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)]"
-            }`}
-            title="Upload logs to mclo.gs"
-          >
-            {uploadState.loading ? (
-              <Loader2 size={16} strokeWidth={2} className="animate-spin" />
-            ) : uploadState.url ? (
-              <ExternalLink size={16} strokeWidth={2} />
-            ) : uploadState.error ? (
-              <X size={16} strokeWidth={2} />
-            ) : (
-              <Upload size={16} strokeWidth={2} />
-            )}
-            <span>
-              {uploadState.loading 
-                ? "Uploading..."
-                : uploadState.url
-                ? "Uploaded & Copied!"
-                : uploadState.error
-                ? uploadState.error
-                : "Upload to mclo.gs"}
-            </span>
-          </button>
-          <button
-            onClick={handleClearConsole}
-            disabled={!activeInstance || activeLogs.length === 0}
-            className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Trash2 size={16} strokeWidth={2} />
-            <span>Clear {activeInstance || "Console"}</span>
-          </button>
-        </div>
+        {!isPopedOut && (
+          <div className="flex items-center justify-end gap-2 mt-4">
+            <button
+              onClick={handleUploadToMcLogs}
+              disabled={!activeInstance || activeLogs.length === 0 || uploadState.loading}
+              className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                uploadState.url
+                  ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
+                  : uploadState.error
+                  ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
+                  : "bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)]"
+              }`}
+              title="Upload logs to mclo.gs"
+            >
+              {uploadState.loading ? (
+                <Loader2 size={16} strokeWidth={2} className="animate-spin" />
+              ) : uploadState.url ? (
+                <ExternalLink size={16} strokeWidth={2} />
+              ) : uploadState.error ? (
+                <X size={16} strokeWidth={2} />
+              ) : (
+                <Upload size={16} strokeWidth={2} />
+              )}
+              <span>
+                {uploadState.loading
+                  ? "Uploading..."
+                  : uploadState.url
+                  ? "Uploaded & Copied!"
+                  : uploadState.error
+                  ? uploadState.error
+                  : "Upload to mclo.gs"}
+              </span>
+            </button>
+            <button
+              onClick={handleClearConsole}
+              disabled={!activeInstance || activeLogs.length === 0}
+              className="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={16} strokeWidth={2} />
+              <span>Clear {activeInstance || "Console"}</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
