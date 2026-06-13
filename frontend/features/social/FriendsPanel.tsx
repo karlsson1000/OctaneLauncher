@@ -148,7 +148,7 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
               <button
                 onClick={() => handleSendRequest(searchQuery.trim())}
                 disabled={sending}
-                className="w-full flex items-center gap-2 px-1 py-1.5 rounded text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
               >
                 {sending ? <Loader2 size={14} className="animate-spin" /> : <UserPlus size={14} strokeWidth={3} />}
                 Send friend request to "{searchQuery.trim()}"
@@ -164,12 +164,12 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
               </div>
               <div className="max-h-40 overflow-y-auto">
                 {requests.map(req => (
-                  <div key={req.id} className="flex items-center gap-2 px-1 py-2 hover:bg-[var(--bg-tertiary)] transition-colors">
-                    <div className="w-6 h-6 rounded bg-[var(--bg-tertiary)] flex items-center justify-center flex-shrink-0">
-                      <span className="text-xs font-semibold text-[var(--text-muted)]">
-                        {req.from_username.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+                  <div key={req.id} className="flex items-center gap-2 px-1 py-2 transition-colors">
+                    <img
+                      src={`https://avatar.mcindex.net/avatar/${req.from_username}/24`}
+                      alt={req.from_username}
+                      className="w-6 h-6 rounded object-cover flex-shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className="text-sm text-[var(--text-primary)] truncate">{req.from_username}</div>
                     </div>
