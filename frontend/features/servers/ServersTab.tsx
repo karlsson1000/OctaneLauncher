@@ -34,7 +34,6 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [serverToDelete, setServerToDelete] = useState<string | null>(null)
   const [launchingServer, setLaunchingServer] = useState<string | null>(null)
-  const [hoveredServer, setHoveredServer] = useState<string | null>(null)
   const isAnyInstanceRunning = runningInstances.size > 0
 
   useEffect(() => { loadServers() }, [])
@@ -182,7 +181,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               {servers.length > 0 && (
-                <div className="relative rounded-md bg-[var(--bg-elevated)]">
+                <div className="relative rounded-md bg-[var(--bg-tertiary)]">
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
                   <input
                     type="text"
@@ -230,14 +229,11 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                 const displayAddress = server.port === 25565 ? server.address : `${server.address}:${server.port}`
                 const isLaunching = launchingServer === server.name
                 const isOnline = server.status === "online"
-                const isHovered = hoveredServer === server.name
 
                 return (
                   <div
                     key={server.name}
-                    onMouseEnter={() => setHoveredServer(server.name)}
-                    onMouseLeave={() => setHoveredServer(null)}
-                    className={`flex items-center gap-5 px-4 transition-colors rounded-md bg-[var(--bg-elevated)] ${isHovered ? "bg-[var(--bg-tertiary)]" : ""}`}
+                    className="group flex items-center gap-5 px-4 transition-colors rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)]"
                     style={{ height: 100 }}
                   >
                     <div className="flex-shrink-0">
@@ -249,7 +245,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                           style={{ imageRendering: "pixelated" }}
                         />
                       ) : (
-                        <div className="w-20 h-20 bg-[var(--bg-tertiary)] rounded flex items-center justify-center">
+                        <div className="w-20 h-20 bg-[var(--bg-secondary)] rounded flex items-center justify-center">
                           <Server size={40} className="text-[var(--text-muted)]" strokeWidth={2} />
                         </div>
                       )}
@@ -276,51 +272,49 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                       )}
                     </div>
 
-                    {!isHovered ? (
-                      <div className="flex-shrink-0 flex flex-col items-end gap-2">
-                        <PingDisplay ping={server.ping} status={server.status} />
-                        {isOnline && server.players_online !== undefined ? (
-                          <span className="text-base text-[var(--text-muted)]">
-                            {server.players_online}/{server.players_max}
-                          </span>
-                        ) : (
-                          <span className={`text-base font-medium ${server.status === "offline" ? "text-[#ef4444]" : "text-[var(--text-muted)]"}`}>
-                            {server.status === "offline" ? "Offline" : "-"}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex-shrink-0 flex items-center gap-2">
-                        <button
-                          onClick={e => { e.stopPropagation(); setServerToDelete(server.name) }}
-                          className="w-10 h-10 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors cursor-pointer"
-                        >
-                          <Trash2 size={18} strokeWidth={2} />
-                        </button>
+                    <div className="flex-shrink-0 flex flex-col items-end gap-2 group-hover:hidden">
+                      <PingDisplay ping={server.ping} status={server.status} />
+                      {isOnline && server.players_online !== undefined ? (
+                        <span className="text-base text-[var(--text-muted)]">
+                          {server.players_online}/{server.players_max}
+                        </span>
+                      ) : (
+                        <span className={`text-base font-medium ${server.status === "offline" ? "text-[#ef4444]" : "text-[var(--text-muted)]"}`}>
+                          {server.status === "offline" ? "Offline" : "-"}
+                        </span>
+                      )}
+                    </div>
 
-                        <button
-                          onClick={e => handleLaunchServer(server, e)}
-                          disabled={!isOnline || isLaunching || isAnyInstanceRunning}
-                          title={!isOnline ? "Server offline" : isAnyInstanceRunning ? "Instance already running" : undefined}
-                          className={`flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded transition-all active:scale-95 cursor-pointer ${
-                            isLaunching || isAnyInstanceRunning
-                              ? "bg-red-500/10 text-red-400 cursor-not-allowed"
-                              : isOnline
-                              ? "bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
-                              : "bg-[var(--bg-hover-strong)] text-[var(--text-muted)] cursor-not-allowed"
-                          } disabled:opacity-50`}
-                        >
-                          {isLaunching || isAnyInstanceRunning ? (
-                            <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                          ) : (
-                            <>
-                              <Play size={18} fill="currentColor" strokeWidth={0} />
-                              <span className="text-base font-semibold">Join</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex-shrink-0 items-center gap-2 hidden group-hover:flex">
+                      <button
+                        onClick={e => { e.stopPropagation(); setServerToDelete(server.name) }}
+                        className="w-10 h-10 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors cursor-pointer"
+                      >
+                        <Trash2 size={18} strokeWidth={2} />
+                      </button>
+
+                      <button
+                        onClick={e => handleLaunchServer(server, e)}
+                        disabled={!isOnline || isLaunching || isAnyInstanceRunning}
+                        title={!isOnline ? "Server offline" : isAnyInstanceRunning ? "Instance already running" : undefined}
+                        className={`flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded transition-all active:scale-95 cursor-pointer ${
+                          isLaunching || isAnyInstanceRunning
+                            ? "bg-red-500/10 text-red-400 cursor-not-allowed"
+                            : isOnline
+                            ? "bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
+                            : "bg-[var(--bg-hover-strong)] text-[var(--text-muted)] cursor-not-allowed"
+                        } disabled:opacity-50`}
+                      >
+                        {isLaunching || isAnyInstanceRunning ? (
+                          <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <Play size={18} fill="currentColor" strokeWidth={0} />
+                            <span className="text-base font-semibold">Join</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 )
               })}

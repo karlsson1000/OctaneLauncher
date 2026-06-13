@@ -262,7 +262,7 @@ export function SkinsTab(props: SkinsTabProps) {
         <div className="flex gap-24 items-center justify-center">
           <div className="flex-shrink-0 self-start mt-8">
             <div className="flex flex-col items-center relative">
-              <button onClick={() => setShowBack(prev => !prev)} className="absolute top-0 -right-8 z-10 p-2 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md transition-all cursor-pointer" title="Rotate view">
+              <button onClick={() => setShowBack(prev => !prev)} className="absolute top-0 -right-8 z-10 p-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md transition-all cursor-pointer" title="Rotate view">
                 <Rotate3d size={20} />
               </button>
               <div className="rounded-md overflow-hidden p-4">
@@ -281,22 +281,22 @@ export function SkinsTab(props: SkinsTabProps) {
                   )}
                 </div>
               </div>
-              <button onClick={() => setCapeModalOpen(true)} className="mt-3 px-4 py-2 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md text-sm font-medium transition-all cursor-pointer">
+              <button onClick={() => setCapeModalOpen(true)} className="mt-3 px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md text-sm font-medium transition-all cursor-pointer">
                 {"Manage Capes"} {capes.length > 0 && `(${capes.length})`}
               </button>
             </div>
           </div>
 
           <div className="flex-1 max-w-sm space-y-4">
-            <div className="bg-[var(--bg-elevated)] rounded-md p-5">
+            <div className="bg-[var(--bg-tertiary)] rounded-md p-5">
               <div className="mb-4">
                 <h3 className="text-base font-semibold text-[var(--text-primary)]">Skin Model</h3>
               </div>
               <div className="flex gap-2 mb-6">
-                <button onClick={() => setSkinVariant("classic")} className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer ${skinVariant === "classic" ? "bg-[#4572e3] text-white" : "bg-[var(--bg-primary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
+                <button onClick={() => setSkinVariant("classic")} className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer ${skinVariant === "classic" ? "bg-[#4572e3] text-white" : "bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
                   Classic
                 </button>
-                <button onClick={() => setSkinVariant("slim")} className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer ${skinVariant === "slim" ? "bg-[#4572e3] text-white" : "bg-[var(--bg-primary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
+                <button onClick={() => setSkinVariant("slim")} className={`flex-1 px-4 py-2.5 rounded-md text-sm font-medium transition-all cursor-pointer ${skinVariant === "slim" ? "bg-[#4572e3] text-white" : "bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
                   Slim
                 </button>
               </div>
@@ -305,14 +305,14 @@ export function SkinsTab(props: SkinsTabProps) {
                 <button onClick={() => fileInputRef.current?.click()} disabled={uploading || loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#16a34a] hover:bg-[#15803d] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md font-medium text-sm transition-all cursor-pointer">
                   {uploading ? <><Loader2 size={16} className="animate-spin" /><span>Uploading...</span></> : <><Upload size={16} /><span>Upload New Skin</span></>}
                 </button>
-                <button onClick={handleReset} disabled={resetting || loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-md font-medium text-sm transition-all cursor-pointer">
+                <button onClick={handleReset} disabled={resetting || loading} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-[var(--text-primary)] rounded-md font-medium text-sm transition-all cursor-pointer">
                   {resetting ? <><Loader2 size={16} className="animate-spin" /><span>Resetting...</span></> : <><RotateCcw size={16} /><span>Reset to Default</span></>}
                 </button>
               </div>
             </div>
 
             {recentSkins.length > 0 && (
-              <div className="bg-[var(--bg-elevated)] rounded-md p-5">
+              <div className="bg-[var(--bg-tertiary)] rounded-md p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <h3 className="text-base font-semibold text-[var(--text-primary)]">Recent Skins</h3>
                 </div>
@@ -322,7 +322,7 @@ export function SkinsTab(props: SkinsTabProps) {
                     const hash = match ? match[1] : null
                     const renderUrl = hash ? `https://vzge.me/bust/128/${hash}${skin.variant === 'slim' ? '?slim' : '?wide'}` : skin.url
                     return (
-                      <button key={`${skin.url}-${index}`} onClick={() => handleRecentSkinSelect(skin)} disabled={uploading} className="bg-[var(--bg-primary)] rounded-md hover:ring-2 hover:ring-[var(--accent-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer overflow-hidden" title="Click to apply this skin">
+                      <button key={`${skin.url}-${index}`} onClick={() => handleRecentSkinSelect(skin)} disabled={uploading} className="bg-[var(--bg-secondary)] rounded-md hover:ring-2 hover:ring-[var(--accent-primary)] transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer overflow-hidden" title="Click to apply this skin">
                         <img src={renderUrl} alt="Recent skin" className="w-20 h-20" style={{ imageRendering: 'pixelated' }} />
                       </button>
                     )
@@ -332,7 +332,7 @@ export function SkinsTab(props: SkinsTabProps) {
             )}
 
             {error && (
-              <div className="bg-[var(--bg-elevated)] rounded-md p-4">
+              <div className="bg-[var(--bg-tertiary)] rounded-md p-4">
                 <p className="text-xs text-red-400 leading-relaxed">{error}</p>
               </div>
             )}
@@ -342,10 +342,10 @@ export function SkinsTab(props: SkinsTabProps) {
 
       {capeModalOpen && (
         <div className={`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 modal-backdrop ${isClosingModal ? 'closing' : ''}`} onClick={handleCloseCapeModal}>
-          <div className={`bg-[var(--bg-primary)] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto modal-content ${isClosingModal ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div className={`bg-[var(--bg-elevated)] rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto modal-content ${isClosingModal ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-[var(--text-primary)]">Manage Capes</h2>
-              <button onClick={handleCloseCapeModal} className="p-1 hover:bg-[var(--bg-elevated)] rounded-md transition-colors cursor-pointer">
+              <button onClick={handleCloseCapeModal} className="p-1 hover:bg-[var(--bg-tertiary)] rounded-md transition-colors cursor-pointer">
                 <X size={20} className="text-[var(--text-muted)]" />
               </button>
             </div>
@@ -360,7 +360,7 @@ export function SkinsTab(props: SkinsTabProps) {
                     <button
                       key={cape.id}
                       onClick={() => handleCapeSelect(cape.id)}
-                      className={`aspect-[5/8] bg-[var(--bg-primary)] rounded-md overflow-hidden flex flex-col items-center justify-center transition-all cursor-pointer hover:ring-2 hover:ring-[var(--accent-primary)] ${activeCape === cape.id ? "ring-2 ring-[var(--accent-primary)]" : ""}`}
+                      className={`aspect-[5/8] bg-[var(--bg-secondary)] rounded-md overflow-hidden flex flex-col items-center justify-center transition-all cursor-pointer hover:ring-2 hover:ring-[var(--accent-primary)] ${activeCape === cape.id ? "ring-2 ring-[var(--accent-primary)]" : ""}`}
                       title={cape.alias}
                     >
                       <img src={`/capes/${getCapeImageName(cape.alias)}.png`} alt={cape.alias} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} onError={(e) => { e.currentTarget.src = '/logo.png' }} />
@@ -368,7 +368,7 @@ export function SkinsTab(props: SkinsTabProps) {
                   ))}
                 </div>
                 {activeCape && (
-                  <button onClick={handleCapeRemove} className="w-full px-4 py-3 bg-[var(--bg-elevated)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md text-sm font-medium transition-all cursor-pointer">
+                  <button onClick={handleCapeRemove} className="w-full px-4 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md text-sm font-medium transition-all cursor-pointer">
                     Remove Cape
                   </button>
                 )}
