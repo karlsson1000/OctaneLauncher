@@ -80,6 +80,9 @@ pub async fn microsoft_login_and_store(app_handle: tauri::AppHandle) -> Result<A
             auth_response.token_expiry,
         )
         .map_err(|e| e.to_string())?;
+
+        AccountManager::set_active_account(&auth_response.uuid)
+            .map_err(|e| e.to_string())?;
     }
 
     AccountManager::get_all_accounts()
