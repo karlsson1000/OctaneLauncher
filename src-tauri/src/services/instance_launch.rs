@@ -1,4 +1,4 @@
-use crate::models::{FabricProfileJson, Instance, LauncherSettings, NeoForgeProfileJson, VersionDetails};
+use crate::models::{FabricProfileJson, Instance, LauncherSettings, NeoForgeProfileJson, Rule, VersionDetails};
 use crate::services::installer::should_include_library;
 use crate::utils::*;
 use chrono::Utc;
@@ -16,6 +16,60 @@ struct ResolvedProfile {
     libraries: Vec<(String, String, Option<String>)>,
     assets_id: String,
     is_neoforge: bool,
+    jvm_arguments: Vec<String>,
+    game_arguments: Vec<String>,
+}
+
+fn process_arguments_args(args: &[serde_json::Value], current_os: &str) -> Vec<String> {
+    let mut result = Vec::new();
+    for arg in args {
+        match arg {
+            serde_json::Value::String(s) => {
+                if !s.is_empty() {
+                    result.push(s.clone());
+                }
+            }
+            serde_json::Value::Object(obj) => {
+                let should_include = if let Some(rules_val) = obj.get("rules") {
+                    if let Ok(rules) = serde_json::from_value::<Vec<Rule>>(rules_val.clone()) {
+                        should_include_library(&rules, current_os)
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                };
+
+                if should_include {
+                    if let Some(value) = obj.get("value") {
+                        match value {
+                            serde_json::Value::String(s) => result.push(s.clone()),
+                            serde_json::Value::Array(arr) => {
+                                for v in arr {
+                                    if let Some(s) = v.as_str() {
+                                        if !s.is_empty() {
+                                            result.push(s.to_string());
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    result
+}
+
+fn substitute_arg(arg: &str, subs: &[(&str, &str)]) -> String {
+    let mut result = arg.to_string();
+    for (from, to) in subs {
+        result = result.replace(from, to);
+    }
+    result
 }
 
 impl super::instance::InstanceManager {
@@ -395,6 +449,8 @@ impl super::instance::InstanceManager {
             libraries: combined_libs,
             assets_id,
             is_neoforge: false,
+            jvm_arguments: Vec::new(),
+            game_arguments: Vec::new(),
         })
     }
 
@@ -477,6 +533,13 @@ impl super::instance::InstanceManager {
             }
         }
 
+        let (jvm_arguments, game_arguments) = if let Some(args) = &neoforge_profile.arguments {
+            (process_arguments_args(&args.jvm, current_os),
+             process_arguments_args(&args.game, current_os))
+        } else {
+            (Vec::new(), Vec::new())
+        };
+
         Ok(ResolvedProfile {
             main_class: neoforge_profile.main_class,
             base_version_id: neoforge_profile.inherits_from,
@@ -484,6 +547,8 @@ impl super::instance::InstanceManager {
             libraries: combined_libs,
             assets_id,
             is_neoforge: true,
+            jvm_arguments,
+            game_arguments,
         })
     }
 
@@ -526,6 +591,8 @@ impl super::instance::InstanceManager {
             libraries: libs,
             assets_id,
             is_neoforge: false,
+            jvm_arguments: Vec::new(),
+            game_arguments: Vec::new(),
         })
     }
 
@@ -786,34 +853,62 @@ impl super::instance::InstanceManager {
         let natives_dir = get_instance_dir(instance_name).join("natives");
         let libraries_dir = meta_dir.join("libraries");
 
+        let classpath_sep = if cfg!(windows) { ";" } else { ":" };
+        let natives_dir_str = natives_dir.to_string_lossy().into_owned();
+        let libraries_dir_str = libraries_dir.to_string_lossy().into_owned();
+        let instance_dir_str = instance_dir.to_string_lossy().into_owned();
+        let assets_root = meta_dir.join("assets");
+        let assets_root_str = assets_root.to_string_lossy().into_owned();
+        let subs: &[(&str, &str)] = &[
+            ("${natives_directory}", &natives_dir_str),
+            ("${library_directory}", &libraries_dir_str),
+            ("${classpath_separator}", classpath_sep),
+            ("${launcher_name}", "octane-launcher"),
+            ("${launcher_version}", "0.1.0"),
+            ("${version_name}", version),
+            ("${game_directory}", &instance_dir_str),
+            ("${assets_root}", &assets_root_str),
+            ("${assets_index_name}", &resolved.assets_id),
+            ("${auth_player_name}", username),
+            ("${auth_uuid}", uuid),
+            ("${auth_access_token}", access_token),
+            ("${user_properties}", "{}"),
+            ("${user_type}", "msa"),
+            ("${version_type}", "release"),
+        ];
+
         let mut cmd = Command::new(java_path);
         cmd.arg(format!("-Xmx{}M", effective_settings.memory_mb))
             .arg(format!("-Xms{}M", effective_settings.memory_mb));
 
         if resolved.is_neoforge {
-            cmd.arg("--add-opens").arg("java.base/java.lang=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.lang.invoke=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.lang.reflect=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.io=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.nio=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.nio.file=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.util=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.util.jar=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/java.util.zip=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/sun.nio.ch=ALL-UNNAMED")
-                .arg("--add-opens").arg("jdk.zipfs/jdk.nio.zipfs=ALL-UNNAMED")
-                .arg("--add-opens").arg("java.base/sun.security.util=ALL-UNNAMED")
-                .arg("--add-exports").arg("java.base/sun.security.util=ALL-UNNAMED")
-                .arg("--add-exports").arg("jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED,java.naming")
-                .arg("--enable-native-access=ALL-UNNAMED");
-        }
-
-        cmd.arg(format!("-Djava.library.path={}", natives_dir.display()));
-
-        if resolved.is_neoforge {
-            cmd.arg(format!("-DlibraryDirectory={}", libraries_dir.display()))
+            if !resolved.jvm_arguments.is_empty() {
+                for arg in &resolved.jvm_arguments {
+                    cmd.arg(substitute_arg(arg, subs));
+                }
+            } else {
+                cmd.arg("--add-opens").arg("java.base/java.lang=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.lang.invoke=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.lang.reflect=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.io=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.nio=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.nio.file=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.util=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.util.jar=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/java.util.zip=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/sun.nio.ch=ALL-UNNAMED")
+                    .arg("--add-opens").arg("jdk.zipfs/jdk.nio.zipfs=ALL-UNNAMED")
+                    .arg("--add-opens").arg("java.base/sun.security.util=ALL-UNNAMED")
+                    .arg("--add-exports").arg("java.base/sun.security.util=ALL-UNNAMED")
+                    .arg("--add-exports").arg("jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED,java.naming")
+                    .arg("--enable-native-access=ALL-UNNAMED");
+            }
+            cmd.arg(format!("-Djava.library.path={}", natives_dir.display()))
+                .arg(format!("-DlibraryDirectory={}", libraries_dir.display()))
                 .arg(format!("-Dminecraft.client.jar={}", client_jar.display()))
                 .arg("-Dfml.earlyprogresswindow=false");
+        } else {
+            cmd.arg(format!("-Djava.library.path={}", natives_dir.display()));
         }
 
         cmd.arg("-cp").arg(&classpath_str)
@@ -827,10 +922,9 @@ impl super::instance::InstanceManager {
             .arg("--assetIndex").arg(&resolved.assets_id);
 
         if resolved.is_neoforge {
-            let neoforge_version_string = version.trim_start_matches("neoforge-");
-            cmd.arg("--fml.mcVersion").arg(&resolved.base_version_id)
-                .arg("--fml.neoFormVersion").arg(neoforge_version_string)
-                .arg("--fml.neoForgeVersion").arg(neoforge_version_string);
+            for arg in &resolved.game_arguments {
+                cmd.arg(substitute_arg(arg, subs));
+            }
         }
 
         if let Some(server) = server_address {
