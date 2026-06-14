@@ -52,7 +52,6 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Octane Launcher ${{ github.ref_name }}'
