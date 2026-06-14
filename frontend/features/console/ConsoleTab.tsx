@@ -3,6 +3,29 @@ import { Terminal, Trash2, Upload, ExternalLink, Loader2, X, PictureInPicture } 
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow"
 import type { ConsoleLog } from "../../types"
 
+const ASCII = `
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠴⠒⠒⠒⠲⢤⣄
+⠀⠀⠀⠀⠀⠀⣀⡠⠤⠤⠤⠤⠤⠤⠔⠋⠁⠀⠀⠀⠀⠀⠀⠈⢧⡀
+⠀⠀⠀⠀⢀⡾⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢷
+⠀⠀⠀⢠⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⡇
+⠀⡔⠒⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⢀⢄⣴⣮⣼⠸⡄
+⠘⣴⣿⣷⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⢣⣿⣟⣿⣿⡏⡇
+⠀⠀⠀⠉⠳⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣧⣾⣿⣿⣿⣿⡇⡇
+⠀⠀⠀⠀⠀⠀⠉⠒⠠⢄⣀⠀⠀⠀⠀⠀⠀⠀⠀⢸⢻⣻⣿⣿⣿⢿⡹⠁
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠲⣄⠀⠀⠀⣠⠔⠛⣎⡻⠿⢿⣫⠞⠁
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⠁⠀⠀⠀⠉⠉⠉
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡴⠃⠀⠈⠉⢻⠁
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠞⠀⠀⠀⡄⠂⠈⡇
+⠀⠀⠀⠀⠀⠀⠀⠀⢠⡏⠀⠀⠀⠸⠀⠀⠀⣿
+⠀⠀⠀⠀⠀⠀⠀⠀⣾⠁⠀⠀⠀⡇⠀⠀⠘⡟⡇
+⠀⠀⠀⠀⠀⠀⠀⠀⠻⣦⠀⠀⠀⣇⠀⢠⣸⣷⣧⢀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⠲⠀⠈⡉⠉⠀⡏⠣⠬⠭⠤⠄
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⣀⣰⠁⠀⡇⠀⠀⣇
+⠀⠀⠀⠀⠀⠀⡔⢊⢉⠤⠒⠛⠒⠲⠃⠀⠀⠻⣄
+⠀⠀⠀⠀⠀⠀⠧⣧⣧⢀⡔⠀⡄⠀⠀⠀⠀⠀⠀⣱
+⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠑⠚⠛⠒⠓⠚⠈⠊⠉⠁
+`;
+
 interface ConsoleTabProps {
   consoleLogs: ConsoleLog[]
   onClearConsole: (instanceName: string) => void
@@ -232,13 +255,13 @@ export function ConsoleTab({ consoleLogs, onClearConsole }: ConsoleTabProps) {
               </div>
             </div>
           ) : consoleLogs.length === 0 ? (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <Terminal size={48} className="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
-                <p className="text-base text-[var(--text-primary)] mb-1">No console output yet</p>
-                <p className="text-sm text-[var(--text-muted)]">Launch an instance to see logs</p>
-              </div>
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <pre className="font-mono text-xs text-[var(--accent-primary)] select-none text-left">{ASCII}</pre>
+              <p className="text-base text-[var(--text-primary)] mt-4 mb-1">No console output yet</p>
+              <p className="text-sm text-[var(--text-muted)]">Launch an instance to see logs</p>
             </div>
+          </div>
           ) : !activeInstance ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
