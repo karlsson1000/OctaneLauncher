@@ -561,8 +561,6 @@ impl super::instance::InstanceManager {
                 "windows"
             } else if library.name.contains(":natives-linux") {
                 "linux"
-            } else if library.name.contains(":natives-macos") || library.name.contains(":natives-osx") {
-                "osx"
             } else {
                 ""
             };
