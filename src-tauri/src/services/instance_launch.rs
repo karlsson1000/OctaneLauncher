@@ -1,11 +1,22 @@
-use crate::models::{FabricProfileJson, Instance, NeoForgeProfileJson, VersionDetails};
+use crate::models::{FabricProfileJson, Instance, LauncherSettings, NeoForgeProfileJson, VersionDetails};
 use crate::services::installer::should_include_library;
 use crate::utils::*;
 use chrono::Utc;
+use std::collections::HashSet;
 use std::io::{BufRead, BufReader};
-use std::{fs, process::{Command, Stdio}};
+use std::process::{Child, Command, Stdio};
+use std::{fs, path::PathBuf};
 use tauri::{Emitter, Manager};
 use zip::ZipArchive;
+
+struct ResolvedProfile {
+    main_class: String,
+    base_version_id: String,
+    base_version: VersionDetails,
+    libraries: Vec<(String, String, Option<String>)>,
+    assets_id: String,
+    is_neoforge: bool,
+}
 
 impl super::instance::InstanceManager {
     fn emit_error_log(app_handle: &tauri::AppHandle, instance_name: &str, error_msg: &str) {
@@ -171,25 +182,41 @@ impl super::instance::InstanceManager {
             return Err(err_msg.into());
         }
 
+        let (instance, version) = Self::step_load_instance(instance_name, &instance_dir, &app_handle)?;
+        let (java_path, effective_settings) = Self::step_resolve_java(instance_name, &instance, &app_handle)?;
+        let required_java = Self::get_required_java_version(&version);
+        Self::step_check_java(instance_name, &version, &java_path, required_java, &app_handle)?;
+        let resolved = Self::step_resolve_profile(instance_name, &version, &meta_dir, &app_handle)?;
+        Self::step_extract_natives(instance_name, &resolved, &meta_dir, &app_handle)?;
+        let classpath = Self::step_build_classpath(instance_name, &resolved.libraries, &meta_dir, &app_handle)?;
+        Self::step_launch(
+            instance_name, username, uuid, access_token, server_address,
+            &instance, &version, &java_path, &resolved,
+            &classpath, &instance_dir, &meta_dir, &app_handle,
+            &effective_settings,
+        )?;
+        Ok(())
+    }
+
+    fn step_load_instance(
+        _instance_name: &str,
+        instance_dir: &PathBuf,
+        _app_handle: &tauri::AppHandle,
+    ) -> Result<(Instance, String), Box<dyn std::error::Error>> {
         let instance_json = instance_dir.join("instance.json");
-        let instance: Instance = match fs::read_to_string(&instance_json) {
-            Ok(content) => match serde_json::from_str(&content) {
-                Ok(inst) => inst,
-                Err(e) => {
-                    let err_msg = format!("Failed to parse instance.json: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            },
-            Err(e) => {
-                let err_msg = format!("Failed to read instance.json: {}", e);
-                Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                return Err(err_msg.into());
-            }
-        };
-
+        let content = fs::read_to_string(&instance_json)
+            .map_err(|e| format!("Failed to read instance.json: {}", e))?;
+        let instance: Instance = serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse instance.json: {}", e))?;
         let version = instance.version.clone();
+        Ok((instance, version))
+    }
 
+    fn step_resolve_java(
+        instance_name: &str,
+        instance: &Instance,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<(String, LauncherSettings), Box<dyn std::error::Error>> {
         let global_settings = crate::services::settings::SettingsManager::load()
             .unwrap_or_default();
 
@@ -206,22 +233,30 @@ impl super::instance::InstanceManager {
                 Some(path) => path,
                 None => {
                     let err_msg = "Java not found. Please install Java or specify a custom Java path in settings.";
-                    Self::emit_error_log(&app_handle, instance_name, err_msg);
+                    Self::emit_error_log(app_handle, instance_name, err_msg);
                     return Err(err_msg.into());
                 }
             }
         };
 
-        let required_java = Self::get_required_java_version(&version);
+        Ok((java_path, effective_settings))
+    }
 
-        match Self::get_java_version(&java_path) {
+    fn step_check_java(
+        instance_name: &str,
+        version: &str,
+        java_path: &str,
+        required_java: u32,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        match Self::get_java_version(java_path) {
             Ok(java_version) => {
                 if java_version < required_java {
                     let err_msg = format!(
                         "Java {} detected, but Minecraft {} requires Java {} or higher. Please update Java in Settings.",
                         java_version, version, required_java
                     );
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    Self::emit_error_log(app_handle, instance_name, &err_msg);
                     return Err(err_msg.into());
                 }
             }
@@ -231,403 +266,413 @@ impl super::instance::InstanceManager {
                         "Could not detect Java version: {}. Minecraft {} requires Java {} or higher. Please ensure Java is correctly installed.",
                         e, version, required_java
                     );
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                    Self::emit_error_log(app_handle, instance_name, &err_msg);
                     return Err(err_msg.into());
                 } else {
                     let warning = format!("Could not detect Java version ({}). Proceeding with caution...", e);
-                    Self::emit_error_log(&app_handle, instance_name, &format!("WARNING: {}", warning));
+                    Self::emit_error_log(app_handle, instance_name, &format!("WARNING: {}", warning));
                 }
             }
         }
+        Ok(())
+    }
 
+    fn step_resolve_profile(
+        instance_name: &str,
+        version: &str,
+        meta_dir: &PathBuf,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<ResolvedProfile, Box<dyn std::error::Error>> {
         let is_fabric = version.contains("fabric-loader");
+        let is_neoforge = version.starts_with("neoforge-");
 
-        let versions_dir = meta_dir.join("versions").join(&version);
+        let versions_dir = meta_dir.join("versions").join(version);
         let json_path = versions_dir.join(format!("{}.json", version));
 
         if !json_path.exists() {
             let err_msg = format!("Version {} is not installed!", version);
-            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            Self::emit_error_log(app_handle, instance_name, &err_msg);
             return Err(err_msg.into());
         }
 
-        let json_content = match fs::read_to_string(&json_path) {
-            Ok(content) => content,
-            Err(e) => {
-                let err_msg = format!("Failed to read version JSON: {}", e);
-                Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                return Err(err_msg.into());
-            }
-        };
+        let json_content = fs::read_to_string(&json_path)
+            .map_err(|e| format!("Failed to read version JSON: {}", e))?;
 
         let current_os = get_current_os();
 
-        let is_neoforge = version.starts_with("neoforge-");
-
-        let (main_class, base_version_id, all_libraries, assets_id) = if is_fabric {
-            let fabric_profile: FabricProfileJson = match serde_json::from_str(&json_content) {
-                Ok(profile) => profile,
-                Err(e) => {
-                    let err_msg = format!("Failed to parse Fabric profile: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            };
-
-            let base_version_dir = meta_dir.join("versions").join(&fabric_profile.inherits_from);
-            let base_json_path = base_version_dir.join(format!("{}.json", fabric_profile.inherits_from));
-
-            if !base_json_path.exists() {
-                let err_msg = format!(
-                    "Base Minecraft version {} not found! Please install it first.",
-                    fabric_profile.inherits_from
-                );
-                Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                return Err(err_msg.into());
-            }
-
-            let base_json_content = match fs::read_to_string(&base_json_path) {
-                Ok(content) => content,
-                Err(e) => {
-                    let err_msg = format!("Failed to read base version JSON: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            };
-
-            let base_version: VersionDetails = match serde_json::from_str(&base_json_content) {
-                Ok(version) => version,
-                Err(e) => {
-                    let err_msg = format!("Failed to parse base version: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            };
-
-            let mut combined_libs = Vec::new();
-            let mut base_lib_names = std::collections::HashSet::new();
-            for lib in &base_version.libraries {
-                if lib.name.contains(":natives-") {
-                    continue;
-                }
-
-                if let Some(rules) = &lib.rules {
-                    if !should_include_library(rules, &current_os) {
-                        continue;
-                    }
-                }
-
-                let parts: Vec<&str> = lib.name.split(':').collect();
-                if parts.len() >= 2 {
-                    let lib_key = format!("{}:{}", parts[0], parts[1]);
-                    base_lib_names.insert(lib_key);
-                }
-            }
-
-            for lib in &fabric_profile.libraries {
-                let parts: Vec<&str> = lib.name.split(':').collect();
-                if parts.len() >= 2 {
-                    let lib_key = format!("{}:{}", parts[0], parts[1]);
-
-                    if base_lib_names.contains(&lib_key) {
-                        continue;
-                    }
-                }
-
-                combined_libs.push((lib.name.clone(), lib.url.clone(), None));
-            }
-
-            for lib in &base_version.libraries {
-                if lib.name.contains(":natives-") {
-                    continue;
-                }
-
-                if let Some(rules) = &lib.rules {
-                    if !should_include_library(rules, &current_os) {
-                        continue;
-                    }
-                }
-
-                if let Some(downloads) = &lib.downloads {
-                    if let Some(artifact) = &downloads.artifact {
-                        combined_libs.push((
-                            lib.name.clone(),
-                            String::new(),
-                            Some(artifact.path.clone())
-                        ));
-                    }
-                } else {
-                    combined_libs.push((lib.name.clone(), String::new(), None));
-                }
-            }
-
-            (
-                fabric_profile.main_class,
-                fabric_profile.inherits_from,
-                combined_libs,
-                base_version.assets,
-            )
+        if is_fabric {
+            Self::resolve_fabric_profile(instance_name, version, &json_content, &current_os, meta_dir, app_handle)
         } else if is_neoforge {
-            let neoforge_profile: NeoForgeProfileJson = match serde_json::from_str(&json_content) {
-                Ok(profile) => profile,
-                Err(e) => {
-                    let err_msg = format!("Failed to parse NeoForge profile: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            };
-
-            let base_version_dir = meta_dir.join("versions").join(&neoforge_profile.inherits_from);
-            let base_json_path = base_version_dir.join(format!("{}.json", neoforge_profile.inherits_from));
-
-            if !base_json_path.exists() {
-                let err_msg = format!(
-                    "Base Minecraft version {} not found! Please install it first.",
-                    neoforge_profile.inherits_from
-                );
-                Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                return Err(err_msg.into());
-            }
-
-            let base_json_content = match fs::read_to_string(&base_json_path) {
-                Ok(content) => content,
-                Err(e) => {
-                    let err_msg = format!("Failed to read base version JSON: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            };
-
-            let base_version: VersionDetails = match serde_json::from_str(&base_json_content) {
-                Ok(version) => version,
-                Err(e) => {
-                    let err_msg = format!("Failed to parse base version: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            };
-
-            let mut combined_libs = Vec::new();
-            let mut base_lib_names = std::collections::HashSet::new();
-
-            for lib in &base_version.libraries {
-                if lib.name.contains(":natives-") {
-                    continue;
-                }
-
-                if let Some(rules) = &lib.rules {
-                    if !should_include_library(rules, &current_os) {
-                        continue;
-                    }
-                }
-
-                let parts: Vec<&str> = lib.name.split(':').collect();
-                if parts.len() >= 2 {
-                    let lib_key = format!("{}:{}", parts[0], parts[1]);
-                    base_lib_names.insert(lib_key);
-                }
-            }
-
-            for lib in &neoforge_profile.libraries {
-                let parts: Vec<&str> = lib.name.split(':').collect();
-                if parts.len() >= 2 {
-                    let lib_key = format!("{}:{}", parts[0], parts[1]);
-
-                    if base_lib_names.contains(&lib_key) {
-                        continue;
-                    }
-                }
-
-                combined_libs.push((
-                    lib.name.clone(),
-                    lib.url.clone().unwrap_or_default(),
-                    None
-                ));
-            }
-
-            for lib in &base_version.libraries {
-                if lib.name.contains(":natives-") {
-                    continue;
-                }
-
-                if let Some(rules) = &lib.rules {
-                    if !should_include_library(rules, &current_os) {
-                        continue;
-                    }
-                }
-
-                if let Some(downloads) = &lib.downloads {
-                    if let Some(artifact) = &downloads.artifact {
-                        combined_libs.push((
-                            lib.name.clone(),
-                            String::new(),
-                            Some(artifact.path.clone())
-                        ));
-                    }
-                } else {
-                    combined_libs.push((lib.name.clone(), String::new(), None));
-                }
-            }
-
-            (
-                neoforge_profile.main_class,
-                neoforge_profile.inherits_from,
-                combined_libs,
-                base_version.assets,
-            )
+            Self::resolve_neoforge_profile(instance_name, version, &json_content, &current_os, meta_dir, app_handle)
         } else {
-            let version_details: VersionDetails = match serde_json::from_str(&json_content) {
-                Ok(details) => details,
-                Err(e) => {
-                    let err_msg = format!("Failed to parse Minecraft profile: {}", e);
-                    Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                    return Err(err_msg.into());
-                }
-            };
+            Self::resolve_vanilla_profile(instance_name, &json_content, app_handle)
+        }
+    }
 
-            let mut libs = Vec::new();
-            for lib in &version_details.libraries {
-                if lib.name.contains(":natives-") {
-                    continue;
-                }
+    fn resolve_fabric_profile(
+        instance_name: &str,
+        _version: &str,
+        json_content: &str,
+        current_os: &str,
+        meta_dir: &PathBuf,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<ResolvedProfile, Box<dyn std::error::Error>> {
+        let fabric_profile: FabricProfileJson = serde_json::from_str(json_content)
+            .map_err(|e| format!("Failed to parse Fabric profile: {}", e))?;
 
-                if let Some(rules) = &lib.rules {
-                    if !should_include_library(rules, &current_os) {
-                        continue;
-                    }
-                }
+        let base_version_dir = meta_dir.join("versions").join(&fabric_profile.inherits_from);
+        let base_json_path = base_version_dir.join(format!("{}.json", fabric_profile.inherits_from));
 
-                if let Some(downloads) = &lib.downloads {
-                    if let Some(artifact) = &downloads.artifact {
-                        libs.push((
-                            lib.name.clone(),
-                            String::new(),
-                            Some(artifact.path.clone())
-                        ));
-                    }
-                } else {
-                    libs.push((lib.name.clone(), String::new(), None));
-                }
-            }
-
-            (
-                version_details.main_class,
-                version_details.id.clone(),
-                libs,
-                version_details.assets,
-            )
-        };
-
-        let natives_dir = instance_dir.join("natives");
-        if let Err(e) = fs::create_dir_all(&natives_dir) {
-            let err_msg = format!("Failed to create natives directory: {}", e);
-            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+        if !base_json_path.exists() {
+            let err_msg = format!(
+                "Base Minecraft version {} not found! Please install it first.",
+                fabric_profile.inherits_from
+            );
+            Self::emit_error_log(app_handle, instance_name, &err_msg);
             return Err(err_msg.into());
         }
 
-        let base_version_dir = meta_dir.join("versions").join(&base_version_id);
-        let base_json_path = base_version_dir.join(format!("{}.json", base_version_id));
-        let base_json_content = match fs::read_to_string(&base_json_path) {
-            Ok(content) => content,
-            Err(e) => {
-                let err_msg = format!("Failed to read base version JSON: {}", e);
-                Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                return Err(err_msg.into());
-            }
-        };
+        let base_json_content = fs::read_to_string(&base_json_path)
+            .map_err(|e| format!("Failed to read base version JSON: {}", e))?;
 
-        let base_version: VersionDetails = match serde_json::from_str(&base_json_content) {
-            Ok(version) => version,
-            Err(e) => {
-                let err_msg = format!("Failed to parse base version: {}", e);
-                Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                return Err(err_msg.into());
-            }
-        };
+        let base_version: VersionDetails = serde_json::from_str(&base_json_content)
+            .map_err(|e| format!("Failed to parse base version: {}", e))?;
 
+        let assets_id = base_version.assets.clone();
+
+        let mut combined_libs = Vec::new();
+        let mut base_lib_names = HashSet::new();
+
+        for lib in &base_version.libraries {
+            if lib.name.contains(":natives-") {
+                continue;
+            }
+            if let Some(rules) = &lib.rules {
+                if !should_include_library(rules, current_os) {
+                    continue;
+                }
+            }
+            let parts: Vec<&str> = lib.name.split(':').collect();
+            if parts.len() >= 2 {
+                let lib_key = format!("{}:{}", parts[0], parts[1]);
+                base_lib_names.insert(lib_key);
+            }
+        }
+
+        for lib in &fabric_profile.libraries {
+            let parts: Vec<&str> = lib.name.split(':').collect();
+            if parts.len() >= 2 {
+                let lib_key = format!("{}:{}", parts[0], parts[1]);
+                if base_lib_names.contains(&lib_key) {
+                    continue;
+                }
+            }
+            combined_libs.push((lib.name.clone(), lib.url.clone(), None));
+        }
+
+        for lib in &base_version.libraries {
+            if lib.name.contains(":natives-") {
+                continue;
+            }
+            if let Some(rules) = &lib.rules {
+                if !should_include_library(rules, current_os) {
+                    continue;
+                }
+            }
+            if let Some(downloads) = &lib.downloads {
+                if let Some(artifact) = &downloads.artifact {
+                    combined_libs.push((lib.name.clone(), String::new(), Some(artifact.path.clone())));
+                }
+            } else {
+                combined_libs.push((lib.name.clone(), String::new(), None));
+            }
+        }
+
+        Ok(ResolvedProfile {
+            main_class: fabric_profile.main_class,
+            base_version_id: fabric_profile.inherits_from,
+            base_version,
+            libraries: combined_libs,
+            assets_id,
+            is_neoforge: false,
+        })
+    }
+
+    fn resolve_neoforge_profile(
+        instance_name: &str,
+        _version: &str,
+        json_content: &str,
+        current_os: &str,
+        meta_dir: &PathBuf,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<ResolvedProfile, Box<dyn std::error::Error>> {
+        let neoforge_profile: NeoForgeProfileJson = serde_json::from_str(json_content)
+            .map_err(|e| format!("Failed to parse NeoForge profile: {}", e))?;
+
+        let base_version_dir = meta_dir.join("versions").join(&neoforge_profile.inherits_from);
+        let base_json_path = base_version_dir.join(format!("{}.json", neoforge_profile.inherits_from));
+
+        if !base_json_path.exists() {
+            let err_msg = format!(
+                "Base Minecraft version {} not found! Please install it first.",
+                neoforge_profile.inherits_from
+            );
+            Self::emit_error_log(app_handle, instance_name, &err_msg);
+            return Err(err_msg.into());
+        }
+
+        let base_json_content = fs::read_to_string(&base_json_path)
+            .map_err(|e| format!("Failed to read base version JSON: {}", e))?;
+
+        let base_version: VersionDetails = serde_json::from_str(&base_json_content)
+            .map_err(|e| format!("Failed to parse base version: {}", e))?;
+
+        let assets_id = base_version.assets.clone();
+
+        let mut combined_libs = Vec::new();
+        let mut base_lib_names = HashSet::new();
+
+        for lib in &base_version.libraries {
+            if lib.name.contains(":natives-") {
+                continue;
+            }
+            if let Some(rules) = &lib.rules {
+                if !should_include_library(rules, current_os) {
+                    continue;
+                }
+            }
+            let parts: Vec<&str> = lib.name.split(':').collect();
+            if parts.len() >= 2 {
+                let lib_key = format!("{}:{}", parts[0], parts[1]);
+                base_lib_names.insert(lib_key);
+            }
+        }
+
+        for lib in &neoforge_profile.libraries {
+            let parts: Vec<&str> = lib.name.split(':').collect();
+            if parts.len() >= 2 {
+                let lib_key = format!("{}:{}", parts[0], parts[1]);
+                if base_lib_names.contains(&lib_key) {
+                    continue;
+                }
+            }
+            combined_libs.push((lib.name.clone(), lib.url.clone().unwrap_or_default(), None));
+        }
+
+        for lib in &base_version.libraries {
+            if lib.name.contains(":natives-") {
+                continue;
+            }
+            if let Some(rules) = &lib.rules {
+                if !should_include_library(rules, current_os) {
+                    continue;
+                }
+            }
+            if let Some(downloads) = &lib.downloads {
+                if let Some(artifact) = &downloads.artifact {
+                    combined_libs.push((lib.name.clone(), String::new(), Some(artifact.path.clone())));
+                }
+            } else {
+                combined_libs.push((lib.name.clone(), String::new(), None));
+            }
+        }
+
+        Ok(ResolvedProfile {
+            main_class: neoforge_profile.main_class,
+            base_version_id: neoforge_profile.inherits_from,
+            base_version,
+            libraries: combined_libs,
+            assets_id,
+            is_neoforge: true,
+        })
+    }
+
+    fn resolve_vanilla_profile(
+        _instance_name: &str,
+        json_content: &str,
+        _app_handle: &tauri::AppHandle,
+    ) -> Result<ResolvedProfile, Box<dyn std::error::Error>> {
+        let version_details: VersionDetails = serde_json::from_str(json_content)
+            .map_err(|e| format!("Failed to parse Minecraft profile: {}", e))?;
+
+        let current_os = get_current_os();
+        let main_class = version_details.main_class.clone();
+        let base_version_id = version_details.id.clone();
+        let assets_id = version_details.assets.clone();
+
+        let mut libs = Vec::new();
+        for lib in &version_details.libraries {
+            if lib.name.contains(":natives-") {
+                continue;
+            }
+            if let Some(rules) = &lib.rules {
+                if !should_include_library(rules, &current_os) {
+                    continue;
+                }
+            }
+            if let Some(downloads) = &lib.downloads {
+                if let Some(artifact) = &downloads.artifact {
+                    libs.push((lib.name.clone(), String::new(), Some(artifact.path.clone())));
+                }
+            } else {
+                libs.push((lib.name.clone(), String::new(), None));
+            }
+        }
+
+        Ok(ResolvedProfile {
+            main_class,
+            base_version_id,
+            base_version: version_details,
+            libraries: libs,
+            assets_id,
+            is_neoforge: false,
+        })
+    }
+
+    fn step_extract_natives(
+        instance_name: &str,
+        resolved: &ResolvedProfile,
+        meta_dir: &PathBuf,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let instance_dir = get_instance_dir(instance_name);
+        let natives_dir = instance_dir.join("natives");
+        fs::create_dir_all(&natives_dir)
+            .map_err(|e| format!("Failed to create natives directory: {}", e))?;
+
+        let current_os = get_current_os();
         let libraries_dir = meta_dir.join("libraries");
 
         let mut natives_extracted = 0;
         let mut natives_attempted = 0;
 
-        for library in &base_version.libraries {
-            let is_native = library.name.contains(":natives-");
+        for library in &resolved.base_version.libraries {
+            let is_native_name = library.name.contains(":natives-");
 
-            if !is_native {
-                continue;
-            }
+            if is_native_name {
+                let platform_suffix = if library.name.contains(":natives-windows") {
+                    "windows"
+                } else if library.name.contains(":natives-linux") {
+                    "linux"
+                } else {
+                    ""
+                };
 
-            let platform_suffix = if library.name.contains(":natives-windows") {
-                "windows"
-            } else if library.name.contains(":natives-linux") {
-                "linux"
-            } else {
-                ""
-            };
-
-            if platform_suffix != current_os {
-                continue;
-            }
-
-            if let Some(rules) = &library.rules {
-                if !should_include_library(rules, &current_os) {
+                if platform_suffix != current_os {
                     continue;
                 }
-            }
 
-            if let Some(downloads) = &library.downloads {
-                if let Some(artifact) = &downloads.artifact {
-                    natives_attempted += 1;
-                    let native_path = libraries_dir.join(&artifact.path);
+                if let Some(rules) = &library.rules {
+                    if !should_include_library(rules, &current_os) {
+                        continue;
+                    }
+                }
 
-                    if native_path.exists() {
-                        match fs::File::open(&native_path) {
-                            Ok(file) => {
-                                match ZipArchive::new(file) {
-                                    Ok(mut archive) => {
-                                        for i in 0..archive.len() {
-                                            if let Ok(mut file) = archive.by_index(i) {
-                                                let file_name = file.name().to_string();
+                if let Some(downloads) = &library.downloads {
+                    if let Some(artifact) = &downloads.artifact {
+                        natives_attempted += 1;
+                        let native_path = libraries_dir.join(&artifact.path);
 
-                                                if file_name.ends_with('/') || file_name.starts_with("META-INF") {
-                                                    continue;
-                                                }
-
-                                                let outpath = natives_dir.join(&file_name);
-
-                                                if let Some(parent) = outpath.parent() {
-                                                    let _ = fs::create_dir_all(parent);
-                                                }
-
-                                                if let Ok(mut outfile) = fs::File::create(&outpath) {
-                                                    if std::io::copy(&mut file, &mut outfile).is_ok() {
-                                                        natives_extracted += 1;
-                                                    }
+                        if native_path.exists() {
+                            if let Ok(file) = fs::File::open(&native_path) {
+                                if let Ok(mut archive) = ZipArchive::new(file) {
+                                    for i in 0..archive.len() {
+                                        if let Ok(mut file) = archive.by_index(i) {
+                                            let file_name = file.name().to_string();
+                                            if file_name.ends_with('/') || file_name.starts_with("META-INF") {
+                                                continue;
+                                            }
+                                            let outpath = natives_dir.join(&file_name);
+                                            if let Some(parent) = outpath.parent() {
+                                                let _ = fs::create_dir_all(parent);
+                                            }
+                                            if let Ok(mut outfile) = fs::File::create(&outpath) {
+                                                if std::io::copy(&mut file, &mut outfile).is_ok() {
+                                                    natives_extracted += 1;
                                                 }
                                             }
                                         }
                                     }
-                                    Err(e) => {
-                                        let err_msg = format!("Failed to open native archive: {}", e);
-                                        Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                                    }
+                                } else {
+                                    Self::emit_error_log(app_handle, instance_name, &format!("Failed to open native archive for {}", library.name));
                                 }
+                            } else {
+                                Self::emit_error_log(app_handle, instance_name, &format!("Failed to open native file for {}", library.name));
                             }
-                            Err(e) => {
-                                let err_msg = format!("Failed to open native file: {}", e);
-                                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                        } else {
+                            Self::emit_error_log(app_handle, instance_name, &format!(
+                                "Native library not found: {}. This will cause LWJGL to fail!",
+                                artifact.path
+                            ));
+                            return Err(format!(
+                                "Native library missing: {}. Please reinstall Minecraft {}",
+                                artifact.path, resolved.base_version_id
+                            ).into());
+                        }
+                    }
+                }
+            }
+
+            if let Some(downloads) = &library.downloads {
+                if let Some(classifiers) = &downloads.classifiers {
+                    for (key, artifact) in classifiers {
+                        let platform_suffix = if key.contains("natives-windows") {
+                            "windows"
+                        } else if key.contains("natives-linux") {
+                            "linux"
+                        } else {
+                            continue;
+                        };
+
+                        if platform_suffix != current_os {
+                            continue;
+                        }
+
+                        if let Some(rules) = &library.rules {
+                            if !should_include_library(rules, &current_os) {
+                                continue;
                             }
                         }
-                    } else {
-                        let err_msg = format!(
-                            "Native library not found: {}. This will cause LWJGL to fail!",
-                            artifact.path
-                        );
-                        Self::emit_error_log(&app_handle, instance_name, &err_msg);
-                        return Err(format!(
-                            "Native library missing: {}. Please reinstall Minecraft {}",
-                            artifact.path, base_version_id
-                        ).into());
+
+                        natives_attempted += 1;
+                        let native_path = libraries_dir.join(&artifact.path);
+
+                        if native_path.exists() {
+                            if let Ok(file) = fs::File::open(&native_path) {
+                                if let Ok(mut archive) = ZipArchive::new(file) {
+                                    for i in 0..archive.len() {
+                                        if let Ok(mut file) = archive.by_index(i) {
+                                            let file_name = file.name().to_string();
+                                            if file_name.ends_with('/') || file_name.starts_with("META-INF") {
+                                                continue;
+                                            }
+                                            let outpath = natives_dir.join(&file_name);
+                                            if let Some(parent) = outpath.parent() {
+                                                let _ = fs::create_dir_all(parent);
+                                            }
+                                            if let Ok(mut outfile) = fs::File::create(&outpath) {
+                                                if std::io::copy(&mut file, &mut outfile).is_ok() {
+                                                    natives_extracted += 1;
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Self::emit_error_log(app_handle, instance_name, &format!("Failed to open native archive for classifier {}", key));
+                                }
+                            } else {
+                                Self::emit_error_log(app_handle, instance_name, &format!("Failed to open native file for classifier {}", key));
+                            }
+                        } else {
+                            Self::emit_error_log(app_handle, instance_name, &format!(
+                                "Native library not found: {}. This will cause LWJGL to fail!",
+                                artifact.path
+                            ));
+                            return Err(format!(
+                                "Native library missing: {}. Please reinstall Minecraft {}",
+                                artifact.path, resolved.base_version_id
+                            ).into());
+                        }
                     }
                 }
             }
@@ -638,10 +683,10 @@ impl super::instance::InstanceManager {
                 "No native libraries found for OS '{}'. Minecraft cannot start without natives.",
                 current_os
             );
-            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            Self::emit_error_log(app_handle, instance_name, &err_msg);
             return Err(format!(
                 "{}. Please reinstall Minecraft version {}",
-                err_msg, base_version_id
+                err_msg, resolved.base_version_id
             ).into());
         }
 
@@ -650,15 +695,24 @@ impl super::instance::InstanceManager {
                 "Found {} native JARs but failed to extract any files. Check file permissions and disk space.",
                 natives_attempted
             );
-            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            Self::emit_error_log(app_handle, instance_name, &err_msg);
             return Err(err_msg.into());
         }
 
+        Ok(())
+    }
+
+    fn step_build_classpath(
+        instance_name: &str,
+        all_libraries: &[(String, String, Option<String>)],
+        meta_dir: &PathBuf,
+        app_handle: &tauri::AppHandle,
+    ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+        let libraries_dir = meta_dir.join("libraries");
         let mut classpath = Vec::new();
 
         for (lib_name, _lib_url, artifact_path) in all_libraries {
             let parts: Vec<&str> = lib_name.split(':').collect();
-
             if parts.len() < 3 || parts.len() > 4 {
                 continue;
             }
@@ -670,13 +724,11 @@ impl super::instance::InstanceManager {
                 libraries_dir.join(path)
             } else {
                 let group_path = group.replace('.', "/");
-
                 let jar_name = if let Some(cls) = classifier {
                     format!("{}-{}-{}.jar", artifact, lib_version, cls)
                 } else {
                     format!("{}-{}.jar", artifact, lib_version)
                 };
-
                 libraries_dir
                     .join(&group_path)
                     .join(artifact)
@@ -687,36 +739,58 @@ impl super::instance::InstanceManager {
             if lib_path.exists() {
                 classpath.push(lib_path.to_string_lossy().to_string());
             } else {
-                let warning = format!("Library not found: {}", lib_path.display());
-                Self::emit_error_log(&app_handle, instance_name, &format!("WARNING: {}", warning));
+                Self::emit_error_log(app_handle, instance_name, &format!("WARNING: Library not found: {}", lib_path.display()));
             }
         }
 
+        Ok(classpath)
+    }
+
+    fn step_launch(
+        instance_name: &str,
+        username: &str,
+        uuid: &str,
+        access_token: &str,
+        server_address: Option<&str>,
+        instance: &Instance,
+        version: &str,
+        java_path: &str,
+        resolved: &ResolvedProfile,
+        classpath: &[String],
+        instance_dir: &PathBuf,
+        meta_dir: &PathBuf,
+        app_handle: &tauri::AppHandle,
+        effective_settings: &LauncherSettings,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let client_jar = meta_dir
             .join("versions")
-            .join(&base_version_id)
-            .join(format!("{}.jar", base_version_id));
+            .join(&resolved.base_version_id)
+            .join(format!("{}.jar", resolved.base_version_id));
 
         if !client_jar.exists() {
             let err_msg = format!(
                 "Minecraft {} JAR not found at: {}",
-                base_version_id,
+                resolved.base_version_id,
                 client_jar.display()
             );
-            Self::emit_error_log(&app_handle, instance_name, &err_msg);
+            Self::emit_error_log(app_handle, instance_name, &err_msg);
             return Err(err_msg.into());
         }
 
-        classpath.push(client_jar.to_string_lossy().to_string());
+        let mut full_classpath = classpath.to_vec();
+        full_classpath.push(client_jar.to_string_lossy().to_string());
 
         let classpath_separator = if cfg!(windows) { ";" } else { ":" };
-        let classpath_str = classpath.join(classpath_separator);
+        let classpath_str = full_classpath.join(classpath_separator);
 
-        let mut cmd = Command::new(&java_path);
+        let natives_dir = get_instance_dir(instance_name).join("natives");
+        let libraries_dir = meta_dir.join("libraries");
+
+        let mut cmd = Command::new(java_path);
         cmd.arg(format!("-Xmx{}M", effective_settings.memory_mb))
             .arg(format!("-Xms{}M", effective_settings.memory_mb));
 
-        if is_neoforge {
+        if resolved.is_neoforge {
             cmd.arg("--add-opens").arg("java.base/java.lang=ALL-UNNAMED")
                 .arg("--add-opens").arg("java.base/java.lang.invoke=ALL-UNNAMED")
                 .arg("--add-opens").arg("java.base/java.lang.reflect=ALL-UNNAMED")
@@ -736,71 +810,31 @@ impl super::instance::InstanceManager {
 
         cmd.arg(format!("-Djava.library.path={}", natives_dir.display()));
 
-        if is_neoforge {
+        if resolved.is_neoforge {
             cmd.arg(format!("-DlibraryDirectory={}", libraries_dir.display()))
                 .arg(format!("-Dminecraft.client.jar={}", client_jar.display()))
                 .arg("-Dfml.earlyprogresswindow=false");
         }
 
         cmd.arg("-cp").arg(&classpath_str)
-            .arg(&main_class)
+            .arg(&resolved.main_class)
             .arg("--username").arg(username)
             .arg("--uuid").arg(uuid)
             .arg("--accessToken").arg(access_token)
-            .arg("--version").arg(&version)
-            .arg("--gameDir").arg(&instance_dir)
+            .arg("--version").arg(version)
+            .arg("--gameDir").arg(instance_dir)
             .arg("--assetsDir").arg(meta_dir.join("assets"))
-            .arg("--assetIndex").arg(&assets_id);
+            .arg("--assetIndex").arg(&resolved.assets_id);
 
-        if is_neoforge {
+        if resolved.is_neoforge {
             let neoforge_version_string = version.trim_start_matches("neoforge-");
-            cmd.arg("--fml.mcVersion").arg(&base_version_id)
+            cmd.arg("--fml.mcVersion").arg(&resolved.base_version_id)
                 .arg("--fml.neoFormVersion").arg(neoforge_version_string)
                 .arg("--fml.neoForgeVersion").arg(neoforge_version_string);
         }
 
         if let Some(server) = server_address {
-            fn should_use_quickplay(version: &str) -> bool {
-                let base_version = if version.contains("fabric-loader") {
-                    version.split('-').last().unwrap_or(version)
-                } else if version.contains('-') {
-                    version.split('-').next().unwrap_or(version)
-                } else {
-                    version
-                };
-
-                let parts: Vec<&str> = base_version.split('.').collect();
-
-                if parts.len() >= 3 {
-                    if let (Ok(major), Ok(minor), Ok(patch)) =
-                        (parts[0].parse::<u32>(), parts[1].parse::<u32>(), parts[2].parse::<u32>())
-                    {
-                        if major == 1 && minor == 20 && patch >= 5 {
-                            return true;
-                        }
-                        if major == 1 && minor > 20 {
-                            return true;
-                        }
-                        if major > 1 {
-                            return true;
-                        }
-                    }
-                } else if parts.len() == 2 {
-                    if let (Ok(major), Ok(minor)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
-                        if major == 1 && minor > 20 {
-                            return true;
-                        }
-                        if major > 1 {
-                            return true;
-                        }
-                    }
-                }
-
-                false
-            }
-
-            let use_quickplay = should_use_quickplay(&base_version_id);
-
+            let use_quickplay = Self::should_use_quickplay(&resolved.base_version_id);
             if use_quickplay {
                 cmd.arg("--quickPlayMultiplayer").arg(server);
             } else {
@@ -808,7 +842,7 @@ impl super::instance::InstanceManager {
             }
         }
 
-        cmd.current_dir(&instance_dir)
+        cmd.current_dir(instance_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
@@ -823,7 +857,7 @@ impl super::instance::InstanceManager {
             Ok(child) => child,
             Err(e) => {
                 let err_msg = format!("Failed to spawn Minecraft process: {}. Check if Java path is correct: {}", e, java_path);
-                Self::emit_error_log(&app_handle, instance_name, &err_msg);
+                Self::emit_error_log(app_handle, instance_name, &err_msg);
                 return Err(err_msg.into());
             }
         };
@@ -852,7 +886,6 @@ impl super::instance::InstanceManager {
             let reader = BufReader::new(stdout);
             let instance_name_clone = instance_name.to_string();
             let app_handle_clone = app_handle.clone();
-
             std::thread::spawn(move || {
                 for line in reader.lines() {
                     if let Ok(line) = line {
@@ -872,16 +905,13 @@ impl super::instance::InstanceManager {
             let reader = BufReader::new(stderr);
             let instance_name_clone = instance_name.to_string();
             let app_handle_clone = app_handle.clone();
-
             std::thread::spawn(move || {
                 let mut has_shown_friendly_error = false;
-
                 for line in reader.lines() {
                     if let Ok(line) = line {
                         if line.contains("accessToken") || line.contains("MINECRAFT_ACCESS_TOKEN") {
                             continue;
                         }
-
                         if !has_shown_friendly_error {
                             let error_message = if line.contains("UnsupportedClassVersionError") {
                                 Some("ERROR: Wrong Java version! This Minecraft version requires a newer Java version. Please update Java in Settings.")
@@ -896,7 +926,6 @@ impl super::instance::InstanceManager {
                             } else {
                                 None
                             };
-
                             if let Some(msg) = error_message {
                                 let _ = app_handle_clone.emit("console-log", serde_json::json!({
                                     "instance": instance_name_clone,
@@ -906,8 +935,6 @@ impl super::instance::InstanceManager {
                                 has_shown_friendly_error = true;
                             }
                         }
-
-
                         let _ = app_handle_clone.emit("console-log", serde_json::json!({
                             "instance": instance_name_clone,
                             "message": line,
@@ -918,12 +945,11 @@ impl super::instance::InstanceManager {
             });
         }
 
+        let instance_json = instance_dir.join("instance.json");
         let mut updated_instance = instance.clone();
         updated_instance.last_played = Some(Utc::now().to_rfc3339());
         let updated_json = serde_json::to_string_pretty(&updated_instance)?;
         fs::write(instance_json, updated_json)?;
-
-
 
         let instance_name_clone = instance_name.to_string();
         let app_handle_clone = app_handle.clone();
@@ -931,47 +957,99 @@ impl super::instance::InstanceManager {
         let launch_time = std::time::Instant::now();
 
         std::thread::spawn(move || {
-            let _ = child.wait();
-            let play_duration = launch_time.elapsed().as_secs();
-
-
-
-            let instance_dir = get_instance_dir(&instance_name_clone);
-            let instance_json_path = instance_dir.join("instance.json");
-
-            if let Ok(content) = fs::read_to_string(&instance_json_path) {
-                if let Ok(mut instance) = serde_json::from_str::<Instance>(&content) {
-                    instance.total_playtime_seconds += play_duration;
-
-                    if let Ok(updated_json) = serde_json::to_string_pretty(&instance) {
-                        let _ = fs::write(&instance_json_path, updated_json);
-
-                    }
-                }
-            }
-
-            {
-                if let Ok(mut processes) = crate::commands::instances::RUNNING_PROCESSES.lock() {
-                    processes.remove(&instance_name_clone);
-                }
-            }
-
-            let config = app_handle_clone.state::<crate::models::AppConfig>();
-            let supabase_url = config.supabase_url.clone();
-            let supabase_key = config.supabase_key.clone();
-            tauri::async_runtime::spawn(async move {
-                let service = match crate::services::friends::FriendsService::new(&supabase_url, &supabase_key) {
-                    Ok(s) => s,
-                    Err(_) => return,
-                };
-                let _ = service.update_status(&launching_uuid, crate::models::FriendStatus::Online, None).await;
-            });
-
-            let _ = app_handle_clone.emit("instance-exited", serde_json::json!({
-                "instance": instance_name_clone
-            }));
+            Self::step_post_launch_process(
+                child,
+                &instance_name_clone,
+                &launching_uuid,
+                &app_handle_clone,
+                launch_time,
+            );
         });
 
         Ok(())
+    }
+
+    fn should_use_quickplay(version: &str) -> bool {
+        let base_version = if version.contains("fabric-loader") {
+            version.split('-').last().unwrap_or(version)
+        } else if version.contains('-') {
+            version.split('-').next().unwrap_or(version)
+        } else {
+            version
+        };
+
+        let parts: Vec<&str> = base_version.split('.').collect();
+
+        if parts.len() >= 3 {
+            if let (Ok(major), Ok(minor), Ok(patch)) =
+                (parts[0].parse::<u32>(), parts[1].parse::<u32>(), parts[2].parse::<u32>())
+            {
+                if major == 1 && minor == 20 && patch >= 5 {
+                    return true;
+                }
+                if major == 1 && minor > 20 {
+                    return true;
+                }
+                if major > 1 {
+                    return true;
+                }
+            }
+        } else if parts.len() == 2 {
+            if let (Ok(major), Ok(minor)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                if major == 1 && minor > 20 {
+                    return true;
+                }
+                if major > 1 {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    fn step_post_launch_process(
+        mut child: Child,
+        instance_name: &str,
+        uuid: &str,
+        app_handle: &tauri::AppHandle,
+        launch_time: std::time::Instant,
+    ) {
+        let _ = child.wait();
+        let play_duration = launch_time.elapsed().as_secs();
+
+        let instance_dir = get_instance_dir(instance_name);
+        let instance_json_path = instance_dir.join("instance.json");
+
+        if let Ok(content) = fs::read_to_string(&instance_json_path) {
+            if let Ok(mut instance) = serde_json::from_str::<Instance>(&content) {
+                instance.total_playtime_seconds += play_duration;
+                if let Ok(updated_json) = serde_json::to_string_pretty(&instance) {
+                    let _ = fs::write(&instance_json_path, updated_json);
+                }
+            }
+        }
+
+        {
+            if let Ok(mut processes) = crate::commands::instances::RUNNING_PROCESSES.lock() {
+                processes.remove(instance_name);
+            }
+        }
+
+        let uuid_owned = uuid.to_string();
+        let config = app_handle.state::<crate::models::AppConfig>();
+        let supabase_url = config.supabase_url.clone();
+        let supabase_key = config.supabase_key.clone();
+        tauri::async_runtime::spawn(async move {
+            let service = match crate::services::friends::FriendsService::new(&supabase_url, &supabase_key) {
+                Ok(s) => s,
+                Err(_) => return,
+            };
+            let _ = service.update_status(&uuid_owned, crate::models::FriendStatus::Online, None).await;
+        });
+
+        let _ = app_handle.emit("instance-exited", serde_json::json!({
+            "instance": instance_name
+        }));
     }
 }

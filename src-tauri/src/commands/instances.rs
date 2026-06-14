@@ -51,20 +51,16 @@ pub async fn create_instance(
     let installer = MinecraftInstaller::new(meta_dir.clone())
         .map_err(|e| e.to_string())?;
     
-    let needs_installation = !installer.check_version_installed(&version);
-    
-    if needs_installation {
-        let _ = app_handle.emit("creation-progress", serde_json::json!({
-            "instance": safe_name,
-            "progress": 20,
-            "stage": format!("Installing Minecraft {}...", version)
-        }));
+    let _ = app_handle.emit("creation-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 20,
+        "stage": format!("Installing Minecraft {}...", version)
+    }));
 
-        installer
-            .install_version(&version)
-            .await
-            .map_err(|e| e.to_string())?;
-    }
+    installer
+        .install_version(&version)
+        .await
+        .map_err(|e| e.to_string())?;
 
     let _ = app_handle.emit("creation-progress", serde_json::json!({
         "instance": safe_name,
@@ -896,14 +892,10 @@ pub async fn update_instance_minecraft_version(
         let installer = MinecraftInstaller::new(meta_dir.clone())
             .map_err(|e| e.to_string())?;
         
-        let needs_installation = !installer.check_version_installed(&new_minecraft_version);
-        
-        if needs_installation {
-            installer
-                .install_version(&new_minecraft_version)
-                .await
-                .map_err(|e| e.to_string())?;
-        }
+        installer
+            .install_version(&new_minecraft_version)
+            .await
+            .map_err(|e| e.to_string())?;
         
         let _ = app_handle.emit("version-update-progress", serde_json::json!({
             "instance": safe_name,
@@ -939,14 +931,10 @@ pub async fn update_instance_minecraft_version(
         let installer = MinecraftInstaller::new(meta_dir)
             .map_err(|e| e.to_string())?;
         
-        let needs_installation = !installer.check_version_installed(&new_minecraft_version);
-        
-        if needs_installation {
-            installer
-                .install_version(&new_minecraft_version)
-                .await
-                .map_err(|e| e.to_string())?;
-        }
+        installer
+            .install_version(&new_minecraft_version)
+            .await
+            .map_err(|e| e.to_string())?;
         
         instance.version = new_minecraft_version.clone();
     }

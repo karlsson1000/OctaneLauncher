@@ -1,6 +1,40 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::fs;
+
+pub const LIBRARY_BASE_URL: &str = "https://libraries.minecraft.net/";
+
+pub fn library_maven_path(libraries_dir: &Path, name: &str) -> PathBuf {
+    let parts: Vec<&str> = name.split(':').collect();
+    if parts.len() < 3 {
+        return libraries_dir.join("unknown.jar");
+    }
+    let (group, artifact, version) = (parts[0], parts[1], parts[2]);
+    let classifier = if parts.len() >= 4 { Some(parts[3]) } else { None };
+    let group_path = group.replace('.', "/");
+    let jar_name = if let Some(cls) = classifier {
+        format!("{}-{}-{}.jar", artifact, version, cls)
+    } else {
+        format!("{}-{}.jar", artifact, version)
+    };
+    libraries_dir.join(&group_path).join(artifact).join(version).join(&jar_name)
+}
+
+pub fn library_maven_url(name: &str) -> String {
+    let parts: Vec<&str> = name.split(':').collect();
+    if parts.len() < 3 {
+        return String::new();
+    }
+    let (group, artifact, version) = (parts[0], parts[1], parts[2]);
+    let classifier = if parts.len() >= 4 { Some(parts[3]) } else { None };
+    let group_path = group.replace('.', "/");
+    let jar_name = if let Some(cls) = classifier {
+        format!("{}-{}-{}.jar", artifact, version, cls)
+    } else {
+        format!("{}-{}.jar", artifact, version)
+    };
+    format!("{}{}/{}/{}/{}", LIBRARY_BASE_URL, group_path, artifact, version, jar_name)
+}
 
 pub fn get_current_os() -> String {
     #[cfg(target_os = "windows")]

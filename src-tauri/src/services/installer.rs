@@ -1,5 +1,5 @@
 use crate::models::*;
-use crate::utils::get_current_os;
+use crate::utils::{get_current_os, library_maven_path, library_maven_url};
 use sha1::{Digest, Sha1};
 use std::{fs, path::PathBuf, sync::Arc};
 use tokio::sync::Semaphore;
@@ -191,9 +191,18 @@ impl MinecraftInstaller {
         let mut native_count = 0;
         
         for library in &version_details.libraries {
-            let is_native = library.name.contains(":natives-");
+            let is_native_name = library.name.contains(":natives-");
+            let should_include = if let Some(rules) = &library.rules {
+                should_include_library(rules, &current_os)
+            } else {
+                true
+            };
             
-            if is_native {
+            if !should_include {
+                continue;
+            }
+
+            if is_native_name {
                 let platform_suffix = if library.name.contains(":natives-windows") {
                     "windows"
                 } else if library.name.contains(":natives-linux") {
@@ -205,41 +214,74 @@ impl MinecraftInstaller {
                 if platform_suffix == current_os {
                     if let Some(downloads) = &library.downloads {
                         if let Some(artifact) = &downloads.artifact {
-                            let should_include = if let Some(rules) = &library.rules {
-                                should_include_library(rules, &current_os)
-                            } else {
-                                true
-                            };
-                            
-                            if should_include {
-                                native_count += 1;
-                                library_tasks.push((
-                                    artifact.url.clone(),
-                                    libraries_dir.join(&artifact.path),
-                                    artifact.sha1.clone(),
-                                    true,
-                                ));
-                            }
-                        }
-                    }
-                }
-            } else {
-                if let Some(downloads) = &library.downloads {
-                    if let Some(artifact) = &downloads.artifact {
-                        let should_include = if let Some(rules) = &library.rules {
-                            should_include_library(rules, &current_os)
-                        } else {
-                            true
-                        };
-
-                        if should_include {
+                            native_count += 1;
                             library_tasks.push((
                                 artifact.url.clone(),
                                 libraries_dir.join(&artifact.path),
                                 artifact.sha1.clone(),
-                                false,
                             ));
                         }
+                    }
+                    if native_count > 0 {
+                        continue;
+                    }
+                    let path = library_maven_path(&libraries_dir, &library.name);
+                    if Self::file_needs_download(&path, None) {
+                        let url = library_maven_url(&library.name);
+                        if !url.is_empty() {
+                            native_count += 1;
+                            library_tasks.push((url, path, String::new()));
+                        }
+                    }
+                }
+                continue;
+            }
+            
+            if let Some(downloads) = &library.downloads {
+                if let Some(classifiers) = &downloads.classifiers {
+                    for (key, artifact) in classifiers {
+                        let platform_suffix = if key.contains("natives-windows") {
+                            "windows"
+                        } else if key.contains("natives-linux") {
+                            "linux"
+                        } else {
+                            continue;
+                        };
+
+                        if platform_suffix != current_os {
+                            continue;
+                        }
+
+                        native_count += 1;
+                        library_tasks.push((
+                            artifact.url.clone(),
+                            libraries_dir.join(&artifact.path),
+                            artifact.sha1.clone(),
+                        ));
+                    }
+                }
+
+                if let Some(artifact) = &downloads.artifact {
+                    library_tasks.push((
+                        artifact.url.clone(),
+                        libraries_dir.join(&artifact.path),
+                        artifact.sha1.clone(),
+                    ));
+                } else {
+                    let path = library_maven_path(&libraries_dir, &library.name);
+                    if Self::file_needs_download(&path, None) {
+                        let url = library_maven_url(&library.name);
+                        if !url.is_empty() {
+                            library_tasks.push((url, path, String::new()));
+                        }
+                    }
+                }
+            } else {
+                let path = library_maven_path(&libraries_dir, &library.name);
+                if Self::file_needs_download(&path, None) {
+                    let url = library_maven_url(&library.name);
+                    if !url.is_empty() {
+                        library_tasks.push((url, path, String::new()));
                     }
                 }
             }
@@ -249,7 +291,7 @@ impl MinecraftInstaller {
             return Err(format!("No native libraries found for {}", current_os).into());
         }
 
-        self.download_parallel_with_types(library_tasks).await?;
+        self.download_parallel(library_tasks).await?;
 
         let asset_index_path = assets_dir
             .join("indexes")
@@ -281,27 +323,27 @@ impl MinecraftInstaller {
             asset_tasks.push((asset_url, asset_path, asset.hash));
         }
 
-        self.download_parallel_fast(asset_tasks).await?;
+        self.download_parallel(asset_tasks).await?;
 
         Ok(())
     }
 
-    async fn download_parallel_with_types(
+    async fn download_parallel(
         &self,
-        tasks: Vec<(String, PathBuf, String, bool)>,
+        tasks: Vec<(String, PathBuf, String)>,
     ) -> Result<usize, DownloadError> {
         let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_DOWNLOADS));
         let client = Arc::new(self.http_client.clone());
         let downloaded_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let mut handles = Vec::new();
 
-        for (url, path, sha1, is_native) in tasks {
+        for (url, path, sha1) in tasks {
             let permit = semaphore.clone().acquire_owned().await?;
             let client = client.clone();
             let downloaded_count = downloaded_count.clone();
 
             let handle = tokio::spawn(async move {
-                let result = Self::download_with_client_labeled(&client, &url, &path, &sha1, is_native).await;
+                let result = Self::download_with_client(&client, &url, &path, &sha1).await;
                 drop(permit);
                 
                 if let Ok(true) = result {
@@ -321,71 +363,7 @@ impl MinecraftInstaller {
         Ok(downloaded_count.load(std::sync::atomic::Ordering::Relaxed))
     }
 
-    async fn download_parallel_fast(
-        &self,
-        tasks: Vec<(String, PathBuf, String)>,
-    ) -> Result<usize, DownloadError> {
-        let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_DOWNLOADS));
-        let client = Arc::new(self.http_client.clone());
-        let downloaded_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        let mut handles = Vec::new();
-        
-        for (url, path, sha1) in tasks {
-            let permit = semaphore.clone().acquire_owned().await?;
-            let client = client.clone();
-            let downloaded_count = downloaded_count.clone();
-
-            let handle = tokio::spawn(async move {
-                let result = Self::download_with_client_fast(&client, &url, &path, &sha1).await;
-                drop(permit);
-                
-                if let Ok(downloaded) = result {
-                    if downloaded {
-                        downloaded_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                    }
-                }
-                
-                result
-            });
-
-            handles.push(handle);
-        }
-
-        for handle in handles {
-            handle.await??;
-        }
-
-        Ok(downloaded_count.load(std::sync::atomic::Ordering::Relaxed))
-    }
-
-    async fn download_with_client_labeled(
-        client: &reqwest::Client,
-        url: &str,
-        path: &PathBuf,
-        expected_sha1: &str,
-        _is_native: bool,
-    ) -> Result<bool, DownloadError> {
-        if !Self::file_needs_download(path, Some(expected_sha1)) {
-            return Ok(false);
-        }
-
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-        
-        let response = client.get(url).send().await?;
-        
-        if !response.status().is_success() {
-            return Err(format!("HTTP {}", response.status()).into());
-        }
-        
-        let bytes = response.bytes().await?;
-        fs::write(path, bytes)?;
-
-        Ok(true)
-    }
-
-    async fn download_with_client_fast(
+    async fn download_with_client(
         client: &reqwest::Client,
         url: &str,
         path: &PathBuf,
@@ -398,7 +376,7 @@ impl MinecraftInstaller {
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
-
+        
         let response = client.get(url).send().await?;
         
         if !response.status().is_success() {
