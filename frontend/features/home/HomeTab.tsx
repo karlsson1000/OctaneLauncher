@@ -223,7 +223,7 @@ export function HomeTab({
                     <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--text-primary)] transition-colors">
                       Recently Played
                     </h2>
-                    <ChevronRight size={18} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
+                    <ChevronRight size={18} strokeWidth={3} className="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
                   </button>
                 ) : (
                   <h2 className="text-xl font-semibold text-[var(--text-primary)] tracking-tight">
