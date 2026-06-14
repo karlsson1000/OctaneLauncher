@@ -135,7 +135,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
+  background: var(--content-bg);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -149,7 +149,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  scrollbar-color: var(--scrollbar-thumb) var(--content-bg);
 }
 
 .screenshot-card {
@@ -230,17 +230,16 @@ input[type="range"]::-moz-range-thumb:hover {
   width: 8px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb-custom);
   border-radius: 4px;
 }
-
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-hover-custom);
+}
+
+.custom-scrollbar {
+  scrollbar-color: var(--scrollbar-thumb-custom) var(--content-bg);
 }
 
 /* Shared modal animations */
