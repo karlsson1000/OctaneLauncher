@@ -350,16 +350,15 @@ function App() {
       message: `Are you sure you want to delete "${instanceName}"?\n\nThis action cannot be undone.`,
       type: "danger",
       onConfirm: async () => {
+        setConfirmModal(null)
         try {
           await invoke<string>("delete_instance", { instanceName })
           await loadInstances()
           if (selectedInstance?.name === instanceName) {
             setSelectedInstance(instances.length > 1 ? instances.find(i => i.name !== instanceName) || null : null)
           }
-          setConfirmModal(null)
         } catch (error) {
           console.error("Delete error:", error)
-          setConfirmModal(null)
         }
       }
     })
