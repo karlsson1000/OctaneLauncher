@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, memo } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Users, UserPlus, UserCheck, UserX, Search, Loader2, LogIn } from "lucide-react"
 import type { Friend, FriendRequest } from "../../types"
@@ -9,7 +9,7 @@ interface FriendsPanelProps {
   activeAccountUuid?: string
 }
 
-export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: FriendsPanelProps) {
+export const FriendsPanel = memo(function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: FriendsPanelProps) {
   const [friends, setFriends] = useState<Friend[]>([])
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -247,4 +247,4 @@ export function FriendsPanel({ isOpen, isAuthenticated, activeAccountUuid }: Fri
       )}
     </div>
   )
-}
+})

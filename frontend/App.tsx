@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react"
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
@@ -61,7 +61,7 @@ function App() {
     message: string
     type: "warning" | "danger" | "success" | "info"
   } | null>(null)
-  const [instanceIcons, setInstanceIcons] = useState<Record<string, string | null>>({})
+  const [, setInstanceIcons] = useState<Record<string, string | null>>({})
   const [navigationHistory, setNavigationHistory] = useState<Array<{tab: typeof activeTab, showDetails: boolean, instance: Instance | null}>>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
   const [isNavigating, setIsNavigating] = useState(false)
@@ -105,7 +105,7 @@ function App() {
     setHistoryIndex(prev => prev + 1)
   }
 
-  const navigateBack = () => {
+  const navigateBack = useCallback(() => {
     if (historyIndex > 0) {
       setIsNavigating(true)
       const newIndex = historyIndex - 1
@@ -116,9 +116,9 @@ function App() {
       setHistoryIndex(newIndex)
       setTimeout(() => setIsNavigating(false), 0)
     }
-  }
+  }, [historyIndex, navigationHistory])
 
-  const navigateForward = () => {
+  const navigateForward = useCallback(() => {
     if (historyIndex < navigationHistory.length - 1) {
       setIsNavigating(true)
       const newIndex = historyIndex + 1
@@ -129,7 +129,7 @@ function App() {
       setHistoryIndex(newIndex)
       setTimeout(() => setIsNavigating(false), 0)
     }
-  }
+  }, [historyIndex, navigationHistory])
 
   const checkForUpdates = async () => {
     try {
@@ -152,7 +152,7 @@ function App() {
     }
   }
 
-  const handleInstallUpdate = async () => {
+  const handleInstallUpdate = useCallback(async () => {
     if (!updateInfo) return
     setIsInstallingUpdate(true)
     try {
@@ -167,7 +167,7 @@ function App() {
       })
       setIsInstallingUpdate(false)
     }
-  }
+  }, [updateInfo])
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -255,7 +255,7 @@ function App() {
     }
   }
 
-  const loadInstances = async (renamedFrom?: string, renamedTo?: string) => {
+  const loadInstances = useCallback(async (renamedFrom?: string, renamedTo?: string) => {
     try {
       const instanceList = await invoke<Instance[]>("get_instances")
       setInstances(instanceList)
@@ -273,11 +273,11 @@ function App() {
     } catch (error) {
       console.error("Failed to load instances:", error)
     }
-  }
+  }, [selectedInstance])
 
-  const handleInstanceRenamed = (oldName: string, newName: string) => {
+  const handleInstanceRenamed = useCallback((oldName: string, newName: string) => {
     loadInstances(oldName, newName)
-  }
+  }, [loadInstances])
 
   const loadLauncherDirectory = async () => {
     try {
@@ -321,7 +321,7 @@ function App() {
     }
   }
 
-  const handleLaunch = async (instance: Instance) => {
+  const handleLaunch = useCallback(async (instance: Instance) => {
     if (!activeAccount) return
     setLaunchingInstanceName(instance.name)
     setConsoleLogs([])
@@ -341,9 +341,9 @@ function App() {
       console.error("Launch error:", error)
       setLaunchingInstanceName(null)
     }
-  }
+  }, [activeAccount, settings, appWindow, loadInstances])
 
-  const handleDeleteInstance = async (instanceName: string) => {
+  const handleDeleteInstance = useCallback(async (instanceName: string) => {
     setConfirmModal({
       isOpen: true,
       title: "Delete Instance",
@@ -363,9 +363,9 @@ function App() {
         }
       }
     })
-  }
+  }, [selectedInstance, instances, loadInstances])
 
-  const handleDuplicateInstance = async (instance: Instance) => {
+  const handleDuplicateInstance = useCallback(async (instance: Instance) => {
     let baseName = instance.name
     let counter = 1
     let newName = `${baseName} (Copy)`
@@ -391,40 +391,40 @@ function App() {
         type: "danger"
       })
     }
-  }
+  }, [instances, loadInstances])
 
-  const handleOpenInstanceFolderByInstance = async (instance: Instance) => {
+  const handleOpenInstanceFolderByInstance = useCallback(async (instance: Instance) => {
     try {
       await invoke("open_instance_folder", { instanceName: instance.name })
     } catch (error) {
       console.error("Failed to open folder:", error)
     }
-  }
+  }, [])
 
-  const handleShowDetails = (instance: Instance) => {
+  const handleShowDetails = useCallback((instance: Instance) => {
     setSelectedInstance(instance)
     setShowInstanceDetails(true)
-  }
+  }, [])
 
-  const handleCloseDetails = () => {
+  const handleCloseDetails = useCallback(() => {
     setShowInstanceDetails(false)
-  }
+  }, [])
 
-  const handleStartCreating = (instanceName: string) => {
+  const handleStartCreating = useCallback((instanceName: string) => {
     setCreatingInstanceName(instanceName)
     setActiveTab('instances')
-  }
+  }, [])
 
   const handleCreationComplete = () => {
     setCreatingInstanceName(null)
     loadInstances()
   }
 
-  const handleCreationError = () => {
+  const handleCreationError = useCallback(() => {
     setCreatingInstanceName(null)
-  }
+  }, [])
 
-  const handleKillInstance = async (instance: Instance) => {
+  const handleKillInstance = useCallback(async (instance: Instance) => {
     try {
       await invoke("kill_instance", { instanceName: instance.name })
       setRunningInstances((prev) => {
@@ -441,7 +441,17 @@ function App() {
         type: "danger"
       })
     }
-  }
+  }, [])
+
+  const handleOpenSettings = useCallback(() => setShowSettingsModal(true), [])
+  const handleCreateNew = useCallback(() => setShowCreateModal(true), [])
+  const handleClearConsole = useCallback((instanceName: string) => {
+    setConsoleLogs(prev => prev.filter(log => log.instance !== instanceName))
+  }, [])
+  const handleNavigateToInstances = useCallback(() => setActiveTab("instances"), [])
+  const handleLaunchSelected = useCallback(() => {
+    if (selectedInstance) handleLaunch(selectedInstance)
+  }, [selectedInstance, handleLaunch])
 
   const tabLabels: Record<typeof activeTab, string> = {
     home: "Home",
@@ -618,11 +628,6 @@ function App() {
           setActiveTab={setActiveTab}
           setShowInstanceDetails={setShowInstanceDetails}
           activeTab={activeTab}
-          instances={instances}
-          instanceIcons={instanceIcons}
-          runningInstances={runningInstances}
-          launchingInstanceName={launchingInstanceName}
-          isAuthenticated={isAuthenticated}
           sidebarContextMenu={sidebarContextMenu}
           setSidebarContextMenu={setSidebarContextMenu}
           setSelectedInstance={setSelectedInstance}
@@ -632,8 +637,8 @@ function App() {
           updateInfo={updateInfo}
           isInstallingUpdate={isInstallingUpdate}
           onInstallUpdate={handleInstallUpdate}
-          onOpenSettings={() => setShowSettingsModal(true)}
-          onCreateNew={() => setShowCreateModal(true)}
+          onOpenSettings={handleOpenSettings}
+          onCreateNew={handleCreateNew}
         />
 
         <div
@@ -653,7 +658,7 @@ function App() {
                 isAuthenticated={isAuthenticated}
                 isLaunching={launchingInstanceName === selectedInstance.name}
                 isRunning={runningInstances.has(selectedInstance.name)}
-                onLaunch={() => handleLaunch(selectedInstance)}
+                onLaunch={handleLaunchSelected}
                 onBack={handleCloseDetails}
                 onInstanceUpdated={loadInstances}
                 onInstanceRenamed={handleInstanceRenamed}
@@ -674,7 +679,7 @@ function App() {
                       onOpenFolderByInstance={handleOpenInstanceFolderByInstance}
                       onDuplicateInstance={handleDuplicateInstance}
                       onKillInstance={handleKillInstance}
-                      onNavigateToInstances={() => setActiveTab("instances")}
+                      onNavigateToInstances={handleNavigateToInstances}
                     />
                   </Suspense>
                 )}
@@ -686,8 +691,8 @@ function App() {
                       launchingInstanceName={launchingInstanceName}
                       runningInstances={runningInstances}
                       onSetSelectedInstance={setSelectedInstance}
-                      onLaunch={(instance: Instance) => { handleLaunch(instance) }}
-                      onCreateNew={() => setShowCreateModal(true)}
+                      onLaunch={handleLaunch}
+                      onCreateNew={handleCreateNew}
                       onShowDetails={handleShowDetails}
                       onOpenFolder={handleOpenInstanceFolderByInstance}
                       onDuplicateInstance={handleDuplicateInstance}
@@ -728,9 +733,7 @@ function App() {
                   <Suspense fallback={<Loader />}>
                     <ConsoleTab
                       consoleLogs={consoleLogs}
-                      onClearConsole={(instanceName: string) => {
-                        setConsoleLogs(prev => prev.filter(log => log.instance !== instanceName))
-                      }}
+                      onClearConsole={handleClearConsole}
                     />
                   </Suspense>
                 )}

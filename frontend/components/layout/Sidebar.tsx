@@ -1,3 +1,4 @@
+import { memo } from "react"
 import { Home, Package, Puzzle, Server, HatGlasses, Camera, Terminal, Settings, Download, Plus, FolderOpen, Copy, Trash2 } from "lucide-react"
 import { ContextMenu } from "../ui/ContextMenu"
 import { Tooltip } from "../ui/Tooltip"
@@ -7,11 +8,6 @@ interface SidebarProps {
   setActiveTab: (tab: "home" | "instances" | "browse" | "console" | "servers" | "skins" | "screenshots") => void
   setShowInstanceDetails: (show: boolean) => void
   activeTab: "home" | "instances" | "browse" | "console" | "servers" | "skins" | "screenshots"
-  instances: Instance[]
-  instanceIcons: Record<string, string | null>
-  runningInstances: Set<string>
-  launchingInstanceName: string | null
-  isAuthenticated: boolean
   sidebarContextMenu: { x: number; y: number; instance: Instance } | null
   setSidebarContextMenu: (menu: { x: number; y: number; instance: Instance } | null) => void
   setSelectedInstance: (instance: Instance) => void
@@ -35,7 +31,7 @@ const tabs = [
   { id: "console" as const, icon: Terminal },
 ]
 
-export function Sidebar(props: SidebarProps) {
+export const Sidebar = memo(function Sidebar(props: SidebarProps) {
   const {
     setActiveTab,
     setShowInstanceDetails,
@@ -154,4 +150,4 @@ export function Sidebar(props: SidebarProps) {
       )}
     </>
   )
-}
+})
