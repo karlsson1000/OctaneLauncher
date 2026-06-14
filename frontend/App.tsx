@@ -36,6 +36,8 @@ function App() {
   const [accounts, setAccounts] = useState<AccountInfo[]>([])
   const [launchingInstanceName, setLaunchingInstanceName] = useState<string | null>(null)
   const [runningInstances, setRunningInstances] = useState<Set<string>>(new Set())
+  const runningInstancesRef = useRef(runningInstances)
+  runningInstancesRef.current = runningInstances
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [versions, setVersions] = useState<string[]>([])
   const [instances, setInstances] = useState<Instance[]>([])
@@ -220,6 +222,27 @@ function App() {
       unlistenServerLaunch.then((fn) => fn())
     }
   }, [isReady])
+
+  useEffect(() => {
+    if (!isAuthenticated || !activeAccount) return
+
+    const sendHeartbeat = async () => {
+      try {
+        const instances = runningInstancesRef.current
+        const firstInstance = instances.values().next().value
+        if (firstInstance) {
+          await invoke("update_user_status", { status: "ingame", currentInstance: firstInstance })
+        } else {
+          await invoke("update_user_status", { status: "online", currentInstance: null })
+        }
+      } catch {
+      }
+    }
+
+    sendHeartbeat()
+    const interval = setInterval(sendHeartbeat, 60000)
+    return () => clearInterval(interval)
+  }, [isAuthenticated, activeAccount?.uuid])
 
   useEffect(() => {
     if (!isNavigating && isReady) {

@@ -1,5 +1,5 @@
 use crate::models::{Friend, FriendRequest, FriendStatus, RequestStatus};
-use chrono::Utc;
+use chrono::{Utc, Duration};
 use serde_json::json;
 
 pub struct FriendsService {
@@ -306,23 +306,31 @@ impl FriendsService {
 
         let data: Vec<serde_json::Value> = response.json().await?;
         
+        let staleness_cutoff = Utc::now() - Duration::seconds(120);
+        
         let mut friends = Vec::new();
         for item in data {
             if let Some(friend) = item.get("friend") {
+                let last_seen: chrono::DateTime<Utc> = friend["last_seen"].as_str()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or_else(Utc::now);
+
                 let status_str = friend["status"].as_str().unwrap_or("offline");
-                let status = match status_str {
-                    "online" => FriendStatus::Online,
-                    "ingame" => FriendStatus::InGame,
-                    _ => FriendStatus::Offline,
+                let status = if last_seen < staleness_cutoff {
+                    FriendStatus::Offline
+                } else {
+                    match status_str {
+                        "online" => FriendStatus::Online,
+                        "ingame" => FriendStatus::InGame,
+                        _ => FriendStatus::Offline,
+                    }
                 };
 
                 friends.push(Friend {
                     uuid: friend["uuid"].as_str().unwrap_or("").to_string(),
                     username: friend["username"].as_str().unwrap_or("").to_string(),
                     status,
-                    last_seen: friend["last_seen"].as_str()
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or_else(Utc::now),
+                    last_seen,
                     current_instance: friend["current_instance"].as_str().map(String::from),
                 });
             }
