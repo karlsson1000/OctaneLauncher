@@ -102,7 +102,7 @@ impl Default for LauncherSettings {
             memory_mb: 2048,
             language: None,
             auto_navigate_to_console: true,
-            theme: "default".to_string(),
+            theme: default_theme(),
         }
     }
 }
