@@ -160,8 +160,12 @@ export function useLauncherState() {
     loadAccounts()
     loadBackground()
 
+    const MAX_CONSOLE_LOGS = 10000
     const unlistenConsole = listen<ConsoleLog>("console-log", (event) => {
-      setConsoleLogs((prev) => [...prev, event.payload])
+      setConsoleLogs((prev) => {
+        const next = [...prev, event.payload]
+        return next.length > MAX_CONSOLE_LOGS ? next.slice(-MAX_CONSOLE_LOGS) : next
+      })
     })
 
     const unlistenExit = listen<{ instance: string }>("instance-exited", (event) => {

@@ -847,13 +847,12 @@ impl super::instance::InstanceManager {
         let mut full_classpath = classpath.to_vec();
         full_classpath.push(client_jar.to_string_lossy().to_string());
 
-        let classpath_separator = if cfg!(windows) { ";" } else { ":" };
-        let classpath_str = full_classpath.join(classpath_separator);
+        let classpath_sep = if cfg!(windows) { ";" } else { ":" };
+        let classpath_str = full_classpath.join(classpath_sep);
 
         let natives_dir = get_instance_dir(instance_name).join("natives");
         let libraries_dir = meta_dir.join("libraries");
 
-        let classpath_sep = if cfg!(windows) { ";" } else { ":" };
         let natives_dir_str = natives_dir.to_string_lossy().into_owned();
         let libraries_dir_str = libraries_dir.to_string_lossy().into_owned();
         let instance_dir_str = instance_dir.to_string_lossy().into_owned();
@@ -877,9 +876,11 @@ impl super::instance::InstanceManager {
             ("${version_type}", "release"),
         ];
 
+        let xms = (effective_settings.memory_mb * 80 / 100).max(512);
+
         let mut cmd = Command::new(java_path);
-        cmd.arg(format!("-Xmx{}M", effective_settings.memory_mb))
-            .arg(format!("-Xms{}M", effective_settings.memory_mb));
+        cmd.arg(format!("-Xms{}M", xms))
+            .arg(format!("-Xmx{}M", effective_settings.memory_mb));
 
         if resolved.is_neoforge {
             if !resolved.jvm_arguments.is_empty() {
