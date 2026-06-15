@@ -22,13 +22,13 @@ interface SidebarProps {
 }
 
 const tabs = [
-  { id: "home" as const, icon: Home },
-  { id: "instances" as const, icon: Package },
-  { id: "browse" as const, icon: Puzzle },
-  { id: "servers" as const, icon: Server },
-  { id: "skins" as const, icon: HatGlasses },
-  { id: "screenshots" as const, icon: Camera },
-  { id: "console" as const, icon: Terminal },
+  { id: "home" as const, icon: Home, label: "Home" },
+  { id: "instances" as const, icon: Package, label: "Instances" },
+  { id: "browse" as const, icon: Puzzle, label: "Addons" },
+  { id: "servers" as const, icon: Server, label: "Servers" },
+  { id: "skins" as const, icon: HatGlasses, label: "Skins" },
+  { id: "screenshots" as const, icon: Camera, label: "Screenshots" },
+  { id: "console" as const, icon: Terminal, label: "Console" },
 ]
 
 export const Sidebar = memo(function Sidebar(props: SidebarProps) {
@@ -57,9 +57,8 @@ export const Sidebar = memo(function Sidebar(props: SidebarProps) {
           {tabs.map((tab) => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
-            const label = tab.id.charAt(0).toUpperCase() + tab.id.slice(1)
             return (
-              <Tooltip key={tab.id} text={label}>
+              <Tooltip key={tab.id} text={tab.label}>
                 <button
                   onClick={() => { setActiveTab(tab.id); setShowInstanceDetails(false) }}
                   className={`w-12 h-12 flex items-center justify-center rounded-lg transition-all cursor-pointer ${
