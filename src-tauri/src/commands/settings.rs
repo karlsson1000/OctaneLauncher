@@ -245,6 +245,57 @@ pub async fn remove_background() -> Result<(), String> {
     Ok(())
 }
 
+#[derive(serde::Serialize)]
+pub struct StorageCategory {
+    pub name: String,
+    pub size_bytes: u64,
+}
+
+#[tauri::command]
+pub async fn get_storage_usage() -> Result<Vec<StorageCategory>, String> {
+    let launcher_dir = crate::utils::get_launcher_dir();
+    let instances_dir = crate::utils::get_instances_dir();
+    let meta_dir = crate::utils::get_meta_dir();
+
+    let mut categories = Vec::new();
+
+    let mut total: u64 = 0;
+
+    if instances_dir.exists() {
+        let size = dir_size(&instances_dir);
+        categories.push(StorageCategory { name: "Instances".to_string(), size_bytes: size });
+        total += size;
+    }
+
+    if meta_dir.exists() {
+        let size = dir_size(&meta_dir);
+        categories.push(StorageCategory { name: "Cache".to_string(), size_bytes: size });
+        total += size;
+    }
+
+    let other = dir_size(&launcher_dir).saturating_sub(total);
+    if other > 0 {
+        categories.push(StorageCategory { name: "Other".to_string(), size_bytes: other });
+    }
+
+    Ok(categories)
+}
+
+fn dir_size(path: &std::path::Path) -> u64 {
+    let mut total = 0u64;
+    if let Ok(entries) = std::fs::read_dir(path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                total += dir_size(&path);
+            } else if path.is_file() {
+                total += path.metadata().map(|m| m.len()).unwrap_or(0);
+            }
+        }
+    }
+    total
+}
+
 #[tauri::command]
 pub async fn open_directory(path: String) -> Result<(), String> {
     let path = std::path::PathBuf::from(&path);

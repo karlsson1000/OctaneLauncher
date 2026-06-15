@@ -196,7 +196,7 @@ export const FriendsPanel = memo(function FriendsPanel({ isOpen, isAuthenticated
           <div className="flex-1 overflow-y-auto">
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 size={20} className="animate-spin text-[#16a34a]" />
+                <Loader2 size={20} className="animate-spin text-[#3b82f6]" />
               </div>
             ) : sortedFriends.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center px-1">

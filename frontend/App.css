@@ -221,10 +221,6 @@ input[type="range"]::-moz-range-thumb:hover {
   transition: none;
 }
 
-.blur-border:hover::before {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
-}
-
 /* Shared custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;

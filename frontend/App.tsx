@@ -21,7 +21,7 @@ const ScreenshotsTab = lazy(() => import("./features/screenshots/ScreenshotsTab"
 function Loader() {
   return (
     <div className="flex items-center justify-center h-full min-h-[200px]">
-      <Loader2 size={32} className="animate-spin text-[#16a34a]" />
+      <Loader2 size={32} className="animate-spin text-[#3b82f6]" />
     </div>
   )
 }

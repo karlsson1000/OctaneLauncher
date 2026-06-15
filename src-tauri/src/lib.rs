@@ -115,6 +115,7 @@ use commands::{
     save_recent_skin,
     get_system_info,
     open_url,
+    get_storage_usage,
 };
 
 #[tauri::command]
@@ -368,7 +369,8 @@ pub fn run() {
             ping_server,
             open_url,
             get_system_info,
-            save_secrets,
+    get_storage_usage,
+    save_secrets,
             is_secrets_configured,
         ])
         .run(tauri::generate_context!())

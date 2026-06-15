@@ -269,7 +269,7 @@ export function SkinsTab(props: SkinsTabProps) {
                 <div className="w-[250px] h-[406px] flex items-center justify-center">
                   {loading && (
                     <div className="text-center">
-                      <Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto mb-3" />
+                      <Loader2 size={32} className="animate-spin text-[#3b82f6] mx-auto mb-3" />
                       <p className="text-sm text-[var(--text-muted)]">Loading skin...</p>
                     </div>
                   )}
@@ -351,7 +351,7 @@ export function SkinsTab(props: SkinsTabProps) {
             </div>
             {loadingCapes ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 size={32} className="animate-spin text-[#16a34a]" />
+                <Loader2 size={32} className="animate-spin text-[#3b82f6]" />
               </div>
             ) : capes.length > 0 ? (
               <div className="space-y-4">

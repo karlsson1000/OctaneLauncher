@@ -119,8 +119,28 @@ export function ScreenshotsTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
+      <div className="p-8 space-y-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-4 invisible">
+            <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">0 screenshots</h1>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-[var(--bg-tertiary)] rounded" />
+              <div className="w-28 h-8 bg-[var(--bg-tertiary)] rounded" />
+              <div className="w-16 h-8 bg-[var(--bg-tertiary)] rounded" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-[var(--bg-tertiary)] rounded-md overflow-hidden">
+                <div className="aspect-video bg-[var(--bg-tertiary)] animate-pulse" />
+                <div className="p-2 space-y-2">
+                  <div className="h-3 bg-[var(--bg-tertiary)] animate-pulse rounded w-3/4" />
+                  <div className="h-3 bg-[var(--bg-tertiary)] animate-pulse rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
@@ -130,8 +150,7 @@ export function ScreenshotsTab() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Screenshots</h1>
-            <p className="text-sm text-[var(--text-muted)] mt-0.5">{filteredScreenshots.length} screenshot{filteredScreenshots.length !== 1 ? 's' : ''}</p>
+            <h1 className="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">{filteredScreenshots.length} screenshot{filteredScreenshots.length !== 1 ? 's' : ''}</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -170,7 +189,7 @@ export function ScreenshotsTab() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredScreenshots.map((screenshot, index) => (
                 <ScreenshotCard
                   key={screenshot.path}
@@ -296,9 +315,7 @@ const ScreenshotCard = memo(function ScreenshotCard({ screenshot, index, getImag
     >
       <div className="aspect-video bg-[var(--bg-secondary)] overflow-hidden relative">
         {imageLoading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
-          </div>
+          <div className="absolute inset-0 bg-[var(--bg-tertiary)] animate-pulse" />
         )}
         {imageSrc && (
           <img src={imageSrc} alt={screenshot.filename} className="w-full h-full object-cover" style={{ opacity: imageLoading ? 0 : 1, transition: 'opacity 0.2s' }} />
@@ -371,7 +388,7 @@ function ImageViewer({ screenshot, currentImageIndex, totalImages, getImageData,
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
           {!imageSrc ? (
-            <div className="w-12 h-12 border-2 border-[#3a3f4b] border-t-[#16a34a] rounded-full animate-spin" />
+            <div className="w-[90vw] max-w-[900px] aspect-video bg-[var(--bg-tertiary)] animate-pulse rounded" />
           ) : (
             <img src={imageSrc} alt={screenshot.filename} className="max-w-full max-h-full object-contain" />
           )}

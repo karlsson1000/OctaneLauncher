@@ -322,7 +322,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
           />
           {isSearching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
-              <Loader2 size={16} className="animate-spin text-[#16a34a]" />
+              <Loader2 size={16} className="animate-spin text-[#3b82f6]" />
             </div>
           )}
         </div>
@@ -369,7 +369,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
             ))}
 
             <div ref={sentinelRef} className="flex items-center justify-center py-4">
-              {isLoadingMore && <Loader2 size={20} className="animate-spin text-[#16a34a]" />}
+              {isLoadingMore && <Loader2 size={20} className="animate-spin text-[#3b82f6]" />}
             </div>
           </div>
 
@@ -393,7 +393,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance }: 
               <div className="pt-1">
                 <h3 className="font-semibold text-sm text-[var(--text-primary)] mb-3">Versions</h3>
                 {isLoadingVersions ? (
-                  <div className="text-center py-6"><Loader2 size={20} className="animate-spin text-[#16a34a] mx-auto" /></div>
+                  <div className="text-center py-6"><Loader2 size={20} className="animate-spin text-[#3b82f6] mx-auto" /></div>
                 ) : modVersions.length === 0 ? (
                   <p className="text-sm text-[#3a3f4b] text-center py-3">No compatible versions</p>
                 ) : (
