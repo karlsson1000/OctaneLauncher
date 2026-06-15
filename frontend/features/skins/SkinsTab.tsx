@@ -1,12 +1,32 @@
 import { useEffect, useRef, useState } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { Upload, RotateCcw, Loader2, User, X, Rotate3d } from "lucide-react"
-import type { CachedSkin, RecentSkin, Cape } from "../../types"
+import type { RecentSkin, Cape } from "../../types"
 
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
   isAuthenticated?: boolean
 }
+
+const SKIN_CACHE_KEY = "octane_skin_cache"
+const CAPE_CACHE_KEY = "octane_cape_cache"
+const CACHE_DURATION = 15 * 60 * 1000
+const MIN_FETCH_INTERVAL = 10 * 1000
+
+function loadCache<T>(key: string): T | null {
+  try {
+    const raw = sessionStorage.getItem(key)
+    if (!raw) return null
+    return JSON.parse(raw) as T
+  } catch { return null }
+}
+
+function saveCache<T>(key: string, data: T) {
+  try { sessionStorage.setItem(key, JSON.stringify(data)) } catch {}
+}
+
+type PersistedSkinCache = { uuid: string; url: string; variant: string; timestamp: number }
+type PersistedCapeCache = { capes: Cape[]; activeCapeId: string | null; timestamp: number }
 
 export function SkinsTab(props: SkinsTabProps) {
   const { activeAccount, isAuthenticated } = props
@@ -24,10 +44,8 @@ export function SkinsTab(props: SkinsTabProps) {
   const [isClosingModal, setIsClosingModal] = useState(false)
   const [showBack, setShowBack] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const skinCacheRef = useRef<Map<string, CachedSkin>>(new Map())
   const lastProfileFetchRef = useRef<number>(0)
-  const CACHE_DURATION = 15 * 60 * 1000
-  const MIN_FETCH_INTERVAL = 10 * 1000
+  const lastCapeFetchRef = useRef<number>(0)
 
   useEffect(() => {
     if (!activeAccount || !invoke) { setRecentSkins([]); return }
@@ -62,6 +80,7 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   const canFetchProfile = () => Date.now() - lastProfileFetchRef.current >= MIN_FETCH_INTERVAL
+  const canFetchCapes = () => Date.now() - lastCapeFetchRef.current >= MIN_FETCH_INTERVAL
 
   const loadUserSkin = async (forceRefresh: boolean = false) => {
     if (!isAuthenticated || !activeAccount || !invoke) {
@@ -72,27 +91,31 @@ export function SkinsTab(props: SkinsTabProps) {
     try {
       setLoading(true)
       setError(null)
-      const cacheKey = activeAccount.uuid
-      const cached = skinCacheRef.current.get(cacheKey)
+
       const now = Date.now()
-      if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_DURATION) {
-        const match = cached.url.match(/texture\/([a-f0-9]+)/)
+      const persisted = loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
+      const cacheValid = persisted && persisted.uuid === activeAccount.uuid && (now - persisted.timestamp) < CACHE_DURATION
+
+      if (!forceRefresh && cacheValid) {
+        const match = persisted!.url.match(/texture\/([a-f0-9]+)/)
         if (match) { setCurrentSkinHash(match[1]) }
-        setSkinVariant(cached.variant)
+        setSkinVariant(persisted!.variant as "classic" | "slim")
         setLoading(false)
         loadCapes()
         return
       }
+
       if (!canFetchProfile()) {
-        if (cached) {
-          const match = cached.url.match(/texture\/([a-f0-9]+)/)
+        if (cacheValid) {
+          const match = persisted!.url.match(/texture\/([a-f0-9]+)/)
           if (match) { setCurrentSkinHash(match[1]) }
-          setSkinVariant(cached.variant)
+          setSkinVariant(persisted!.variant as "classic" | "slim")
         }
         setLoading(false)
         loadCapes()
         return
       }
+
       lastProfileFetchRef.current = now
       const skinData = await invoke<{ url: string; variant: string }>("get_current_skin")
       if (skinData && skinData.url) {
@@ -100,7 +123,7 @@ export function SkinsTab(props: SkinsTabProps) {
         const match = skinData.url.match(/texture\/([a-f0-9]+)/)
         if (match) { setCurrentSkinHash(match[1]) }
         setSkinVariant(variant)
-        skinCacheRef.current.set(cacheKey, { url: skinData.url, variant, timestamp: now })
+        saveCache<PersistedSkinCache>(SKIN_CACHE_KEY, { uuid: activeAccount.uuid, url: skinData.url, variant, timestamp: now })
       } else {
         setCurrentSkinHash(null)
       }
@@ -110,11 +133,11 @@ export function SkinsTab(props: SkinsTabProps) {
       console.error("Failed to load skin:", err)
       if (err && typeof err === 'string' && err.includes('429')) {
         setError('Rate limited. Please wait before refreshing.')
-        const cached = skinCacheRef.current.get(activeAccount.uuid)
-        if (cached) {
-          const match = cached.url.match(/texture\/([a-f0-9]+)/)
+        const persisted = loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
+        if (persisted && persisted.uuid === activeAccount.uuid) {
+          const match = persisted.url.match(/texture\/([a-f0-9]+)/)
           if (match) { setCurrentSkinHash(match[1]) }
-          setSkinVariant(cached.variant)
+          setSkinVariant(persisted.variant as "classic" | "slim")
         }
       } else {
         setError(`Failed to load skin: ${err}`)
@@ -126,13 +149,30 @@ export function SkinsTab(props: SkinsTabProps) {
 
   const loadCapes = async () => {
     if (!invoke || !isAuthenticated) return
+    const now = Date.now()
+    const persisted = loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
+    if (persisted && (now - persisted.timestamp) < CACHE_DURATION) {
+      setCapes(persisted.capes)
+      setActiveCape(persisted.activeCapeId)
+      return
+    }
+    if (!canFetchCapes()) {
+      if (persisted) {
+        setCapes(persisted.capes)
+        setActiveCape(persisted.activeCapeId)
+      }
+      return
+    }
     try {
       setLoadingCapes(true)
+      lastCapeFetchRef.current = now
       const capeData = await invoke<{ capes: Cape[] }>("get_user_capes")
       if (capeData && capeData.capes) {
         setCapes(capeData.capes)
         const active = capeData.capes.find((cape: Cape) => cape.state === "ACTIVE")
-        setActiveCape(active?.id || null)
+        const activeId = active?.id || null
+        setActiveCape(activeId)
+        saveCache<PersistedCapeCache>(CAPE_CACHE_KEY, { capes: capeData.capes, activeCapeId: activeId, timestamp: now })
       }
     } catch { console.error("Failed to load capes") } finally { setLoadingCapes(false) }
   }
@@ -175,7 +215,7 @@ export function SkinsTab(props: SkinsTabProps) {
           if (match) { setCurrentSkinHash(match[1]) }
           const variant = result.variant === "slim" ? "slim" : "classic"
           setSkinVariant(variant)
-          if (activeAccount) skinCacheRef.current.set(activeAccount.uuid, { url: result.url, variant, timestamp: Date.now() })
+          if (activeAccount) saveCache<PersistedSkinCache>(SKIN_CACHE_KEY, { uuid: activeAccount.uuid, url: result.url, variant, timestamp: Date.now() })
           await addToRecentSkins(result.url, variant)
         } else {
           setTimeout(() => loadUserSkin(false), 2000)
@@ -192,7 +232,7 @@ export function SkinsTab(props: SkinsTabProps) {
     setError(null)
     try {
       await invoke<void>("reset_skin")
-      if (activeAccount) skinCacheRef.current.delete(activeAccount.uuid)
+      sessionStorage.removeItem(SKIN_CACHE_KEY)
       setTimeout(() => loadUserSkin(false), 2000)
     } catch (err) { setError(`Reset failed: ${err}`) } finally { setResetting(false) }
   }
@@ -216,7 +256,7 @@ export function SkinsTab(props: SkinsTabProps) {
         if (match) { setCurrentSkinHash(match[1]) }
         const variant = result.variant === "slim" ? "slim" : "classic"
         setSkinVariant(variant)
-        if (activeAccount) skinCacheRef.current.set(activeAccount.uuid, { url: result.url, variant, timestamp: Date.now() })
+        if (activeAccount) saveCache<PersistedSkinCache>(SKIN_CACHE_KEY, { uuid: activeAccount.uuid, url: result.url, variant, timestamp: Date.now() })
       }
       await addToRecentSkins(skin.url, skin.variant)
       setError(null)
@@ -224,9 +264,12 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   const getSkinRenderUrl = () => {
-    if (!activeAccount?.username) return null
-    const angleParam = showBack ? "&y=200" : ""
-    return `https://renders.stellarmc.gg/full/${activeAccount.username}?${angleParam}`
+    if (!currentSkinHash) return null
+    const params: string[] = []
+    if (skinVariant === "slim") params.push("alex")
+    if (showBack) params.push("y=200")
+    const qs = params.length > 0 ? `?${params.join("&")}` : ""
+    return `https://renders.stellarmc.gg/full/${currentSkinHash}${qs}`
   }
 
   if (!isAuthenticated) {
