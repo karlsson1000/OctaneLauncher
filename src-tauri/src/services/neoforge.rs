@@ -37,14 +37,26 @@ impl NeoForgeInstaller {
         if parts.len() >= 2 {
             if let Ok(major) = parts[0].parse::<u32>() {
                 if let Ok(minor) = parts[1].parse::<u32>() {
-                    if major >= 20 {
-                        let mc_major = 1;
-                        let mc_minor = major;
-                        
+                    if major >= 22 {
+                        if parts.len() >= 3 {
+                            if let Ok(patch) = parts[2].parse::<u32>() {
+                                if patch == 0 {
+                                    return Some(format!("{}.{}", major, minor));
+                                } else {
+                                    return Some(format!("{}.{}.{}", major, minor, patch));
+                                }
+                            }
+                        }
                         if minor == 0 {
-                            return Some(format!("{}.{}", mc_major, mc_minor));
+                            return Some(format!("{}", major));
                         } else {
-                            return Some(format!("{}.{}.{}", mc_major, mc_minor, minor));
+                            return Some(format!("{}.{}", major, minor));
+                        }
+                    } else if major >= 20 {
+                        if minor == 0 {
+                            return Some(format!("1.{}", major));
+                        } else {
+                            return Some(format!("1.{}.{}", major, minor));
                         }
                     }
                 }
@@ -196,16 +208,11 @@ impl NeoForgeInstaller {
 
     pub async fn install_neoforge(
         &self,
-        minecraft_version: &str,
         neoforge_version: &str,
     ) -> Result<String, NeoForgeError> {
         self.ensure_launcher_profile()?;
         
-        let full_version = if neoforge_version.starts_with("20.") || neoforge_version.starts_with("21.") {
-            neoforge_version.to_string()
-        } else {
-            format!("{}-{}", minecraft_version, neoforge_version)
-        };
+        let full_version = neoforge_version.to_string();
         
         let version_id = format!("neoforge-{}", full_version);
         

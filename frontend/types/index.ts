@@ -31,7 +31,6 @@ export interface NeoForgeVersion {
   minecraft_version: string
   neoforge_version: string
   full_version: string
-  version: string
 }
 
 export interface LauncherSettings {

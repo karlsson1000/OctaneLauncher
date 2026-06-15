@@ -129,10 +129,7 @@ pub async fn install_fabric(minecraft_version: String, loader_version: String) -
 }
 
 #[tauri::command]
-pub async fn install_neoforge(minecraft_version: String, loader_version: String) -> Result<String, String> {
-    if !minecraft_version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
-        return Err("Invalid Minecraft version format".to_string());
-    }
+pub async fn install_neoforge(loader_version: String) -> Result<String, String> {
     if !loader_version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
         return Err("Invalid loader version format".to_string());
     }
@@ -142,7 +139,7 @@ pub async fn install_neoforge(minecraft_version: String, loader_version: String)
         .map_err(|e| e.to_string())?;
 
     installer
-        .install_neoforge(&minecraft_version, &loader_version)
+        .install_neoforge(&loader_version)
         .await
         .map_err(|e| format!("NeoForge installation failed: {}", e))
 }

@@ -113,7 +113,7 @@ pub async fn create_instance(
                 });
                 
                 let version_id = neoforge_installer
-                    .install_neoforge(&version, neoforge_version)
+                    .install_neoforge(neoforge_version)
                     .await
                     .map_err(|e| e.to_string())?;
                 
