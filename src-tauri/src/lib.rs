@@ -10,6 +10,7 @@ use services::accounts::AccountManager;
 use services::friends::FriendsService;
 use models::{AppConfig, FriendStatus};
 use tauri_plugin_store::StoreExt;
+use std::sync::Arc;
 
 use commands::{
     microsoft_login,
@@ -116,6 +117,10 @@ use commands::{
     get_system_info,
     open_url,
     get_storage_usage,
+    search_curseforge_mods,
+    get_curseforge_mod_files,
+    download_curseforge_file,
+    download_curseforge_file_temp,
 };
 
 #[tauri::command]
@@ -181,6 +186,10 @@ async fn is_secrets_configured(app: tauri::AppHandle) -> Result<bool, String> {
     Ok(configured("microsoft_client_id") && configured("supabase_url") && configured("supabase_key"))
 }
 
+pub struct CurseforgeConfig {
+    pub api_key: Arc<str>,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     if let Err(e) = dotenvy::dotenv() {
@@ -215,6 +224,11 @@ pub fn run() {
                 microsoft_client_id,
                 supabase_url,
                 supabase_key,
+            });
+
+            let curseforge_api_key = env!("CURSEFORGE_API_KEY").to_string();
+            app.manage(CurseforgeConfig {
+                api_key: Arc::from(curseforge_api_key),
             });
 
             tauri::async_runtime::spawn(async move {
@@ -369,9 +383,13 @@ pub fn run() {
             ping_server,
             open_url,
             get_system_info,
-    get_storage_usage,
-    save_secrets,
+            get_storage_usage,
+            save_secrets,
             is_secrets_configured,
+            search_curseforge_mods,
+            get_curseforge_mod_files,
+            download_curseforge_file,
+            download_curseforge_file_temp,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -5,6 +5,7 @@ use crate::services::fabric::FabricInstaller;
 use crate::utils::modrinth::{ModrinthClient, ModrinthVersion};
 use crate::utils::*;
 use crate::commands::validation::{sanitize_instance_name, validate_download_url};
+use crate::utils::curseforge::CurseforgeClient;
 use tauri::Emitter;
 
 #[tauri::command]
@@ -566,6 +567,9 @@ pub async fn install_modpack_from_file(
 
     let instance_json_path = extract_dir.join("instance.json");
     let is_standard_zip = instance_json_path.exists();
+
+    let curseforge_manifest_path = extract_dir.join("manifest.json");
+    let is_curseforge = curseforge_manifest_path.exists();
     
     if is_mrpack {
         install_from_mrpack(
@@ -581,8 +585,15 @@ pub async fn install_modpack_from_file(
             preferred_game_version,
             app_handle
         ).await
+    } else if is_curseforge {
+        install_from_curseforge_manifest(
+            extract_dir,
+            safe_name,
+            preferred_game_version,
+            app_handle
+        ).await
     } else {
-        Err("Invalid modpack format: missing modrinth.index.json or instance.json".to_string())
+        Err("Invalid modpack format: missing modrinth.index.json or instance.json or manifest.json".to_string())
     }
 }
 
@@ -893,6 +904,196 @@ async fn install_from_standard_zip(
         "stage": "Installation complete!"
     }));
     
+    Ok(())
+}
+
+async fn install_from_curseforge_manifest(
+    extract_dir: std::path::PathBuf,
+    safe_name: String,
+    preferred_game_version: Option<String>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let manifest_path = extract_dir.join("manifest.json");
+    let manifest_content = std::fs::read_to_string(&manifest_path)
+        .map_err(|e| e.to_string())?;
+
+    let manifest: serde_json::Value = serde_json::from_str(&manifest_content)
+        .map_err(|e| e.to_string())?;
+
+    let minecraft_obj = manifest.get("minecraft")
+        .and_then(|m| m.as_object())
+        .ok_or("Invalid CurseForge manifest: missing minecraft section")?;
+
+    let game_version = if let Some(ref preferred) = preferred_game_version {
+        preferred.clone()
+    } else {
+        minecraft_obj.get("version")
+            .and_then(|v| v.as_str())
+            .ok_or("No Minecraft version found in manifest")?
+            .to_string()
+    };
+
+    let mod_loaders = minecraft_obj.get("modLoaders")
+        .and_then(|l| l.as_array())
+        .ok_or("Invalid manifest: missing modLoaders")?;
+
+    let primary_loader = mod_loaders.iter()
+        .find(|l| l.get("primary").and_then(|p| p.as_bool()).unwrap_or(false))
+        .or_else(|| mod_loaders.first())
+        .and_then(|l| l.get("id").and_then(|id| id.as_str()))
+        .ok_or("No mod loader found in manifest")?;
+
+    let (loader, _loader_version) = if primary_loader.starts_with("forge-") {
+        ("forge".to_string(), Some(primary_loader.trim_start_matches("forge-").to_string()))
+    } else if primary_loader.starts_with("fabric-") {
+        ("fabric".to_string(), Some(primary_loader.trim_start_matches("fabric-").to_string()))
+    } else if primary_loader.starts_with("neoforge-") {
+        ("neoforge".to_string(), Some(primary_loader.trim_start_matches("neoforge-").to_string()))
+    } else if primary_loader.starts_with("quilt-") {
+        ("quilt".to_string(), Some(primary_loader.trim_start_matches("quilt-").to_string()))
+    } else {
+        ("vanilla".to_string(), None)
+    };
+
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 30,
+        "stage": format!("Installing Minecraft {}...", game_version)
+    }));
+
+    let meta_dir = get_meta_dir();
+    let installer = MinecraftInstaller::new(meta_dir.clone())
+        .map_err(|e| e.to_string())?;
+    installer
+        .install_version(&game_version)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let final_version = if loader == "fabric" {
+        let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+            "instance": safe_name,
+            "progress": 40,
+            "stage": "Installing Fabric loader..."
+        }));
+
+        let fabric_installer = FabricInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
+
+        let fabric_versions = fabric_installer
+            .get_loader_versions()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let fabric_version = fabric_versions
+            .iter()
+            .find(|v| v.stable)
+            .or_else(|| fabric_versions.first())
+            .ok_or("No Fabric versions found")?;
+
+        fabric_installer
+            .install_fabric(&game_version, &fabric_version.version)
+            .await
+            .map_err(|e| e.to_string())?
+    } else {
+        game_version.clone()
+    };
+
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 50,
+        "stage": "Creating instance..."
+    }));
+
+    InstanceManager::create(
+        &safe_name,
+        &final_version,
+        if loader == "vanilla" { None } else { Some(loader) },
+        None,
+    )
+    .map_err(|e| e.to_string())?;
+
+    let instance_dir = get_instance_dir(&safe_name);
+
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 60,
+        "stage": "Copying overrides..."
+    }));
+
+    let overrides_dir = extract_dir.join("overrides");
+    if overrides_dir.exists() {
+        copy_dir_recursive(&overrides_dir, &instance_dir)
+            .map_err(|e| e.to_string())?;
+    }
+
+    if let Some(files) = manifest.get("files").and_then(|f| f.as_array()) {
+        let curseforge_files: Vec<(&serde_json::Value, u32, u32)> = files.iter()
+            .filter_map(|f| {
+                let project_id = f.get("projectID").and_then(|p| p.as_u64()).map(|p| p as u32)?;
+                let file_id = f.get("fileID").and_then(|p| p.as_u64()).map(|p| p as u32)?;
+                Some((f, project_id, file_id))
+            })
+            .collect();
+
+        let total_files = curseforge_files.len();
+        if total_files > 0 {
+            let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+                "instance": safe_name,
+                "progress": 70,
+                "stage": format!("Downloading {} mods...", total_files)
+            }));
+
+            let api_key = super::curseforge_api_key(&app_handle)?;
+            let cf_client = CurseforgeClient::new(api_key).map_err(|e| e.to_string())?;
+
+            let mods_dir = instance_dir.join("mods");
+            std::fs::create_dir_all(&mods_dir)
+                .map_err(|e| e.to_string())?;
+
+            for (idx, &(_file_entry, project_id, file_id)) in curseforge_files.iter().enumerate() {
+                let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+                    "instance": safe_name,
+                    "progress": 70 + ((idx + 1) * 25 / total_files) as u32,
+                    "stage": format!("Downloading mods... ({}/{})", idx + 1, total_files)
+                }));
+
+                match cf_client.get_single_mod_file(project_id, file_id).await {
+                    Ok(cf_file) => {
+                        if let Some(download_url) = cf_file.download_url {
+                            let dest_path = mods_dir.join(&cf_file.file_name);
+
+                            if let Some(parent) = dest_path.parent() {
+                                let _ = std::fs::create_dir_all(parent);
+                            }
+
+                            let _ = cf_client.download_file(&download_url, &dest_path).await;
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to fetch mod {} file {}: {}", project_id, file_id, e);
+                    }
+                }
+            }
+        }
+    }
+
+    let icon_path = extract_dir.join("icon.png");
+    if icon_path.exists() {
+        if let Ok(icon_bytes) = std::fs::read(&icon_path) {
+            use base64::{Engine as _, engine::general_purpose};
+            let icon_base64 = general_purpose::STANDARD.encode(&icon_bytes);
+            let _ = crate::commands::set_instance_icon(safe_name.clone(), icon_base64).await;
+        }
+    }
+
+    let _ = std::fs::remove_dir_all(&extract_dir);
+
+    let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+        "instance": safe_name,
+        "progress": 100,
+        "stage": "Installation complete!"
+    }));
+
     Ok(())
 }
 

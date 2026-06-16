@@ -196,6 +196,21 @@ export function InstanceDetailsTab({
     await loadInstalledMods()
   }
 
+  const updateSingleMod = async (update: ModUpdate) => {
+    try {
+      await invoke("download_mod", { instanceName: instance.name, downloadUrl: update.latestVersion.downloadUrl, filename: update.latestVersion.filename })
+      if (update.filename !== update.latestVersion.filename) {
+        await invoke("delete_mod", { instanceName: instance.name, filename: update.filename }).catch(err =>
+          console.error(`Failed to delete old version ${update.filename}:`, err)
+        )
+      }
+      setAvailableUpdates(prev => prev.filter(u => u.filename !== update.filename))
+      await loadInstalledMods()
+    } catch (error) {
+      console.error(`Failed to update mod ${update.filename}:`, error)
+    }
+  }
+
   const formatFileSize = (bytes: number): string => {
     if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
     if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
@@ -309,10 +324,11 @@ export function InstanceDetailsTab({
   }
 
   const handleToggleMod = async (mod: InstalledMod) => {
+    setInstalledMods(prev => prev.map(m => m.filename === mod.filename ? { ...m, disabled: !m.disabled } : m))
     try {
       await invoke("toggle_mod", { instanceName: instance.name, filename: mod.filename, disable: !mod.disabled })
-      await loadInstalledMods()
     } catch (error) {
+      setInstalledMods(prev => prev.map(m => m.filename === mod.filename ? { ...m, disabled: !m.disabled } : m))
       console.error("Failed to toggle mod:", error)
       setAlertModal({ isOpen: true, title: "Error", message: `Failed to ${mod.disabled ? 'enable' : 'disable'} mod: ${String(error)}`, type: "danger" })
     }
@@ -485,7 +501,7 @@ export function InstanceDetailsTab({
                       const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
 
                       return (
-                        <div key={mod.filename} className={`bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all ${mod.disabled ? 'opacity-60' : ''} ${hasUpdate ? 'ring-2 ring-[var(--accent-primary)]/50' : ''}`}>
+                        <div key={mod.filename} className={`bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all ${mod.disabled ? 'opacity-60' : ''}`}>
                           <div className="flex min-h-0">
                             {mod.icon_url ? (
                               <div className="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
@@ -500,9 +516,9 @@ export function InstanceDetailsTab({
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                   <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{mod.name || mod.filename}</h3>
-                                  {hasUpdate && <span className="px-1.5 py-0.5 bg-[var(--accent-primary)] text-white text-xs rounded font-medium">Update</span>}
+                                  {hasUpdate && <button onClick={() => { const u = availableUpdates.find(up => up.filename === mod.filename); if (u) updateSingleMod(u) }} className="px-1.5 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-xs rounded font-medium transition-colors cursor-pointer">Update</button>}
                                 </div>
-                                <p className="text-sm text-[var(--text-muted)] truncate">{mod.filename}</p>
+                                <p className="text-sm text-[var(--text-muted)] truncate">{mod.filename}{mod.disabled && !mod.filename.endsWith('.disabled') ? '.disabled' : ''}</p>
                                 <p className="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(mod.size)}</p>
                               </div>
                               <div className="flex flex-col items-center gap-1">

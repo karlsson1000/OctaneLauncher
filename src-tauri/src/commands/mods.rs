@@ -1,6 +1,8 @@
-use crate::commands::validation::{sanitize_instance_name, sanitize_mod_filename, validate_download_url};
+use crate::commands::validation::{sanitize_instance_name, sanitize_mod_filename, sanitize_filename, validate_download_url};
 use crate::utils::{get_instance_dir, open_folder};
+use crate::utils::curseforge::{CurseforgeClient, CurseforgeGetModFilesResult, CurseforgeSearchResult};
 use crate::utils::modrinth::{ModrinthClient, ModrinthProjectDetails, ModrinthSearchResult, ModrinthVersion};
+use tauri::Manager;
 use serde::{Deserialize, Serialize};
 use sha1::{Digest, Sha1};
 use std::collections::HashMap;
@@ -569,6 +571,124 @@ pub async fn download_mod(
     let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     client
         .download_mod_file(&download_url, &destination)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+// CurseForge
+
+pub fn curseforge_api_key(app: &tauri::AppHandle) -> Result<String, String> {
+    let config = app.state::<crate::CurseforgeConfig>();
+    if config.api_key.is_empty() {
+        Err("CURSEFORGE_API_KEY not set in .env".to_string())
+    } else {
+        Ok(config.api_key.to_string())
+    }
+}
+
+#[tauri::command]
+pub async fn search_curseforge_mods(
+    app_handle: tauri::AppHandle,
+    query: String,
+    class_id: u32,
+    category_ids: Option<String>,
+    game_version: Option<String>,
+    mod_loader_types: Option<String>,
+    sort_field: Option<u32>,
+    sort_order: Option<String>,
+    index: Option<u32>,
+    page_size: Option<u32>,
+) -> Result<CurseforgeSearchResult, String> {
+    if query.len() > 200 {
+        return Err("Search query too long (max 200 characters)".to_string());
+    }
+
+    let api_key = curseforge_api_key(&app_handle)?;
+    let client = CurseforgeClient::new(api_key).map_err(|e| e.to_string())?;
+    client
+        .search_mods(
+            &query,
+            class_id,
+            category_ids.as_deref(),
+            game_version.as_deref(),
+            mod_loader_types.as_deref(),
+            sort_field.unwrap_or(2),
+            sort_order.as_deref(),
+            index.unwrap_or(0),
+            page_size.unwrap_or(20).min(100),
+        )
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_curseforge_mod_files(
+    app_handle: tauri::AppHandle,
+    mod_id: u32,
+    game_version: Option<String>,
+    mod_loader_type: Option<u32>,
+    page_size: Option<u32>,
+) -> Result<CurseforgeGetModFilesResult, String> {
+    let api_key = curseforge_api_key(&app_handle)?;
+    let client = CurseforgeClient::new(api_key).map_err(|e| e.to_string())?;
+    client
+        .get_mod_files(mod_id, game_version.as_deref(), mod_loader_type, page_size)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn download_curseforge_file_temp(
+    app_handle: tauri::AppHandle,
+    download_url: String,
+    filename: String,
+) -> Result<String, String> {
+    let safe_filename = sanitize_filename(&filename)?;
+
+    let temp_dir = std::env::temp_dir().join("octane_curseforge");
+    std::fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
+
+    let destination = temp_dir.join(&safe_filename);
+    let api_key = curseforge_api_key(&app_handle)?;
+    let client = CurseforgeClient::new(api_key).map_err(|e| e.to_string())?;
+    client
+        .download_file(&download_url, &destination)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    Ok(destination.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub async fn download_curseforge_file(
+    app_handle: tauri::AppHandle,
+    instance_name: String,
+    download_url: String,
+    filename: String,
+    target_folder: String,
+) -> Result<(), String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    let safe_filename = sanitize_mod_filename(&filename)?;
+    let _ = validate_download_url(&download_url)?;
+
+    let instance_dir = get_instance_dir(&safe_name);
+    let target_dir = instance_dir.join(&target_folder);
+
+    if !target_dir.exists() {
+        std::fs::create_dir_all(&target_dir)
+            .map_err(|e| e.to_string())?;
+    }
+
+    let destination = target_dir.join(&safe_filename);
+
+    if !destination.starts_with(&target_dir) {
+        return Err("Invalid destination path".to_string());
+    }
+
+    let api_key = curseforge_api_key(&app_handle)?;
+    let client = CurseforgeClient::new(api_key).map_err(|e| e.to_string())?;
+    client
+        .download_file(&download_url, &destination)
         .await
         .map_err(|e| e.to_string())
 }

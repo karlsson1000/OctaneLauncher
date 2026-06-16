@@ -55,6 +55,27 @@ pub fn sanitize_mod_filename(filename: &str) -> Result<String, String> {
     Ok(filename.to_string())
 }
 
+/// Sanitize filenames without extension restriction (for temp downloads)
+pub fn sanitize_filename(filename: &str) -> Result<String, String> {
+    if filename.is_empty() {
+        return Err("Filename cannot be empty".to_string());
+    }
+
+    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
+        return Err("Filename contains invalid characters".to_string());
+    }
+
+    if filename.starts_with('.') {
+        return Err("Filename cannot start with a dot".to_string());
+    }
+
+    if filename.contains('\0') {
+        return Err("Filename contains null bytes".to_string());
+    }
+
+    Ok(filename.to_string())
+}
+
 /// Sanitize resource pack filenames (allow .zip and .jar files)
 pub fn sanitize_resourcepack_filename(filename: &str) -> Result<String, String> {
     if filename.is_empty() {

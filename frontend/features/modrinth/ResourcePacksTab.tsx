@@ -5,14 +5,13 @@ import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion }
 
 interface ResourcePacksTabProps {
   selectedInstance: Instance | null
-  instances: Instance[]
-  onSetSelectedInstance: (instance: Instance) => void
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
+  sourceSelector?: React.ReactNode
 }
 
 const ITEMS_PER_PAGE = 20
 
-export function ResourcePacksTab({ selectedInstance }: ResourcePacksTabProps) {
+export function ResourcePacksTab({ selectedInstance, sourceSelector }: ResourcePacksTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [hits, setHits] = useState<ModrinthProject[]>([])
   const [, setTotalHits] = useState(0)
@@ -177,8 +176,10 @@ export function ResourcePacksTab({ selectedInstance }: ResourcePacksTabProps) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex gap-2 mb-4">
+    <div className="max-w-7xl mx-auto flex flex-col h-full min-h-0">
+      <div className="flex-shrink-0">
+        <div className="flex gap-2 mb-4">
+          {sourceSelector}
         <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
           <input
@@ -307,6 +308,7 @@ export function ResourcePacksTab({ selectedInstance }: ResourcePacksTabProps) {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

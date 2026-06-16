@@ -329,3 +329,74 @@ export interface FriendRequest {
   status: RequestStatus
   created_at: string
 }
+
+export interface CurseforgeSearchResult {
+  data: CurseforgeHit[]
+  pagination: CurseforgePagination
+}
+
+export interface CurseforgePagination {
+  index: number
+  pageSize: number
+  resultCount: number
+  totalCount: number
+}
+
+export interface CurseforgeHit {
+  id: number
+  name: string
+  slug: string
+  summary: string
+  downloadCount: number
+  classId: number | null
+  logo: CurseforgeModAsset | null
+  authors: CurseforgeModAuthor[]
+  categories: CurseforgeCategory[]
+  latestFilesIndexes: CurseforgeFileIndex[]
+}
+
+export interface CurseforgeFileIndex {
+  gameVersion: string
+  fileId: number
+  modLoader: number | null
+}
+
+export interface CurseforgeModAsset {
+  thumbnailUrl: string
+}
+
+export interface CurseforgeModAuthor {
+  id: number
+  name: string
+  url: string
+}
+
+export interface CurseforgeCategory {
+  name: string
+  isClass: boolean
+}
+
+export interface CurseforgeGetModFilesResult {
+  data: CurseforgeFile[]
+}
+
+export interface CurseforgeFile {
+  id: number
+  modId: number
+  fileName: string
+  releaseType: number
+  fileLength: number
+  hashes: CurseforgeFileHash[]
+  downloadUrl: string | null
+  dependencies: CurseforgeFileDependency[]
+}
+
+export interface CurseforgeFileDependency {
+  modId: number
+  relationType: number
+}
+
+export interface CurseforgeFileHash {
+  value: string
+  algo: number
+}

@@ -5,14 +5,13 @@ import type { Instance, ModrinthSearchResult, ModrinthProject, ModrinthVersion }
 
 interface ShaderPacksTabProps {
   selectedInstance: Instance | null
-  instances: Instance[]
-  onSetSelectedInstance: (instance: Instance) => void
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
+  sourceSelector?: React.ReactNode
 }
 
 const ITEMS_PER_PAGE = 20
 
-export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
+export function ShaderPacksTab({ selectedInstance, sourceSelector }: ShaderPacksTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [hits, setHits] = useState<ModrinthProject[]>([])
   const [, setTotalHits] = useState(0)
@@ -161,8 +160,10 @@ export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <div className="flex gap-2 mb-4">
+    <div className="max-w-7xl mx-auto flex flex-col h-full min-h-0">
+      <div className="flex-shrink-0">
+        <div className="flex gap-2 mb-4">
+          {sourceSelector}
         <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
           <input
@@ -273,7 +274,8 @@ export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
                           <button
                             onClick={() => handleDownloadShader(version)}
                             disabled={!selectedInstance || downloading || installed}
-                            className="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1"
+                            className="px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1"
+                            style={{ backgroundColor: installed ? "var(--bg-secondary)" : "#f59e0b", color: installed ? "var(--text-muted)" : "white" }}
                           >
                             {downloading ? (
                               <Loader2 size={14} className="animate-spin" />
@@ -292,6 +294,7 @@ export function ShaderPacksTab({ selectedInstance }: ShaderPacksTabProps) {
             </div>
           )}
         </div>
+      </div>
     </div>
   )
 }
