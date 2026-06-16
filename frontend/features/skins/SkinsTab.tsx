@@ -13,6 +13,26 @@ const CAPE_CACHE_KEY = "octane_cape_cache"
 const CACHE_DURATION = 15 * 60 * 1000
 const MIN_FETCH_INTERVAL = 10 * 1000
 
+const CAPE_IMAGE_MAP: Record<string, string> = {
+  "vanilla": "vanilla",
+  "migrator": "migrator",
+  "cherry blossom": "blossom",
+  "purple heart": "purple",
+  "follower's": "followers",
+  "15th anniversary": "15th",
+  "mcc 15th year": "mcc15th",
+  "pan": "pan",
+  "copper": "copper",
+  "builder": "builder",
+  "minecraft experience": "experience",
+  "home": "home",
+  "mojang office": "office",
+  "yearn": "yearn",
+  "zombie horse": "zombiehorse",
+  "common": "common",
+  "menace": "menace"
+}
+
 function loadCache<T>(key: string): T | null {
   try {
     const raw = sessionStorage.getItem(key)
@@ -72,11 +92,7 @@ export function SkinsTab(props: SkinsTabProps) {
   useEffect(() => { loadUserSkin() }, [activeAccount])
 
   const getCapeImageName = (alias: string) => {
-    const specialCases: Record<string, string> = {
-      "follower's": "followers", "purple heart": "purple", "15th anniversary": "15th"
-    }
-    const lowerAlias = alias.toLowerCase()
-    return specialCases[lowerAlias] || lowerAlias.replace(/\s+/g, '_').replace(/['']/g, '')
+    return CAPE_IMAGE_MAP[alias.toLowerCase()] ?? "unknown"
   }
 
   const canFetchProfile = () => Date.now() - lastProfileFetchRef.current >= MIN_FETCH_INTERVAL
