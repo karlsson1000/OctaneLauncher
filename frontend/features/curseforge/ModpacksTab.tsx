@@ -5,7 +5,11 @@ import type { Instance, CurseforgeSearchResult, CurseforgeHit, CurseforgeGetModF
 
 interface CurseforgeModpacksTabProps {
   instances: Instance[]
+  hideToolbar?: boolean
   sourceSelector?: React.ReactNode
+  modsSelector?: React.ReactNode
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
   onShowCreationToast?: (instanceName: string) => void
   onRefreshInstances?: () => void
 }
@@ -14,8 +18,9 @@ const CLASS_ID = 4471
 const SEARCH_PLACEHOLDER = "Search modpacks..."
 const ITEMS_PER_PAGE = 20
 
-export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreationToast, onRefreshInstances }: CurseforgeModpacksTabProps) {
-  const [searchQuery, setSearchQuery] = useState("")
+export function CurseforgeModpacksTab({ instances, hideToolbar, sourceSelector, modsSelector, searchQuery, onSearchQueryChange, onShowCreationToast, onRefreshInstances }: CurseforgeModpacksTabProps) {
+  const [internalSearchQuery, setInternalSearchQuery] = useState("")
+  const debounceSearchQuery = searchQuery ?? internalSearchQuery
   const [hits, setHits] = useState<CurseforgeHit[]>([])
   const [, setTotalHits] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
@@ -39,7 +44,7 @@ export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreatio
       fetchItems(0, true)
     }, hits.length === 0 ? 0 : 300)
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) }
-  }, [searchQuery])
+  }, [debounceSearchQuery])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -55,7 +60,7 @@ export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreatio
   }, [isLoadingMore, isSearching])
 
   const fetchItems = useCallback(async (offset: number, replace: boolean) => {
-    const query = searchQuery.trim()
+    const query = internalSearchQuery.trim()
     if (replace) setIsSearching(true)
     else setIsLoadingMore(true)
     try {
@@ -88,7 +93,7 @@ export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreatio
       if (replace) setIsSearching(false)
       else setIsLoadingMore(false)
     }
-  }, [searchQuery])
+  }, [internalSearchQuery])
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isLoadingMore || isSearching) return
@@ -169,26 +174,30 @@ export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreatio
   }
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col h-full min-h-0">
-      <div className="flex-shrink-0">
-        <div className="flex gap-2 mb-4">
-          {sourceSelector}
-        <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
-          <input
-            type="text"
-            placeholder={SEARCH_PLACEHOLDER}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
-          />
-          {isSearching && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
-              <Loader2 size={16} className="animate-spin text-[#3b82f6]" />
-            </div>
-          )}
+    <div className="max-w-7xl mx-auto">
+      {!hideToolbar && (
+        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+          <div className="flex gap-2 items-stretch">
+            {sourceSelector}
+          <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
+            <input
+              type="text"
+              placeholder={SEARCH_PLACEHOLDER}
+              value={searchQuery ?? internalSearchQuery}
+              onChange={(e) => onSearchQueryChange ? onSearchQueryChange(e.target.value) : setInternalSearchQuery(e.target.value)}
+              className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
+                <Loader2 size={16} className="animate-spin text-[#3b82f6]" />
+              </div>
+            )}
+          </div>
+            {modsSelector}
         </div>
-      </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
@@ -238,7 +247,7 @@ export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreatio
         </div>
 
         {selectedItem && (
-          <div className="bg-[var(--bg-tertiary)] rounded-md p-5 sticky top-4 self-start">
+          <div className="bg-[var(--bg-tertiary)] rounded-md p-3 sticky top-0 self-start">
             <div className="flex gap-3 mb-4">
               {selectedItem.logo?.thumbnailUrl && (
                 <img src={selectedItem.logo.thumbnailUrl} alt={selectedItem.name} className="w-16 h-16 rounded" />
@@ -262,7 +271,7 @@ export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreatio
               ) : itemFiles.length === 0 ? (
                 <p className="text-sm text-[var(--text-muted)] text-center py-3">No files available</p>
               ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
                   {itemFiles.map((file) => {
                     const installing = installingFiles.has(file.id)
                     const status = installationStatus[selectedItem.id.toString()]
@@ -297,8 +306,7 @@ export function CurseforgeModpacksTab({ instances, sourceSelector, onShowCreatio
             </div>
           </div>
         )}
-      </div>
-      </div>
+        </div>
     </div>
   )
 }

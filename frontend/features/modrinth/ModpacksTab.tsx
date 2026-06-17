@@ -9,6 +9,10 @@ interface ModpacksTabProps {
   onShowCreationToast?: (instanceName: string) => void
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>
   sourceSelector?: React.ReactNode
+  modsSelector?: React.ReactNode
+  hideToolbar?: boolean
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
 }
 
 const CUSTOM_MODPACK_SLUG = "stellarmc-enhanced"
@@ -20,8 +24,13 @@ export function ModpacksTab({
   onRefreshInstances,
   onShowCreationToast,
   sourceSelector,
+  modsSelector,
+  hideToolbar,
+  searchQuery,
+  onSearchQueryChange,
 }: ModpacksTabProps) {
-  const [searchQuery, setSearchQuery] = useState("")
+  const [internalSearchQuery, setInternalSearchQuery] = useState("")
+  const debounceSearchQuery = searchQuery ?? internalSearchQuery
   const [hits, setHits] = useState<ModrinthProject[]>([])
   const [, setTotalHits] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
@@ -53,7 +62,7 @@ export function ModpacksTab({
       fetchModpacks(0, true)
     }, hits.length === 0 ? 0 : 300)
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) }
-  }, [searchQuery])
+    }, [debounceSearchQuery])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -69,7 +78,7 @@ export function ModpacksTab({
   }, [isLoadingMore, isSearching])
 
   const fetchModpacks = useCallback(async (offset: number, replace: boolean) => {
-    const query = searchQuery.trim()
+    const query = debounceSearchQuery.trim()
     if (replace) setIsSearching(true)
     else setIsLoadingMore(true)
 
@@ -103,7 +112,7 @@ export function ModpacksTab({
       if (replace) setIsSearching(false)
       else setIsLoadingMore(false)
     }
-  }, [searchQuery])
+  }, [debounceSearchQuery])
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isLoadingMore || isSearching) return
@@ -155,15 +164,15 @@ export function ModpacksTab({
   }
 
   const displayedHits = useMemo(() => {
-    if (!customModpack || searchQuery.trim() || offsetRef.current === 0 && hits.length === 0) {
+    if (!customModpack || debounceSearchQuery.trim() || offsetRef.current === 0 && hits.length === 0) {
       return hits
     }
     const withoutCustom = hits.filter(m => m.project_id !== customModpack.project_id)
-    if (!searchQuery.trim()) {
+    if (!debounceSearchQuery.trim()) {
       return [customModpack, ...withoutCustom]
     }
     return hits
-  }, [hits, customModpack, searchQuery])
+  }, [hits, customModpack, debounceSearchQuery])
 
   const handleModpackSelect = async (modpack: ModrinthProject) => {
     setSelectedModpack(modpack)
@@ -222,17 +231,17 @@ export function ModpacksTab({
   }
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col h-full min-h-0">
-      <div className="flex-shrink-0">
-        <div className="flex gap-2 mb-4">
+    <div className="max-w-7xl mx-auto">
+      {!hideToolbar && <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+        <div className="flex gap-2 items-stretch">
           {sourceSelector}
         <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
           <input
             type="text"
             placeholder="Search modpacks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchQuery ?? internalSearchQuery}
+            onChange={(e) => onSearchQueryChange ? onSearchQueryChange(e.target.value) : setInternalSearchQuery(e.target.value)}
             className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
           />
           {isSearching && (
@@ -241,7 +250,9 @@ export function ModpacksTab({
             </div>
           )}
         </div>
-      </div>
+          {modsSelector}
+        </div>
+      </div>}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
@@ -289,7 +300,7 @@ export function ModpacksTab({
         </div>
 
         {selectedModpack && (
-          <div className="bg-[var(--bg-tertiary)] rounded-md p-5 sticky top-4 self-start">
+          <div className="bg-[var(--bg-tertiary)] rounded-md p-3 sticky top-0 self-start">
             <div className="flex gap-3 mb-4">
               {selectedModpack.icon_url && (
                 <img src={selectedModpack.icon_url} alt={selectedModpack.title} className="w-16 h-16 rounded" />
@@ -315,7 +326,7 @@ export function ModpacksTab({
               {loadingVersions.has(selectedModpack.project_id) ? (
                 <div className="text-center py-6"><Loader2 size={20} className="animate-spin text-[#3b82f6] mx-auto" /></div>
               ) : modpackVersions[selectedModpack.project_id]?.length > 0 ? (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
                   {modpackVersions[selectedModpack.project_id].map((version) => {
                     const installing = installingVersions.has(version.id)
                     const projectStatus = installationStatus[selectedModpack.project_id]
@@ -350,7 +361,6 @@ export function ModpacksTab({
             </div>
           </div>
         )}
-      </div>
       </div>
     </div>
   )

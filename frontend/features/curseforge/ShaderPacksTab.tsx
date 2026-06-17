@@ -5,14 +5,19 @@ import type { Instance, CurseforgeSearchResult, CurseforgeHit, CurseforgeGetModF
 
 interface CurseforgeShaderPacksTabProps {
   selectedInstance: Instance | null
+  hideToolbar?: boolean
   sourceSelector?: React.ReactNode
+  modsSelector?: React.ReactNode
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
 }
 
 const CLASS_ID = 6552
 const SEARCH_PLACEHOLDER = "Search shader packs..."
 
-export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: CurseforgeShaderPacksTabProps) {
-  const [searchQuery, setSearchQuery] = useState("")
+export function CurseforgeShaderPacksTab({ selectedInstance, hideToolbar, sourceSelector, modsSelector, searchQuery, onSearchQueryChange }: CurseforgeShaderPacksTabProps) {
+  const [internalSearchQuery, setInternalSearchQuery] = useState("")
+  const debounceSearchQuery = searchQuery ?? internalSearchQuery
   const [hits, setHits] = useState<CurseforgeHit[]>([])
   const [, setTotalHits] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
@@ -61,7 +66,7 @@ export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: C
       fetchItems(0, true)
     }, hits.length === 0 ? 0 : 300)
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) }
-  }, [searchQuery])
+  }, [debounceSearchQuery])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -77,7 +82,7 @@ export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: C
   }, [isLoadingMore, isSearching])
 
   const fetchItems = useCallback(async (offset: number, replace: boolean) => {
-    const query = searchQuery.trim()
+    const query = internalSearchQuery.trim()
     if (replace) setIsSearching(true)
     else setIsLoadingMore(true)
     try {
@@ -110,7 +115,7 @@ export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: C
       if (replace) setIsSearching(false)
       else setIsLoadingMore(false)
     }
-  }, [searchQuery, itemsPerPage])
+  }, [internalSearchQuery, itemsPerPage])
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isLoadingMore || isSearching) return
@@ -184,51 +189,60 @@ export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: C
   if (!selectedInstance) {
     return (
       <div className="max-w-7xl mx-auto">
-        <div className="flex gap-2 mb-4">
+        {!hideToolbar && (
+        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+        <div className="flex gap-2 items-stretch">
           {sourceSelector}
           <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
             <input
               type="text"
               placeholder={SEARCH_PLACEHOLDER}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchQuery ?? internalSearchQuery}
+              onChange={(e) => onSearchQueryChange ? onSearchQueryChange(e.target.value) : setInternalSearchQuery(e.target.value)}
               className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
             />
           </div>
+          {modsSelector}
         </div>
+        </div>
+        )}
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <Package size={64} className="mx-auto mb-4 text-[var(--text-muted)]" strokeWidth={1.5} />
             <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">No instance selected</h3>
             <p className="text-sm text-[var(--text-muted)]">Select an instance to manage shader packs</p>
-          </div>
         </div>
-      </div>
-    )
-  }
+    </div>
+    </div>
+  )
+}
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col h-full min-h-0">
-      <div className="flex-shrink-0">
-        <div className="flex gap-2 mb-4">
-          {sourceSelector}
-        <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
-          <input
-            type="text"
-            placeholder={SEARCH_PLACEHOLDER}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
-          />
-          {isSearching && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
-              <Loader2 size={16} className="animate-spin text-[#f59e0b]" />
-            </div>
-          )}
+    <div className="max-w-7xl mx-auto">
+      {!hideToolbar && (
+        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+          <div className="flex gap-2 items-stretch">
+            {sourceSelector}
+          <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
+            <input
+              type="text"
+              placeholder={SEARCH_PLACEHOLDER}
+              value={searchQuery ?? internalSearchQuery}
+              onChange={(e) => onSearchQueryChange ? onSearchQueryChange(e.target.value) : setInternalSearchQuery(e.target.value)}
+              className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
+            />
+            {isSearching && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
+                <Loader2 size={16} className="animate-spin text-[#f59e0b]" />
+              </div>
+            )}
+          </div>
+            {modsSelector}
         </div>
-      </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-3">
@@ -278,7 +292,7 @@ export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: C
         </div>
 
         {selectedItem && (
-          <div className="bg-[var(--bg-tertiary)] rounded-md p-5 sticky top-4 self-start">
+          <div className="bg-[var(--bg-tertiary)] rounded-md p-3 sticky top-0 self-start">
             <div className="flex gap-3 mb-4">
               {selectedItem.logo?.thumbnailUrl && (
                 <img src={selectedItem.logo.thumbnailUrl} alt={selectedItem.name} className="w-16 h-16 rounded" />
@@ -302,7 +316,7 @@ export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: C
               ) : itemFiles.length === 0 ? (
                 <p className="text-sm text-[var(--text-muted)] text-center py-3">No files available</p>
               ) : (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
                   {itemFiles.map((file) => {
                     const installed = isItemInstalled(file)
                     const downloading = downloadingItems.has(file.id)
@@ -330,7 +344,6 @@ export function CurseforgeShaderPacksTab({ selectedInstance, sourceSelector }: C
             </div>
           </div>
         )}
-      </div>
       </div>
     </div>
   )

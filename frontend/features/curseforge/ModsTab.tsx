@@ -7,13 +7,17 @@ interface CurseforgeModsTabProps {
   selectedInstance: Instance | null
   instances: Instance[]
   onSetSelectedInstance: (instance: Instance) => void
+  hideToolbar?: boolean
   sourceSelector?: React.ReactNode
+  modsSelector?: React.ReactNode
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
 }
 
 const CLASS_ID = 6
 const SEARCH_PLACEHOLDER = "Search mods..."
 
-export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedInstance, sourceSelector }: CurseforgeModsTabProps) {
+export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedInstance, hideToolbar, sourceSelector, modsSelector, searchQuery, onSearchQueryChange }: CurseforgeModsTabProps) {
   useEffect(() => {
     if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) {
       const moddedInstances = instances.filter(i => i.loader === "fabric" || i.loader === "neoforge")
@@ -21,7 +25,8 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
     }
   }, [instances, selectedInstance])
 
-  const [searchQuery, setSearchQuery] = useState("")
+  const [internalSearchQuery, setInternalSearchQuery] = useState("")
+  const debounceSearchQuery = searchQuery ?? internalSearchQuery
   const [hits, setHits] = useState<CurseforgeHit[]>([])
   const [, setTotalHits] = useState(0)
   const [isSearching, setIsSearching] = useState(false)
@@ -50,7 +55,7 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
       fetchItems(0, true)
     }, hits.length === 0 ? 0 : 300)
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current) }
-  }, [searchQuery])
+  }, [debounceSearchQuery])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -66,7 +71,7 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
   }, [isLoadingMore, isSearching])
 
   const fetchItems = useCallback(async (offset: number, replace: boolean) => {
-    const query = searchQuery.trim()
+    const query = internalSearchQuery.trim()
     if (replace) setIsSearching(true)
     else setIsLoadingMore(true)
     try {
@@ -99,7 +104,7 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
       if (replace) setIsSearching(false)
       else setIsLoadingMore(false)
     }
-  }, [searchQuery, itemsPerPage])
+  }, [internalSearchQuery, itemsPerPage])
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isLoadingMore || isSearching) return
@@ -171,26 +176,30 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
   }
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col h-full min-h-0">
-      <div className="flex-shrink-0">
-        <div className="flex gap-2 mb-4">
-          {sourceSelector}
-          <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
-            <input
-              type="text"
-              placeholder={SEARCH_PLACEHOLDER}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
-            />
-            {isSearching && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
-                <Loader2 size={16} className="animate-spin text-[#16a34a]" />
-              </div>
-            )}
+    <div className="max-w-7xl mx-auto">
+      {!hideToolbar && (
+        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+          <div className="flex gap-2 items-stretch">
+            {sourceSelector}
+            <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
+              <input
+                type="text"
+                placeholder={SEARCH_PLACEHOLDER}
+                value={searchQuery ?? internalSearchQuery}
+                onChange={(e) => onSearchQueryChange ? onSearchQueryChange(e.target.value) : setInternalSearchQuery(e.target.value)}
+                className="w-full bg-transparent rounded-md pl-10 pr-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
+              />
+              {isSearching && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 z-20">
+                  <Loader2 size={16} className="animate-spin text-[#16a34a]" />
+                </div>
+              )}
+            </div>
+            {modsSelector}
           </div>
         </div>
+      )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2 space-y-3">
@@ -240,7 +249,7 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
           </div>
 
           {selectedItem && (
-            <div className="bg-[var(--bg-tertiary)] rounded-md p-5 sticky top-4 self-start">
+            <div className="bg-[var(--bg-tertiary)] rounded-md p-3 sticky top-0 self-start">
               <div className="flex gap-3 mb-4">
                 {selectedItem.logo?.thumbnailUrl && (
                   <img src={selectedItem.logo.thumbnailUrl} alt={selectedItem.name} className="w-16 h-16 rounded" />
@@ -264,7 +273,7 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
                 ) : itemFiles.length === 0 ? (
                   <p className="text-sm text-[#3a3f4b] text-center py-3">No files available</p>
                 ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto">
                     {itemFiles.map((file) => {
                       const installed = isItemInstalled(file)
                       const downloading = downloadingItems.has(file.id)
@@ -292,7 +301,6 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
             </div>
           )}
         </div>
-      </div>
     </div>
   )
 }
