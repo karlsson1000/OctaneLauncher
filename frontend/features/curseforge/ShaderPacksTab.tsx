@@ -34,26 +34,6 @@ export function CurseforgeShaderPacksTab({ selectedInstance, hideToolbar, source
   const [downloadingItems, setDownloadingItems] = useState<Set<number>>(new Set())
   const [installedFiles, setInstalledFiles] = useState<Set<string>>(new Set())
 
-  const getMinecraftVersion = (instance: Instance): string => {
-    if (instance.loader === "fabric") {
-      const parts = instance.version.split("-")
-      return parts[parts.length - 1]
-    }
-    if (instance.loader === "neoforge") {
-      const versionPart = instance.version.replace("neoforge-", "")
-      const parts = versionPart.split("-")
-      if (parts[0].startsWith("1.")) return parts[0]
-      const versionNumbers = parts[0].split(".")
-      if (versionNumbers.length >= 2) {
-        const major = versionNumbers[0]
-        const minor = versionNumbers[1]
-        const patch = versionNumbers[2] || "0"
-        if (parseInt(major) >= 20) return patch === "0" ? `1.${major}` : `1.${major}.${minor}`
-      }
-    }
-    return instance.version
-  }
-
   useEffect(() => {
     if (selectedInstance) loadInstalledItems()
   }, [selectedInstance])
@@ -138,7 +118,7 @@ export function CurseforgeShaderPacksTab({ selectedInstance, hideToolbar, source
     try {
       const result = await invoke<CurseforgeGetModFilesResult>("get_curseforge_mod_files", {
         modId: item.id,
-        gameVersion: selectedInstance ? getMinecraftVersion(selectedInstance) : null,
+        gameVersion: null,
         modLoaderType: null,
         pageSize: 20,
       })

@@ -100,35 +100,13 @@ export function ResourcePacksTab({ selectedInstance, sourceSelector, modsSelecto
     }
   }
 
-  const getMinecraftVersion = (instance: Instance): string => {
-    if (instance.loader === "fabric") {
-      const parts = instance.version.split("-")
-      return parts[parts.length - 1]
-    }
-    if (instance.loader === "neoforge") {
-      const versionPart = instance.version.replace("neoforge-", "")
-      const parts = versionPart.split("-")
-      if (parts[0].startsWith("1.")) return parts[0]
-      const versionNumbers = parts[0].split(".")
-      if (versionNumbers.length >= 2) {
-        const major = versionNumbers[0]
-        const minor = versionNumbers[1]
-        const patch = versionNumbers[2] || "0"
-        if (parseInt(major) >= 20) return patch === "0" ? `1.${major}` : `1.${major}.${minor}`
-      }
-    }
-    return instance.version
-  }
-
   const handlePackSelect = async (pack: ModrinthProject) => {
     if (!selectedInstance) return
     setSelectedPack(pack)
     setIsLoadingVersions(true)
     try {
-      const mcVersion = getMinecraftVersion(selectedInstance)
       const versions = await invoke<ModrinthVersion[]>("get_mod_versions", {
         idOrSlug: pack.project_id,
-        gameVersions: [mcVersion],
       })
       setPackVersions(versions)
     } catch (error) {
@@ -291,7 +269,7 @@ export function ResourcePacksTab({ selectedInstance, sourceSelector, modsSelecto
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
                           <div className="text-xs text-[var(--text-muted)] truncate mt-0.5">
-                            {getMinecraftVersion(selectedInstance)}
+                            {version.game_versions[0]}
                           </div>
                         </div>
                         <button
