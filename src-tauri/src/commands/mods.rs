@@ -21,11 +21,11 @@ fn invalidate_mod_cache(instance_name: &str) {
 }
 
 #[derive(Serialize, Deserialize)]
-struct CacheEntry {
-    mtime: u128,
-    size: u64,
-    sha1_hash: String,
-    metadata: Option<ModFileWithMetadata>,
+pub struct CacheEntry {
+    pub mtime: u128,
+    pub size: u64,
+    pub sha1_hash: String,
+    pub metadata: Option<ModFileWithMetadata>,
 }
 
 #[derive(Serialize, Deserialize)]

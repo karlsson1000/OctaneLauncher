@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react"
-import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2, RefreshCw, Search, X } from "lucide-react"
+import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Settings, Trash2, RefreshCw, Search, X, Image, Palette } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "../../components/ui/ConfirmModal"
 import { InstanceSettingsModal } from "./InstanceSettingsModal"
@@ -63,6 +63,13 @@ export function InstanceDetailsTab({
   const [isUpdatingMods, setIsUpdatingMods] = useState(false)
   const [modSearchQuery, setModSearchQuery] = useState("")
   const [worldSearchQuery, setWorldSearchQuery] = useState("")
+  const [resourcePacks, setResourcePacks] = useState<ModFileWithMetadata[]>([])
+  const [shaderPacks, setShaderPacks] = useState<ModFileWithMetadata[]>([])
+  const [isLoadingResourcePacks, setIsLoadingResourcePacks] = useState(true)
+  const [isLoadingShaderPacks, setIsLoadingShaderPacks] = useState(true)
+  const [resourcePackSearchQuery, setResourcePackSearchQuery] = useState("")
+  const [shaderPackSearchQuery, setShaderPackSearchQuery] = useState("")
+  const [detailSection, setDetailSection] = useState<"mods" | "worlds" | "resourcepacks" | "shaderpacks">("mods")
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean
     title: string
@@ -80,6 +87,8 @@ export function InstanceDetailsTab({
   useEffect(() => {
     loadInstalledMods()
     loadWorlds()
+    loadResourcePacks()
+    loadShaderPacks()
     loadInstanceIcon()
   }, [instance.name])
 
@@ -120,6 +129,32 @@ export function InstanceDetailsTab({
       setInstalledMods([])
     } finally {
       setIsLoadingMods(false)
+    }
+  }
+
+  const loadResourcePacks = async () => {
+    setIsLoadingResourcePacks(true)
+    try {
+      const packs = await invoke<ModFileWithMetadata[]>("get_installed_resourcepacks_with_metadata", { instanceName: instance.name })
+      setResourcePacks(packs)
+    } catch (error) {
+      console.error("Failed to load resource packs:", error)
+      setResourcePacks([])
+    } finally {
+      setIsLoadingResourcePacks(false)
+    }
+  }
+
+  const loadShaderPacks = async () => {
+    setIsLoadingShaderPacks(true)
+    try {
+      const packs = await invoke<ModFileWithMetadata[]>("get_installed_shaderpacks_with_metadata", { instanceName: instance.name })
+      setShaderPacks(packs)
+    } catch (error) {
+      console.error("Failed to load shader packs:", error)
+      setShaderPacks([])
+    } finally {
+      setIsLoadingShaderPacks(false)
     }
   }
 
@@ -323,6 +358,26 @@ export function InstanceDetailsTab({
     })
   }
 
+  const handleDeleteResourcePack = async (filename: string) => {
+    try {
+      await invoke("delete_resourcepack", { instanceName: instance.name, filename })
+      await loadResourcePacks()
+    } catch (error) {
+      console.error("Failed to delete resource pack:", error)
+      setAlertModal({ isOpen: true, title: "Error", message: `Failed to delete resource pack: ${String(error)}`, type: "danger" })
+    }
+  }
+
+  const handleDeleteShaderPack = async (filename: string) => {
+    try {
+      await invoke("delete_shaderpack", { instanceName: instance.name, filename })
+      await loadShaderPacks()
+    } catch (error) {
+      console.error("Failed to delete shader pack:", error)
+      setAlertModal({ isOpen: true, title: "Error", message: `Failed to delete shader pack: ${String(error)}`, type: "danger" })
+    }
+  }
+
   const handleToggleMod = async (mod: InstalledMod) => {
     setInstalledMods(prev => prev.map(m => m.filename === mod.filename ? { ...m, disabled: !m.disabled } : m))
     try {
@@ -349,6 +404,22 @@ export function InstanceDetailsTab({
     } catch (error) {
       console.error("Failed to open world folder:", error)
       setAlertModal({ isOpen: true, title: "Error", message: `Failed to open world folder: ${String(error)}`, type: "danger" })
+    }
+  }
+
+  const handleOpenResourcePacksFolder = async () => {
+    try {
+      await invoke("open_resourcepacks_folder", { instanceName: instance.name })
+    } catch (error) {
+      console.error("Failed to open resourcepacks folder:", error)
+    }
+  }
+
+  const handleOpenShaderPacksFolder = async () => {
+    try {
+      await invoke("open_shaderpacks_folder", { instanceName: instance.name })
+    } catch (error) {
+      console.error("Failed to open shaderpacks folder:", error)
     }
   }
 
@@ -380,12 +451,27 @@ export function InstanceDetailsTab({
       return world.name.toLowerCase().includes(worldSearchQuery.toLowerCase())
     })
   , [worlds, worldSearchQuery])
+  const filteredResourcePacks = useMemo(() =>
+    resourcePacks.filter(pack => {
+      if (!resourcePackSearchQuery.trim()) return true
+      const query = resourcePackSearchQuery.toLowerCase()
+      return (pack.name || pack.filename).toLowerCase().includes(query) || pack.filename.toLowerCase().includes(query)
+    })
+  , [resourcePacks, resourcePackSearchQuery])
+  const filteredShaderPacks = useMemo(() =>
+    shaderPacks.filter(pack => {
+      if (!shaderPackSearchQuery.trim()) return true
+      const query = shaderPackSearchQuery.toLowerCase()
+      return (pack.name || pack.filename).toLowerCase().includes(query) || pack.filename.toLowerCase().includes(query)
+    })
+  , [shaderPacks, shaderPackSearchQuery])
 
   return (
     <>
-      <div className="flex flex-col h-full overflow-hidden">
+          <div className="flex flex-col h-full overflow-hidden">
 
-        <div className="flex-shrink-0 px-8 pt-8 pb-6 max-w-7xl w-full mx-auto">
+        <div className="flex-shrink-0 px-8 pt-8 pb-6">
+          <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0">
               {instanceIcon ? (
@@ -445,173 +531,317 @@ export function InstanceDetailsTab({
             </div>
           </div>
         </div>
+        </div>
 
-        <div className="flex-1 overflow-hidden px-8 max-w-7xl w-full mx-auto">
-          <div className="grid grid-cols-2 gap-0 h-full">
+        <div className="flex-1 overflow-hidden px-8">
+          <div className="max-w-7xl mx-auto flex flex-col h-full">
 
-            {/* Mods column */}
-            <div className="pr-6 flex flex-col h-full overflow-hidden">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Installed Mods</h2>
-                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{installedMods.length} mod{installedMods.length === 1 ? '' : 's'}</span>
+            {/* Section tabs */}
+            <div className="flex-shrink-0 flex gap-1 mb-4">
+              <button onClick={() => setDetailSection("mods")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${detailSection === "mods" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"}`}>
+                Mods
+              </button>
+              <button onClick={() => setDetailSection("worlds")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${detailSection === "worlds" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"}`}>
+                Worlds
+              </button>
+              <button onClick={() => setDetailSection("resourcepacks")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${detailSection === "resourcepacks" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"}`}>
+                Resource Packs
+              </button>
+              <button onClick={() => setDetailSection("shaderpacks")} className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${detailSection === "shaderpacks" ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"}`}>
+                Shader Packs
+              </button>
+            </div>
+
+            {detailSection === "mods" ? (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Installed Mods</h2>
+                      <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{installedMods.length} mod{installedMods.length === 1 ? '' : 's'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {(instance.loader === "fabric" || instance.loader === "neoforge") && modsWithProjectId > 0 && (
+                        availableUpdates.length > 0 ? (
+                          <button onClick={updateAllMods} disabled={isUpdatingMods} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                            {isUpdatingMods ? <><Loader2 size={14} className="animate-spin" /><span>Updating...</span></> : <><RefreshCw size={14} /><span>Update All ({availableUpdates.length})</span></>}
+                          </button>
+                        ) : (
+                          <button onClick={checkForUpdates} disabled={isCheckingUpdates} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] disabled:opacity-50 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+                            {isCheckingUpdates ? <><Loader2 size={14} className="animate-spin" /><span>Checking...</span></> : <><RefreshCw size={14} /><span>Check for Updates</span></>}
+                          </button>
+                        )
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {(instance.loader === "fabric" || instance.loader === "neoforge") && modsWithProjectId > 0 && (
-                      availableUpdates.length > 0 ? (
-                        <button onClick={updateAllMods} disabled={isUpdatingMods} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer">
-                          {isUpdatingMods ? <><Loader2 size={14} className="animate-spin" /><span>Updating...</span></> : <><RefreshCw size={14} /><span>Update All ({availableUpdates.length})</span></>}
-                        </button>
-                      ) : (
-                        <button onClick={checkForUpdates} disabled={isCheckingUpdates} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] disabled:opacity-50 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
-                          {isCheckingUpdates ? <><Loader2 size={14} className="animate-spin" /><span>Checking...</span></> : <><RefreshCw size={14} /><span>Check for Updates</span></>}
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
 
-                {installedMods.length > 0 && (
                   <div className="relative mb-3">
                     <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
                     <input type="text" value={modSearchQuery} onChange={(e) => setModSearchQuery(e.target.value)} placeholder="Search mods..." className="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
                     {modSearchQuery && <button onClick={() => setModSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>}
                   </div>
-                )}
+                </div>
+
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {isLoadingMods ? (
+                    <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
+                  ) : installedMods.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                      <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No mods installed</h3>
+                      <p className="text-sm text-[var(--text-muted)]">Browse the mods tab to add mods</p>
+                    </div>
+                  ) : filteredMods.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Search size={32} className="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
+                      <p className="text-sm text-[var(--text-muted)]">No mods match your search</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 pr-1">
+                      {filteredMods.map((mod) => {
+                        const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
+
+                        return (
+                          <div key={mod.filename} className={`bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all ${mod.disabled ? 'opacity-60' : ''}`}>
+                            <div className="flex min-h-0">
+                              {mod.icon_url ? (
+                                <div className="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                                  <img src={mod.icon_url} alt={mod.name || mod.filename} className={`w-full h-full object-contain ${mod.disabled ? 'grayscale' : ''}`} />
+                                </div>
+                              ) : (
+                                <div className="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                                  <Package size={36} className="text-[var(--text-muted)]" strokeWidth={2} />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{mod.name || mod.filename}</h3>
+                                    {hasUpdate && <button onClick={() => { const u = availableUpdates.find(up => up.filename === mod.filename); if (u) updateSingleMod(u) }} className="px-1.5 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-xs rounded font-medium transition-colors cursor-pointer">Update</button>}
+                                  </div>
+                                  <p className="text-sm text-[var(--text-muted)] truncate">{mod.filename}{mod.disabled && !mod.filename.endsWith('.disabled') ? '.disabled' : ''}</p>
+                                  <p className="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(mod.size)}</p>
+                                </div>
+                                <div className="flex flex-col items-center gap-1">
+                                  <button onClick={() => handleToggleMod(mod)} className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${mod.disabled ? 'bg-[var(--bg-hover-strong)] border-[var(--text-muted)]' : 'bg-[#16a34a] border-[#16a34a]'}`}>
+                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M10 3L4.5 8.5L2 6" stroke={mod.disabled ? '#7d8590' : '#0f1115'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  </button>
+                                  <button onClick={() => handleDeleteMod(mod.filename)} className="p-1.5 mt-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <div className="flex-1 overflow-y-auto min-h-0">
-                {isLoadingMods ? (
-                  <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
-                ) : installedMods.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <Package size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
-                    <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No mods installed</h3>
-                    <p className="text-sm text-[var(--text-muted)]">Browse the mods tab to add mods</p>
+            ) : detailSection === "worlds" ? (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Worlds</h2>
+                      <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{worlds.length} world{worlds.length === 1 ? '' : 's'}</span>
+                    </div>
+                    <button onClick={handleOpenWorldsFolder} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+                      <ExternalLink size={14} /><span>Open Folder</span>
+                    </button>
                   </div>
-                ) : filteredMods.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <Search size={32} className="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
-                    <p className="text-sm text-[var(--text-muted)]">No mods match your search</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 pr-1">
-                    {filteredMods.map((mod) => {
-                      const hasUpdate = availableUpdates.some(u => u.filename === mod.filename)
 
-                      return (
-                        <div key={mod.filename} className={`bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all ${mod.disabled ? 'opacity-60' : ''}`}>
+                  <div className="relative mb-3">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
+                    <input type="text" value={worldSearchQuery} onChange={(e) => setWorldSearchQuery(e.target.value)} placeholder="Search worlds..." className="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
+                    {worldSearchQuery && <button onClick={() => setWorldSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>}
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {isLoadingWorlds ? (
+                    <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
+                  ) : worlds.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
+                      <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No worlds yet</h3>
+                      <p className="text-sm text-[var(--text-muted)]">Launch the game to create a world</p>
+                    </div>
+                  ) : filteredWorlds.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Search size={32} className="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
+                      <p className="text-sm text-[var(--text-muted)]">No worlds match your search</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 pr-1">
+                      {filteredWorlds.map((world) => (
+                        <div key={world.folder_name} className="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
                           <div className="flex min-h-0">
-                            {mod.icon_url ? (
+                            {world.icon ? (
                               <div className="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
-                                <img src={mod.icon_url} alt={mod.name || mod.filename} className={`w-full h-full object-contain ${mod.disabled ? 'grayscale' : ''}`} />
+                                <img src={world.icon} alt={world.name} className="w-full h-full object-contain" />
                               </div>
                             ) : (
                               <div className="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
-                                <Package size={36} className="text-[var(--text-muted)]" strokeWidth={2} />
+                                <Globe size={32} className="text-[var(--text-muted)]" strokeWidth={1.5} />
                               </div>
                             )}
                             <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{mod.name || mod.filename}</h3>
-                                  {hasUpdate && <button onClick={() => { const u = availableUpdates.find(up => up.filename === mod.filename); if (u) updateSingleMod(u) }} className="px-1.5 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-xs rounded font-medium transition-colors cursor-pointer">Update</button>}
+                                <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{world.name}</h3>
+                                <p className="text-xs text-[var(--text-muted)] mt-0.5">Created {formatDate(world.created)}</p>
+                                <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-0.5">
+                                  <span>{formatFileSize(world.size)}</span>
+                                  {world.game_mode && <><span>•</span><span className="capitalize">{world.game_mode}</span></>}
                                 </div>
-                                <p className="text-sm text-[var(--text-muted)] truncate">{mod.filename}{mod.disabled && !mod.filename.endsWith('.disabled') ? '.disabled' : ''}</p>
-                                <p className="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(mod.size)}</p>
                               </div>
-                              <div className="flex flex-col items-center gap-1">
-                                <button onClick={() => handleToggleMod(mod)} className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${mod.disabled ? 'bg-[var(--bg-hover-strong)] border-[var(--text-muted)]' : 'bg-[#16a34a] border-[#16a34a]'}`}>
-                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M10 3L4.5 8.5L2 6" stroke={mod.disabled ? '#7d8590' : '#0f1115'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                </button>
-                                <button onClick={() => handleDeleteMod(mod.filename)} className="p-1.5 mt-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
+                              <div className="flex flex-col items-end gap-1">
+                                <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer"><FolderOpen size={16} /></button>
+                                <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={16} /></button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : detailSection === "resourcepacks" ? (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Resource Packs</h2>
+                      <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{resourcePacks.length} pack{resourcePacks.length === 1 ? '' : 's'}</span>
+                    </div>
+                    <button onClick={handleOpenResourcePacksFolder} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+                      <ExternalLink size={14} /><span>Open Folder</span>
+                    </button>
+                  </div>
+                  <div className="relative mb-3">
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
+                    <input type="text" value={resourcePackSearchQuery} onChange={(e) => setResourcePackSearchQuery(e.target.value)} placeholder="Search resource packs..." className="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
+                    {resourcePackSearchQuery && <button onClick={() => setResourcePackSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>}
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {isLoadingResourcePacks ? (
+                    <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
+                  ) : resourcePacks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Image size={48} className="text-[#f97316] mb-3" strokeWidth={1.5} />
+                      <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No resource packs</h3>
+                      <p className="text-sm text-[var(--text-muted)]">Browse the addons tab to add resource packs</p>
+                    </div>
+                  ) : filteredResourcePacks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Search size={32} className="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
+                      <p className="text-sm text-[var(--text-muted)]">No resource packs match your search</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 pr-1">
+                      {filteredResourcePacks.map((pack) => (
+                        <div key={pack.filename} className="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
+                          <div className="flex min-h-0">
+                            {pack.icon_url ? (
+                              <div className="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                                <img src={pack.icon_url} alt={pack.name || pack.filename} className="w-full h-full object-contain" />
+                              </div>
+                            ) : (
+                              <div className="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                                <Image size={36} className="text-[#f97316]" strokeWidth={1.5} />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{pack.name || pack.filename}</h3>
+                                <p className="text-sm text-[var(--text-muted)] truncate">{pack.filename}</p>
+                                <p className="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(pack.size)}</p>
+                              </div>
+                              <div className="flex flex-col items-center gap-1 self-center">
+                                <button onClick={() => handleDeleteResourcePack(pack.filename)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
                                   <Trash2 size={16} />
                                 </button>
                               </div>
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Worlds column */}
-            <div className="pl-6 flex flex-col h-full overflow-hidden">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Worlds</h2>
-                    <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{worlds.length} world{worlds.length === 1 ? '' : 's'}</span>
-                  </div>
-                  <button onClick={handleOpenWorldsFolder} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
-                    <ExternalLink size={14} /><span>Open Folder</span>
-                  </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                {worlds.length > 0 && (
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Shader Packs</h2>
+                      <span className="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{shaderPacks.length} pack{shaderPacks.length === 1 ? '' : 's'}</span>
+                    </div>
+                    <button onClick={handleOpenShaderPacksFolder} className="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+                      <ExternalLink size={14} /><span>Open Folder</span>
+                    </button>
+                  </div>
                   <div className="relative mb-3">
                     <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
-                    <input type="text" value={worldSearchQuery} onChange={(e) => setWorldSearchQuery(e.target.value)} placeholder="Search worlds..." className="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
-                    {worldSearchQuery && <button onClick={() => setWorldSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>}
+                    <input type="text" value={shaderPackSearchQuery} onChange={(e) => setShaderPackSearchQuery(e.target.value)} placeholder="Search shader packs..." className="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
+                    {shaderPackSearchQuery && <button onClick={() => setShaderPackSearchQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>}
                   </div>
-                )}
-              </div>
-
-              <div className="flex-1 overflow-y-auto min-h-0">
-                {isLoadingWorlds ? (
-                  <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
-                ) : worlds.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <Globe size={48} className="text-[#16a34a] mb-3" strokeWidth={1.5} />
-                    <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No worlds yet</h3>
-                    <p className="text-sm text-[var(--text-muted)]">Launch the game to create a world</p>
-                  </div>
-                ) : filteredWorlds.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <Search size={32} className="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
-                    <p className="text-sm text-[var(--text-muted)]">No worlds match your search</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3 pr-1">
-                    {filteredWorlds.map((world) => (
-                      <div key={world.folder_name} className="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
-                        <div className="flex min-h-0">
-                          {world.icon ? (
-                            <div className="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
-                              <img src={world.icon} alt={world.name} className="w-full h-full object-contain" />
-                            </div>
-                          ) : (
-                            <div className="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
-                              <Globe size={32} className="text-[var(--text-muted)]" strokeWidth={1.5} />
-                            </div>
-                          )}
-                          <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{world.name}</h3>
-                              <p className="text-xs text-[var(--text-muted)] mt-0.5">Created {formatDate(world.created)}</p>
-                              <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-0.5">
-                                <span>{formatFileSize(world.size)}</span>
-                                {world.game_mode && <><span>•</span><span className="capitalize">{world.game_mode}</span></>}
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  {isLoadingShaderPacks ? (
+                    <div className="text-center py-16"><Loader2 size={32} className="animate-spin text-[#16a34a] mx-auto" /></div>
+                  ) : shaderPacks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Palette size={48} className="text-[#8b5cf6] mb-3" strokeWidth={1.5} />
+                      <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No shader packs</h3>
+                      <p className="text-sm text-[var(--text-muted)]">Browse the addons tab to add shader packs</p>
+                    </div>
+                  ) : filteredShaderPacks.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      <Search size={32} className="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
+                      <p className="text-sm text-[var(--text-muted)]">No shader packs match your search</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 pr-1">
+                      {filteredShaderPacks.map((pack) => (
+                        <div key={pack.filename} className="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
+                          <div className="flex min-h-0">
+                            {pack.icon_url ? (
+                              <div className="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                                <img src={pack.icon_url} alt={pack.name || pack.filename} className="w-full h-full object-contain" />
                               </div>
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer"><FolderOpen size={16} /></button>
-                              <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={16} /></button>
+                            ) : (
+                              <div className="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                                <Palette size={36} className="text-[#8b5cf6]" strokeWidth={1.5} />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{pack.name || pack.filename}</h3>
+                                <p className="text-sm text-[var(--text-muted)] truncate">{pack.filename}</p>
+                                <p className="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(pack.size)}</p>
+                              </div>
+                              <div className="flex flex-col items-center gap-1 self-center">
+                                <button onClick={() => handleDeleteShaderPack(pack.filename)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
+
           </div>
         </div>
       </div>

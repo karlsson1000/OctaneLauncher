@@ -281,6 +281,8 @@ pub fn run() {
             get_curseforge_mod_files,
             download_curseforge_file,
             download_curseforge_file_temp,
+            get_installed_resourcepacks_with_metadata,
+            get_installed_shaderpacks_with_metadata,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
