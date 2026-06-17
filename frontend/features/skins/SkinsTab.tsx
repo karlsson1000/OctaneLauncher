@@ -14,23 +14,34 @@ const CACHE_DURATION = 15 * 60 * 1000
 const MIN_FETCH_INTERVAL = 10 * 1000
 
 const CAPE_IMAGE_MAP: Record<string, string> = {
-  "vanilla": "vanilla",
   "migrator": "migrator",
-  "cherry blossom": "blossom",
-  "purple heart": "purple",
-  "follower's": "followers",
-  "15th anniversary": "15th",
-  "mcc 15th year": "mcc15th",
   "pan": "pan",
-  "copper": "copper",
-  "builder": "builder",
-  "minecraft experience": "experience",
-  "home": "home",
-  "mojang office": "office",
-  "yearn": "yearn",
-  "zombie horse": "zombiehorse",
+  "15th anniversary": "15th",
   "common": "common",
-  "menace": "menace"
+  "vanilla": "vanilla",
+  "cherry blossom": "cherry",
+  "purple heart": "twitch",
+  "follower's": "tiktok",
+  "menace": "menace",
+  "copper": "copper",
+  "home": "home",
+  "mojang office": "mojangoffice",
+  "yearn": "yearn",
+  "founders": "founders",
+  "zombie horse": "zombiehorse",
+  "mcc 15th year": "mcc",
+  "builder": "builder",
+  "minecraft experience": "mcexp",
+  "minecon 2016": "2016",
+  "minecon 2015": "2015",
+  "minecon 2013": "2013",
+  "minecon 2012": "2012",
+  "crafter": "crafter",
+  "minecon 2011": "2011",
+  "moonlight trail": "moonlighttrail",
+  "realms mapmaker": "realms",
+  "mojang": "mojang",
+  "mojang studios": "mojangstudios"
 }
 
 function loadCache<T>(key: string): T | null {
@@ -422,7 +433,7 @@ export function SkinsTab(props: SkinsTabProps) {
                       className={`aspect-[5/8] bg-[var(--bg-secondary)] rounded-md overflow-hidden flex flex-col items-center justify-center transition-all cursor-pointer hover:ring-2 hover:ring-[var(--accent-primary)] ${activeCape === cape.id ? "ring-2 ring-[var(--accent-primary)]" : ""}`}
                       title={cape.alias}
                     >
-                      <img src={`/capes/${getCapeImageName(cape.alias)}.png`} alt={cape.alias} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} onError={(e) => { e.currentTarget.src = '/logo.png' }} />
+                      <img src={`/capes/${getCapeImageName(cape.alias)}.webp`} alt={cape.alias} className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} onError={(e) => { e.currentTarget.src = '/logo.png' }} />
                     </button>
                   ))}
                 </div>
