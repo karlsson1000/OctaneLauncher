@@ -60,7 +60,7 @@ export function CurseforgeModpacksTab({ instances, hideToolbar, sourceSelector, 
   }, [isLoadingMore, isSearching])
 
   const fetchItems = useCallback(async (offset: number, replace: boolean) => {
-    const query = internalSearchQuery.trim()
+    const query = debounceSearchQuery.trim()
     if (replace) setIsSearching(true)
     else setIsLoadingMore(true)
     try {
@@ -93,7 +93,7 @@ export function CurseforgeModpacksTab({ instances, hideToolbar, sourceSelector, 
       if (replace) setIsSearching(false)
       else setIsLoadingMore(false)
     }
-  }, [internalSearchQuery])
+  }, [debounceSearchQuery])
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isLoadingMore || isSearching) return

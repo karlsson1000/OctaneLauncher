@@ -82,7 +82,7 @@ export function CurseforgeResourcePacksTab({ selectedInstance, hideToolbar, sour
   }, [isLoadingMore, isSearching])
 
   const fetchItems = useCallback(async (offset: number, replace: boolean) => {
-    const query = internalSearchQuery.trim()
+    const query = debounceSearchQuery.trim()
     if (replace) setIsSearching(true)
     else setIsLoadingMore(true)
     try {
@@ -115,7 +115,7 @@ export function CurseforgeResourcePacksTab({ selectedInstance, hideToolbar, sour
       if (replace) setIsSearching(false)
       else setIsLoadingMore(false)
     }
-  }, [internalSearchQuery, itemsPerPage])
+  }, [debounceSearchQuery, itemsPerPage])
 
   const loadMore = useCallback(() => {
     if (!hasMoreRef.current || isLoadingMore || isSearching) return
