@@ -1,4 +1,4 @@
-use crate::commands::validation::{sanitize_instance_name, sanitize_mod_filename, sanitize_filename, validate_download_url};
+use crate::commands::validation::{sanitize_instance_name, sanitize_mod_filename, sanitize_filename, sanitize_resourcepack_filename, sanitize_shaderpack_filename, validate_download_url};
 use crate::utils::{get_instance_dir, open_folder};
 use crate::utils::curseforge::{CurseforgeClient, CurseforgeGetModFilesResult, CurseforgeSearchResult};
 use crate::utils::modrinth::{ModrinthClient, ModrinthProjectDetails, ModrinthSearchResult, ModrinthVersion};
@@ -668,7 +668,12 @@ pub async fn download_curseforge_file(
     target_folder: String,
 ) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
-    let safe_filename = sanitize_mod_filename(&filename)?;
+    let safe_filename = match target_folder.as_str() {
+        "mods" => sanitize_mod_filename(&filename)?,
+        "resourcepacks" => sanitize_resourcepack_filename(&filename)?,
+        "shaderpacks" => sanitize_shaderpack_filename(&filename)?,
+        _ => sanitize_filename(&filename)?,
+    };
     let _ = validate_download_url(&download_url)?;
 
     let instance_dir = get_instance_dir(&safe_name);
