@@ -57,7 +57,7 @@ function saveCache<T>(key: string, data: T) {
 }
 
 type PersistedSkinCache = { uuid: string; url: string; variant: string; timestamp: number }
-type PersistedCapeCache = { capes: Cape[]; activeCapeId: string | null; timestamp: number }
+type PersistedCapeCache = { uuid: string; capes: Cape[]; activeCapeId: string | null; timestamp: number }
 
 export function SkinsTab(props: SkinsTabProps) {
   const { activeAccount, isAuthenticated } = props
@@ -76,7 +76,7 @@ export function SkinsTab(props: SkinsTabProps) {
   const [showBack, setShowBack] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const lastProfileFetchRef = useRef<number>(0)
-  const lastCapeFetchRef = useRef<number>(0)
+  const lastCapeFetchRef = useRef<Record<string, number>>({})
 
   useEffect(() => {
     if (!activeAccount || !invoke) { setRecentSkins([]); return }
@@ -107,7 +107,7 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   const canFetchProfile = () => Date.now() - lastProfileFetchRef.current >= MIN_FETCH_INTERVAL
-  const canFetchCapes = () => Date.now() - lastCapeFetchRef.current >= MIN_FETCH_INTERVAL
+  const canFetchCapes = (uuid: string) => Date.now() - (lastCapeFetchRef.current[uuid] ?? 0) >= MIN_FETCH_INTERVAL
 
   const loadUserSkin = async (forceRefresh: boolean = false) => {
     if (!isAuthenticated || !activeAccount || !invoke) {
@@ -175,31 +175,32 @@ export function SkinsTab(props: SkinsTabProps) {
   }
 
   const loadCapes = async () => {
-    if (!invoke || !isAuthenticated) return
+    if (!invoke || !isAuthenticated || !activeAccount) return
     const now = Date.now()
     const persisted = loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
-    if (persisted && (now - persisted.timestamp) < CACHE_DURATION) {
-      setCapes(persisted.capes)
-      setActiveCape(persisted.activeCapeId)
+    const cacheValid = persisted && persisted.uuid === activeAccount.uuid && (now - persisted.timestamp) < CACHE_DURATION
+
+    if (cacheValid) {
+      setCapes(persisted!.capes)
+      setActiveCape(persisted!.activeCapeId)
       return
     }
-    if (!canFetchCapes()) {
-      if (persisted) {
-        setCapes(persisted.capes)
-        setActiveCape(persisted.activeCapeId)
-      }
-      return
-    }
+
+    setCapes([])
+    setActiveCape(null)
+
+    if (!canFetchCapes(activeAccount.uuid)) return
+
     try {
       setLoadingCapes(true)
-      lastCapeFetchRef.current = now
+      lastCapeFetchRef.current[activeAccount.uuid] = now
       const capeData = await invoke<{ capes: Cape[] }>("get_user_capes")
       if (capeData && capeData.capes) {
         setCapes(capeData.capes)
         const active = capeData.capes.find((cape: Cape) => cape.state === "ACTIVE")
         const activeId = active?.id || null
         setActiveCape(activeId)
-        saveCache<PersistedCapeCache>(CAPE_CACHE_KEY, { capes: capeData.capes, activeCapeId: activeId, timestamp: now })
+        saveCache<PersistedCapeCache>(CAPE_CACHE_KEY, { uuid: activeAccount.uuid, capes: capeData.capes, activeCapeId: activeId, timestamp: now })
       }
     } catch { console.error("Failed to load capes") } finally { setLoadingCapes(false) }
   }
