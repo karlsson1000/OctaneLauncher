@@ -10,6 +10,9 @@ interface ConfirmModalProps {
   type?: "warning" | "danger" | "success" | "info"
   onConfirm: () => void
   onCancel: () => void
+  checkboxLabel?: string
+  checkboxChecked?: boolean
+  onCheckboxChange?: (checked: boolean) => void
 }
 
 interface AlertModalProps {
@@ -21,17 +24,28 @@ interface AlertModalProps {
   onClose: () => void
 }
 
-export function ConfirmModal({
-  isOpen,
-  title,
-  message,
-  confirmText,
-  cancelText,
-  type = "warning",
-  onConfirm,
-  onCancel,
-}: ConfirmModalProps) {
+export function ConfirmModal(props: ConfirmModalProps) {
+  const {
+    isOpen,
+    title,
+    message,
+    confirmText,
+    cancelText,
+    type = "warning",
+    onConfirm,
+    onCancel,
+    checkboxLabel,
+    checkboxChecked: controlledChecked,
+    onCheckboxChange,
+  } = props
   const [isClosing, setIsClosing] = useState(false)
+  const [localChecked, setLocalChecked] = useState(false)
+
+  const isChecked = controlledChecked !== undefined ? controlledChecked : localChecked
+  const handleCheckboxChange = (checked: boolean) => {
+    setLocalChecked(checked)
+    onCheckboxChange?.(checked)
+  }
 
   if (!isOpen) return null
 
@@ -104,11 +118,25 @@ export function ConfirmModal({
             </button>
           </div>
 
-          <div className="px-6 pb-5">
+          <div className="px-6 pb-4">
             <p className="text-sm text-[var(--text-primary)] whitespace-pre-line leading-snug">{message}</p>
+            {checkboxLabel && (
+              <button
+                type="button"
+                onClick={() => handleCheckboxChange(!isChecked)}
+                className="flex items-center gap-2 mt-3 cursor-pointer select-none bg-transparent border-0 p-0 w-full text-left"
+              >
+                <div className={`w-4 h-4 rounded flex items-center justify-center transition-colors ${isChecked ? 'bg-red-500' : 'border border-[var(--border-default)] bg-[var(--bg-elevated)]'}`}>
+                  {isChecked && (
+                    <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                </div>
+                <span className="text-xs text-[var(--text-muted)]">{checkboxLabel}</span>
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">
+          <div className="flex items-center justify-end gap-3 px-6 pb-5 pt-1">
             <button
               onClick={handleClose}
               className="px-5 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded font-medium text-sm transition-colors cursor-pointer"

@@ -6,3 +6,4 @@ pub mod installer;
 pub mod settings;
 pub mod accounts;
 pub mod friends;
+pub mod trash;

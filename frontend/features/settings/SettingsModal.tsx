@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Terminal, Paintbrush } from "lucide-react"
+import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Terminal, Paintbrush, Trash2 } from "lucide-react"
 import { AlertModal } from "../../components/ui/ConfirmModal"
 import type { LauncherSettings } from "../../types"
 
@@ -22,6 +22,90 @@ interface SettingsModalProps {
   onClose: () => void
   onSettingsChange: (settings: LauncherSettings) => void
   onBackgroundChanged?: () => void
+}
+
+function TrashSection({ onAlert }: { onAlert: (alert: any) => void }) {
+  const [count, setCount] = useState(0)
+  const [totalSize, setTotalSize] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [emptying, setEmptying] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
+
+  const loadTrash = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [c, s] = await invoke<[number, number]>("get_trash_size")
+      setCount(c)
+      setTotalSize(s)
+    } catch {
+      setCount(0)
+      setTotalSize(0)
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { loadTrash() }, [loadTrash])
+
+  const handleEmptyTrash = async () => {
+    if (!confirmClear) {
+      setConfirmClear(true)
+      setTimeout(() => setConfirmClear(false), 3000)
+      return
+    }
+    setEmptying(true)
+    try {
+      await invoke("empty_trash")
+      setCount(0)
+      setTotalSize(0)
+      setConfirmClear(false)
+    } catch (e) {
+      onAlert({ isOpen: true, title: "Error", message: `Failed to empty trash: ${e}`, type: "danger" })
+    }
+    setEmptying(false)
+  }
+
+  const formatBytes = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-[var(--text-primary)]">
+        <Trash2 size={16} className="text-red-400" />
+        <span className="font-medium text-sm">Trash</span>
+      </div>
+      <div className="bg-[var(--bg-elevated)] rounded p-3 space-y-2">
+        {loading ? (
+          <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+            <Loader2 size={14} className="animate-spin" />
+            <span>Loading trash...</span>
+          </div>
+        ) : count === 0 ? (
+          <p className="text-xs text-[var(--text-muted)]">Trash is empty</p>
+        ) : (
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-[var(--text-muted)]">
+              {count} item{count !== 1 ? "s" : ""} ({formatBytes(totalSize)})
+            </span>
+            <button
+              onClick={handleEmptyTrash}
+              disabled={emptying}
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${
+                confirmClear
+                  ? "bg-red-500 text-white hover:bg-red-600"
+                  : "bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10"
+              }`}
+            >
+              {emptying ? <Loader2 size={12} className="animate-spin" /> : confirmClear ? "Click again to confirm" : "Empty Trash"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export function SettingsModal({
@@ -128,6 +212,7 @@ export function SettingsModal({
   const storageColors: Record<string, string> = {
     Instances: "#3b82f6",
     Cache: "#f59e0b",
+    Trash: "#ef4444",
     Other: "#6b7280",
   }
 
@@ -522,6 +607,9 @@ export function SettingsModal({
                 )}
               </div>
             </div>
+
+            {/* Trash */}
+            <TrashSection onAlert={setAlertModal} />
 
             {/* Version Information */}
             <div className="space-y-2">

@@ -73,14 +73,35 @@ impl InstanceManager {
         Ok(instances)
     }
 
-    pub fn delete(instance_name: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn delete(instance_name: &str, permanent: bool) -> Result<(), Box<dyn std::error::Error>> {
         let instance_dir = get_instance_dir(instance_name);
 
         if !instance_dir.exists() {
             return Err(format!("Instance '{}' does not exist", instance_name).into());
         }
 
-        fs::remove_dir_all(&instance_dir)?;
+        if permanent {
+            fs::remove_dir_all(&instance_dir)?;
+        } else {
+            let trash_dir = get_trash_dir();
+            fs::create_dir_all(&trash_dir)?;
+
+            let timestamp = Utc::now().format("%Y%m%d%H%M%S");
+            let folder_name = format!("{}_{}", instance_name, timestamp);
+            let trash_path = trash_dir.join(&folder_name);
+
+            if trash_path.exists() {
+                fs::remove_dir_all(&trash_path)?;
+            }
+
+            fs::rename(&instance_dir, &trash_path)?;
+
+            crate::services::trash::TrashManager::add_item(
+                instance_name,
+                "instance",
+                &folder_name,
+            )?;
+        }
 
         Ok(())
     }

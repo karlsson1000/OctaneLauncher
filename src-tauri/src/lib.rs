@@ -124,6 +124,7 @@ pub fn run() {
 
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+                let _ = crate::services::trash::TrashManager::clean_old_items(30);
                 let account = AccountManager::get_active_account()
                     .map_err(|e| e.to_string())
                     .ok()
@@ -283,6 +284,8 @@ pub fn run() {
             download_curseforge_file_temp,
             get_installed_resourcepacks_with_metadata,
             get_installed_shaderpacks_with_metadata,
+            get_trash_size,
+            empty_trash,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

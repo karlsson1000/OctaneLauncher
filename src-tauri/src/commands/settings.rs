@@ -273,6 +273,15 @@ pub async fn get_storage_usage() -> Result<Vec<StorageCategory>, String> {
         total += size;
     }
 
+    let trash_dir = crate::utils::get_trash_dir();
+    if trash_dir.exists() {
+        let size = dir_size(&trash_dir);
+        if size > 0 {
+            categories.push(StorageCategory { name: "Trash".to_string(), size_bytes: size });
+            total += size;
+        }
+    }
+
     let other = dir_size(&launcher_dir).saturating_sub(total);
     if other > 0 {
         categories.push(StorageCategory { name: "Other".to_string(), size_bytes: other });

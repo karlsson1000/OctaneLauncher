@@ -68,6 +68,14 @@ pub fn get_instance_dir(instance_name: &str) -> PathBuf {
     get_instances_dir().join(instance_name)
 }
 
+pub fn get_trash_dir() -> PathBuf {
+    get_launcher_dir().join("trash")
+}
+
+pub fn get_trash_index_path() -> PathBuf {
+    get_trash_dir().join("trash_index.json")
+}
+
 pub fn find_java() -> Option<String> {
     if let Ok(java_home) = std::env::var("JAVA_HOME") {
         let java_path = PathBuf::from(&java_home)

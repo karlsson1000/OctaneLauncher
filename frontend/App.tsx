@@ -236,6 +236,9 @@ function App() {
           confirmText={confirmModal.type === "danger" ? "Delete" : "Confirm"}
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal(null)}
+          checkboxLabel={confirmModal.checkboxLabel}
+          checkboxChecked={confirmModal.checkboxChecked}
+          onCheckboxChange={confirmModal.onCheckboxChange}
         />
       )}
 

@@ -32,6 +32,9 @@ export function useLauncherState() {
     message: string
     type: "warning" | "danger" | "success" | "info"
     onConfirm: () => void
+    checkboxLabel?: string
+    checkboxChecked?: boolean
+    onCheckboxChange?: (checked: boolean) => void
   } | null>(null)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean
@@ -45,6 +48,7 @@ export function useLauncherState() {
   const [isNavigating, setIsNavigating] = useState(false)
   const [background, setBackground] = useState<string | null>(null)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+
   const [sidebarContextMenu, setSidebarContextMenu] = useState<{
     x: number
     y: number
@@ -334,16 +338,21 @@ export function useLauncherState() {
     }
   }, [activeAccount, settings, appWindow, loadInstances])
 
+  const skipTrashRef = useRef(false)
+
   const handleDeleteInstance = useCallback(async (instanceName: string) => {
+    skipTrashRef.current = false
     setConfirmModal({
       isOpen: true,
       title: "Delete Instance",
       message: `Are you sure you want to delete "${instanceName}"?\n\nThis action cannot be undone.`,
       type: "danger",
+      checkboxLabel: "Delete permanently",
+      onCheckboxChange: (checked: boolean) => { skipTrashRef.current = checked },
       onConfirm: async () => {
         setConfirmModal(null)
         try {
-          await invoke<string>("delete_instance", { instanceName })
+          await invoke<string>("delete_instance", { instanceName, permanent: skipTrashRef.current })
           await loadInstances()
           if (selectedInstance?.name === instanceName) {
             setSelectedInstance(instances.length > 1 ? instances.find(i => i.name !== instanceName) || null : null)

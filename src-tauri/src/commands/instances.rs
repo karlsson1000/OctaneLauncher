@@ -204,10 +204,10 @@ pub async fn get_instances() -> Result<Vec<Instance>, String> {
 }
 
 #[tauri::command]
-pub async fn delete_instance(instance_name: String) -> Result<(), String> {
+pub async fn delete_instance(instance_name: String, permanent: bool) -> Result<(), String> {
     let safe_name = sanitize_instance_name(&instance_name)?;
     
-    InstanceManager::delete(&safe_name)
+    InstanceManager::delete(&safe_name, permanent)
         .map_err(|e| e.to_string())
 }
 
