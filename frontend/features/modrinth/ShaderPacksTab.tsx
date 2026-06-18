@@ -143,8 +143,8 @@ export function ShaderPacksTab({ selectedInstance, sourceSelector, modsSelector,
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {!hideToolbar && <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+    <div className="max-w-7xl mx-auto h-full flex flex-col">
+      {!hideToolbar && <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4 flex-shrink-0">
         <div className="flex gap-2 items-stretch">
           {sourceSelector}
         <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
@@ -166,8 +166,8 @@ export function ShaderPacksTab({ selectedInstance, sourceSelector, modsSelector,
         </div>
       </div>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-3">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2">
+           <div className="lg:col-span-2 space-y-3 overflow-y-auto pr-2">
             {hits.map((shader) => (
               <div
                 key={shader.project_id}
@@ -209,7 +209,7 @@ export function ShaderPacksTab({ selectedInstance, sourceSelector, modsSelector,
             <div ref={sentinelRef} className="flex items-center justify-center py-4">
               {isLoadingMore && <Loader2 size={20} className="animate-spin text-[#f59e0b]" />}
             </div>
-          </div>
+           </div>
 
           {selectedShader && (
             <div className="bg-[var(--bg-tertiary)] rounded-md p-3 sticky top-0 self-start">
@@ -224,7 +224,6 @@ export function ShaderPacksTab({ selectedInstance, sourceSelector, modsSelector,
               </div>
 
               <p className="text-sm text-[var(--text-muted)] mb-4 leading-relaxed">{selectedShader.description}</p>
-
               <div className="flex gap-2 mb-5 text-xs flex-wrap">
                 <span className="flex items-center gap-1 bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
                   <Download size={12} />
@@ -244,7 +243,7 @@ export function ShaderPacksTab({ selectedInstance, sourceSelector, modsSelector,
                 ) : shaderVersions.length === 0 ? (
                   <p className="text-sm text-[var(--text-muted)] text-center py-3">No compatible versions</p>
                 ) : (
-                  <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1.5">
                     {shaderVersions.map((version) => {
                       const installed = isShaderInstalled(version)
                       const downloading = downloadingShaders.has(version.id)

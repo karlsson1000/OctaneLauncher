@@ -174,9 +174,9 @@ export function CurseforgeModpacksTab({ instances, hideToolbar, sourceSelector, 
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto h-full flex flex-col">
       {!hideToolbar && (
-        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4 flex-shrink-0">
           <div className="flex gap-2 items-stretch">
             {sourceSelector}
           <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
@@ -199,8 +199,8 @@ export function CurseforgeModpacksTab({ instances, hideToolbar, sourceSelector, 
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-3">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2">
+        <div className="lg:col-span-2 space-y-3 overflow-y-auto pr-2">
           {hits.map((item) => (
             <div
               key={item.id}
@@ -271,7 +271,7 @@ export function CurseforgeModpacksTab({ instances, hideToolbar, sourceSelector, 
               ) : itemFiles.length === 0 ? (
                 <p className="text-sm text-[var(--text-muted)] text-center py-3">No files available</p>
               ) : (
-                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1.5">
                   {itemFiles.map((file) => {
                     const installing = installingFiles.has(file.id)
                     const status = installationStatus[selectedItem.id.toString()]

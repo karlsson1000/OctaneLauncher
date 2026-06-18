@@ -144,7 +144,7 @@ export function BrowseTab({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto min-h-0 px-8 pb-8">
+      <div className="flex-1 min-h-0 px-8 overflow-hidden">
         {contentSource === "modrinth" ? (
           <>
             {activeSubTab === "mods" && (

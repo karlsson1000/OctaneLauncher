@@ -517,14 +517,14 @@ export function InstanceDetailsTab({
                     {isLaunching || isRunning ? (
                       <><div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" /><span>Running...</span></>
                     ) : (
-                      <><Play size={18} fill="currentColor" strokeWidth={0} /><span>Play</span></>
+                      <><Play size={20} fill="currentColor" strokeWidth={0} /><span>Play</span></>
                     )}
                   </button>
                   <button onClick={handleOpenFolder} className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer">
-                    <FolderOpen size={16} /><span>Open Folder</span>
+                    <FolderOpen size={18} strokeWidth={2.5} /><span>Open Folder</span>
                   </button>
                   <button onClick={() => setIsSettingsOpen(true)} className="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer" title="Instance Settings">
-                    <Settings size={18} />
+                    <Settings size={19} strokeWidth={2.5} />
                   </button>
                 </div>
               </div>
@@ -613,7 +613,7 @@ export function InstanceDetailsTab({
                                   <Package size={36} className="text-[var(--text-muted)]" strokeWidth={2} />
                                 </div>
                               )}
-                              <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                              <div className="flex-1 min-w-0 py-2 px-4 flex items-center gap-3 relative z-0">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2">
                                     <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{mod.name || mod.filename}</h3>
@@ -622,14 +622,14 @@ export function InstanceDetailsTab({
                                   <p className="text-sm text-[var(--text-muted)] truncate">{mod.filename}{mod.disabled && !mod.filename.endsWith('.disabled') ? '.disabled' : ''}</p>
                                   <p className="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(mod.size)}</p>
                                 </div>
-                                <div className="flex flex-col items-center gap-1">
-                                  <button onClick={() => handleToggleMod(mod)} className={`w-5 h-5 mt-2 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${mod.disabled ? 'bg-[var(--bg-hover-strong)] border-[var(--text-muted)]' : 'bg-[#16a34a] border-[#16a34a]'}`}>
-                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <div className="flex items-center gap-3">
+                                  <button onClick={() => handleToggleMod(mod)} className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer ${mod.disabled ? 'bg-[var(--bg-hover-strong)] border-[var(--text-muted)]' : 'bg-[#16a34a] border-[#16a34a]'}`}>
+                                    <svg width="16" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                                       <path d="M10 3L4.5 8.5L2 6" stroke={mod.disabled ? '#7d8590' : '#0f1115'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                   </button>
-                                  <button onClick={() => handleDeleteMod(mod.filename)} className="p-1.5 mt-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
-                                    <Trash2 size={16} />
+                                  <button onClick={() => handleDeleteMod(mod.filename)} className="p-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded transition-all cursor-pointer">
+                                    <Trash2 size={20} />
                                   </button>
                                 </div>
                               </div>
@@ -689,7 +689,7 @@ export function InstanceDetailsTab({
                                 <Globe size={32} className="text-[var(--text-muted)]" strokeWidth={1.5} />
                               </div>
                             )}
-                            <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                            <div className="flex-1 min-w-0 py-2 px-4 flex items-center gap-3 relative z-0">
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{world.name}</h3>
                                 <p className="text-xs text-[var(--text-muted)] mt-0.5">Created {formatDate(world.created)}</p>
@@ -699,8 +699,8 @@ export function InstanceDetailsTab({
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-1">
-                                <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer"><FolderOpen size={16} /></button>
-                                <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={16} /></button>
+                                <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer"><FolderOpen size={20} /></button>
+                                <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
                               </div>
                             </div>
                           </div>
@@ -756,7 +756,7 @@ export function InstanceDetailsTab({
                                 <Image size={36} className="text-[#f97316]" strokeWidth={1.5} />
                               </div>
                             )}
-                            <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                            <div className="flex-1 min-w-0 py-2 px-4 flex items-center gap-3 relative z-0">
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{pack.name || pack.filename}</h3>
                                 <p className="text-sm text-[var(--text-muted)] truncate">{pack.filename}</p>
@@ -764,7 +764,7 @@ export function InstanceDetailsTab({
                               </div>
                               <div className="flex flex-col items-center gap-1 self-center">
                                 <button onClick={() => handleDeleteResourcePack(pack.filename)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
-                                  <Trash2 size={16} />
+                                  <Trash2 size={20} />
                                 </button>
                               </div>
                             </div>
@@ -821,7 +821,7 @@ export function InstanceDetailsTab({
                                 <Palette size={36} className="text-[#8b5cf6]" strokeWidth={1.5} />
                               </div>
                             )}
-                            <div className="flex-1 min-w-0 py-2 px-3 flex items-center gap-3 relative z-0">
+                            <div className="flex-1 min-w-0 py-2 px-4 flex items-center gap-3 relative z-0">
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-base text-[var(--text-primary)] truncate">{pack.name || pack.filename}</h3>
                                 <p className="text-sm text-[var(--text-muted)] truncate">{pack.filename}</p>
@@ -829,7 +829,7 @@ export function InstanceDetailsTab({
                               </div>
                               <div className="flex flex-col items-center gap-1 self-center">
                                 <button onClick={() => handleDeleteShaderPack(pack.filename)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
-                                  <Trash2 size={16} />
+                                  <Trash2 size={20} />
                                 </button>
                               </div>
                             </div>

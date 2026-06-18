@@ -176,9 +176,9 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto h-full flex flex-col">
       {!hideToolbar && (
-        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+        <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4 flex-shrink-0">
           <div className="flex gap-2 items-stretch">
             {sourceSelector}
             <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
@@ -201,8 +201,8 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
         </div>
       )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-3">
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2">
+          <div className="lg:col-span-2 space-y-3 overflow-y-auto pr-2">
             {hits.map((item) => (
               <div
                 key={item.id}
@@ -273,7 +273,7 @@ export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedIn
                 ) : itemFiles.length === 0 ? (
                   <p className="text-sm text-[#3a3f4b] text-center py-3">No files available</p>
                 ) : (
-                  <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1.5">
                     {itemFiles.map((file) => {
                       const installed = isItemInstalled(file)
                       const downloading = downloadingItems.has(file.id)

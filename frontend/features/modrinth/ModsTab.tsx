@@ -95,7 +95,7 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
         <ChevronDown size={16} className={`text-[var(--text-muted)] ml-auto transition-transform ${showInstanceSelector ? 'rotate-180' : ''}`} strokeWidth={3} />
       </button>
       {showInstanceSelector && (
-        <div className="absolute top-full mt-1 right-0 bg-[var(--bg-tertiary)] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto">
+        <div className="absolute top-full mt-2 right-0 bg-[var(--bg-tertiary)] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto">
           {instances.filter(i => i.loader === "fabric" || i.loader === "neoforge").length === 0 ? (
             <div className="px-3 py-4 text-center bg-[var(--bg-tertiary)]">
               <p className="text-sm text-[var(--text-muted)] mb-1">No modded instances</p>
@@ -109,7 +109,7 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
                 <button
                   key={instance.name}
                   onClick={() => { onSetSelectedInstance(instance); setShowInstanceSelector(false) }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm cursor-pointer transition-colors ${selectedInstance.name === instance.name ? "bg-[#3b82f6]/10 text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"}`}
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-left text-sm cursor-pointer transition-colors ${selectedInstance.name === instance.name ? "bg-[#3b82f6]/10 text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-hover)]"}`}
                 >
                   {icon ? (
                     <img src={icon} alt={instance.name} className="w-8 h-8 rounded object-cover flex-shrink-0" />
@@ -315,8 +315,8 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, so
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {!hideToolbar && <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+    <div className="max-w-7xl mx-auto h-full flex flex-col">
+      {!hideToolbar && <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4 flex-shrink-0">
         <div className="flex gap-2 items-stretch">
           {sourceSelector}
         <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
@@ -338,8 +338,8 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, so
         </div>
       </div>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-3">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2">
+          <div className="lg:col-span-2 space-y-3 overflow-y-auto pr-2">
             {hits.map((mod) => (
               <div
                 key={mod.project_id}
@@ -407,7 +407,7 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, so
                 ) : modVersions.length === 0 ? (
                   <p className="text-sm text-[#3a3f4b] text-center py-3">No compatible versions</p>
                 ) : (
-                  <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1.5">
                     {modVersions.map((version) => {
                       const installed = isModInstalled(version)
                       const downloading = downloadingMods.has(version.id)

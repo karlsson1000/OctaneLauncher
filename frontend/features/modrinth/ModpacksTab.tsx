@@ -231,8 +231,8 @@ export function ModpacksTab({
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {!hideToolbar && <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4">
+    <div className="max-w-7xl mx-auto h-full flex flex-col">
+      {!hideToolbar && <div className="sticky top-0 z-10 bg-[var(--content-bg)] pb-4 flex-shrink-0">
         <div className="flex gap-2 items-stretch">
           {sourceSelector}
         <div className="relative flex-1 rounded-md bg-[var(--bg-tertiary)]">
@@ -254,8 +254,8 @@ export function ModpacksTab({
         </div>
       </div>}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-3">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-2">
+        <div className="lg:col-span-2 space-y-3 overflow-y-auto pr-2">
           {displayedHits.map((modpack) => (
             <div
               key={modpack.project_id}
@@ -312,7 +312,6 @@ export function ModpacksTab({
             </div>
 
             <p className="text-sm text-[var(--text-muted)] mb-4 leading-relaxed">{selectedModpack.description}</p>
-
             <div className="flex gap-2 mb-5 text-xs flex-wrap">
               <span className="flex items-center gap-1 bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
                 <Download size={12} />
@@ -326,7 +325,7 @@ export function ModpacksTab({
               {loadingVersions.has(selectedModpack.project_id) ? (
                 <div className="text-center py-6"><Loader2 size={20} className="animate-spin text-[#3b82f6] mx-auto" /></div>
               ) : modpackVersions[selectedModpack.project_id]?.length > 0 ? (
-                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1.5">
                   {modpackVersions[selectedModpack.project_id].map((version) => {
                     const installing = installingVersions.has(version.id)
                     const projectStatus = installationStatus[selectedModpack.project_id]
