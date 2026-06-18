@@ -57,7 +57,13 @@ export function useLauncherState() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [isInstallingUpdate, setIsInstallingUpdate] = useState(false)
   const [showAccountDropdown, setShowAccountDropdown] = useState(false)
-  const [showFriendsPanel, setShowFriendsPanel] = useState(false)
+  const [showFriendsPanel, setShowFriendsPanel] = useState(() => {
+    const stored = localStorage.getItem("octane_friends_panel_open")
+    return stored ? JSON.parse(stored) : false
+  })
+  useEffect(() => {
+    localStorage.setItem("octane_friends_panel_open", JSON.stringify(showFriendsPanel))
+  }, [showFriendsPanel])
   const [browseSubTab, setBrowseSubTab] = useState<"mods" | "modpacks" | "resourcepacks" | "shaderpacks">("mods")
 
   const appWindow = getCurrentWindow()
