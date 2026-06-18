@@ -308,12 +308,11 @@ export function CurseforgeShaderPacksTab({ selectedInstance, hideToolbar, source
                             {releaseTypeLabel(file.releaseType)} • {(file.fileLength / 1024 / 1024).toFixed(1)} MB
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDownload(file)}
-                          disabled={!selectedInstance || downloading || installed || !file.downloadUrl}
-                          className="px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1"
-                          style={{ backgroundColor: installed ? "var(--bg-secondary)" : "#f59e0b", color: installed ? "var(--text-muted)" : "white" }}
-                        >
+                          <button
+                            onClick={() => handleDownload(file)}
+                            disabled={!selectedInstance || downloading || installed || !file.downloadUrl}
+                            className="px-3 py-2 bg-[#f59e0b] hover:bg-[#fbbf24] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1"
+                          >
                           {downloading ? <Loader2 size={14} className="animate-spin" /> : installed ? "Installed" : <><Download size={14} />Install</>}
                         </button>
                       </div>
