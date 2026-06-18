@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Upload, RotateCcw, Loader2, User, X, Rotate3d, Settings } from "lucide-react"
+import { Upload, Loader2, User, X, Rotate3d, Settings } from "lucide-react"
 import type { RecentSkin, Cape } from "../../types"
 
 interface SkinsTabProps {
