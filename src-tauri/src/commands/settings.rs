@@ -28,16 +28,6 @@ fn cache_jres(jres: &[DetectedJava]) {
     }
 }
 
-fn load_cached_jres() -> Vec<DetectedJava> {
-    let cache_path = crate::utils::get_launcher_dir().join("java_cache.json");
-    if let Ok(content) = std::fs::read_to_string(&cache_path) {
-        if let Ok(jres) = serde_json::from_str(&content) {
-            return jres;
-        }
-    }
-    Vec::new()
-}
-
 #[tauri::command]
 pub async fn get_settings() -> Result<LauncherSettings, String> {
     SettingsManager::load()
@@ -115,7 +105,6 @@ pub async fn save_instance_settings(
 #[tauri::command]
 pub async fn detect_java_installations() -> Result<Vec<String>, String> {
     let mut java_paths: Vec<String> = Vec::new();
-    let _detected: Vec<DetectedJava> = load_cached_jres();
 
     let java_bin = if cfg!(windows) { "javaw.exe" } else { "java" };
 
@@ -128,6 +117,8 @@ pub async fn detect_java_installations() -> Result<Vec<String>, String> {
             "C:\\Program Files (x86)\\Eclipse Adoptium",
             "C:\\Program Files\\Microsoft",
             "C:\\Program Files\\Zulu",
+            "C:\\Program Files\\GraalVM",
+            "C:\\Program Files\\BellSoft",
             "C:\\Program Files\\Amazon Corretto",
         ];
         for base_path in common_paths {
@@ -137,6 +128,23 @@ pub async fn detect_java_installations() -> Result<Vec<String>, String> {
                         if let Some(p) = detect_path(&entry.path().to_string_lossy(), java_bin) {
                             if get_java_info(&p).is_ok() {
                                 try_add(&mut java_paths, &p);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
+            let local_programs = PathBuf::from(local_app_data).join("Programs");
+            if local_programs.exists() {
+                if let Ok(entries) = std::fs::read_dir(&local_programs) {
+                    for entry in entries.flatten() {
+                        if entry.path().is_dir() {
+                            if let Some(p) = detect_path(&entry.path().to_string_lossy(), java_bin) {
+                                if get_java_info(&p).is_ok() {
+                                    try_add(&mut java_paths, &p);
+                                }
                             }
                         }
                     }
