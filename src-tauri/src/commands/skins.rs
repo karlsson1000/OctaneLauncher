@@ -280,9 +280,9 @@ pub async fn upload_skin(
                 let cape_url = textures_data.textures.cape.map(|c| c.url);
                 
                 return Ok(CurrentSkin {
-                    url: skin_texture.url,
+                    url: skin_texture.url.replace("http://", "https://"),
                     variant: skin_variant.to_lowercase(),
-                    cape_url,
+                    cape_url: cape_url.map(|u| u.replace("http://", "https://")),
                 });
             }
         }
@@ -361,7 +361,7 @@ pub async fn get_current_skin(app_handle: tauri::AppHandle) -> Result<Option<Cur
     
     if let Some(active_skin) = profile.skins.iter().find(|s| s.state == "ACTIVE") {
         Ok(Some(CurrentSkin {
-            url: active_skin.url.clone(),
+            url: active_skin.url.replace("http://", "https://"),
             variant: active_skin.variant.to_lowercase(),
             cape_url,
         }))
@@ -447,7 +447,7 @@ async fn get_player_cape(uuid: &str) -> Result<String, String> {
     textures_data
         .textures
         .cape
-        .map(|cape| cape.url)
+        .map(|cape| cape.url.replace("http://", "https://"))
         .ok_or("No cape found".to_string())
 }
 
