@@ -218,8 +218,6 @@ export function ScreenshotsTab() {
             prevImage={prevImage}
             onOpen={handleOpenScreenshot}
             onDelete={handleViewerDelete}
-            formatDate={formatDate}
-            formatFileSize={formatFileSize}
           />
       )}
     </div>
@@ -358,19 +356,13 @@ interface ImageViewerProps {
   prevImage: () => void
   onOpen: (screenshot: Screenshot) => void
   onDelete: (screenshot: Screenshot) => void
-  formatDate: (timestamp: number) => string
-  formatFileSize: (bytes: number) => string
 }
 
-function ImageViewer({ screenshot, currentImageIndex, totalImages, getImageData, closeViewer, nextImage, prevImage, onOpen, onDelete, formatDate, formatFileSize }: ImageViewerProps) {
+function ImageViewer({ screenshot, currentImageIndex, totalImages, getImageData, closeViewer, nextImage, prevImage, onOpen, onDelete }: ImageViewerProps) {
   const [imageSrc, setImageSrc] = useState("")
 
   useEffect(() => {
-    const loadImage = async () => {
-      const dataUrl = await getImageData(screenshot.path)
-      setImageSrc(dataUrl)
-    }
-    loadImage()
+    getImageData(screenshot.path).then(setImageSrc)
   }, [screenshot.path, getImageData])
 
   useEffect(() => {
@@ -381,51 +373,49 @@ function ImageViewer({ screenshot, currentImageIndex, totalImages, getImageData,
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [closeViewer, prevImage, nextImage])
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-50">
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="max-w-[90vw] max-h-[90vh] flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col">
+      <div className="absolute top-4 left-4 z-30">
+        <button onClick={closeViewer} className="w-9 h-9 hover:bg-white/10 text-white/80 hover:text-white rounded-lg flex items-center justify-center transition-colors cursor-pointer">
+          <X size={18} />
+        </button>
+      </div>
+      {totalImages > 1 && (
+        <span className="absolute top-4 left-[60px] py-[9px] text-sm text-gray-400 select-none z-30">{currentImageIndex + 1} / {totalImages}</span>
+      )}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-30">
+        <button onClick={() => onOpen(screenshot)} className="px-3 h-9 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer">
+          <ExternalLink size={14} />
+          Open
+        </button>
+        <button onClick={() => onDelete(screenshot)} className="px-3 h-9 bg-red-500/80 hover:bg-red-500 text-white rounded-lg text-sm flex items-center gap-2 transition-colors cursor-pointer">
+          <Trash2 size={14} />
+          Delete
+        </button>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center relative min-h-0 px-4 pt-14 pb-4">
+        {totalImages > 1 && (
+          <>
+            <button onClick={prevImage} className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 hover:bg-white/10 rounded-full flex items-center justify-center transition-colors cursor-pointer text-white/60 hover:text-white z-10">
+              <ChevronLeft size={24} />
+            </button>
+            <button onClick={nextImage} className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 hover:bg-white/10 rounded-full flex items-center justify-center transition-colors cursor-pointer text-white/60 hover:text-white z-10">
+              <ChevronRight size={24} />
+            </button>
+          </>
+        )}
+        <div className="flex items-center justify-center w-full h-full">
           {!imageSrc ? (
-            <div className="w-[90vw] max-w-[900px] aspect-video bg-[var(--bg-tertiary)] animate-pulse rounded" />
+            <div className="w-full max-w-[900px] aspect-video bg-[var(--bg-tertiary)] animate-pulse rounded-lg" />
           ) : (
-            <img src={imageSrc} alt={screenshot.filename} className="max-w-full max-h-full object-contain" />
+            <img src={imageSrc} alt={screenshot.filename} className="max-w-[85vw] max-h-[83vh] object-contain rounded-md" />
           )}
         </div>
       </div>
-      <button onClick={closeViewer} className="absolute top-4 left-4 w-9 h-9 bg-[var(--bg-tertiary)]/90 hover:bg-[var(--bg-hover)] text-white rounded flex items-center justify-center transition-colors cursor-pointer z-10">
-        <X size={16} />
-      </button>
-      {totalImages > 1 && (
-        <div className="absolute top-4 left-[72px] px-3 py-2 bg-[var(--bg-tertiary)]/90 rounded-full text-sm text-white pointer-events-none z-10">
-          {currentImageIndex + 1} / {totalImages}
-        </div>
-      )}
-      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-        <button onClick={() => onOpen(screenshot)} className="px-3 py-2 bg-[var(--bg-tertiary)]/90 hover:bg-[var(--bg-hover)] text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer">
-          <ExternalLink size={14} />
-          {"Open"}
-        </button>
-        <button onClick={() => onDelete(screenshot)} className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm flex items-center gap-2 transition-colors cursor-pointer">
-          <Trash2 size={14} />
-          {"Delete"}
-        </button>
-      </div>
-      {totalImages > 1 && (
-        <>
-          <button onClick={prevImage} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[var(--bg-tertiary)]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10">
-            <ChevronLeft size={32} className="text-[var(--text-primary)]" />
-          </button>
-          <button onClick={nextImage} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 hover:bg-[var(--bg-tertiary)]/50 rounded-full flex items-center justify-center transition-colors cursor-pointer z-10">
-            <ChevronRight size={32} className="text-[var(--text-primary)]" />
-          </button>
-        </>
-      )}
-      <div className="absolute bottom-4 left-4 pointer-events-none z-10">
-        <p className="text-sm font-medium text-white mb-1">{screenshot.instance_name}</p>
-        <p className="text-xs text-gray-300">{screenshot.filename} • {formatDate(screenshot.timestamp)} • {formatFileSize(screenshot.size)}</p>
-      </div>
+
     </div>
   )
 }
