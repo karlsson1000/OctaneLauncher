@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Upload, Loader2, User, RotateCcw, Save } from "lucide-react"
+import { Upload, Loader2, User, RotateCcw, Save, Plane, RectangleVertical } from "lucide-react"
 import * as skinview3d from "skinview3d"
 import type { RecentSkin, Cape } from "../../types"
 
@@ -126,6 +126,28 @@ function PillBtn({ onClick, active, children }: { onClick: () => void; active: b
   )
 }
 
+function ElytraToggle({ showElytra, onToggle }: { showElytra: boolean; onToggle: () => void }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <Tooltip label={showElytra ? "Show as cape" : "Show as elytra"}>
+      <button
+        onClick={onToggle}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: 34, height: 34, borderRadius: 6, border: "none",
+          cursor: "pointer", background: hovered ? "var(--bg-hover)" : "transparent",
+          color: "var(--text-muted)",
+          transition: "background 0.15s", flexShrink: 0,
+        }}
+      >
+        {showElytra ? <RectangleVertical size={20} strokeWidth={2.5} /> : <Plane size={20} strokeWidth={2.5} />}
+      </button>
+    </Tooltip>
+  )
+}
+
 function CapeBar({ capes, activeCape, loadingCapes, getCapeImageName, onSelect, onRemove }: {
   capes: Cape[]; activeCape: string | null; loadingCapes: boolean
   getCapeImageName: (alias: string) => string; onSelect: (id: string) => void; onRemove: () => void
@@ -238,12 +260,13 @@ interface SkinViewer3DProps {
   skinUrl: string | null
   capeUrl: string | null
   slim: boolean
+  showElytra: boolean
   width: number
   height: number
   onViewerReady?: (viewer: skinview3d.SkinViewer | null) => void
 }
 
-function SkinViewer3D({ loading, skinUrl, capeUrl, slim, width, height, onViewerReady }: SkinViewer3DProps) {
+function SkinViewer3D({ loading, skinUrl, capeUrl, slim, showElytra, width, height, onViewerReady }: SkinViewer3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const viewerRef = useRef<skinview3d.SkinViewer | null>(null)
 
@@ -297,9 +320,12 @@ function SkinViewer3D({ loading, skinUrl, capeUrl, slim, width, height, onViewer
   useEffect(() => {
     const viewer = viewerRef.current
     if (!viewer) return
-    if (capeUrl) viewer.loadCape(capeUrl)
-    else viewer.loadCape(null)
-  }, [capeUrl])
+    if (capeUrl) {
+      viewer.loadCape(capeUrl, showElytra ? { backEquipment: "elytra" } : undefined)
+    } else {
+      viewer.loadCape(null)
+    }
+  }, [capeUrl, showElytra])
 
   useEffect(() => {
     const viewer = viewerRef.current
@@ -348,6 +374,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
   const [capes, setCapes] = useState<Cape[]>([])
   const [activeCape, setActiveCape] = useState<string | null>(null)
   const [loadingCapes, setLoadingCapes] = useState(false)
+  const [showElytra, setShowElytra] = useState(false)
   const [recentSkins, setRecentSkins] = useState<RecentSkin[]>([])
   const [currentSkinUrl, setCurrentSkinUrl] = useState<string | null>(null)
   const [containerSize, setContainerSize] = useState({ width: 800, height: 600 })
@@ -645,6 +672,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
       skinUrl={currentSkinUrl}
       capeUrl={activeCapeUrl}
       slim={skinVariant === "slim"}
+      showElytra={showElytra}
       width={containerSize.width}
       height={containerSize.height}
       onViewerReady={v => { skinViewerRef.current = v }}
@@ -726,14 +754,17 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
           <PillBtn onClick={() => setSkinVariant("classic")} active={skinVariant === "classic"}>Classic</PillBtn>
           <PillBtn onClick={() => setSkinVariant("slim")} active={skinVariant === "slim"}>Slim</PillBtn>
           {(loadingCapes || capes.length > 0) && (
-            <CapeBar
-              capes={capes}
-              activeCape={activeCape}
-              loadingCapes={loadingCapes}
-              getCapeImageName={getCapeImageName}
-              onSelect={handleCapeSelect}
-              onRemove={handleCapeRemove}
-            />
+            <>
+              <CapeBar
+                capes={capes}
+                activeCape={activeCape}
+                loadingCapes={loadingCapes}
+                getCapeImageName={getCapeImageName}
+                onSelect={handleCapeSelect}
+                onRemove={handleCapeRemove}
+              />
+              {activeCapeUrl && <ElytraToggle showElytra={showElytra} onToggle={() => setShowElytra(v => !v)} />}
+            </>
           )}
           {hasPendingChanges && (
             <div style={{ display: "flex", gap: 8, marginLeft: "auto", flexShrink: 0 }}>
