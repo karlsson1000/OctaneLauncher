@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import { X, Trash2, Camera, ImagePlus, Loader2, Check, Cpu } from "lucide-react"
 import { invoke } from "@tauri-apps/api/core"
 import { ConfirmModal, AlertModal } from "../../components/ui/ConfirmModal"
-import type { Instance, FabricVersion, LauncherSettings } from "../../types"
+import type { Instance, FabricVersion, NeoForgeVersion, ForgeVersion, LauncherSettings } from "../../types"
 
 interface SystemInfo {
   total_memory_mb: number
@@ -78,6 +78,16 @@ function InnerModal({
   const [isLoadingFabric, setIsLoadingFabric] = useState(false)
   const [isUpdatingFabric, setIsUpdatingFabric] = useState(false)
 
+  const [neoforgeVersions, setNeoforgeVersions] = useState<NeoForgeVersion[]>([])
+  const [selectedNeoforgeVersion, setSelectedNeoforgeVersion] = useState<string>(instance.loader_version || "")
+  const [isLoadingNeoforge, setIsLoadingNeoforge] = useState(false)
+  const [isUpdatingNeoforge, setIsUpdatingNeoforge] = useState(false)
+
+  const [forgeVersions, setForgeVersions] = useState<ForgeVersion[]>([])
+  const [selectedForgeVersion, setSelectedForgeVersion] = useState<string>(instance.loader_version || "")
+  const [isLoadingForge, setIsLoadingForge] = useState(false)
+  const [isUpdatingForge, setIsUpdatingForge] = useState(false)
+
   const [minecraftVersions, setMinecraftVersions] = useState<string[]>([])
   const [selectedMinecraftVersion, setSelectedMinecraftVersion] = useState<string>(
     getMinecraftVersion(instance.version)
@@ -86,8 +96,12 @@ function InnerModal({
   const [isUpdatingVersion, setIsUpdatingVersion] = useState(false)
   const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false)
   const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false)
+  const [isNeoforgeDropdownOpen, setIsNeoforgeDropdownOpen] = useState(false)
+  const [isForgeDropdownOpen, setIsForgeDropdownOpen] = useState(false)
   const versionDropdownRef = useRef<HTMLDivElement>(null)
   const fabricDropdownRef = useRef<HTMLDivElement>(null)
+  const neoforgeDropdownRef = useRef<HTMLDivElement>(null)
+  const forgeDropdownRef = useRef<HTMLDivElement>(null)
 
   const [useCustomRam, setUseCustomRam] = useState(false)
   const [instanceMemoryMb, setInstanceMemoryMb] = useState(2048)
@@ -112,12 +126,16 @@ function InnerModal({
     loadInstanceRamSettings()
     loadSystemInfo()
     if (isFabricInstance) loadFabricVersions()
+    if (isNeoforgeInstance) loadNeoforgeVersions()
+    if (isForgeInstance) loadForgeVersions()
   }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (versionDropdownRef.current && !versionDropdownRef.current.contains(event.target as Node)) setIsVersionDropdownOpen(false)
       if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) setIsFabricDropdownOpen(false)
+      if (neoforgeDropdownRef.current && !neoforgeDropdownRef.current.contains(event.target as Node)) setIsNeoforgeDropdownOpen(false)
+      if (forgeDropdownRef.current && !forgeDropdownRef.current.contains(event.target as Node)) setIsForgeDropdownOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -243,6 +261,72 @@ function InnerModal({
       setSelectedFabricVersion(instance.loader_version || "")
     } finally {
       setIsUpdatingFabric(false)
+    }
+  }
+
+  const loadNeoforgeVersions = async () => {
+    setIsLoadingNeoforge(true)
+    try {
+      const versions = await invoke<NeoForgeVersion[]>("get_neoforge_versions")
+      setNeoforgeVersions(versions)
+    } catch (error) {
+      console.error("Failed to load NeoForge versions:", error)
+      setAlertModal({ isOpen: true, title: "An error occurred", message: `Failed to load NeoForge versions: ${String(error)}`, type: "danger" })
+    } finally {
+      setIsLoadingNeoforge(false)
+    }
+  }
+
+  const handleNeoforgeSelect = async (newVersion: string) => {
+    if (!newVersion || newVersion === instance.loader_version) {
+      setIsNeoforgeDropdownOpen(false)
+      return
+    }
+    setSelectedNeoforgeVersion(newVersion)
+    setIsNeoforgeDropdownOpen(false)
+    setIsUpdatingNeoforge(true)
+    try {
+      await invoke("update_instance_neoforge_loader", { instanceName: instance.name, neoforgeVersion: newVersion })
+      onInstanceUpdated()
+    } catch (error) {
+      console.error("Failed to update NeoForge loader:", error)
+      setAlertModal({ isOpen: true, title: "An error occurred", message: `Failed to update NeoForge loader: ${String(error)}`, type: "danger" })
+      setSelectedNeoforgeVersion(instance.loader_version || "")
+    } finally {
+      setIsUpdatingNeoforge(false)
+    }
+  }
+
+  const loadForgeVersions = async () => {
+    setIsLoadingForge(true)
+    try {
+      const versions = await invoke<ForgeVersion[]>("get_forge_versions")
+      setForgeVersions(versions)
+    } catch (error) {
+      console.error("Failed to load Forge versions:", error)
+      setAlertModal({ isOpen: true, title: "An error occurred", message: `Failed to load Forge versions: ${String(error)}`, type: "danger" })
+    } finally {
+      setIsLoadingForge(false)
+    }
+  }
+
+  const handleForgeSelect = async (newVersion: string) => {
+    if (!newVersion || newVersion === instance.loader_version) {
+      setIsForgeDropdownOpen(false)
+      return
+    }
+    setSelectedForgeVersion(newVersion)
+    setIsForgeDropdownOpen(false)
+    setIsUpdatingForge(true)
+    try {
+      await invoke("update_instance_forge_loader", { instanceName: instance.name, forgeFullVersion: newVersion })
+      onInstanceUpdated()
+    } catch (error) {
+      console.error("Failed to update Forge loader:", error)
+      setAlertModal({ isOpen: true, title: "An error occurred", message: `Failed to update Forge loader: ${String(error)}`, type: "danger" })
+      setSelectedForgeVersion(instance.loader_version || "")
+    } finally {
+      setIsUpdatingForge(false)
     }
   }
 
@@ -478,7 +562,7 @@ function InnerModal({
                 )}
               </div>
 
-              {/* Fabric loader version */}
+              {/* Loader version (Fabric / NeoForge / Forge) */}
               <div>
                 {isFabricInstance && (
                   <>
@@ -517,6 +601,96 @@ function InnerModal({
                               >
                                 <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
                                 {selectedFabricVersion === version.version && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+                {isNeoforgeInstance && (
+                  <>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">NeoForge Loader Version</label>
+                    {isLoadingNeoforge ? (
+                      <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+                        <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
+                    <span>Loading...</span>
+                      </div>
+                    ) : (
+                      <div className="relative" ref={neoforgeDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={() => setIsNeoforgeDropdownOpen(!isNeoforgeDropdownOpen)}
+                          className={`w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer ${isNeoforgeDropdownOpen ? 'rounded-t' : 'rounded'}`}
+                          disabled={isUpdatingNeoforge}
+                        >
+                          {selectedNeoforgeVersion}
+                        </button>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          {isUpdatingNeoforge
+                            ? <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
+                            : isNeoforgeDropdownOpen
+                              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+                              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                          }
+                        </div>
+                        {isNeoforgeDropdownOpen && (
+                          <div className="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                            {neoforgeVersions.map((version) => (
+                              <button
+                                key={version.full_version}
+                                type="button"
+                                onClick={() => handleNeoforgeSelect(version.full_version)}
+                                className="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                              >
+                                <span>{version.full_version}</span>
+                                {selectedNeoforgeVersion === version.full_version && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+                {isForgeInstance && (
+                  <>
+                    <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Forge Loader Version</label>
+                    {isLoadingForge ? (
+                      <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+                        <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
+                    <span>Loading...</span>
+                      </div>
+                    ) : (
+                      <div className="relative" ref={forgeDropdownRef}>
+                        <button
+                          type="button"
+                          onClick={() => setIsForgeDropdownOpen(!isForgeDropdownOpen)}
+                          className={`w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer ${isForgeDropdownOpen ? 'rounded-t' : 'rounded'}`}
+                          disabled={isUpdatingForge}
+                        >
+                          {selectedForgeVersion}
+                        </button>
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                          {isUpdatingForge
+                            ? <Loader2 size={16} className="animate-spin text-[var(--accent-primary)]" />
+                            : isForgeDropdownOpen
+                              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+                              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                          }
+                        </div>
+                        {isForgeDropdownOpen && (
+                          <div className="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                            {forgeVersions.map((version) => (
+                              <button
+                                key={version.full_version}
+                                type="button"
+                                onClick={() => handleForgeSelect(version.full_version)}
+                                className="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                              >
+                                <span>{version.full_version}</span>
+                                {selectedForgeVersion === version.full_version && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
                               </button>
                             ))}
                           </div>

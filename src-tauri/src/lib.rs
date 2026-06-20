@@ -216,6 +216,8 @@ pub fn run() {
             get_instance_worlds,
             delete_world,
             update_instance_fabric_loader,
+            update_instance_neoforge_loader,
+            update_instance_forge_loader,
             update_instance_minecraft_version,
             export_instance,
             get_neoforge_versions,
