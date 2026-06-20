@@ -132,7 +132,10 @@ pub async fn load_recent_skins(account_uuid: String) -> Result<Vec<RecentSkin>, 
     let skins: Vec<RecentSkin> = serde_json::from_str(&content)
         .map_err(|e| e.to_string())?;
     
-    Ok(skins)
+    Ok(skins.into_iter().map(|s| RecentSkin {
+        url: s.url.replace("http://", "https://"),
+        ..s
+    }).collect())
 }
 
 #[tauri::command]
@@ -156,7 +159,7 @@ pub async fn save_recent_skin(
     skins.retain(|s| s.url != skin_url);
     
     let new_skin = RecentSkin {
-        url: skin_url,
+        url: skin_url.replace("http://", "https://"),
         variant,
         timestamp: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -402,7 +405,10 @@ pub async fn get_user_capes(app_handle: tauri::AppHandle) -> Result<UserCapesRes
         .await
         .map_err(|e| e.to_string())?;
     
-    let capes = profile.capes.unwrap_or_default();
+    let capes = profile.capes.unwrap_or_default().into_iter().map(|c| CapeInfo {
+        url: c.url.replace("http://", "https://"),
+        ..c
+    }).collect();
     
     Ok(UserCapesResponse { capes })
 }
