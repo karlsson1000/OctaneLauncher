@@ -133,6 +133,27 @@ pub async fn update_server_status(
 }
 
 #[tauri::command]
+pub async fn reorder_servers(server_names: Vec<String>) -> Result<(), String> {
+    let mut servers = get_servers().await?;
+
+    let mut reordered: Vec<ServerInfo> = Vec::with_capacity(server_names.len());
+    for name in &server_names {
+        if let Some(idx) = servers.iter().position(|s| s.name == *name) {
+            reordered.push(servers.remove(idx));
+        }
+    }
+
+    reordered.extend(servers);
+
+    let servers_file = get_launcher_dir().join("servers.json");
+    let json = serde_json::to_string_pretty(&reordered)
+        .map_err(|e| e.to_string())?;
+
+    std::fs::write(&servers_file, json)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn ping_server(address: String, port: u16) -> Result<u32, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let addr_str = format!("{}:{}", address, port);

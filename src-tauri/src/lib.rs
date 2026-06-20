@@ -278,6 +278,7 @@ pub fn run() {
             update_server_status,
             launch_server,
             ping_server,
+            reorder_servers,
             open_url,
             get_system_info,
             get_storage_usage,

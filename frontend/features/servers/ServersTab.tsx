@@ -1,5 +1,5 @@
-import { Server, Plus, Search, Trash2, Play } from "lucide-react"
-import { useState, useEffect, useRef } from "react"
+import { Server, Plus, Search, Trash2, Play, GripVertical } from "lucide-react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { CreateServerModal } from "./CreateServerModal"
 import { ConfirmModal } from "../../components/ui/ConfirmModal"
@@ -148,6 +148,92 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
     }
   }
 
+  const filteredServers = servers.filter(server =>
+    server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    server.address.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const dragState = useRef<{
+    fromIndex: number
+    draggedOverIndex: number | null
+  } | null>(null)
+
+  const persistReorder = useCallback(async (ordered: ServerInfo[]) => {
+    setServers(ordered)
+    try {
+      await invoke("reorder_servers", { serverNames: ordered.map(s => s.name) })
+    } catch (e) {
+      console.error("Failed to reorder servers:", e)
+    }
+  }, [])
+
+  const [draggedOverIndex, setDraggedOverIndex] = useState<number | null>(null)
+
+  const cleanupDrag = useCallback(() => {
+    document.removeEventListener("pointermove", onPointerMove)
+    document.removeEventListener("pointerup", onPointerUp)
+    document.removeEventListener("pointercancel", onPointerCancel)
+    dragState.current = null
+    setDraggedOverIndex(null)
+  }, [])
+
+  const onPointerUp = useCallback((_e: PointerEvent) => {
+    const state = dragState.current
+    if (!state) return
+    const fromIdx = state.fromIndex
+    const toIdx = state.draggedOverIndex
+    cleanupDrag()
+    if (toIdx === null || fromIdx === toIdx) return
+
+    const list = filteredServers
+    const reordered = list.slice()
+    const [moved] = reordered.splice(fromIdx, 1)
+    reordered.splice(toIdx, 0, moved)
+
+    if (searchQuery) {
+      const movedNames = new Set(reordered.map(s => s.name))
+      const remaining = servers.filter(s => !movedNames.has(s.name))
+      persistReorder([...reordered, ...remaining])
+    } else {
+      persistReorder(reordered)
+    }
+  }, [filteredServers, servers, searchQuery, persistReorder, cleanupDrag])
+
+  const onPointerMove = useCallback((e: PointerEvent) => {
+    const state = dragState.current
+    if (!state) return
+    const els = document.elementsFromPoint(e.clientX, e.clientY)
+    for (const el of els) {
+      const card = (el as HTMLElement).closest("[data-server-card]") as HTMLElement | null
+      if (card) {
+        const idx = Number(card.dataset.serverIndex)
+        if (!isNaN(idx) && idx !== state.draggedOverIndex) {
+          state.draggedOverIndex = idx
+          setDraggedOverIndex(idx)
+        }
+        return
+      }
+    }
+    if (state.draggedOverIndex !== null) {
+      state.draggedOverIndex = null
+      setDraggedOverIndex(null)
+    }
+  }, [])
+
+  const onPointerCancel = useCallback((_e: PointerEvent) => {
+    cleanupDrag()
+  }, [cleanupDrag])
+
+  const handleGripPointerDown = (e: React.PointerEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    dragState.current = { fromIndex: index, draggedOverIndex: index }
+    setDraggedOverIndex(index)
+    document.addEventListener("pointermove", onPointerMove)
+    document.addEventListener("pointerup", onPointerUp)
+    document.addEventListener("pointercancel", onPointerCancel)
+  }
+
   const handleLaunchServer = async (server: ServerInfo, e: React.MouseEvent) => {
     e.stopPropagation()
     if (server.status !== "online") {
@@ -168,11 +254,6 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
       setLaunchingServer(null)
     }
   }
-
-  const filteredServers = servers.filter(server =>
-    server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    server.address.toLowerCase().includes(searchQuery.toLowerCase())
-  )
 
   return (
     <>
@@ -225,17 +306,26 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredServers.map((server) => {
+              {filteredServers.map((server, index) => {
                 const displayAddress = server.port === 25565 ? server.address : `${server.address}:${server.port}`
                 const isLaunching = launchingServer === server.name
                 const isOnline = server.status === "online"
+                const isOver = draggedOverIndex === index
 
                 return (
                   <div
                     key={server.name}
-                    className="group flex items-center gap-5 px-4 transition-colors rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)]"
+                    data-server-card
+                    data-server-index={index}
+                    className={`group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] ${isOver ? "outline outline-2 outline-[var(--accent-primary)]" : "transition-colors"}`}
                     style={{ height: 100 }}
                   >
+                    <div
+                      onPointerDown={e => handleGripPointerDown(e, index)}
+                      className="flex-shrink-0 cursor-grab active:cursor-grabbing text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                    >
+                      <GripVertical size={18} strokeWidth={2} />
+                    </div>
                     <div className="flex-shrink-0">
                       {server.favicon ? (
                         <img
