@@ -271,7 +271,7 @@ function SkinViewer3D({ loading, skinUrl, capeUrl, slim, width, height, onViewer
 
     viewer.playerObject.rotation.y = 0.3
 
-    viewer.camera.position.y += 5
+    viewer.camera.position.y += 8
     viewer.camera.lookAt(viewer.playerObject.position)
 
     viewerRef.current = viewer
