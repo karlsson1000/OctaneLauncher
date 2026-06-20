@@ -622,6 +622,12 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
           await invoke<void>('remove_cape')
           finalCape = null
         }
+        if (activeAccount) {
+          const cached = loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
+          if (cached?.uuid === activeAccount.uuid) {
+            saveCache(CAPE_CACHE_KEY, { ...cached, activeCapeId: finalCape, timestamp: Date.now() })
+          }
+        }
       }
 
       if (currentSkinUrl?.startsWith('blob:')) URL.revokeObjectURL(currentSkinUrl)
