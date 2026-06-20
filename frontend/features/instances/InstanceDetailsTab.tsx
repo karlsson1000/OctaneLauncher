@@ -159,7 +159,7 @@ export function InstanceDetailsTab({
   }
 
   const checkForUpdates = async () => {
-    if (!instance || (instance.loader !== "fabric" && instance.loader !== "neoforge")) return
+    if (!instance || (instance.loader !== "fabric" && instance.loader !== "neoforge" && instance.loader !== "forge")) return
 
     setIsCheckingUpdates(true)
     const updates: ModUpdate[] = []
@@ -297,6 +297,9 @@ export function InstanceDetailsTab({
         if (major >= 20) return minor === '0' ? `1.${major}` : `1.${major}.${minor}`
       }
     }
+    if (instance.loader === "forge") {
+      return instance.version.split('-forge-')[0] || instance.version
+    }
     return instance.version
   }
 
@@ -316,6 +319,14 @@ export function InstanceDetailsTab({
       const mcVersion = getMinecraftVersion(instance)
       const neoforgeVersionParts = parts.filter(part => part !== mcVersion)
       if (neoforgeVersionParts.length > 0) return neoforgeVersionParts.join('-')
+    }
+    return null
+  }
+
+  const getForgeVersion = (instance: Instance): string | null => {
+    if (instance.loader === "forge") {
+      const parts = instance.version.split('-forge-')
+      if (parts.length > 1) return parts[1]
     }
     return null
   }
@@ -503,6 +514,8 @@ export function InstanceDetailsTab({
                       <><span className="text-[#3b82f6]">Fabric Loader</span>{fabricLoaderVersion && <span className="text-[var(--text-muted)]"> {fabricLoaderVersion}</span>}</>
                     ) : instance.loader === "neoforge" ? (
                       <><span className="text-[#f97316]">NeoForge</span>{neoforgeVersion && <span className="text-[var(--text-muted)]"> {neoforgeVersion}</span>}</>
+                    ) : instance.loader === "forge" ? (
+                      <><span className="text-[#e05d2e]">Forge</span>{getForgeVersion(instance) && <span className="text-[var(--text-muted)]"> {getForgeVersion(instance)}</span>}</>
                     ) : (
                       <span className="text-[#16a34a]">Vanilla</span>
                     )}

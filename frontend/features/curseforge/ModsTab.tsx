@@ -19,8 +19,8 @@ const SEARCH_PLACEHOLDER = "Search mods..."
 
 export function CurseforgeModsTab({ selectedInstance, instances, onSetSelectedInstance, hideToolbar, sourceSelector, modsSelector, searchQuery, onSearchQueryChange }: CurseforgeModsTabProps) {
   useEffect(() => {
-    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) {
-      const moddedInstances = instances.filter(i => i.loader === "fabric" || i.loader === "neoforge")
+    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge" && selectedInstance.loader !== "forge")) {
+      const moddedInstances = instances.filter(i => i.loader === "fabric" || i.loader === "neoforge" || i.loader === "forge")
       if (moddedInstances.length > 0) onSetSelectedInstance(moddedInstances[0])
     }
   }, [instances, selectedInstance])

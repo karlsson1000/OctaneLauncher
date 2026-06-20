@@ -58,16 +58,20 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
         if (parseInt(major) >= 20) return patch === '0' ? `1.${major}` : `1.${major}.${minor}`
       }
     }
+    if (instance.loader === "forge") {
+      return instance.version.split('-forge-')[0] || instance.version
+    }
     return instance.version
   }
 
   const getLoaderDisplay = (instance: Instance): { name: string; color: string } => {
     if (instance.loader === "fabric") return { name: "Fabric", color: "text-[#3b82f6]" }
     if (instance.loader === "neoforge") return { name: "NeoForge", color: "text-[#f97316]" }
+    if (instance.loader === "forge") return { name: "Forge", color: "text-[#e05d2e]" }
     return { name: "Vanilla", color: "text-[#16a34a]" }
   }
 
-  if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) return null
+  if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge" && selectedInstance.loader !== "forge")) return null
 
   const loaderInfo = getLoaderDisplay(selectedInstance)
 
@@ -96,13 +100,13 @@ export function ModsSelector({ instances, selectedInstance, onSetSelectedInstanc
       </button>
       {showInstanceSelector && (
         <div className="absolute top-full mt-2 right-0 bg-[var(--bg-tertiary)] rounded-md overflow-hidden z-[100] min-w-[240px] max-h-[400px] overflow-y-auto">
-          {instances.filter(i => i.loader === "fabric" || i.loader === "neoforge").length === 0 ? (
+          {instances.filter(i => i.loader === "fabric" || i.loader === "neoforge" || i.loader === "forge").length === 0 ? (
             <div className="px-3 py-4 text-center bg-[var(--bg-tertiary)]">
               <p className="text-sm text-[var(--text-muted)] mb-1">No modded instances</p>
-              <p className="text-xs text-[#3a3f4b]">Create a Fabric or NeoForge instance to install mods</p>
+              <p className="text-xs text-[#3a3f4b]">Create a modded instance to install mods</p>
             </div>
           ) : (
-            instances.filter(i => i.loader === "fabric" || i.loader === "neoforge").map((instance) => {
+            instances.filter(i => i.loader === "fabric" || i.loader === "neoforge" || i.loader === "forge").map((instance) => {
               const icon = instanceIcons[instance.name]
               const loader = getLoaderDisplay(instance)
               return (
@@ -168,14 +172,14 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, so
   const itemsPerPage = 20
 
   useEffect(() => {
-    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) {
-      const moddedInstances = instances.filter(i => i.loader === "fabric" || i.loader === "neoforge")
+    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge" && selectedInstance.loader !== "forge")) {
+      const moddedInstances = instances.filter(i => i.loader === "fabric" || i.loader === "neoforge" || i.loader === "forge")
       if (moddedInstances.length > 0) onSetSelectedInstance(moddedInstances[0])
     }
   }, [instances, selectedInstance])
 
   useEffect(() => {
-    if (selectedInstance && (selectedInstance.loader === "fabric" || selectedInstance.loader === "neoforge")) {
+    if (selectedInstance && (selectedInstance.loader === "fabric" || selectedInstance.loader === "neoforge" || selectedInstance.loader === "forge")) {
       loadInstalledMods()
     }
   }, [selectedInstance])
@@ -267,11 +271,14 @@ export function ModsTab({ selectedInstance, instances, onSetSelectedInstance, so
         if (parseInt(major) >= 20) return patch === '0' ? `1.${major}` : `1.${major}.${minor}`
       }
     }
+    if (instance.loader === "forge") {
+      return instance.version.split('-forge-')[0] || instance.version
+    }
     return instance.version
   }
 
   const handleModSelect = async (mod: ModrinthProject) => {
-    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge")) return
+    if (!selectedInstance || (selectedInstance.loader !== "fabric" && selectedInstance.loader !== "neoforge" && selectedInstance.loader !== "forge")) return
     setSelectedMod(mod)
     setIsLoadingVersions(true)
     try {

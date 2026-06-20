@@ -33,6 +33,12 @@ export interface NeoForgeVersion {
   full_version: string
 }
 
+export interface ForgeVersion {
+  minecraft_version: string
+  forge_version: string
+  full_version: string
+}
+
 export interface LauncherSettings {
   memory_mb: number
   java_path: string | null

@@ -44,6 +44,7 @@ function InnerModal({
 
   const isFabricInstance = instance.loader === "fabric"
   const isNeoforgeInstance = instance.loader === "neoforge"
+  const isForgeInstance = instance.loader === "forge"
 
   const getMinecraftVersion = (versionString: string): string => {
     if (isFabricInstance) {
@@ -65,6 +66,9 @@ function InnerModal({
         }
         if (major >= 20) return minor === '0' ? `1.${major}` : `1.${major}.${minor}`
       }
+    }
+    if (isForgeInstance) {
+      return versionString.split('-forge-')[0] || versionString
     }
     return versionString
   }

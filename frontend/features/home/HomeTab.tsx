@@ -116,6 +116,9 @@ export function HomeTab({
         }
       }
     }
+    if (instance.loader === "forge") {
+      return instance.version.split('-forge-')[0] || instance.version
+    }
     return instance.version
   }
 

@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { open } from '@tauri-apps/plugin-dialog'
 import { X, Loader2, AlertCircle, FileDown, Check } from "lucide-react"
 import { AlertModal } from "../../components/ui/ConfirmModal"
-import type { FabricVersion, NeoForgeVersion, Instance } from "../../types"
+import type { FabricVersion, NeoForgeVersion, ForgeVersion, Instance } from "../../types"
 
 interface MinecraftVersion {
   id: string
@@ -25,13 +25,17 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   const [isCreating, setIsCreating] = useState(false)
   const [selectedVersion, setSelectedVersion] = useState(versions[0] || "1.21.11")
   const [newInstanceName, setNewInstanceName] = useState("")
-  const [loaderType, setLoaderType] = useState<"vanilla" | "fabric" | "neoforge">("vanilla")
+  const [loaderType, setLoaderType] = useState<"vanilla" | "fabric" | "neoforge" | "forge">("vanilla")
   const [fabricVersions, setFabricVersions] = useState<FabricVersion[]>([])
   const [selectedFabricVersion, setSelectedFabricVersion] = useState<string>("")
   const [neoforgeVersions, setNeoforgeVersions] = useState<NeoForgeVersion[]>([])
   const [selectedNeoforgeVersion, setSelectedNeoforgeVersion] = useState<string>("")
+  const [forgeVersions, setForgeVersions] = useState<ForgeVersion[]>([])
+  const [selectedForgeVersion, setSelectedForgeVersion] = useState<string>("")
+  const [isLoadingForge, setIsLoadingForge] = useState(false)
   const [isLoadingFabric, setIsLoadingFabric] = useState(false)
   const [isLoadingNeoforge, setIsLoadingNeoforge] = useState(false)
+  const [forgeSupportedVersions, setForgeSupportedVersions] = useState<string[]>([])
   const [isClosing, setIsClosing] = useState(false)
   const [alertModal, setAlertModal] = useState<{
     isOpen: boolean
@@ -48,9 +52,11 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
   const [isVersionDropdownOpen, setIsVersionDropdownOpen] = useState(false)
   const [isFabricDropdownOpen, setIsFabricDropdownOpen] = useState(false)
   const [isNeoforgeDropdownOpen, setIsNeoforgeDropdownOpen] = useState(false)
+  const [isForgeDropdownOpen, setIsForgeDropdownOpen] = useState(false)
   const versionDropdownRef = useRef<HTMLDivElement>(null)
   const fabricDropdownRef = useRef<HTMLDivElement>(null)
   const neoforgeDropdownRef = useRef<HTMLDivElement>(null)
+  const forgeDropdownRef = useRef<HTMLDivElement>(null)
 
   const instanceExists = instances.some(
     instance => instance.name.toLowerCase() === newInstanceName.trim().toLowerCase()
@@ -61,6 +67,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     loadVersionsWithMetadata()
     loadFabricSupportedVersions()
     loadNeoforgeSupportedVersions()
+    loadForgeSupportedVersions()
   }, [])
 
   useEffect(() => {
@@ -68,6 +75,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
       if (versionDropdownRef.current && !versionDropdownRef.current.contains(event.target as Node)) setIsVersionDropdownOpen(false)
       if (fabricDropdownRef.current && !fabricDropdownRef.current.contains(event.target as Node)) setIsFabricDropdownOpen(false)
       if (neoforgeDropdownRef.current && !neoforgeDropdownRef.current.contains(event.target as Node)) setIsNeoforgeDropdownOpen(false)
+      if (forgeDropdownRef.current && !forgeDropdownRef.current.contains(event.target as Node)) setIsForgeDropdownOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -107,6 +115,15 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     }
   }
 
+  const loadForgeSupportedVersions = async () => {
+    try {
+      const supported = await invoke<string[]>("get_forge_supported_game_versions")
+      setForgeSupportedVersions(supported)
+    } catch (error) {
+      console.error("Failed to load Forge supported versions:", error)
+    }
+  }
+
   const getFilteredVersions = (): MinecraftVersion[] => {
     let filtered = versionFilter === "snapshot"
       ? allVersions.filter(v => v.type === "snapshot")
@@ -118,11 +135,29 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     if (loaderType === "neoforge" && versionFilter === "release") {
       filtered = filtered.filter(v => neoforgeSupportedVersions.includes(v.id))
     }
+    if (loaderType === "forge" && versionFilter === "release") {
+      filtered = filtered.filter(v => forgeSupportedVersions.includes(v.id))
+    }
 
     return filtered
   }
 
   const filteredVersions = getFilteredVersions()
+
+  const loadForgeVersions = async (forVersion: string) => {
+    setIsLoadingForge(true)
+    try {
+      const versions = await invoke<ForgeVersion[]>("get_forge_versions")
+      const filtered = versions.filter(v => v.minecraft_version === forVersion)
+      setForgeVersions(filtered)
+      if (filtered.length > 0) setSelectedForgeVersion(filtered[0].forge_version)
+    } catch (error) {
+      console.error("Failed to load Forge versions:", error)
+      setAlertModal({ isOpen: true, title: "An error occurred", message: "Failed to load Forge versions" + `: ${error}`, type: "danger" })
+    } finally {
+      setIsLoadingForge(false)
+    }
+  }
 
   const loadFabricVersions = async () => {
     setIsLoadingFabric(true)
@@ -155,7 +190,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     }
   }
 
-  const handleLoaderChange = (newLoader: "vanilla" | "fabric" | "neoforge") => {
+  const handleLoaderChange = (newLoader: "vanilla" | "fabric" | "neoforge" | "forge") => {
     setLoaderType(newLoader)
 
     if (newLoader === "fabric") {
@@ -194,6 +229,25 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         loadNeoforgeVersions(selectedVersion)
       }
     }
+
+    if (newLoader === "forge") {
+      if (versionFilter === "snapshot") setVersionFilter("release")
+
+      const currentIsUnsupported = !forgeSupportedVersions.includes(selectedVersion)
+        || allVersions.find(v => v.id === selectedVersion)?.type === "snapshot"
+      if (currentIsUnsupported && forgeSupportedVersions.length > 0 && allVersions.length > 0) {
+        const firstSupported = allVersions.find(v =>
+          v.type === "release" &&
+          forgeSupportedVersions.includes(v.id)
+        )
+        if (firstSupported) {
+          setSelectedVersion(firstSupported.id)
+          loadForgeVersions(firstSupported.id)
+        }
+      } else {
+        loadForgeVersions(selectedVersion)
+      }
+    }
   }
 
   const handleVersionSelect = (versionId: string) => {
@@ -201,6 +255,9 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     setIsVersionDropdownOpen(false)
     if (loaderType === "neoforge") {
       loadNeoforgeVersions(versionId)
+    }
+    if (loaderType === "forge") {
+      loadForgeVersions(versionId)
     }
   }
 
@@ -263,6 +320,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
         loader: loaderType === "vanilla" ? null : loaderType,
         loaderVersion: loaderType === "fabric" ? selectedFabricVersion
           : loaderType === "neoforge" ? selectedNeoforgeVersion
+          : loaderType === "forge" ? (forgeVersions.find(v => v.forge_version === selectedForgeVersion)?.full_version ?? selectedForgeVersion)
           : null,
       })
 
@@ -283,12 +341,14 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     ).filter(v => {
       if (loaderType === "fabric" && filter === "release") return fabricSupportedVersions.includes(v.id)
       if (loaderType === "neoforge" && filter === "release") return neoforgeSupportedVersions.includes(v.id)
+      if (loaderType === "forge" && filter === "release") return forgeSupportedVersions.includes(v.id)
       return true
     })
 
     if (available.length > 0) {
       setSelectedVersion(available[0].id)
       if (loaderType === "neoforge") loadNeoforgeVersions(available[0].id)
+      if (loaderType === "forge") loadForgeVersions(available[0].id)
     }
   }
 
@@ -297,6 +357,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
     || instanceExists
     || (loaderType === "fabric" && !selectedFabricVersion)
     || (loaderType === "neoforge" && !selectedNeoforgeVersion)
+    || (loaderType === "forge" && !selectedForgeVersion)
     || isLoadingVersions
     || filteredVersions.length === 0
 
@@ -362,8 +423,8 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                   <button
                     type="button"
                     onClick={() => handleVersionFilterChange("snapshot")}
-                    disabled={isCreating || loaderType === "fabric" || loaderType === "neoforge"}
-                    className={`text-xs font-medium transition-colors ${loaderType === "fabric" || loaderType === "neoforge" ? "text-gray-600 cursor-not-allowed" : versionFilter === "snapshot" ? "text-[var(--text-primary)] cursor-pointer" : "text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer"}`}
+                    disabled={isCreating || loaderType === "fabric" || loaderType === "neoforge" || loaderType === "forge"}
+                    className={`text-xs font-medium transition-colors ${loaderType === "fabric" || loaderType === "neoforge" || loaderType === "forge" ? "text-gray-600 cursor-not-allowed" : versionFilter === "snapshot" ? "text-[var(--text-primary)] cursor-pointer" : "text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer"}`}
                   >
                     Snapshots
                   </button>
@@ -417,10 +478,10 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
 
             <div>
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Modloader</label>
-              <div className="flex gap-3">
-                {(["vanilla", "fabric", "neoforge"] as const).map((loader) => {
-                  const colors: Record<string, string> = { vanilla: "bg-[#16a34a]", fabric: "bg-[#3b82f6]", neoforge: "bg-[#f97316]" }
-                  const labels: Record<string, string> = { vanilla: "Vanilla", fabric: "Fabric", neoforge: "NeoForge" }
+              <div className="grid grid-cols-2 gap-2">
+                {(["vanilla", "fabric", "neoforge", "forge"] as const).map((loader) => {
+                  const colors: Record<string, string> = { vanilla: "bg-[#16a34a]", fabric: "bg-[#3b82f6]", neoforge: "bg-[#f97316]", forge: "bg-[#e05d2e]" }
+                  const labels: Record<string, string> = { vanilla: "Vanilla", fabric: "Fabric", neoforge: "NeoForge", forge: "Forge" }
                   const isActive = loaderType === loader
                   return (
                     <button
@@ -428,7 +489,7 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                       type="button"
                       onClick={() => handleLoaderChange(loader)}
                       disabled={isCreating}
-                      className={`flex-1 px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2 ${isActive ? `${colors[loader]} text-white` : "bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover-strong)]"}`}
+                      className={`px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2 ${isActive ? `${colors[loader]} text-white` : "bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover-strong)]"}`}
                     >
                       <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${isActive ? "border-white" : "border-gray-500"}`}>
                         {isActive && <div className="w-2 h-2 rounded-full bg-white" />}
@@ -526,6 +587,56 @@ export function CreateInstanceModal({ versions, instances, onClose, onSuccess, o
                           >
                             <span>{version.neoforge_version}</span>
                             {selectedNeoforgeVersion === version.neoforge_version && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {loaderType === "forge" && (
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Forge Version</label>
+                {isLoadingForge ? (
+                  <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+                    <Loader2 size={16} className="animate-spin text-[#e05d2e]" />
+                    <span>Loading Forge versions...</span>
+                  </div>
+                ) : forgeVersions.length === 0 ? (
+                  <div className="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+                    <AlertCircle size={16} />
+                    <span>No Forge versions available for Minecraft {selectedVersion}</span>
+                  </div>
+                ) : (
+                  <div className="relative" ref={forgeDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsForgeDropdownOpen(!isForgeDropdownOpen)}
+                      className={`w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer ${isForgeDropdownOpen ? 'rounded-t' : 'rounded'}`}
+                      disabled={isCreating}
+                    >
+                      {selectedForgeVersion}
+                    </button>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      {isForgeDropdownOpen
+                        ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>
+                        : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                      }
+                    </div>
+                    
+                    {isForgeDropdownOpen && (
+                      <div className="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                        {forgeVersions.map((version) => (
+                          <button
+                            key={version.forge_version}
+                            type="button"
+                            onClick={() => { setSelectedForgeVersion(version.forge_version); setIsForgeDropdownOpen(false) }}
+                            className="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                          >
+                            <span>{version.forge_version}</span>
+                            {selectedForgeVersion === version.forge_version && <Check size={16} className="text-[var(--text-primary)]" strokeWidth={2} />}
                           </button>
                         ))}
                       </div>

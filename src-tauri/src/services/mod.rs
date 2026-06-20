@@ -2,6 +2,7 @@ pub mod instance;
 pub mod instance_launch;
 pub mod fabric;
 pub mod neoforge;
+pub mod forge;
 pub mod installer;
 pub mod settings;
 pub mod accounts;

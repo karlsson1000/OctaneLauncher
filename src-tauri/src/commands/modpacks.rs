@@ -672,6 +672,30 @@ async fn install_from_mrpack(
             .install_fabric(&game_version, &fabric_version.version)
             .await
             .map_err(|e| e.to_string())?
+    } else if loader == "forge" {
+        let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+            "instance": safe_name,
+            "progress": 40,
+            "stage": "Installing Forge loader..."
+        }));
+        
+        let forge_installer = crate::services::forge::ForgeInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
+        
+        let forge_versions = forge_installer
+            .get_loader_versions()
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        let compatible = forge_versions
+            .iter()
+            .find(|v| v.minecraft_version == game_version)
+            .ok_or_else(|| format!("No Forge version found for Minecraft {}", game_version))?;
+        
+        forge_installer
+            .install_forge(&compatible.full_version)
+            .await
+            .map_err(|e| e.to_string())?
     } else {
         game_version.clone()
     };
@@ -840,6 +864,35 @@ async fn install_from_standard_zip(
             .install_fabric(&game_version, &fabric_ver)
             .await
             .map_err(|e| e.to_string())?
+    } else if loader == Some("forge".to_string()) {
+        let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+            "instance": safe_name,
+            "progress": 40,
+            "stage": "Installing Forge loader..."
+        }));
+        
+        let forge_installer = crate::services::forge::ForgeInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
+        
+        let forge_ver = if let Some(ref ver) = loader_version {
+            format!("{}-{}", game_version, ver)
+        } else {
+            let forge_versions = forge_installer
+                .get_loader_versions()
+                .await
+                .map_err(|e| e.to_string())?;
+            
+            forge_versions
+                .iter()
+                .find(|v| v.minecraft_version == game_version)
+                .ok_or_else(|| format!("No Forge version found for Minecraft {}", game_version))?
+                .full_version.clone()
+        };
+        
+        forge_installer
+            .install_forge(&forge_ver)
+            .await
+            .map_err(|e| e.to_string())?
     } else {
         game_version.clone()
     };
@@ -992,6 +1045,35 @@ async fn install_from_curseforge_manifest(
 
         fabric_installer
             .install_fabric(&game_version, &fabric_version.version)
+            .await
+            .map_err(|e| e.to_string())?
+    } else if loader == "forge" {
+        let _ = app_handle.emit("modpack-install-progress", serde_json::json!({
+            "instance": safe_name,
+            "progress": 40,
+            "stage": "Installing Forge loader..."
+        }));
+
+        let forge_installer = crate::services::forge::ForgeInstaller::new(meta_dir)
+            .map_err(|e| e.to_string())?;
+
+        let forge_ver = if let Some(ref ver) = _loader_version {
+            format!("{}-{}", game_version, ver)
+        } else {
+            let forge_versions = forge_installer
+                .get_loader_versions()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            forge_versions
+                .iter()
+                .find(|v| v.minecraft_version == game_version)
+                .ok_or_else(|| format!("No Forge version found for Minecraft {}", game_version))?
+                .full_version.clone()
+        };
+
+        forge_installer
+            .install_forge(&forge_ver)
             .await
             .map_err(|e| e.to_string())?
     } else {

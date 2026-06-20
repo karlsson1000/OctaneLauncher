@@ -1,7 +1,8 @@
 use crate::services::installer::MinecraftInstaller;
 use crate::services::fabric::FabricInstaller;
 use crate::services::neoforge::NeoForgeInstaller;
-use crate::models::{FabricLoaderVersion, NeoForgeVersion};
+use crate::services::forge::ForgeInstaller;
+use crate::models::{FabricLoaderVersion, NeoForgeVersion, ForgeVersion};
 use crate::utils::get_meta_dir;
 
 #[tauri::command]
@@ -142,4 +143,40 @@ pub async fn install_neoforge(loader_version: String) -> Result<String, String> 
         .install_neoforge(&loader_version)
         .await
         .map_err(|e| format!("NeoForge installation failed: {}", e))
+}
+
+#[tauri::command]
+pub async fn get_forge_versions() -> Result<Vec<ForgeVersion>, String> {
+    let installer = ForgeInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
+    installer
+        .get_loader_versions()
+        .await
+        .map_err(|e| format!("Failed to fetch Forge versions: {}", e))
+}
+
+#[tauri::command]
+pub async fn get_forge_supported_game_versions() -> Result<Vec<String>, String> {
+    let installer = ForgeInstaller::new(get_meta_dir())
+        .map_err(|e| e.to_string())?;
+    installer
+        .get_supported_game_versions()
+        .await
+        .map_err(|e| format!("Failed to fetch Forge supported versions: {}", e))
+}
+
+#[tauri::command]
+pub async fn install_forge(loader_version: String) -> Result<String, String> {
+    if !loader_version.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-') {
+        return Err("Invalid loader version format".to_string());
+    }
+    
+    let meta_dir = get_meta_dir();
+    let installer = ForgeInstaller::new(meta_dir)
+        .map_err(|e| e.to_string())?;
+
+    installer
+        .install_forge(&loader_version)
+        .await
+        .map_err(|e| format!("Forge installation failed: {}", e))
 }

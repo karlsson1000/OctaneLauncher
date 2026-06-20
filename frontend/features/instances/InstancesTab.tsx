@@ -78,6 +78,9 @@ export function InstancesTab({
         }
       }
     }
+    if (instance.loader === "forge") {
+      return instance.version.split('-forge-')[0] || instance.version
+    }
     return instance.version
   }
 
@@ -95,6 +98,14 @@ export function InstancesTab({
         <span className="text-[#f97316] flex-shrink-0 flex items-center gap-1">
           <img src="/loaders/neoforge.png" alt="NeoForge" className="w-3 h-3" />
           NeoForge
+        </span>
+      )
+    }
+    if (instance.loader === "forge") {
+      return (
+        <span className="text-[#e05d2e] flex-shrink-0 flex items-center gap-1">
+          <img src="/loaders/forge.png" alt="Forge" className="w-3 h-3" />
+          Forge
         </span>
       )
     }
