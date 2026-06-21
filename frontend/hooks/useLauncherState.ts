@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
 import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } from "../types"
 import type { CSSProperties } from "react"
+import { storeGet, storeSet } from "../lib/store"
 
 export function useLauncherState() {
   const [isReady, setIsReady] = useState(false)
@@ -57,12 +58,12 @@ export function useLauncherState() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [isInstallingUpdate, setIsInstallingUpdate] = useState(false)
   const [showAccountDropdown, setShowAccountDropdown] = useState(false)
-  const [showFriendsPanel, setShowFriendsPanel] = useState(() => {
-    const stored = localStorage.getItem("octane_friends_panel_open")
-    return stored ? JSON.parse(stored) : false
-  })
+  const [showFriendsPanel, setShowFriendsPanel] = useState(false)
   useEffect(() => {
-    localStorage.setItem("octane_friends_panel_open", JSON.stringify(showFriendsPanel))
+    storeGet<boolean>("friends_panel_open").then(v => { if (v) setShowFriendsPanel(true) })
+  }, [])
+  useEffect(() => {
+    storeSet("friends_panel_open", showFriendsPanel)
   }, [showFriendsPanel])
   const [browseSubTab, setBrowseSubTab] = useState<"mods" | "modpacks" | "resourcepacks" | "shaderpacks">("mods")
 
@@ -117,7 +118,7 @@ export function useLauncherState() {
             current_version: parts[0].trim(),
             new_version: parts[1].trim()
           }
-          const dismissedVersion = sessionStorage.getItem("dismissed_update_version")
+          const dismissedVersion = await storeGet<string>("dismissed_update_version")
           if (dismissedVersion !== info.new_version) {
             setUpdateInfo(info)
           }

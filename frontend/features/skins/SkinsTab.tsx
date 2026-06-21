@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { Upload, Loader2, User, RotateCcw, Save, Plane, RectangleVertical } from "lucide-react"
 import * as skinview3d from "skinview3d"
 import type { RecentSkin, Cape } from "../../types"
+import { storeGet, storeSet, storeRemove } from "../../lib/store"
 
 interface SkinsTabProps {
   activeAccount?: { uuid: string; username: string } | null
@@ -45,13 +46,12 @@ const CAPE_IMAGE_MAP: Record<string, string> = {
   "mojang studios": "mojangstudios",
 }
 
-function loadCache<T>(key: string): T | null {
-  try { const raw = sessionStorage.getItem(key); return raw ? JSON.parse(raw) as T : null }
-  catch { return null }
+function loadCache<T>(key: string): Promise<T | null> {
+  return storeGet<T>(key).then(v => v ?? null)
 }
 
 function saveCache<T>(key: string, data: T) {
-  try { sessionStorage.setItem(key, JSON.stringify(data)) } catch {}
+  return storeSet(key, data)
 }
 
 const canFetch = (last: number) => Date.now() - last >= MIN_FETCH_INTERVAL
@@ -463,7 +463,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
     try {
       setLoading(true); setError(null)
       const now = Date.now()
-      const persisted = loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
+      const persisted = await loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
       const cacheValid =
         persisted && persisted.uuid === activeAccount.uuid && (now - persisted.timestamp) < CACHE_DURATION
 
@@ -484,7 +484,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
         setCurrentSkinUrl(skinData.url)
         setSkinVariant(variant)
         originalRef.current = { ...originalRef.current, skinUrl: skinData.url, variant }
-        saveCache<PersistedSkinCache>(SKIN_CACHE_KEY, {
+        await saveCache<PersistedSkinCache>(SKIN_CACHE_KEY, {
           uuid: activeAccount.uuid, url: skinData.url, variant, timestamp: now,
         })
       } else {
@@ -494,7 +494,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
     } catch (err: any) {
       if (typeof err === "string" && err.includes("429")) {
         setError("Rate limited — please wait before refreshing.")
-        const persisted = loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
+        const persisted = await loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
         if (persisted && persisted.uuid === activeAccount?.uuid) {
           setCurrentSkinUrl(persisted.url)
           setSkinVariant(persisted.variant as "classic" | "slim")
@@ -511,7 +511,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
   const loadCapes = async () => {
     if (!isAuthenticated || !activeAccount) return
     const now = Date.now()
-    const persisted = loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
+    const persisted = await loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
     const cacheValid =
       persisted && persisted.uuid === activeAccount.uuid && (now - persisted.timestamp) < CACHE_DURATION
     if (cacheValid) {
@@ -531,7 +531,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
         const activeId = capeData.capes.find((c: Cape) => c.state === "ACTIVE")?.id ?? null
         setActiveCape(activeId)
         originalRef.current = { ...originalRef.current, activeCape: activeId }
-        saveCache<PersistedCapeCache>(CAPE_CACHE_KEY, {
+        await saveCache<PersistedCapeCache>(CAPE_CACHE_KEY, {
           uuid: activeAccount.uuid, capes: capeData.capes, activeCapeId: activeId, timestamp: now,
         })
       }
@@ -608,7 +608,7 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
           if (variant) await addToRecentSkins(result.url, variant)
         } else if (skinOp.type === 'reset') {
           await invoke<void>('reset_skin')
-          sessionStorage.removeItem(SKIN_CACHE_KEY)
+          await storeRemove(SKIN_CACHE_KEY)
           setTimeout(() => loadUserSkinRef.current(false), 2000)
         }
       }
@@ -623,9 +623,9 @@ export function SkinsTab({ activeAccount, isAuthenticated }: SkinsTabProps) {
           finalCape = null
         }
         if (activeAccount) {
-          const cached = loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
+          const cached = await loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
           if (cached?.uuid === activeAccount.uuid) {
-            saveCache(CAPE_CACHE_KEY, { ...cached, activeCapeId: finalCape, timestamp: Date.now() })
+            await saveCache(CAPE_CACHE_KEY, { ...cached, activeCapeId: finalCape, timestamp: Date.now() })
           }
         }
       }

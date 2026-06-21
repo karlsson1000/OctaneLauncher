@@ -85,7 +85,7 @@ export function InstancesTab({
     setSortBy(SORT_CYCLE[(currentIndex + 1) % SORT_CYCLE.length])
   }
 
-  const handleCreateGroup = (instance: Instance, name: string) => {
+  const handleCreateGroup = async (instance: Instance, name: string) => {
     const trimmed = name.trim()
     if (!trimmed || trimmed === DEFAULT_GROUP) return
     const next = { ...groups }
@@ -93,7 +93,7 @@ export function InstancesTab({
       next[key] = next[key].filter(n => n !== instance.name)
     }
     next[trimmed] = [...(next[trimmed] ?? []), instance.name]
-    persistGroups(next)
+    await persistGroups(next)
   }
 
   const handleMoveToGroup = async (instance: Instance, group: string) => {

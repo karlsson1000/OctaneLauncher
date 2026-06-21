@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Terminal, Paintbrush, Trash2 } from "lucide-react"
 import { AlertModal } from "../../components/ui/ConfirmModal"
 import type { LauncherSettings } from "../../types"
+import { storeSet } from "../../lib/store"
 
 interface SystemInfo {
   total_memory_mb: number
@@ -249,7 +250,7 @@ export function SettingsModal({
   const handleSettingChange = async (newSettings: LauncherSettings) => {
     try {
       await invoke("save_settings", { settings: newSettings })
-      localStorage.setItem('octane_theme', newSettings.theme ?? 'octane')
+      await storeSet('octane_theme', newSettings.theme ?? 'octane')
       onSettingsChange(newSettings)
     } catch (error) {
       console.error("Failed to save settings:", error)
