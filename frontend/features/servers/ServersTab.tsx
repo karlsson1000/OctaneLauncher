@@ -156,6 +156,12 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
   const dragState = useRef<{
     fromIndex: number
     draggedOverIndex: number | null
+    ghostEl: HTMLElement | null
+    origCardEl: HTMLElement | null
+    offsetY: number
+    initialLeft: number
+    minY: number
+    maxY: number
   } | null>(null)
 
   const persistReorder = useCallback(async (ordered: ServerInfo[]) => {
@@ -169,15 +175,58 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
 
   const [draggedOverIndex, setDraggedOverIndex] = useState<number | null>(null)
 
+  const pointerMoveImplRef = useRef<(e: PointerEvent) => void>(() => {})
+  const pointerUpImplRef = useRef<(e: PointerEvent) => void>(() => {})
+  const pointerCancelImplRef = useRef<(e: PointerEvent) => void>(() => {})
+
+  const stablePointerMove = useCallback((e: PointerEvent) => pointerMoveImplRef.current(e), [])
+  const stablePointerUp = useCallback((e: PointerEvent) => pointerUpImplRef.current(e), [])
+  const stablePointerCancel = useCallback((e: PointerEvent) => pointerCancelImplRef.current(e), [])
+
   const cleanupDrag = useCallback(() => {
-    document.removeEventListener("pointermove", onPointerMove)
-    document.removeEventListener("pointerup", onPointerUp)
-    document.removeEventListener("pointercancel", onPointerCancel)
+    document.removeEventListener("pointermove", stablePointerMove)
+    document.removeEventListener("pointerup", stablePointerUp)
+    document.removeEventListener("pointercancel", stablePointerCancel)
+    if (dragState.current) {
+      if (dragState.current.ghostEl && dragState.current.ghostEl.parentNode) {
+        dragState.current.ghostEl.parentNode.removeChild(dragState.current.ghostEl)
+      }
+      if (dragState.current.origCardEl) {
+        dragState.current.origCardEl.style.opacity = ""
+      }
+    }
     dragState.current = null
     setDraggedOverIndex(null)
-  }, [])
+  }, [stablePointerMove, stablePointerUp, stablePointerCancel])
 
-  const onPointerUp = useCallback((_e: PointerEvent) => {
+  pointerMoveImplRef.current = (e: PointerEvent) => {
+    const state = dragState.current
+    if (!state || !state.ghostEl) return
+
+    state.ghostEl.style.left = `${state.initialLeft}px`
+    const clampedY = Math.max(state.minY, Math.min(e.clientY - state.offsetY, state.maxY))
+    state.ghostEl.style.top = `${clampedY}px`
+
+    const els = document.elementsFromPoint(e.clientX, e.clientY)
+    for (const el of els) {
+      if (el === state.ghostEl) continue
+      const card = (el as HTMLElement).closest("[data-server-card]") as HTMLElement | null
+      if (card && card !== state.ghostEl) {
+        const idx = Number(card.dataset.serverIndex)
+        if (!isNaN(idx) && idx !== state.draggedOverIndex) {
+          state.draggedOverIndex = idx
+          setDraggedOverIndex(idx)
+        }
+        return
+      }
+    }
+    if (state.draggedOverIndex !== null) {
+      state.draggedOverIndex = null
+      setDraggedOverIndex(null)
+    }
+  }
+
+  pointerUpImplRef.current = (_e: PointerEvent) => {
     const state = dragState.current
     if (!state) return
     const fromIdx = state.fromIndex
@@ -197,41 +246,65 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
     } else {
       persistReorder(reordered)
     }
-  }, [filteredServers, servers, searchQuery, persistReorder, cleanupDrag])
+  }
 
-  const onPointerMove = useCallback((e: PointerEvent) => {
-    const state = dragState.current
-    if (!state) return
-    const els = document.elementsFromPoint(e.clientX, e.clientY)
-    for (const el of els) {
-      const card = (el as HTMLElement).closest("[data-server-card]") as HTMLElement | null
-      if (card) {
-        const idx = Number(card.dataset.serverIndex)
-        if (!isNaN(idx) && idx !== state.draggedOverIndex) {
-          state.draggedOverIndex = idx
-          setDraggedOverIndex(idx)
-        }
-        return
-      }
-    }
-    if (state.draggedOverIndex !== null) {
-      state.draggedOverIndex = null
-      setDraggedOverIndex(null)
-    }
-  }, [])
-
-  const onPointerCancel = useCallback((_e: PointerEvent) => {
+  pointerCancelImplRef.current = (_e: PointerEvent) => {
     cleanupDrag()
-  }, [cleanupDrag])
+  }
 
   const handleGripPointerDown = (e: React.PointerEvent, index: number) => {
     e.preventDefault()
     e.stopPropagation()
-    dragState.current = { fromIndex: index, draggedOverIndex: index }
+
+    const gripEl = e.currentTarget as HTMLElement
+    const cardEl = gripEl.closest("[data-server-card]") as HTMLElement | null
+    if (!cardEl) return
+
+    const rect = cardEl.getBoundingClientRect()
+    const offsetY = e.clientY - rect.top
+    const initialLeft = rect.left
+
+    const listEl = cardEl.parentElement
+    let minY = -Infinity
+    let maxY = Infinity
+    if (listEl) {
+      const listRect = listEl.getBoundingClientRect()
+      minY = listRect.top
+      maxY = listRect.bottom - rect.height
+    }
+
+    const ghost = cardEl.cloneNode(true) as HTMLElement
+    ghost.removeAttribute("data-server-card")
+    ghost.dataset.serverIndex = "-1"
+    ghost.style.position = "fixed"
+    ghost.style.left = `${initialLeft}px`
+    ghost.style.top = `${e.clientY - offsetY}px`
+    ghost.style.width = `${rect.width}px`
+    ghost.style.pointerEvents = "none"
+    ghost.style.zIndex = "9999"
+    ghost.style.transform = "scale(1.03)"
+    ghost.style.opacity = "0.95"
+    ghost.style.transition = "none"
+    ghost.style.outline = "none"
+    ghost.style.willChange = "transform, left, top"
+    document.body.appendChild(ghost)
+
+    cardEl.style.opacity = "0.3"
+
+    dragState.current = {
+      fromIndex: index,
+      draggedOverIndex: index,
+      ghostEl: ghost,
+      origCardEl: cardEl,
+      offsetY,
+      initialLeft,
+      minY,
+      maxY,
+    }
     setDraggedOverIndex(index)
-    document.addEventListener("pointermove", onPointerMove)
-    document.addEventListener("pointerup", onPointerUp)
-    document.addEventListener("pointercancel", onPointerCancel)
+    document.addEventListener("pointermove", stablePointerMove)
+    document.addEventListener("pointerup", stablePointerUp)
+    document.addEventListener("pointercancel", stablePointerCancel)
   }
 
   const handleLaunchServer = async (server: ServerInfo, e: React.MouseEvent) => {
@@ -322,7 +395,7 @@ export function ServersTab({ runningInstances }: ServersTabProps) {
                   >
                     <div
                       onPointerDown={e => handleGripPointerDown(e, index)}
-                      className="flex-shrink-0 cursor-grab active:cursor-grabbing text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      className="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                     >
                       <GripVertical size={18} strokeWidth={2} />
                     </div>
