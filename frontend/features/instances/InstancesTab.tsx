@@ -1,9 +1,10 @@
-import { Package, Plus, Search, FolderOpen, Copy, Trash2, ChevronDown, Play, FileArchive, ChevronUp } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Package, Plus, Search, FolderOpen, Copy, Trash2, ChevronDown, Play, FileArchive, ChevronUp, FolderPlus, FolderSymlink, FolderX } from "lucide-react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import type { Instance } from "../../types"
 import { ContextMenu } from "../../components/ui/ContextMenu"
 import { ExportModal } from "./ExportModal"
+import { storeGet, storeSet } from "../../lib/store"
 
 type SortOption = "recently-played" | "name-asc" | "name-desc"
 
@@ -14,6 +15,8 @@ const SORT_LABELS: Record<SortOption, string> = {
   "name-asc": "Name (A–Z)",
   "name-desc": "Name (Z–A)",
 }
+
+const DEFAULT_GROUP = "__ungrouped__"
 
 interface InstancesTabProps {
   instances: Instance[]
@@ -50,9 +53,75 @@ export function InstancesTab({
   const [sortBy, setSortBy] = useState<SortOption>("recently-played")
   const [exportModalInstance, setExportModalInstance] = useState<Instance | null>(null)
 
+  const [groups, setGroups] = useState<Record<string, string[]>>({})
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+
+  const groupsRef = useRef(groups)
+  groupsRef.current = groups
+
+  useEffect(() => {
+    storeGet<Record<string, string[]>>("instance_groups").then(g => { if (g) setGroups(g) })
+    storeGet<Record<string, boolean>>("group_collapsed").then(c => { if (c) setCollapsed(c) })
+  }, [])
+
+  const [groupModal, setGroupModal] = useState<{ instance: Instance } | null>(null)
+  const [groupModalValue, setGroupModalValue] = useState("")
+  const groupModalInputRef = useRef<HTMLInputElement>(null)
+
+  const [groupContextMenu, setGroupContextMenu] = useState<{ x: number; y: number; group: string } | null>(null)
+
+  const persistGroups = async (next: Record<string, string[]>) => {
+    setGroups(next)
+    await storeSet("instance_groups", next)
+  }
+
+  const persistCollapsed = async (next: Record<string, boolean>) => {
+    setCollapsed(next)
+    await storeSet("group_collapsed", next)
+  }
+
   const handleCycleSort = () => {
     const currentIndex = SORT_CYCLE.indexOf(sortBy)
     setSortBy(SORT_CYCLE[(currentIndex + 1) % SORT_CYCLE.length])
+  }
+
+  const handleCreateGroup = (instance: Instance, name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed || trimmed === DEFAULT_GROUP) return
+    const next = { ...groups }
+    for (const key of Object.keys(next)) {
+      next[key] = next[key].filter(n => n !== instance.name)
+    }
+    next[trimmed] = [...(next[trimmed] ?? []), instance.name]
+    persistGroups(next)
+  }
+
+  const handleMoveToGroup = async (instance: Instance, group: string) => {
+    const next = { ...groups }
+    for (const key of Object.keys(next)) {
+      next[key] = next[key].filter(n => n !== instance.name)
+    }
+    next[group] = [...(next[group] ?? []), instance.name]
+    await persistGroups(next)
+  }
+
+  const handleRemoveFromGroup = async (instance: Instance) => {
+    const next = { ...groups }
+    for (const key of Object.keys(next)) {
+      next[key] = next[key].filter(n => n !== instance.name)
+    }
+    await persistGroups(next)
+  }
+
+  const handleDeleteGroup = async (group: string) => {
+    const next = { ...groups }
+    delete next[group]
+    await persistGroups(next)
+    setGroupContextMenu(null)
+  }
+
+  const toggleCollapsed = async (group: string) => {
+    await persistCollapsed({ ...collapsed, [group]: !collapsed[group] })
   }
 
   const getMinecraftVersion = (instance: Instance): string => {
@@ -124,7 +193,7 @@ export function InstancesTab({
         try {
           const icon = await invoke<string | null>("get_instance_icon", { instanceName: instance.name })
           icons[instance.name] = icon
-        } catch (error) {
+        } catch {
           icons[instance.name] = null
         }
       }
@@ -133,19 +202,39 @@ export function InstancesTab({
     if (instances.length > 0) loadIcons()
   }, [instances])
 
+  useEffect(() => {
+    if (groupModal) {
+      setTimeout(() => groupModalInputRef.current?.focus(), 50)
+    }
+  }, [groupModal])
+
+  useEffect(() => {
+    const nameSet = new Set(instances.map(i => i.name))
+    let changed = false
+    const next: Record<string, string[]> = {}
+    for (const [group, names] of Object.entries(groupsRef.current)) {
+      const filtered = names.filter(n => nameSet.has(n))
+      if (filtered.length !== names.length) changed = true
+      if (filtered.length > 0) next[group] = filtered
+    }
+    if (changed) persistGroups(next)
+  }, [instances])
+
   const handleContextMenu = (e: React.MouseEvent, instance: Instance) => {
     e.preventDefault()
     setContextMenu({ x: e.clientX, y: e.clientY, instance })
   }
 
-  const sortedAndFilteredInstances = instances
-    .filter(instance => instance.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => {
+  const handleGroupHeaderContextMenu = (e: React.MouseEvent, group: string) => {
+    e.preventDefault()
+    setGroupContextMenu({ x: e.clientX, y: e.clientY, group })
+  }
+
+  const sortInstances = (list: Instance[]) =>
+    [...list].sort((a, b) => {
       switch (sortBy) {
-        case "name-asc":
-          return a.name.localeCompare(b.name)
-        case "name-desc":
-          return b.name.localeCompare(a.name)
+        case "name-asc": return a.name.localeCompare(b.name)
+        case "name-desc": return b.name.localeCompare(a.name)
         case "recently-played":
         default: {
           const aTime = (a as any).last_played ? new Date((a as any).last_played).getTime() : 0
@@ -155,7 +244,106 @@ export function InstancesTab({
       }
     })
 
+  const filteredInstances = instances.filter(i =>
+    i.name.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const instanceToGroup = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const [group, names] of Object.entries(groups)) {
+      for (const name of names) {
+        map.set(name, group)
+      }
+    }
+    return map
+  }, [groups])
+
+  const namedGroups = Object.keys(groups)
+  const ungrouped = filteredInstances.filter(i => (instanceToGroup.get(i.name) ?? DEFAULT_GROUP) === DEFAULT_GROUP)
+  const hasAnyGroups = namedGroups.length > 0
+
+  const visibleNamedGroups = namedGroups.map(group => ({
+    name: group,
+    instances: sortInstances(filteredInstances.filter(i => instanceToGroup.get(i.name) === group)),
+  }))
+
   const sortIsDesc = sortBy === "recently-played" || sortBy === "name-desc"
+
+  const renderInstanceCard = (instance: Instance) => {
+    const icon = instanceIcons[instance.name]
+    const isLaunching = launchingInstanceName === instance.name
+    const isRunning = runningInstances.has(instance.name)
+    return (
+      <div
+        key={instance.name}
+        onClick={() => { onSetSelectedInstance(instance); onShowDetails(instance) }}
+        onContextMenu={(e) => handleContextMenu(e, instance)}
+        className="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative overflow-hidden"
+      >
+        <div className="relative flex-shrink-0">
+          {icon ? (
+            <img src={icon} alt={instance.name} className="w-20 h-20 object-cover" />
+          ) : (
+            <div className="w-20 h-20 flex items-center justify-center">
+              <Package size={36} className="text-[var(--text-muted)]" />
+            </div>
+          )}
+        </div>
+
+        <div className={`py-2 pr-2 pl-4 flex-1 min-w-0 ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
+          <div className="text-base font-medium text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
+          <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-0.5">
+            <span>{getMinecraftVersion(instance)}</span>
+            <span className="text-[var(--text-muted)]">•</span>
+            {getLoaderBadge(instance)}
+          </div>
+        </div>
+
+        {isAuthenticated && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              if (isRunning && onKillInstance) onKillInstance(instance)
+              else handleQuickLaunch(instance)
+            }}
+            disabled={launchingInstanceName !== null && !isRunning}
+            className={`flex-shrink-0 w-12 h-12 mr-4 flex items-center justify-center rounded transition-all active:scale-95 cursor-pointer ${
+              isRunning || isLaunching
+                ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
+                : "opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
+            } disabled:opacity-50`}
+            title={isRunning ? "Stop instance" : "Launch instance"}
+          >
+            {isLaunching || isRunning ? (
+              <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
+            ) : (
+              <Play size={24} fill="currentColor" strokeWidth={0} />
+            )}
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  const renderGroupHeader = (group: string) => {
+    const isCollapsed = collapsed[group]
+
+    return (
+      <div
+        className="flex items-center gap-1.5 mb-2 select-none"
+        onContextMenu={(e) => handleGroupHeaderContextMenu(e, group)}
+      >
+        <ChevronDown
+          size={16}
+          strokeWidth={3}
+          className={`text-[var(--text-muted)] flex-shrink-0 transition-transform duration-150 ${isCollapsed ? '-rotate-90' : ''}`}
+        />
+        <span className="text-sm font-semibold text-[var(--text-muted)] truncate cursor-pointer" onClick={() => toggleCollapsed(group)}>{group}</span>
+      </div>
+    )
+  }
+
+  const instanceGroup = contextMenu ? (instanceToGroup.get(contextMenu.instance.name) ?? DEFAULT_GROUP) : null
 
   return (
     <>
@@ -213,74 +401,52 @@ export function InstancesTab({
                 <span>Create Instance</span>
               </button>
             </div>
-          ) : sortedAndFilteredInstances.length === 0 ? (
+          ) : filteredInstances.length === 0 ? (
             <div className="rounded-md p-8 flex flex-col items-center justify-center">
               <Search size={48} className="text-[var(--text-primary)] mb-3" strokeWidth={1.5} />
               <h3 className="text-base font-semibold text-[var(--text-primary)] mb-1">No instances found</h3>
               <p className="text-sm text-[var(--text-muted)]">Try adjusting your search query</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {sortedAndFilteredInstances.map((instance) => {
-                const icon = instanceIcons[instance.name]
-                const isLaunching = launchingInstanceName === instance.name
-                const isRunning = runningInstances.has(instance.name)
-                return (
-                  <div
-                    key={instance.name}
-                    onClick={() => { onSetSelectedInstance(instance); onShowDetails(instance) }}
-                    onContextMenu={(e) => handleContextMenu(e, instance)}
-                    className="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative overflow-hidden"
-                  >
-                    <div className="relative flex-shrink-0">
-                      {icon ? (
-                        <img src={icon} alt={instance.name} className="w-20 h-20 object-cover" />
-                      ) : (
-                        <div className="w-20 h-20 flex items-center justify-center">
-                          <Package size={36} className="text-[var(--text-muted)]" />
-                        </div>
-                      )}
+            <div className="space-y-5">
+              {visibleNamedGroups.map(({ name, instances: groupInstances }) => (
+                <div key={name}>
+                  {renderGroupHeader(name)}
+                  {!collapsed[name] && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {groupInstances.map(renderInstanceCard)}
                     </div>
+                  )}
+                </div>
+              ))}
 
-                    <div className={`py-2 pr-2 pl-4 flex-1 min-w-0 ${isRunning || isLaunching ? 'pr-12' : 'group-hover:pr-12'}`}>
-                      <div className="text-base font-medium text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
-                      <div className="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-0.5">
-                        <span>{getMinecraftVersion(instance)}</span>
-                        <span className="text-[var(--text-muted)]">•</span>
-                        {getLoaderBadge(instance)}
-                      </div>
+              {ungrouped.length > 0 && (
+                <div>
+                  {hasAnyGroups && (
+                    <div
+                      className="flex items-center gap-1.5 mb-2 select-none"
+                    >
+                      <ChevronDown
+                        size={16}
+                        strokeWidth={3}
+                        className={`text-[var(--text-muted)] flex-shrink-0 transition-transform duration-150 ${collapsed[DEFAULT_GROUP] ? '-rotate-90' : ''}`}
+                      />
+                      <span className="text-sm font-semibold text-[var(--text-muted)] cursor-pointer" onClick={() => toggleCollapsed(DEFAULT_GROUP)}>Ungrouped</span>
                     </div>
-
-                    {isAuthenticated && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (isRunning && onKillInstance) onKillInstance(instance)
-                          else handleQuickLaunch(instance)
-                        }}
-                        disabled={launchingInstanceName !== null && !isRunning}
-                        className={`flex-shrink-0 w-12 h-12 mr-4 flex items-center justify-center rounded transition-all active:scale-95 cursor-pointer ${
-                          isRunning || isLaunching
-                            ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
-                            : "opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
-                        } disabled:opacity-50`}
-                        title={isRunning ? "Stop instance" : "Launch instance"}
-                      >
-                        {isLaunching || isRunning ? (
-                          <div className="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" />
-                        ) : (
-                          <Play size={24} fill="currentColor" strokeWidth={0} />
-                        )}
-                      </button>
-                    )}
-                  </div>
-                )
-              })}
+                  )}
+                  {!collapsed[DEFAULT_GROUP] && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {sortInstances(ungrouped).map(renderInstanceCard)}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
+      {/* Instance context menu */}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -291,10 +457,105 @@ export function InstancesTab({
             { label: "Open Folder", icon: <FolderOpen size={16} />, onClick: () => onOpenFolder?.(contextMenu.instance) },
             { label: "Duplicate", icon: <Copy size={16} />, onClick: () => onDuplicateInstance?.(contextMenu.instance) },
             { label: "Export", icon: <FileArchive size={16} />, onClick: () => setExportModalInstance(contextMenu.instance) },
-            { separator: true },
+            { separator: true as const },
+            {
+              label: "Create group",
+              icon: <FolderPlus size={16} />,
+              onClick: () => {
+                setGroupModal({ instance: contextMenu.instance })
+                setGroupModalValue("")
+                setContextMenu(null)
+              },
+            },
+            ...(instanceGroup !== DEFAULT_GROUP ? [
+              {
+                label: "Remove from group",
+                icon: <FolderX size={16} />,
+                onClick: () => { handleRemoveFromGroup(contextMenu.instance); setContextMenu(null) },
+                danger: true,
+              },
+            ] : []),
+            ...(namedGroups.length > 0 ? [
+              { separator: true as const },
+              ...namedGroups
+                .filter(g => g !== instanceGroup)
+                .map(g => ({
+                  label: `Move to "${g}"`,
+                  icon: <FolderSymlink size={16} />,
+                  onClick: () => { handleMoveToGroup(contextMenu.instance, g); setContextMenu(null) },
+                })),
+            ] : []),
+            { separator: true as const },
             { label: "Delete", icon: <Trash2 size={16} />, onClick: () => onDeleteInstance?.(contextMenu.instance.name), danger: true },
           ]}
         />
+      )}
+
+      {/* Group header context menu */}
+      {groupContextMenu && (
+        <ContextMenu
+          x={groupContextMenu.x}
+          y={groupContextMenu.y}
+          onClose={() => setGroupContextMenu(null)}
+          items={[
+            {
+              label: "Delete group",
+              icon: <Trash2 size={16} />,
+              onClick: () => handleDeleteGroup(groupContextMenu.group),
+              danger: true,
+            },
+          ]}
+        />
+      )}
+
+      {/* Create group modal */}
+      {groupModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setGroupModal(null)}
+        >
+          <div
+            className="bg-[var(--bg-secondary)] rounded-lg p-5 w-80 shadow-xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Create group</h3>
+            <input
+              ref={groupModalInputRef}
+              type="text"
+              placeholder="Group name"
+              value={groupModalValue}
+              onChange={e => setGroupModalValue(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === "Enter" && groupModalValue.trim()) {
+                  handleCreateGroup(groupModal.instance, groupModalValue)
+                  setGroupModal(null)
+                }
+                if (e.key === "Escape") setGroupModal(null)
+              }}
+              className="w-full bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-md px-3 py-2 text-sm outline-none border border-transparent focus:border-[var(--accent-primary)] transition-colors"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => setGroupModal(null)}
+                className="px-3 py-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (groupModalValue.trim()) {
+                    handleCreateGroup(groupModal.instance, groupModalValue)
+                    setGroupModal(null)
+                  }
+                }}
+                disabled={!groupModalValue.trim()}
+                className="px-3 py-1.5 text-sm bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {exportModalInstance && (
