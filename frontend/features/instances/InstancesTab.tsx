@@ -475,7 +475,7 @@ export function InstancesTab({
                 danger: true,
               },
             ] : []),
-            ...(namedGroups.length > 0 ? [
+            ...(namedGroups.some(g => g !== instanceGroup) ? [
               { separator: true as const },
               ...namedGroups
                 .filter(g => g !== instanceGroup)
