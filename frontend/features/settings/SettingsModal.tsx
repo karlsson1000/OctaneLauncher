@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { invoke } from "@tauri-apps/api/core"
-import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Terminal, Paintbrush, Trash2 } from "lucide-react"
+import { Loader2, Coffee, Cpu, ImagePlus, FolderOpen, X, Check, ChevronDown, Info, Terminal, Paintbrush, Trash2, Play } from "lucide-react"
 import { AlertModal } from "../../components/ui/ConfirmModal"
 import type { LauncherSettings } from "../../types"
 import { storeSet } from "../../lib/store"
@@ -137,6 +137,8 @@ export function SettingsModal({
   const [isClosing, setIsClosing] = useState(false)
   const [isJavaDropdownOpen, setIsJavaDropdownOpen] = useState(false)
   const javaDropdownRef = useRef<HTMLDivElement>(null)
+  const [isTabDropdownOpen, setIsTabDropdownOpen] = useState(false)
+  const tabDropdownRef = useRef<HTMLDivElement>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
@@ -157,6 +159,9 @@ export function SettingsModal({
     const handleClickOutside = (event: MouseEvent) => {
       if (javaDropdownRef.current && !javaDropdownRef.current.contains(event.target as Node)) {
         setIsJavaDropdownOpen(false)
+      }
+      if (tabDropdownRef.current && !tabDropdownRef.current.contains(event.target as Node)) {
+        setIsTabDropdownOpen(false)
       }
     }
 
@@ -522,6 +527,43 @@ export function SettingsModal({
                 </button>
               )}
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+            </div>
+
+            {/* Startup */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                <Play size={16} className="text-[var(--accent-primary)]" />
+                <span className="font-medium text-sm">Startup</span>
+              </div>
+              <div className="flex items-center justify-between bg-[var(--bg-elevated)] rounded p-3">
+                <div>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">Default Tab</span>
+                  <p className="text-xs text-[var(--text-muted)]">Tab shown when the launcher opens</p>
+                </div>
+                <div className="relative" ref={tabDropdownRef}>
+                  <button
+                    onClick={() => setIsTabDropdownOpen(!isTabDropdownOpen)}
+                    className="bg-[var(--bg-hover)] px-3 py-1.5 text-sm text-[var(--text-primary)] rounded flex items-center gap-2 cursor-pointer capitalize"
+                  >
+                    {settings.default_tab || "home"}
+                    <ChevronDown size={14} className={`transition-transform ${isTabDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isTabDropdownOpen && (
+                    <div className="absolute right-0 z-[60] w-36 bg-[var(--bg-elevated)] rounded shadow-lg overflow-hidden mt-1">
+                      {(["home", "instances", "browse", "servers", "skins", "screenshots"] as const).map((tab) => (
+                        <button
+                          key={tab}
+                          onClick={() => { handleSettingChange({ ...settings, default_tab: tab }); setIsTabDropdownOpen(false) }}
+                          className="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between cursor-pointer capitalize"
+                        >
+                          {tab}
+                          {(settings.default_tab || "home") === tab && <Check size={14} className="text-[var(--text-primary)]" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Console */}

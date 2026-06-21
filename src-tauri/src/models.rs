@@ -89,11 +89,14 @@ pub struct LauncherSettings {
     pub auto_navigate_to_console: bool,
     #[serde(default = "default_theme")]
     pub theme: String,
+    #[serde(default = "default_tab")]
+    pub default_tab: String,
 }
 
 fn default_memory() -> u32 { 2048 }
 fn default_auto_navigate_to_console() -> bool { true }
 fn default_theme() -> String { "octane".to_string() }
+fn default_tab() -> String { "home".to_string() }
 
 impl Default for LauncherSettings {
     fn default() -> Self {
@@ -103,6 +106,7 @@ impl Default for LauncherSettings {
             language: None,
             auto_navigate_to_console: true,
             theme: default_theme(),
+            default_tab: default_tab(),
         }
     }
 }

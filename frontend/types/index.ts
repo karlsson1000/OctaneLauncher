@@ -45,6 +45,7 @@ export interface LauncherSettings {
   language?: string
   auto_navigate_to_console?: boolean
   theme?: string
+  default_tab?: string
 }
 
 export interface MinecraftOptions {

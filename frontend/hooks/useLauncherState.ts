@@ -202,6 +202,17 @@ export function useLauncherState() {
     }
   }, [isReady])
 
+  const appliedDefaultTab = useRef(false)
+
+  useEffect(() => {
+    if (appliedDefaultTab.current || !settings?.default_tab) return
+    appliedDefaultTab.current = true
+    const validTabs = ["home", "instances", "browse", "console", "servers", "skins", "screenshots"] as const
+    if (validTabs.includes(settings.default_tab as any)) {
+      setActiveTab(settings.default_tab as typeof activeTab)
+    }
+  }, [settings?.default_tab])
+
   useEffect(() => {
     if (!isAuthenticated || !activeAccount) return
 
