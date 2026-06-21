@@ -57,6 +57,7 @@ function App() {
     handleStartCreating, handleCreationComplete, handleCreationError,
     handleKillInstance, handleOpenSettings, handleCreateNew,
     handleClearConsole, handleNavigateToInstances, handleLaunchSelected,
+    handleWorldLaunch,
     loadInstances, handleInstanceRenamed, loadBackground,
   } = useLauncherState()
 
@@ -122,6 +123,7 @@ function App() {
                 isLaunching={launchingInstanceName === selectedInstance.name}
                 isRunning={runningInstances.has(selectedInstance.name)}
                 onLaunch={handleLaunchSelected}
+                onWorldLaunch={handleWorldLaunch}
                 onBack={handleCloseDetails}
                 onInstanceUpdated={loadInstances}
                 onInstanceRenamed={handleInstanceRenamed}

@@ -459,6 +459,25 @@ export function useLauncherState() {
     if (selectedInstance) handleLaunch(selectedInstance)
   }, [selectedInstance, handleLaunch])
 
+  const handleWorldLaunch = useCallback(async (worldName: string) => {
+    if (!selectedInstance || !activeAccount) return
+    setLaunchingInstanceName(selectedInstance.name)
+    setConsoleLogs([])
+    if (settings?.auto_navigate_to_console !== false) {
+      setActiveTab("console")
+      setShowInstanceDetails(false)
+    }
+    try {
+      await invoke("launch_world", { instanceName: selectedInstance.name, worldName })
+      await loadInstances()
+      setRunningInstances((prev) => new Set(prev).add(selectedInstance.name))
+      setLaunchingInstanceName(null)
+    } catch (error) {
+      console.error("World launch error:", error)
+      setLaunchingInstanceName(null)
+    }
+  }, [selectedInstance, activeAccount, settings, appWindow, loadInstances])
+
   return {
     isReady, isAuthenticated, activeAccount, accounts,
     launchingInstanceName, runningInstances,
@@ -488,6 +507,7 @@ export function useLauncherState() {
     handleStartCreating, handleCreationComplete, handleCreationError,
     handleKillInstance, handleOpenSettings, handleCreateNew,
     handleClearConsole, handleNavigateToInstances, handleLaunchSelected,
+    handleWorldLaunch,
     loadInstances, handleInstanceRenamed, loadAccounts, loadBackground,
   }
 }

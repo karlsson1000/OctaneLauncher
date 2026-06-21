@@ -235,6 +235,7 @@ pub fn run() {
             remove_instance_icon,
             get_instance_icon,
             launch_instance,
+            launch_world,
             kill_instance,
             get_launcher_directory,
             open_instance_folder,

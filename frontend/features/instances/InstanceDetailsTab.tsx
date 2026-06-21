@@ -37,6 +37,7 @@ interface InstanceDetailsTabProps {
   isLaunching: boolean
   isRunning: boolean
   onLaunch: () => void
+  onWorldLaunch?: (worldName: string) => void
   onBack: () => void
   onInstanceUpdated: () => void
   onInstanceRenamed?: (oldName: string, newName: string) => void
@@ -48,6 +49,7 @@ export function InstanceDetailsTab({
   isLaunching,
   isRunning,
   onLaunch,
+  onWorldLaunch,
   onBack,
   onInstanceUpdated,
   onInstanceRenamed,
@@ -63,6 +65,7 @@ export function InstanceDetailsTab({
   const [isUpdatingMods, setIsUpdatingMods] = useState(false)
   const [modSearchQuery, setModSearchQuery] = useState("")
   const [worldSearchQuery, setWorldSearchQuery] = useState("")
+  const [launchingWorld, setLaunchingWorld] = useState<string | null>(null)
   const [resourcePacks, setResourcePacks] = useState<ModFileWithMetadata[]>([])
   const [shaderPacks, setShaderPacks] = useState<ModFileWithMetadata[]>([])
   const [isLoadingResourcePacks, setIsLoadingResourcePacks] = useState(true)
@@ -418,6 +421,20 @@ export function InstanceDetailsTab({
     }
   }
 
+  const handleLaunchWorld = async (worldName: string) => {
+    if (onWorldLaunch) {
+      onWorldLaunch(worldName)
+    } else {
+      setLaunchingWorld(worldName)
+      try {
+        await invoke("launch_world", { instanceName: instance.name, worldName })
+      } catch (error) {
+        console.error("Failed to launch world:", error)
+        setAlertModal({ isOpen: true, title: "Error", message: `Failed to launch world: ${String(error)}`, type: "danger" })
+      }
+    }
+  }
+
   const handleOpenResourcePacksFolder = async () => {
     try {
       await invoke("open_resourcepacks_folder", { instanceName: instance.name })
@@ -711,9 +728,12 @@ export function InstanceDetailsTab({
                                   {world.game_mode && <><span>•</span><span className="capitalize">{world.game_mode}</span></>}
                                 </div>
                               </div>
-                              <div className="flex flex-col items-end gap-1">
-                                <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-1.5 hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer"><FolderOpen size={20} /></button>
-                                <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleLaunchWorld(world.folder_name)} disabled={!isAuthenticated || isLaunching || isRunning || launchingWorld !== null} className={`p-2.5 rounded-md transition-all cursor-pointer ${isLaunching || launchingWorld === world.folder_name ? "bg-red-500/10 text-red-400" : "bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"} disabled:opacity-40 disabled:cursor-not-allowed`} title="Play this world">
+                                  {isLaunching || launchingWorld === world.folder_name ? <div className="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin" /> : <Play size={20} fill="currentColor" strokeWidth={0} />}
+                                </button>
+                                <button onClick={() => handleOpenWorldFolder(world.folder_name)} className="p-2.5 hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer" title="Open world folder"><FolderOpen size={20} /></button>
+                                <button onClick={() => handleDeleteWorld(world.folder_name, world.name)} className="p-2.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
                               </div>
                             </div>
                           </div>

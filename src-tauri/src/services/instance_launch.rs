@@ -206,7 +206,7 @@ impl super::instance::InstanceManager {
         access_token: &str,
         app_handle: tauri::AppHandle,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        Self::launch_internal(instance_name, username, uuid, access_token, None, app_handle)
+        Self::launch_internal(instance_name, username, uuid, access_token, None, None, app_handle)
     }
 
     pub fn launch_with_server(
@@ -217,7 +217,18 @@ impl super::instance::InstanceManager {
         server_address: &str,
         app_handle: tauri::AppHandle,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        Self::launch_internal(instance_name, username, uuid, access_token, Some(server_address), app_handle)
+        Self::launch_internal(instance_name, username, uuid, access_token, Some(server_address), None, app_handle)
+    }
+
+    pub fn launch_with_world(
+        instance_name: &str,
+        username: &str,
+        uuid: &str,
+        access_token: &str,
+        world_name: &str,
+        app_handle: tauri::AppHandle,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        Self::launch_internal(instance_name, username, uuid, access_token, None, Some(world_name), app_handle)
     }
 
     fn launch_internal(
@@ -226,6 +237,7 @@ impl super::instance::InstanceManager {
         uuid: &str,
         access_token: &str,
         server_address: Option<&str>,
+        world_name: Option<&str>,
         app_handle: tauri::AppHandle,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let meta_dir = get_meta_dir();
@@ -245,7 +257,7 @@ impl super::instance::InstanceManager {
         Self::step_extract_natives(instance_name, &resolved, &meta_dir, &app_handle)?;
         let classpath = Self::step_build_classpath(instance_name, &resolved.libraries, &meta_dir, &app_handle)?;
         Self::step_launch(
-            instance_name, username, uuid, access_token, server_address,
+            instance_name, username, uuid, access_token, server_address, world_name,
             &instance, &version, &java_path, &resolved,
             &classpath, &instance_dir, &meta_dir, &app_handle,
             &effective_settings,
@@ -925,6 +937,7 @@ impl super::instance::InstanceManager {
         uuid: &str,
         access_token: &str,
         server_address: Option<&str>,
+        world_name: Option<&str>,
         instance: &Instance,
         version: &str,
         java_path: &str,
@@ -1037,6 +1050,13 @@ impl super::instance::InstanceManager {
                 cmd.arg("--quickPlayMultiplayer").arg(server);
             } else {
                 cmd.arg("--server").arg(server);
+            }
+        }
+
+        if let Some(world) = world_name {
+            let use_quickplay = Self::should_use_quickplay(&resolved.base_version_id);
+            if use_quickplay {
+                cmd.arg("--quickPlaySingleplayer").arg(world);
             }
         }
 

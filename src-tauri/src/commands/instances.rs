@@ -324,6 +324,34 @@ pub async fn launch_instance_with_active_account(
 }
 
 #[tauri::command]
+pub async fn launch_world(
+    instance_name: String,
+    world_name: String,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    let safe_name = sanitize_instance_name(&instance_name)?;
+    let config = app_handle.state::<AppConfig>();
+
+    let active_account = AccountManager::get_active_account()
+        .map_err(|e| e.to_string())?
+        .ok_or("No active account")?;
+
+    let access_token = AccountManager::get_valid_token(&active_account.uuid, &config.microsoft_client_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    crate::services::instance::InstanceManager::launch_with_world(
+        &safe_name,
+        &active_account.username,
+        &active_account.uuid,
+        &access_token,
+        &world_name,
+        app_handle,
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn launch_instance(
     instance_name: String,
     username: String,
