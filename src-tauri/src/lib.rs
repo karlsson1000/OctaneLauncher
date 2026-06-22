@@ -122,6 +122,10 @@ pub fn run() {
                 api_key: Arc::from(curseforge_api_key),
             });
 
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
                 let _ = crate::services::trash::TrashManager::clean_old_items(30);
