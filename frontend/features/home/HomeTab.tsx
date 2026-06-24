@@ -130,18 +130,11 @@ export function HomeTab({
   }
 
   const cleanVersionName = (version: string): string =>
-    version.replace('Minecraft Java Edition', '').replace('| Minecraft', '').replace('Minecraft:', '').replace('Minecraft', '').trim()
+    version.replace('Minecraft Snapshot ', '').trim()
 
   const getVersionUrl = (version: string): string => {
     const cleanVersion = cleanVersionName(version)
-    const isSnapshot = /\d+w\d+[a-z]?/.test(cleanVersion) || cleanVersion.toLowerCase().includes('snapshot')
-    const urlVersion = cleanVersion.replace(/\./g, '-').toLowerCase()
-    if (isSnapshot) {
-      return /\d+w\d+[a-z]?/.test(cleanVersion)
-        ? `https://www.minecraft.net/en-us/article/minecraft-snapshot-${urlVersion}`
-        : `https://www.minecraft.net/en-us/article/minecraft-${urlVersion}`
-    }
-    return `https://www.minecraft.net/en-us/article/minecraft-java-edition-${urlVersion}`
+    return `https://www.minecraft.net/en-us/article/minecraft-snapshot-${cleanVersion.toLowerCase()}`
   }
 
   const getGreeting = (): string => {
