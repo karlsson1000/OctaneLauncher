@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { save } from '@tauri-apps/plugin-dialog'
 import { X, Download } from "lucide-react"
@@ -12,6 +12,15 @@ interface ExportModalProps {
 export function ExportModal({ instanceName, onClose }: ExportModalProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+
+  useEffect(() => {
+    const main = document.querySelector('main')
+    if (main) {
+      const prev = main.style.overflowY
+      main.style.overflowY = 'hidden'
+      return () => { main.style.overflowY = prev }
+    }
+  }, [])
   const [exportFormat, setExportFormat] = useState<'zip' | 'mrpack'>('mrpack')
   const [includeWorlds, setIncludeWorlds] = useState(true)
   const [includeResourcePacks, setIncludeResourcePacks] = useState(true)
