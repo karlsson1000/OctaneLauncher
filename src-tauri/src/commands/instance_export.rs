@@ -2,7 +2,6 @@ use crate::commands::validation::sanitize_instance_name;
 use crate::models::Instance;
 use crate::utils::*;
 use std::io::Write;
-use sha2::{Sha512, Digest};
 use zip::{write::SimpleFileOptions, CompressionMethod, ZipWriter};
 
 #[tauri::command]
@@ -160,8 +159,8 @@ fn export_as_mrpack(
     let instance: Instance = serde_json::from_str(&instance_content)
         .map_err(|e| e.to_string())?;
 
-    let minecraft_version = extract_minecraft_version(&instance.version);
     let loader = instance.loader.clone().unwrap_or_else(|| "vanilla".to_string());
+    let minecraft_version = extract_minecraft_version(&instance.version, &loader);
     let loader_version = instance.loader_version.clone();
 
     let mut manifest = serde_json::json!({
@@ -176,49 +175,31 @@ fn export_as_mrpack(
         }
     });
 
-    if loader == "fabric" {
-        if let Some(fabric_ver) = loader_version {
-            manifest["dependencies"]["fabric-loader"] = serde_json::Value::String(fabric_ver);
-        }
-    }
-
-    let mods_dir = instance_dir.join("mods");
-    if include_mods && mods_dir.exists() {
-        let mut mod_files = Vec::new();
-
-        if let Ok(entries) = std::fs::read_dir(&mods_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_file() && path.extension().map_or(false, |e| e == "jar") {
-                    let file_name = path.file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("")
-                        .to_string();
-
-                    if let Ok(file_content) = std::fs::read(&path) {
-                        let hash = calculate_sha512(&file_content);
-
-                        mod_files.push(serde_json::json!({
-                            "path": format!("mods/{}", file_name),
-                            "hashes": {
-                                "sha512": hash
-                            },
-                            "downloads": [],
-                            "fileSize": file_content.len()
-                        }));
-
-                        let zip_path = format!("overrides/mods/{}", file_name);
-                        add_file_to_zip(zip, &path, &zip_path, options)?;
-                    }
-                }
+    match loader.as_str() {
+        "fabric" => {
+            if let Some(ver) = loader_version {
+                manifest["dependencies"]["fabric-loader"] = serde_json::Value::String(ver);
             }
         }
-
-        manifest["files"] = serde_json::Value::Array(mod_files);
+        "forge" => {
+            if let Some(ver) = loader_version {
+                manifest["dependencies"]["forge"] = serde_json::Value::String(ver);
+            }
+        }
+        "neoforge" => {
+            if let Some(ver) = loader_version {
+                manifest["dependencies"]["neoforge"] = serde_json::Value::String(ver);
+            }
+        }
+        _ => {}
     }
 
-    zip.add_directory("overrides/", options)
-        .map_err(|e| format!("Failed to add overrides directory: {}", e))?;
+    if include_mods {
+        let mods_dir = instance_dir.join("mods");
+        if mods_dir.exists() {
+            add_dir_to_zip_with_prefix(zip, &mods_dir, "overrides/mods", options)?;
+        }
+    }
 
     if include_worlds {
         let saves_dir = instance_dir.join("saves");
@@ -279,20 +260,37 @@ fn export_as_mrpack(
     Ok(())
 }
 
-fn extract_minecraft_version(version_string: &str) -> String {
-    if version_string.contains("fabric-loader") {
-        let parts: Vec<&str> = version_string.split('-').collect();
-        if let Some(mc_version) = parts.last() {
-            return mc_version.to_string();
+fn extract_minecraft_version(version_string: &str, loader: &str) -> String {
+    match loader {
+        "fabric" => {
+            if let Some(mc_version) = version_string.rsplit('-').next() {
+                return mc_version.to_string();
+            }
+            version_string.to_string()
         }
+        "forge" => {
+            if let Some(pos) = version_string.find("-forge-") {
+                return version_string[..pos].to_string();
+            }
+            version_string.to_string()
+        }
+        "neoforge" => {
+            if let Some(ver) = version_string.strip_prefix("neoforge-") {
+                if let Some((mc_ver, _)) = ver.split_once('-') {
+                    if mc_ver.starts_with("1.") {
+                        return mc_ver.to_string();
+                    }
+                }
+                if let Some(mc_ver) =
+                    crate::services::neoforge::NeoForgeInstaller::parse_minecraft_version_from_neoforge(ver)
+                {
+                    return mc_ver;
+                }
+            }
+            version_string.to_string()
+        }
+        _ => version_string.to_string(),
     }
-    version_string.to_string()
-}
-
-fn calculate_sha512(data: &[u8]) -> String {
-    let mut hasher = Sha512::new();
-    hasher.update(data);
-    format!("{:x}", hasher.finalize())
 }
 
 fn add_file_to_zip(

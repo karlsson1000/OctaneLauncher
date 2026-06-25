@@ -1181,9 +1181,21 @@ async fn install_from_curseforge_manifest(
 
 fn extract_minecraft_version_from_instance(version_string: &str) -> String {
     if version_string.contains("fabric-loader") {
-        let parts: Vec<&str> = version_string.split('-').collect();
-        if let Some(mc_version) = parts.last() {
+        if let Some(mc_version) = version_string.rsplit('-').next() {
             return mc_version.to_string();
+        }
+    } else if let Some(pos) = version_string.find("-forge-") {
+        return version_string[..pos].to_string();
+    } else if let Some(ver) = version_string.strip_prefix("neoforge-") {
+        if let Some((mc_ver, _)) = ver.split_once('-') {
+            if mc_ver.starts_with("1.") {
+                return mc_ver.to_string();
+            }
+        }
+        if let Some(mc_ver) =
+            crate::services::neoforge::NeoForgeInstaller::parse_minecraft_version_from_neoforge(ver)
+        {
+            return mc_ver;
         }
     }
     version_string.to_string()

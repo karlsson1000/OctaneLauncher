@@ -27,7 +27,7 @@ impl NeoForgeInstaller {
         })
     }
 
-    fn parse_minecraft_version_from_neoforge(neoforge_version: &str) -> Option<String> {
+    pub fn parse_minecraft_version_from_neoforge(neoforge_version: &str) -> Option<String> {
         let version_clean = neoforge_version
             .replace("-beta", "")
             .replace("-alpha", "");
