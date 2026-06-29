@@ -93,6 +93,7 @@
   let useCustomRam = $state(false)
   let instanceMemoryMb = $state(2048)
   let systemInfo = $state<SystemInfo | null>(null)
+  let ramSaveTimeout: ReturnType<typeof setTimeout> | undefined
 
   $effect(() => {
     newName = instance.name
@@ -124,6 +125,10 @@
     if (isFabricInstance) loadFabricVersions()
     if (isNeoforgeInstance) loadNeoforgeVersions()
     if (isForgeInstance) loadForgeVersions()
+
+    return () => {
+      if (ramSaveTimeout) clearTimeout(ramSaveTimeout)
+    }
   })
 
   $effect(() => {
@@ -168,7 +173,7 @@
     }
   }
 
-  async function handleSaveRam(memoryMb: number, enabled: boolean) {
+  async function saveRamSettings(memoryMb: number, enabled: boolean) {
     try {
       if (enabled) {
         const currentSettings = await invoke<LauncherSettings | null>("get_instance_settings", { instanceName: instance.name })
@@ -187,6 +192,11 @@
       console.error("Failed to save RAM settings:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to save RAM settings: ${String(error)}`, type: "danger" }
     }
+  }
+
+  function handleRamChange() {
+    if (ramSaveTimeout) clearTimeout(ramSaveTimeout)
+    ramSaveTimeout = setTimeout(() => saveRamSettings(instanceMemoryMb, useCustomRam), 500)
   }
 
   async function loadMinecraftVersions() {
@@ -730,7 +740,7 @@
                 <span class="text-sm font-medium">RAM Allocation</span>
               </div>
               <button
-                onclick={() => { const next = !useCustomRam; useCustomRam = next; handleSaveRam(instanceMemoryMb, next) }}
+                onclick={() => { const next = !useCustomRam; useCustomRam = next; saveRamSettings(instanceMemoryMb, next) }}
                 class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 {useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover)]'}"
                 aria-label="Toggle custom RAM"
               >
@@ -743,15 +753,17 @@
                   <span class="text-2xl font-bold text-[var(--text-primary)]">{(instanceMemoryMb / 1024).toFixed(1)} GB</span>
                   <span class="text-xs text-[var(--text-muted)]">{systemInfo ? `of ${(systemInfo.total_memory_mb / 1024).toFixed(0)} GB total` : ""}</span>
                 </div>
-                <input
-                  type="range" min={minMem} max={maxMem} step="512"
-                  value={instanceMemoryMb}
-                  oninput={(e) => instanceMemoryMb = parseInt((e.target as HTMLInputElement).value)}
-                  onmouseup={(e) => { if (useCustomRam) handleSaveRam(parseInt((e.target as HTMLInputElement).value), true) }}
-                  ontouchend={(e) => { if (useCustomRam) handleSaveRam(parseInt((e.target as HTMLInputElement).value), true) }}
-                  class="w-full h-2 bg-[var(--bg-secondary)] rounded-full appearance-none cursor-pointer"
-                  style="background: linear-gradient(to right, var(--accent-primary) 0%, var(--accent-primary) {ramPercent}%, var(--bg-elevated) {ramPercent}%, var(--bg-elevated) 100%)"
-                />
+                <div class="relative h-6 flex items-center">
+                  <div class="absolute inset-x-0 h-2 bg-[var(--bg-secondary)] rounded-full"></div>
+                  <div class="absolute h-2 rounded-full" style="width: {ramPercent}%; background: var(--accent-primary)"></div>
+                  <div class="absolute w-4 h-4 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 shadow-md top-1/2 -mt-2" style="left: {ramPercent}%"></div>
+                  <input
+                    type="range" min={minMem} max={maxMem} step="512"
+                    bind:value={instanceMemoryMb}
+                    oninput={handleRamChange}
+                    class="absolute inset-0 w-full opacity-0 cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
           </div>
