@@ -431,7 +431,7 @@
         isDeleting = true
         confirmModal = null
         try {
-          await invoke("delete_instance", { instanceName: instance.name })
+          await invoke("delete_instance", { instanceName: instance.name, permanent: true })
           onInstanceDeleted()
           onClose()
         } catch (error) {
