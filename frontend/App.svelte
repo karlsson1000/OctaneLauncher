@@ -18,10 +18,10 @@
   import {
     store,
     setShowSettingsModal, setShowCreateModal, setConfirmModal,
-    setAlertModal, loadAllInitialData, setupEventListeners,
+    setAlertModal, loadAllInitialData, setupEventListeners, pushToHistory,
     handleStartCreating, handleCreationComplete, handleCreationError,
   } from "./lib/launcherStore.svelte"
-  import { onMount } from "svelte"
+  import { onMount, untrack } from "svelte"
 
   onMount(() => {
     setTimeout(async () => {
@@ -40,6 +40,14 @@
   $effect(() => {
     if (!store.isReady) return
     return setupEventListeners()
+  })
+
+  $effect(() => {
+    if (!store.isReady) return
+    store.activeTab
+    store.showInstanceDetails
+    store.selectedInstance?.name
+    untrack(pushToHistory)
   })
 </script>
 

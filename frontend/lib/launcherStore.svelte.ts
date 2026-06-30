@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
 import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } from "../types"
-import { storeGet } from "./store"
+import { storeGet, storeSet } from "./store"
 
 type ActiveTab = "home" | "instances" | "browse" | "console" | "servers" | "skins" | "screenshots"
 type BrowseSubTab = "mods" | "modpacks" | "resourcepacks" | "shaderpacks"
@@ -59,6 +59,7 @@ export const store = $state({
   alertModal: null as AlertModalState | null,
   navigationHistory: [] as NavEntry[],
   historyIndex: -1,
+  isNavigating: false,
   background: null as string | null,
   showSettingsModal: false,
   sidebarContextMenu: null as SidebarMenu | null,
@@ -73,25 +74,35 @@ const appWindow = getCurrentWindow()
 const dragRegion = "webkit-app-region: drag"
 const noDragRegion = "webkit-app-region: no-drag"
 
+function pushToHistory() {
+  if (store.isNavigating) return
+  store.navigationHistory = [...store.navigationHistory.slice(0, store.historyIndex + 1), { tab: store.activeTab, showDetails: store.showInstanceDetails, instance: store.selectedInstance }]
+  store.historyIndex = store.navigationHistory.length - 1
+}
+
 function navigateBack() {
   if (store.historyIndex > 0) {
+    store.isNavigating = true
     const newIndex = store.historyIndex - 1
     const state = store.navigationHistory[newIndex]
     store.activeTab = state.tab
     store.showInstanceDetails = state.showDetails
     if (state.instance) store.selectedInstance = state.instance
     store.historyIndex = newIndex
+    setTimeout(() => store.isNavigating = false, 0)
   }
 }
 
 function navigateForward() {
   if (store.historyIndex < store.navigationHistory.length - 1) {
+    store.isNavigating = true
     const newIndex = store.historyIndex + 1
     const state = store.navigationHistory[newIndex]
     store.activeTab = state.tab
     store.showInstanceDetails = state.showDetails
     if (state.instance) store.selectedInstance = state.instance
     store.historyIndex = newIndex
+    setTimeout(() => store.isNavigating = false, 0)
   }
 }
 
@@ -377,7 +388,10 @@ function setAlertModal(v: AlertModalState | null) { store.alertModal = v }
 function setShowSettingsModal(v: boolean) { store.showSettingsModal = v }
 function setSidebarContextMenu(v: SidebarMenu | null) { store.sidebarContextMenu = v }
 function setShowAccountDropdown(v: boolean) { store.showAccountDropdown = v }
-function setShowFriendsPanel(v: boolean) { store.showFriendsPanel = v }
+function setShowFriendsPanel(v: boolean) {
+  store.showFriendsPanel = v
+  storeSet("friends_panel_open", v)
+}
 function setBrowseSubTab(v: BrowseSubTab) { store.browseSubTab = v }
 
 let heartbeatTimer: ReturnType<typeof setInterval> | undefined
@@ -407,6 +421,8 @@ function stopHeartbeat() {
   }
 }
 
+let appliedDefaultTab = false
+
 async function loadAllInitialData() {
   await Promise.all([
     loadVersions(),
@@ -415,7 +431,15 @@ async function loadAllInitialData() {
     loadSettings(),
     loadAccounts(),
     loadBackground(),
+    storeGet<boolean>("friends_panel_open").then(v => { if (v) store.showFriendsPanel = true }),
   ])
+  if (!appliedDefaultTab && store.settings?.default_tab) {
+    const validTabs = ["home", "instances", "browse", "console", "servers", "skins", "screenshots"]
+    if (validTabs.includes(store.settings.default_tab)) {
+      store.activeTab = store.settings.default_tab as ActiveTab
+    }
+    appliedDefaultTab = true
+  }
   checkForUpdates()
 }
 
@@ -472,6 +496,7 @@ export {
   setBrowseSubTab,
   navigateBack,
   navigateForward,
+  pushToHistory,
   handleInstallUpdate,
   handleLaunch,
   handleDeleteInstance,
