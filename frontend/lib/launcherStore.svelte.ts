@@ -203,6 +203,9 @@ async function loadAccounts() {
     store.isAuthenticated = !!active
     if (active) {
       invoke("register_user_in_friends_system").catch(() => {})
+      startHeartbeat()
+    } else {
+      stopHeartbeat()
     }
   } catch (error) {
     console.error("Failed to load accounts:", error)
@@ -377,6 +380,33 @@ function setShowAccountDropdown(v: boolean) { store.showAccountDropdown = v }
 function setShowFriendsPanel(v: boolean) { store.showFriendsPanel = v }
 function setBrowseSubTab(v: BrowseSubTab) { store.browseSubTab = v }
 
+let heartbeatTimer: ReturnType<typeof setInterval> | undefined
+
+function startHeartbeat() {
+  stopHeartbeat()
+  const sendHeartbeat = async () => {
+    try {
+      const instances = store.runningInstances
+      const firstInstance = instances.values().next().value
+      if (firstInstance) {
+        await invoke("update_user_status", { status: "ingame", currentInstance: firstInstance })
+      } else {
+        await invoke("update_user_status", { status: "online", currentInstance: null })
+      }
+    } catch {
+    }
+  }
+  sendHeartbeat()
+  heartbeatTimer = setInterval(sendHeartbeat, 60000)
+}
+
+function stopHeartbeat() {
+  if (heartbeatTimer !== undefined) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = undefined
+  }
+}
+
 async function loadAllInitialData() {
   await Promise.all([
     loadVersions(),
@@ -426,7 +456,7 @@ function setupEventListeners() {
 
 export {
   appWindow, dragRegion, noDragRegion,
-  loadAllInitialData, setupEventListeners,
+  loadAllInitialData, setupEventListeners, startHeartbeat, stopHeartbeat,
   setShowCreateModal,
   setSelectedInstance,
   setSettings,

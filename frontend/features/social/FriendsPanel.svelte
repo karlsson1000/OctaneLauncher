@@ -16,6 +16,8 @@
     if (isOpen && isAuthenticated) {
       loadFriends()
       loadRequests()
+      const interval = setInterval(loadFriends, 30000)
+      return () => clearInterval(interval)
     }
     void activeAccountUuid
   })
