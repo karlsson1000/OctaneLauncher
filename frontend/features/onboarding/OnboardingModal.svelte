@@ -243,7 +243,7 @@
             {:else if detected.length > 0}
               From Modrinth, Prism and CurseForge. Pick what to bring over, nothing is moved or deleted.
             {:else}
-              We looked for Modrinth, Prism and CurseForge installations on this PC.
+              Scanning for Modrinth, Prism and CurseForge installations on this PC...
             {/if}
           </p>
 
