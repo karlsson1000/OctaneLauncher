@@ -1179,6 +1179,7 @@ impl super::instance::InstanceManager {
         cmd.arg(format!("-Xms{}M", xms))
             .arg(format!("-Xmx{}M", effective_settings.memory_mb))
             .arg("-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump")
+            .arg("-XX:StackShadowPages=32")
             .arg("-Dminecraft.launcher.brand=octane-launcher")
             .arg(format!("-Dminecraft.launcher.version={}", env!("CARGO_PKG_VERSION")));
 
