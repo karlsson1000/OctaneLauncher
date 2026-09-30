@@ -1,5 +1,0 @@
-project_id = "octane-launcher"
-
-[functions.database-auth]
-verify_jwt = false
-entrypoint = "./functions/database-auth/index.ts"

@@ -90,17 +90,13 @@ pub fn run() {    if let Err(e) = dotenvy::dotenv() {
             let microsoft_client_id =
                 std::env::var("MICROSOFT_CLIENT_ID").unwrap_or_else(|_| env!("MICROSOFT_CLIENT_ID").to_string());
 
-            let database_url =
-                std::env::var("DATABASE_URL").unwrap_or_else(|_| env!("DATABASE_URL").to_string());
-
-            let database_key =
-                std::env::var("DATABASE_ANON_KEY").unwrap_or_else(|_| env!("DATABASE_ANON_KEY").to_string());
+            let convex_url =
+                std::env::var("CONVEX_URL").unwrap_or_else(|_| env!("CONVEX_URL").to_string());
 
             let client_id = microsoft_client_id.clone();
             app.manage(AppConfig {
                 microsoft_client_id,
-                database_url,
-                database_key,
+                convex_url,
             });
 
             let curseforge_api_key = env!("CURSEFORGE_API_KEY").to_string();

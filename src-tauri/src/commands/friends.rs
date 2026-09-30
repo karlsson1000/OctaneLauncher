@@ -4,7 +4,7 @@ use crate::services::accounts::AccountManager;
 use tauri::Manager;
 
 fn get_database_service(config: &AppConfig) -> DatabaseService {
-    DatabaseService::new(&config.database_url, &config.database_key)
+    DatabaseService::new(&config.convex_url)
 }
 
 async fn require_session(

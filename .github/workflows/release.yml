@@ -48,8 +48,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           MICROSOFT_CLIENT_ID: ${{ secrets.MICROSOFT_CLIENT_ID }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_ANON_KEY: ${{ secrets.DATABASE_ANON_KEY }}
+          CONVEX_URL: ${{ secrets.CONVEX_URL }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         with:
           tagName: ${{ github.ref_name }}
