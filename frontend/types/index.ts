@@ -48,6 +48,8 @@ export interface LauncherSettings {
   default_tab?: string
   cat_mode?: boolean
   discord_rpc?: boolean
+  background_darkness?: number
+  background_blur?: number
 }
 
 export interface MinecraftOptions {

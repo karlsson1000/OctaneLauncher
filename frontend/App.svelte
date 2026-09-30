@@ -102,7 +102,10 @@
         : 'background-color: var(--content-bg)'}
     >
       {#if store.background}
-        <div class="absolute inset-0 bg-black/80"></div>
+        <div
+          class="absolute inset-0"
+          style="background: rgba(0,0,0,{((store.settings?.background_darkness ?? 80) / 100).toFixed(2)}); {(store.settings?.background_blur ?? 0) > 0 ? `backdrop-filter: blur(${store.settings!.background_blur}px);` : ''}"
+        ></div>
       {/if}
 
       <main class="flex-1 min-h-0 overflow-y-auto relative">

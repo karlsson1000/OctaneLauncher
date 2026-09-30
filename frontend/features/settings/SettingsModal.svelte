@@ -456,6 +456,42 @@
                   </button>
                 {/if}
                 <input bind:this={fileInputEl} type="file" accept="image/*" onchange={handleFileSelect} class="hidden" />
+                {#if sidebarBgPreview}
+                  <div class="mt-4">
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-sm text-[var(--text-primary)]">Darkness</span>
+                      <span class="text-sm font-mono text-[var(--text-muted)]">{store.settings?.background_darkness ?? 80}%</span>
+                    </div>
+                    <div class="relative h-6 flex items-center">
+                      <div class="absolute inset-x-0 h-2 bg-[var(--bg-primary)] rounded-full"></div>
+                      <div class="absolute h-2 rounded-full" style="width: calc(8px + (100% - 16px) * {store.settings?.background_darkness ?? 80} / 100); background: var(--accent-primary)"></div>
+                      <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: calc(8px + (100% - 16px) * {store.settings?.background_darkness ?? 80} / 100)"></div>
+                      <input
+                        type="range" min="0" max="100" step="1"
+                        value={store.settings?.background_darkness ?? 80}
+                        oninput={(e) => handleSettingChangeDebounced({ ...store.settings!, background_darkness: Number((e.currentTarget as HTMLInputElement).value) } as LauncherSettings)}
+                        class="absolute inset-0 w-full opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                  <div class="mt-2">
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-sm text-[var(--text-primary)]">Blur</span>
+                      <span class="text-sm font-mono text-[var(--text-muted)]">{store.settings?.background_blur ?? 0}px</span>
+                    </div>
+                    <div class="relative h-6 flex items-center">
+                      <div class="absolute inset-x-0 h-2 bg-[var(--bg-primary)] rounded-full"></div>
+                      <div class="absolute h-2 rounded-full" style="width: calc(8px + (100% - 16px) * {store.settings?.background_blur ?? 0} / 20); background: var(--accent-primary)"></div>
+                      <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: calc(8px + (100% - 16px) * {store.settings?.background_blur ?? 0} / 20)"></div>
+                      <input
+                        type="range" min="0" max="20" step="1"
+                        value={store.settings?.background_blur ?? 0}
+                        oninput={(e) => handleSettingChangeDebounced({ ...store.settings!, background_blur: Number((e.currentTarget as HTMLInputElement).value) } as LauncherSettings)}
+                        class="absolute inset-0 w-full opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                {/if}
               </section>
             {:else if activeTab === "game"}
               <section id="settings-memory" class="bg-[var(--bg-elevated)] rounded-lg p-4">

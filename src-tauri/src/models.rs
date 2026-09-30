@@ -109,11 +109,17 @@ pub struct LauncherSettings {
     pub java_args: Option<String>,
     #[serde(default = "default_discord_rpc")]
     pub discord_rpc: bool,
+    #[serde(default = "default_background_darkness")]
+    pub background_darkness: u8,
+    #[serde(default = "default_background_blur")]
+    pub background_blur: u8,
 }
 
 fn default_memory() -> u32 { 4096 }
 fn default_auto_navigate_to_console() -> bool { true }
 fn default_discord_rpc() -> bool { true }
+fn default_background_darkness() -> u8 { 80 }
+fn default_background_blur() -> u8 { 0 }
 fn default_theme() -> String { "octane".to_string() }
 fn default_tab() -> String { "home".to_string() }
 
@@ -128,6 +134,8 @@ impl Default for LauncherSettings {
             cat_mode: false,
             java_args: None,
             discord_rpc: true,
+            background_darkness: 80,
+            background_blur: 0,
         }
     }
 }
