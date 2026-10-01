@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Package, ExternalLink, FolderOpen, Copy, FileArchive, Trash2, Play, ChevronRight } from "lucide-svelte"
+  import { Package, ExternalLink, FolderOpen, Copy, FileArchive, Trash2, Play, ChevronLeft, ChevronRight } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import type { Instance, Snapshot, SnapshotsResponse } from "../../types"
   import { getMinecraftVersion } from "../../lib/version"
@@ -17,6 +17,15 @@
   let contextMenu = $state<{ x: number; y: number; instance: Instance } | null>(null)
   let snapshots = $state<Snapshot[]>([])
   let loadingSnapshots = $state(true)
+  let snapshotPage = $state(0)
+
+  const SNAPSHOT_PAGE_SIZE = 3
+
+  let snapshotPages = $derived<Snapshot[][]>(
+    Array.from({ length: Math.ceil(snapshots.length / SNAPSHOT_PAGE_SIZE) }, (_, i) =>
+      snapshots.slice(i * SNAPSHOT_PAGE_SIZE, (i + 1) * SNAPSHOT_PAGE_SIZE)
+    )
+  )
   let tooltipInstance = $state<Instance | null>(null)
   let tooltipTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -49,7 +58,8 @@
       try {
         const response = await fetch('https://launchercontent.mojang.com/v2/javaPatchNotes.json')
         const data: SnapshotsResponse = await response.json()
-        snapshots = data.entries.slice(0, 3)
+        snapshots = data.entries.slice(0, 30)
+        if (snapshotPage > Math.ceil(snapshots.length / SNAPSHOT_PAGE_SIZE) - 1) snapshotPage = 0
       } catch (error) {
         console.error('Failed to load snapshots:', error)
       } finally {
@@ -244,8 +254,26 @@
   {/if}
 
   <div class="max-w-7xl mx-auto">
-    <div class="mb-4">
+    <div class="mb-4 flex items-center justify-between">
       <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Latest Snapshots</h2>
+      {#if snapshotPages.length > 1}
+        <div class="flex items-center gap-1">
+          <button
+            onclick={() => snapshotPage = Math.max(0, snapshotPage - 1)}
+            disabled={snapshotPage === 0}
+            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+          >
+            <ChevronLeft size={18} strokeWidth={3} />
+          </button>
+          <button
+            onclick={() => snapshotPage = Math.min(snapshotPages.length - 1, snapshotPage + 1)}
+            disabled={snapshotPage >= snapshotPages.length - 1}
+            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+          >
+            <ChevronRight size={18} strokeWidth={3} />
+          </button>
+        </div>
+      {/if}
     </div>
     {#if loadingSnapshots}
       <div class="flex items-center justify-center py-12">
@@ -256,8 +284,11 @@
         <p class="text-[var(--text-muted)]">Unable to load snapshots</p>
       </div>
     {:else}
-      <div class="grid grid-cols-3 gap-4">
-        {#each snapshots as snapshot (snapshot.id)}
+      <div class="overflow-hidden">
+        <div class="flex transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform" style="transform: translateX(-{snapshotPage * 100}%)">
+          {#each snapshotPages as page, i (i)}
+            <div class="grid grid-cols-3 gap-4 w-full flex-shrink-0">
+              {#each page as snapshot (snapshot.id)}
           <div
             role="button"
             tabindex="0"
@@ -270,7 +301,7 @@
             </div>
             <div class="h-40 bg-[var(--bg-secondary)] overflow-hidden relative flex-shrink-0 z-0">
               {#if snapshot.image?.url}
-                <img src="https://launchercontent.mojang.com{snapshot.image.url}" alt={snapshot.title} class="w-full h-full object-cover" />
+                <img src="https://launchercontent.mojang.com{snapshot.image.url}" alt={snapshot.title} loading="lazy" decoding="async" class="w-full h-full object-cover" />
               {:else}
                 <div class="w-full h-full flex items-center justify-center">
                   <Package size={48} class="text-[var(--text-muted)]" />
@@ -291,6 +322,9 @@
             </div>
           </div>
         {/each}
+            </div>
+          {/each}
+        </div>
       </div>
     {/if}
   </div>
