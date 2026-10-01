@@ -1,7 +1,9 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
-  import { Users, UserPlus, UserCheck, UserX, Search, Loader2, LogIn, ChevronDown, ChevronRight, Inbox } from "lucide-svelte"
+  import { Users, UserPlus, UserCheck, UserX, Search, Loader2, LogIn, ChevronDown, ChevronRight, Inbox, Pencil } from "lucide-svelte"
   import type { Friend, FriendRequest } from "../../types"
+  import { storeGet, storeSet } from "../../lib/store"
+  import ContextMenu from "../../components/ui/ContextMenu.svelte"
 
   let { isOpen, isAuthenticated, activeAccountUuid }: { isOpen: boolean, isAuthenticated: boolean, activeAccountUuid?: string } = $props()
 
@@ -11,11 +13,48 @@
   let sending = $state(false)
   let sendError = $state<string | null>(null)
   let searchQuery = $state("")
+  let nicknames = $state<Record<string, string>>({})
+  let editingNicknameUuid = $state<string | null>(null)
+  let nicknameDraft = $state("")
+  let nicknameInput: HTMLInputElement | undefined = $state()
+
+  $effect(() => {
+    if (editingNicknameUuid && nicknameInput) nicknameInput.focus()
+  })
+  let friendMenu = $state<{ x: number; y: number; friend: Friend } | null>(null)
+
+  const nicknameKey = () => `nicknames_${activeAccountUuid ?? "default"}`
+
+  const displayName = (friend: Friend) => nicknames[friend.uuid]?.trim() || friend.username
+
+  const loadNicknames = async () => {
+    try {
+      nicknames = (await storeGet<Record<string, string>>(nicknameKey())) ?? {}
+    } catch {
+      nicknames = {}
+    }
+  }
+
+  const saveNickname = async (friendUuid: string, value: string) => {
+    const trimmed = value.trim().slice(0, 32)
+    if (trimmed) {
+      nicknames[friendUuid] = trimmed
+    } else {
+      delete nicknames[friendUuid]
+    }
+    try {
+      await storeSet(nicknameKey(), nicknames)
+    } catch (error) {
+      console.error("Failed to save nickname:", error)
+    }
+    editingNicknameUuid = null
+  }
 
   $effect(() => {
     if (isOpen && isAuthenticated) {
       loadFriends()
       loadRequests()
+      loadNicknames()
       const interval = setInterval(pollFriends, 30000)
       return () => clearInterval(interval)
     }
@@ -96,7 +135,10 @@
   }
 
   let filteredFriends = $derived(
-    friends.filter(f => f.username.toLowerCase().includes(searchQuery.toLowerCase()))
+    friends.filter(f => {
+      const q = searchQuery.toLowerCase()
+      return f.username.toLowerCase().includes(q) || displayName(f).toLowerCase().includes(q)
+    })
   )
 
   let sortedFriends = $derived(
@@ -121,7 +163,12 @@
 </script>
 
 {#snippet friendRow(friend: Friend)}
-  <div class="group flex items-center gap-3 px-1 py-1 relative">
+  <div
+    role="button"
+    tabindex="0"
+    class="group flex items-center gap-3 px-1 py-1 relative"
+    oncontextmenu={(e) => { e.preventDefault(); friendMenu = { x: e.clientX, y: e.clientY, friend } }}
+  >
     <div class="relative flex-shrink-0">
       <img
         src="https://avatar.mcindex.net/avatar/{friend.username}/32"
@@ -141,7 +188,23 @@
       </div>
     </div>
     <div class="flex-1 min-w-0">
-      <div class="text-base text-[var(--text-primary)] truncate font-medium">{friend.username}</div>
+      {#if editingNicknameUuid === friend.uuid}
+        <input
+          type="text"
+          bind:this={nicknameInput}
+          bind:value={nicknameDraft}
+          maxlength={32}
+          placeholder={friend.username}
+          onkeydown={(e) => {
+            if (e.key === "Enter") saveNickname(friend.uuid, nicknameDraft)
+            else if (e.key === "Escape") editingNicknameUuid = null
+          }}
+          onblur={() => saveNickname(friend.uuid, nicknameDraft)}
+          class="w-full bg-[var(--bg-secondary)] rounded px-0 py-0 text-base font-medium text-[var(--text-primary)] focus:outline-none"
+        />
+      {:else}
+        <div class="text-base text-[var(--text-primary)] truncate font-medium" title={nicknames[friend.uuid] ? friend.username : undefined}>{displayName(friend)}</div>
+      {/if}
       <div class="text-[13px] text-[var(--text-muted)] truncate -mt-0.75">
         {#if friend.status === "ingame" && friend.current_instance}
           Playing <span class="text-[#3b82f6] font-semibold">{friend.current_instance}</span>
@@ -152,13 +215,6 @@
         {/if}
       </div>
     </div>
-    <button
-      onclick={() => handleRemoveFriend(friend.uuid)}
-      class="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded text-[var(--text-muted)] hover:text-red-400 transition-all cursor-pointer absolute right-1"
-      title="Remove friend"
-    >
-      <UserX size={16} strokeWidth={3} />
-    </button>
   </div>
 {/snippet}
 
@@ -331,3 +387,17 @@
     </div>
   {/if}
 </div>
+
+{#if friendMenu}
+  {@const fm = friendMenu}
+  <ContextMenu
+    x={fm.x}
+    y={fm.y}
+    onClose={() => friendMenu = null}
+    items={[
+      { label: "Set nickname", icon: Pencil, onClick: () => { editingNicknameUuid = fm.friend.uuid; nicknameDraft = nicknames[fm.friend.uuid] ?? "" } },
+      { separator: true },
+      { label: "Remove friend", icon: UserX, onClick: () => handleRemoveFriend(fm.friend.uuid), danger: true },
+    ]}
+  />
+{/if}
