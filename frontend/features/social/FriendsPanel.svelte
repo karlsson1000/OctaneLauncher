@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
-  import { Users, UserPlus, UserCheck, UserX, Search, Loader2, LogIn, ChevronDown, ChevronRight, Inbox, Pencil } from "lucide-svelte"
+  import { Users, UserPlus, UserCheck, UserX, Search, Loader2, LogIn, ChevronDown, ChevronRight, Inbox, Pencil, Star } from "lucide-svelte"
   import type { Friend, FriendRequest } from "../../types"
   import { storeGet, storeSet } from "../../lib/store"
   import ContextMenu from "../../components/ui/ContextMenu.svelte"
@@ -14,6 +14,7 @@
   let sendError = $state<string | null>(null)
   let searchQuery = $state("")
   let nicknames = $state<Record<string, string>>({})
+  let favorites = $state<string[]>([])
   let editingNicknameUuid = $state<string | null>(null)
   let nicknameDraft = $state("")
   let nicknameInput: HTMLInputElement | undefined = $state()
@@ -25,13 +26,36 @@
 
   const nicknameKey = () => `nicknames_${activeAccountUuid ?? "default"}`
 
-  const displayName = (friend: Friend) => nicknames[friend.uuid]?.trim() || friend.username
+  const displayName = (friend: Friend) => nicknames[friend.uuid] || friend.username
 
   const loadNicknames = async () => {
     try {
       nicknames = (await storeGet<Record<string, string>>(nicknameKey())) ?? {}
     } catch {
       nicknames = {}
+    }
+  }
+
+  const favoritesKey = () => `favorites_${activeAccountUuid ?? "default"}`
+
+  const isFavorite = (friendUuid: string) => favorites.includes(friendUuid)
+
+  const loadFavorites = async () => {
+    try {
+      favorites = (await storeGet<string[]>(favoritesKey())) ?? []
+    } catch {
+      favorites = []
+    }
+  }
+
+  const toggleFavorite = async (friendUuid: string) => {
+    favorites = isFavorite(friendUuid)
+      ? favorites.filter(u => u !== friendUuid)
+      : [...favorites, friendUuid]
+    try {
+      await storeSet(favoritesKey(), favorites)
+    } catch (error) {
+      console.error("Failed to save favorite:", error)
     }
   }
 
@@ -55,6 +79,7 @@
       loadFriends()
       loadRequests()
       loadNicknames()
+      loadFavorites()
       const interval = setInterval(pollFriends, 30000)
       return () => clearInterval(interval)
     }
@@ -143,6 +168,8 @@
 
   let sortedFriends = $derived(
     [...filteredFriends].sort((a, b) => {
+      const fav = Number(isFavorite(b.uuid)) - Number(isFavorite(a.uuid))
+      if (fav !== 0) return fav
       const order: Record<string, number> = { ingame: 0, online: 1, offline: 2 }
       return (order[a.status] ?? 2) - (order[b.status] ?? 2)
     })
@@ -203,7 +230,12 @@
           class="w-full bg-[var(--bg-secondary)] rounded px-0 py-0 text-base font-medium text-[var(--text-primary)] focus:outline-none"
         />
       {:else}
-        <div class="text-base text-[var(--text-primary)] truncate font-medium" title={nicknames[friend.uuid] ? friend.username : undefined}>{displayName(friend)}</div>
+        <div class="text-base text-[var(--text-primary)] truncate font-medium flex items-center gap-1" title={nicknames[friend.uuid] ? friend.username : undefined}>
+          {#if isFavorite(friend.uuid)}
+            <Star size={13} strokeWidth={0} fill="currentColor" class="text-amber-400 flex-shrink-0" />
+          {/if}
+          <span class="truncate">{displayName(friend)}</span>
+        </div>
       {/if}
       <div class="text-[13px] text-[var(--text-muted)] truncate -mt-0.75">
         {#if friend.status === "ingame" && friend.current_instance}
@@ -395,6 +427,7 @@
     y={fm.y}
     onClose={() => friendMenu = null}
     items={[
+      { label: isFavorite(fm.friend.uuid) ? "Remove from favorites" : "Add to favorites", icon: Star, onClick: () => toggleFavorite(fm.friend.uuid) },
       { label: "Set nickname", icon: Pencil, onClick: () => { editingNicknameUuid = fm.friend.uuid; nicknameDraft = nicknames[fm.friend.uuid] ?? "" } },
       { separator: true },
       { label: "Remove friend", icon: UserX, onClick: () => handleRemoveFriend(fm.friend.uuid), danger: true },
