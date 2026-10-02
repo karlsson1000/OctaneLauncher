@@ -173,7 +173,7 @@
         {#each recentInstances as instance (instance.name)}
           {@const isRunning = store.runningInstances.has(instance.name)}
           {@const isLaunching = store.launchingInstanceName === instance.name}
-          {@const icon = instanceIconSrc(instance.icon_path)}
+          {@const icon = instanceIconSrc(instance.icon_path, instance.name)}
           <div
             role="button"
             tabindex="0"

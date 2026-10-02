@@ -53,7 +53,7 @@
     {#if recentInstances.length > 0}
       <div class="flex flex-col items-center gap-2.5 pt-2.5 border-t border-[var(--bg-tertiary)]">
         {#each recentInstances as instance (instance.name)}
-          {@const icon = instanceIconSrc(instance.icon_path)}
+          {@const icon = instanceIconSrc(instance.icon_path, instance.name)}
           <Tooltip text={instance.name}>
             <button
               onclick={() => openRecentInstance(instance)}

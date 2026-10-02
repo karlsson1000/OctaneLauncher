@@ -177,7 +177,7 @@
                 <p class="text-xs text-[#3a3f4b]">No modded instances</p>
               {:else}
                 {#each moddedInstances as instance}
-                  {@const icon = instanceIconSrc(instance.icon_path)}
+                  {@const icon = instanceIconSrc(instance.icon_path, instance.name)}
                   {@const loader = getLoaderDisplay(instance)}
                   <button
                     onclick={() => setSelectedInstance(instance)}

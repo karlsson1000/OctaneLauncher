@@ -4,6 +4,7 @@
   import ConfirmModal from "../../components/ui/ConfirmModal.svelte"
   import AlertModal from "../../components/ui/AlertModal.svelte"
   import type { Instance, FabricVersion, NeoForgeVersion, ForgeVersion, LauncherSettings } from "../../types"
+  import { instanceIconSrc, bumpInstanceIcon, clearInstanceIcon } from "../../lib/icons"
   import { store, handleInstanceRenamed, deleteInstanceOptimistically } from "../../lib/launcherStore.svelte"
 
   interface SystemInfo {
@@ -368,7 +369,8 @@
 
         try {
           const iconPath = await invoke<string | null>("set_instance_icon", { instanceName: instance.name, imageData: base64 })
-          localIcon = instanceIconSrc(iconPath)
+          bumpInstanceIcon(instance.name)
+          localIcon = instanceIconSrc(iconPath, instance.name)
           onInstanceUpdated()
         } catch (error) {
           console.error("Failed to set icon:", error)
@@ -396,6 +398,7 @@
         confirmModal = null
         try {
           await invoke("remove_instance_icon", { instanceName: instance.name })
+          clearInstanceIcon(instance.name)
           localIcon = null
           onInstanceUpdated()
         } catch (error) {

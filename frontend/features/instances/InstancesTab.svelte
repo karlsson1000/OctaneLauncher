@@ -321,8 +321,8 @@ import { instanceIconSrc } from "../../lib/icons"
                     class="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative overflow-hidden"
                   >
                     <div class="relative flex-shrink-0">
-                      {#if instanceIconSrc(instance.icon_path)}
-                        <img src={instanceIconSrc(instance.icon_path)} alt={instance.name} class="w-20 h-20 object-cover" />
+                      {#if instanceIconSrc(instance.icon_path, instance.name)}
+                        <img src={instanceIconSrc(instance.icon_path, instance.name)} alt={instance.name} class="w-20 h-20 object-cover" />
                       {:else}
                         <div class="w-20 h-20 flex items-center justify-center">
                           <Package size={36} class="text-[var(--text-muted)]" />
@@ -406,8 +406,8 @@ import { instanceIconSrc } from "../../lib/icons"
                     class="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative overflow-hidden"
                   >
                     <div class="relative flex-shrink-0">
-                      {#if instanceIconSrc(instance.icon_path)}
-                        <img src={instanceIconSrc(instance.icon_path)} alt={instance.name} class="w-20 h-20 object-cover" />
+                      {#if instanceIconSrc(instance.icon_path, instance.name)}
+                        <img src={instanceIconSrc(instance.icon_path, instance.name)} alt={instance.name} class="w-20 h-20 object-cover" />
                       {:else}
                         <div class="w-20 h-20 flex items-center justify-center">
                           <Package size={36} class="text-[var(--text-muted)]" />

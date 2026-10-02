@@ -92,7 +92,7 @@
     loadShaderPacks()
   })
 
-  const instanceIcon = $derived(instanceIconSrc(instance.icon_path))
+  const instanceIcon = $derived(instanceIconSrc(instance.icon_path, instance.name))
 
   async function loadWorlds() {
     isLoadingWorlds = true
