@@ -43,7 +43,9 @@
   })
 
   $effect(() => {
-    const theme = store.settings?.theme || "octane"
+    if (!store.settings) return
+    const theme = store.settings.theme || "octane"
+    try { localStorage.setItem("octane_theme", theme) } catch {}
     const root = document.documentElement
     for (const cls of Array.from(root.classList)) {
       if (cls.startsWith("theme-")) root.classList.remove(cls)

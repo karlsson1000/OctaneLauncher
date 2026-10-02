@@ -12,7 +12,7 @@
     { id: "octane", label: "Octane", colors: ["#15171c", "#252932", "#4572e3", "#e6e6e6"] },
     { id: "light", label: "Light", colors: ["#f5f5f5", "#ffffff", "#4361ee", "#1a1d23"] },
     { id: "rose", label: "Rosé", colors: ["#1a1423", "#2a1a33", "#f472b6", "#e6e6ee"] },
-    { id: "cherry", label: "Cherry", colors: ["#1a0d0f", "#2a1417", "#dc2626", "#f4ecec"] },
+    { id: "forest", label: "Forest", colors: ["#1a241e", "#30423a", "#4ade80", "#e8eee9"] },
   ] as const
 
   type TabId = "appearance" | "game" | "launcher" | "storage"
