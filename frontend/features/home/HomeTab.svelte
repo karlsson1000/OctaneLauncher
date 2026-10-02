@@ -302,7 +302,7 @@
             </div>
             <div class="h-40 bg-[var(--bg-secondary)] overflow-hidden relative flex-shrink-0 z-0">
               {#if snapshot.image?.url}
-                <img src="https://launchercontent.mojang.com{snapshot.image.url}" alt={snapshot.title} loading="lazy" decoding="async" class="w-full h-full object-cover" />
+                <img src="https://launchercontent.mojang.com{snapshot.image.url}" alt={snapshot.title} class="w-full h-full object-cover" />
               {:else}
                 <div class="w-full h-full flex items-center justify-center">
                   <Package size={48} class="text-[var(--text-muted)]" />
