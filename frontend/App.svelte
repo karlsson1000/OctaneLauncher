@@ -19,15 +19,46 @@
   import ServersTab from "./features/servers/ServersTab.svelte"
   import SkinsTab from "./features/skins/SkinsTab.svelte"
   import ScreenshotsTab from "./features/screenshots/ScreenshotsTab.svelte"
+  import ContextMenu from "./components/ui/ContextMenu.svelte"
   import {
     store,
     setShowSettingsModal, setShowCreateModal, setConfirmModal,
     setAlertModal, loadAllInitialData, setupEventListeners, pushToHistory,
     handleStartCreating, handleCreationComplete, handleCreationError,
-    setExportModal, setShowSearchPalette,
+    setExportModal, setShowSearchPalette, navigateBack, navigateForward,
   } from "./lib/launcherStore.svelte"
   import { onMount, untrack } from "svelte"
   import { invoke } from "@tauri-apps/api/core"
+  import { ArrowLeft, ArrowRight, RefreshCw, Search } from "lucide-svelte"
+
+  const SPLASH_DELAY_MS = 100
+  const SPLASH_REMOVE_MS = 500
+
+  const tabs = {
+    home: HomeTab,
+    instances: InstancesTab,
+    addons: AddonsTab,
+    servers: ServersTab,
+    skins: SkinsTab,
+    screenshots: ScreenshotsTab,
+    console: ConsoleTab,
+  }
+
+  let globalMenu = $state<{ x: number; y: number } | null>(null)
+
+  const ActiveTab = $derived(tabs[store.activeTab as keyof typeof tabs])
+
+  const backgroundStyle = $derived(
+    store.background
+      ? `background-image: url("${store.background}"); background-size: cover; background-position: center`
+      : "background-color: var(--content-bg)"
+  )
+
+  const overlayStyle = $derived.by(() => {
+    const darkness = ((store.settings?.background_darkness ?? 80) / 100).toFixed(2)
+    const blur = store.settings?.background_blur ?? 0
+    return `background: rgba(0,0,0,${darkness});${blur > 0 ? ` backdrop-filter: blur(${blur}px);` : ""}`
+  })
 
   function handleGlobalKeydown(e: KeyboardEvent) {
     const key = e.key.toLowerCase()
@@ -37,10 +68,18 @@
     }
   }
 
-  $effect(() => {
-    window.addEventListener("keydown", handleGlobalKeydown)
-    return () => window.removeEventListener("keydown", handleGlobalKeydown)
-  })
+  function handleGlobalContextMenu(e: MouseEvent) {
+    if (e.defaultPrevented) return
+    const el = e.target as HTMLElement | null
+    if (el?.closest("input, textarea, [contenteditable='true']")) return
+    if (window.getSelection()?.toString()) return
+    e.preventDefault()
+    globalMenu = { x: e.clientX, y: e.clientY }
+  }
+
+  function dismissCreationToast() {
+    store.creatingInstanceName = null
+  }
 
   $effect(() => {
     if (!store.settings) return
@@ -55,22 +94,27 @@
 
   onMount(() => {
     invoke("show_window").catch(() => {})
-    setTimeout(async () => {
+    setTimeout(() => {
       store.isReady = true
       const splash = document.getElementById("splash-screen")
       const root = document.getElementById("root")
       if (splash && root) {
         splash.classList.add("hidden")
         root.classList.add("visible")
-        setTimeout(() => splash.remove(), 500)
+        setTimeout(() => splash.remove(), SPLASH_REMOVE_MS)
       }
       loadAllInitialData()
-    }, 100)
+    }, SPLASH_DELAY_MS)
   })
 
   $effect(() => {
     if (!store.isReady) return
-    return setupEventListeners()
+    const cleanup: unknown = setupEventListeners()
+    return () => {
+      Promise.resolve(cleanup).then((fn) => {
+        if (typeof fn === "function") fn()
+      })
+    }
   })
 
   $effect(() => {
@@ -82,6 +126,8 @@
   })
 </script>
 
+<svelte:window onkeydown={handleGlobalKeydown} oncontextmenu={handleGlobalContextMenu} />
+
 <!-- preload avatar keeps the browser decode cache warm across tab switches -->
 {#if store.activeAccount}
   <img src="https://renders.stellarmc.gg/bust/{store.activeAccount.username}" alt="" aria-hidden="true" class="fixed opacity-0 pointer-events-none" />
@@ -91,60 +137,41 @@
   <img src="/cat.webp" alt="" aria-hidden="true" class="fixed top-0 left-1/2 -translate-x-1/2 z-40 h-12 w-auto pointer-events-none select-none" />
 {/if}
 
-<div class="flex flex-col h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden font-sans {store.settings?.theme ? `theme-${store.settings.theme}` : 'theme-octane'}">
+<div class="flex flex-col h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden font-sans">
   <TitleBar />
 
-  <div class="flex flex-1 overflow-hidden px-4 gap-4">
+  <div class="flex flex-1 overflow-hidden px-4 pb-4 gap-4">
     <Sidebar />
 
-    <div
-      class="flex-1 rounded-xl overflow-hidden flex flex-col relative"
-      style={store.background
-        ? `background-image: url(${store.background}); background-size: cover; background-position: center`
-        : 'background-color: var(--content-bg)'}
-    >
+    <div class="flex-1 rounded-xl overflow-hidden flex flex-col relative" style={backgroundStyle}>
       {#if store.background}
-        <div
-          class="absolute inset-0"
-          style="background: rgba(0,0,0,{((store.settings?.background_darkness ?? 80) / 100).toFixed(2)}); {(store.settings?.background_blur ?? 0) > 0 ? `backdrop-filter: blur(${store.settings!.background_blur}px);` : ''}"
-        ></div>
+        <div class="absolute inset-0" style={overlayStyle}></div>
       {/if}
 
       <main class="flex-1 min-h-0 overflow-y-auto relative">
         {#if store.showInstanceDetails && store.selectedInstance}
-          <InstanceDetailsTab
-            instance={store.selectedInstance}
-          />
-        {:else if store.activeTab === "home"}
-          <HomeTab />
-        {:else if store.activeTab === "instances"}
-          <InstancesTab />
-        {:else if store.activeTab === "addons"}
-          <AddonsTab />
-        {:else if store.activeTab === "servers"}
-          <ServersTab />
-        {:else if store.activeTab === "skins"}
-          <SkinsTab />
-        {:else if store.activeTab === "screenshots"}
-          <ScreenshotsTab />
-        {:else if store.activeTab === "console"}
-          <ConsoleTab />
+          <InstanceDetailsTab instance={store.selectedInstance} />
+        {:else if ActiveTab}
+          <ActiveTab />
         {/if}
       </main>
 
       {#if store.creatingInstanceName}
         <div class="absolute bottom-0 left-0 right-0 z-20">
-          <CreationProgressToast instanceName={store.creatingInstanceName} onDismiss={() => store.creatingInstanceName = null} onError={handleCreationError} />
+          <CreationProgressToast
+            instanceName={store.creatingInstanceName}
+            onDismiss={dismissCreationToast}
+            onError={handleCreationError}
+          />
         </div>
       {/if}
     </div>
 
-    <FriendsPanel isOpen={store.showFriendsPanel} isAuthenticated={store.isAuthenticated} activeAccountUuid={store.activeAccount?.uuid} />
-  </div>
-
-  <div class="flex flex-shrink-0 px-4 pb-4">
-    <div class="w-14 flex-shrink-0"></div>
-    <div class="flex-1 h-0"></div>
+    <FriendsPanel
+      isOpen={store.showFriendsPanel}
+      isAuthenticated={store.isAuthenticated}
+      activeAccountUuid={store.activeAccount?.uuid}
+    />
   </div>
 
   {#if store.confirmModal}
@@ -188,8 +215,8 @@
     <CreateInstanceModal
       instances={store.instances}
       onClose={() => setShowCreateModal(false)}
-      onSuccess={() => { handleCreationComplete() }}
-      onStartCreating={(name) => { handleStartCreating(name) }}
+      onSuccess={handleCreationComplete}
+      onStartCreating={handleStartCreating}
     />
   {/if}
 
@@ -198,6 +225,22 @@
   {/if}
 
   <GlobalSearch />
+
+  {#if globalMenu}
+    {@const gm = globalMenu}
+    <ContextMenu
+      x={gm.x}
+      y={gm.y}
+      onClose={() => (globalMenu = null)}
+      items={[
+        ...(store.historyIndex > 0 ? [{ label: "Back", icon: ArrowLeft, onClick: navigateBack }] : []),
+        ...(store.historyIndex < store.navigationHistory.length - 1 ? [{ label: "Forward", icon: ArrowRight, onClick: navigateForward }] : []),
+        { label: "Reload", icon: RefreshCw, onClick: () => window.location.reload() },
+        { separator: true },
+        { label: "Search", icon: Search, onClick: () => setShowSearchPalette(true) },
+      ]}
+    />
+  {/if}
 
   <Toaster />
 </div>
