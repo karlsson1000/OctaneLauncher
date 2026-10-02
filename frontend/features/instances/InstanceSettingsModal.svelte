@@ -351,12 +351,12 @@
     if (!file) return
 
     if (!file.type.startsWith("image/")) {
-      alertModal = { isOpen: true, title: "Invalid File", message: "Please select an image file (PNG, JPEG, or WebP)", type: "danger" }
+      alertModal = { isOpen: true, title: "Invalid File", message: "Please select an image file (PNG, JPEG, WebP, or GIF)", type: "danger" }
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alertModal = { isOpen: true, title: "File Too Large", message: "Image must be smaller than 5MB", type: "danger" }
+    if (file.size > 25 * 1024 * 1024) {
+      alertModal = { isOpen: true, title: "File Too Large", message: "Image must be smaller than 25MB", type: "danger" }
       return
     }
 

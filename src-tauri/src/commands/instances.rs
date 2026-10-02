@@ -442,8 +442,8 @@ pub async fn set_instance_icon(
         .decode(&image_data)
         .map_err(|e| e.to_string())?;
     
-    if image_bytes.len() > 2 * 1024 * 1024 {
-        return Err("Image too large (max 2MB)".to_string());
+    if image_bytes.len() > 25 * 1024 * 1024 {
+        return Err("Image too large (max 25MB)".to_string());
     }
     
     let format = image::guess_format(&image_bytes)
@@ -452,18 +452,35 @@ pub async fn set_instance_icon(
     match format {
         image::ImageFormat::Png | 
         image::ImageFormat::Jpeg | 
-        image::ImageFormat::WebP => {},
-        _ => return Err("Unsupported image format. Use PNG, JPEG, or WebP".to_string()),
+        image::ImageFormat::WebP |
+        image::ImageFormat::Gif => {},
+        _ => return Err("Unsupported image format. Use PNG, JPEG, WebP, or GIF".to_string()),
     }
-    
-    let img = image::load_from_memory(&image_bytes)
-        .map_err(|e| e.to_string())?;
-    
-    let resized = img.resize_exact(256, 256, image::imageops::FilterType::Lanczos3);
-    
-    let icon_path = instance_dir.join("icon.png");
-    resized.save(&icon_path)
-        .map_err(|e| e.to_string())?;
+
+    let (icon_file_name, icon_path) = if format == image::ImageFormat::Gif {
+        let icon_path = instance_dir.join("icon.gif");
+        std::fs::write(&icon_path, &image_bytes)
+            .map_err(|e| e.to_string())?;
+        let stale_png = instance_dir.join("icon.png");
+        if stale_png.exists() {
+            let _ = std::fs::remove_file(&stale_png);
+        }
+        ("icon.gif", icon_path)
+    } else {
+        let img = image::load_from_memory(&image_bytes)
+            .map_err(|e| e.to_string())?;
+
+        let resized = img.resize_exact(256, 256, image::imageops::FilterType::Lanczos3);
+
+        let icon_path = instance_dir.join("icon.png");
+        resized.save(&icon_path)
+            .map_err(|e| e.to_string())?;
+        let stale_gif = instance_dir.join("icon.gif");
+        if stale_gif.exists() {
+            let _ = std::fs::remove_file(&stale_gif);
+        }
+        ("icon.png", icon_path)
+    };
     
     let instance_json = instance_dir.join("instance.json");
     let content = std::fs::read_to_string(&instance_json)
@@ -472,7 +489,7 @@ pub async fn set_instance_icon(
     let mut instance: Instance = serde_json::from_str(&content)
         .map_err(|e| e.to_string())?;
     
-    instance.icon_path = Some("icon.png".to_string());
+    instance.icon_path = Some(icon_file_name.to_string());
     
     let updated_json = serde_json::to_string_pretty(&instance)
         .map_err(|e| e.to_string())?;
@@ -480,7 +497,7 @@ pub async fn set_instance_icon(
     std::fs::write(&instance_json, updated_json)
         .map_err(|e| e.to_string())?;
 
-    Ok(Some(instance_dir.join("icon.png").to_string_lossy().into_owned()))
+    Ok(Some(icon_path.to_string_lossy().into_owned()))
 }
 
 #[tauri::command]
@@ -493,9 +510,15 @@ pub async fn remove_instance_icon(instance_name: String) -> Result<(), String> {
         return Err(format!("Instance '{}' does not exist", safe_name));
     }
     
-    let icon_path = instance_dir.join("icon.png");
-    if icon_path.exists() {
-        std::fs::remove_file(&icon_path)
+    let icon_png = instance_dir.join("icon.png");
+    if icon_png.exists() {
+        std::fs::remove_file(&icon_png)
+            .map_err(|e| e.to_string())?;
+    }
+
+    let icon_gif = instance_dir.join("icon.gif");
+    if icon_gif.exists() {
+        std::fs::remove_file(&icon_gif)
             .map_err(|e| e.to_string())?;
     }
     
