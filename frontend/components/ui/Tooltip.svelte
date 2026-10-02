@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte"
   import { portal } from "../../lib/portal"
+  import { store } from "../../lib/launcherStore.svelte"
 
   let { text, children }: {
     text: string
@@ -9,15 +10,7 @@
 
   let show = $state(false)
   let rect = $state<DOMRect | null>(null)
-  let portalThemeClass = $state("")
-
-  $effect(() => {
-    const root = document.querySelector("[class*='theme-']")
-    if (root) {
-      const match = root.className.match(/theme-\S+/)
-      portalThemeClass = match ? match[0] : ""
-    }
-  })
+  let portalThemeClass = $derived(`theme-${store.settings?.theme ?? "octane"}`)
 </script>
 
 <div
