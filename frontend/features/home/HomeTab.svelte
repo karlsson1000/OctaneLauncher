@@ -256,7 +256,7 @@
 
   <div class="max-w-7xl mx-auto">
     <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Latest Snapshots</h2>
+      <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Latest Updates</h2>
       {#if snapshotPages.length > 1}
         <div class="flex items-center gap-1">
           <button
