@@ -193,8 +193,18 @@
   <div
     role="button"
     tabindex="0"
-    class="group flex items-center gap-3 px-1 py-1 relative"
-    oncontextmenu={(e) => { e.preventDefault(); friendMenu = { x: e.clientX, y: e.clientY, friend } }}
+    class="group flex items-center gap-3 px-1 py-0.5 relative rounded-md hover:bg-[var(--bg-active)] cursor-pointer"
+    onclick={(e) => {
+      if ((e.target as HTMLElement).closest("input")) return
+      friendMenu = { x: e.clientX, y: e.clientY, friend }
+    }}
+    onkeydown={(e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault()
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        friendMenu = { x: rect.left, y: rect.bottom, friend }
+      }
+    }}
   >
     <div class="relative flex-shrink-0">
       <img
@@ -227,7 +237,7 @@
             else if (e.key === "Escape") editingNicknameUuid = null
           }}
           onblur={() => saveNickname(friend.uuid, nicknameDraft)}
-          class="w-full bg-[var(--bg-secondary)] rounded px-0 py-0 text-base font-medium text-[var(--text-primary)] focus:outline-none"
+          class="w-full min-w-0 bg-[var(--bg-secondary)] rounded px-0 py-0 text-base font-medium text-[var(--text-primary)] focus:outline-none"
         />
       {:else}
         <div class="text-base text-[var(--text-primary)] truncate font-medium flex items-center gap-1" title={nicknames[friend.uuid] ? friend.username : undefined}>
@@ -374,7 +384,7 @@
           {#if onlineFriends.length > 0}
             <button
               onclick={() => onlineCollapsed = !onlineCollapsed}
-              class="flex items-center gap-1 px-1 pt-2 pb-1 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] transition-colors cursor-pointer w-full text-left"
+              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] transition-colors cursor-pointer w-full text-left"
             >
               {#if onlineCollapsed}
                 <ChevronRight size={14} strokeWidth={3} />
@@ -384,8 +394,8 @@
               Online ({onlineFriends.length})
             </button>
             {#if !onlineCollapsed}
-              <div class="border-b border-[var(--bg-tertiary)]"></div>
-              <div class="pt-1 pb-1">
+              <div class="border-b border-[var(--bg-tertiary)] mt-0.5"></div>
+              <div class="pt-1 pb-1 space-y-0.5">
                 {#each onlineFriends as friend (friend.uuid)}
                   {@render friendRow(friend)}
                 {/each}
@@ -396,7 +406,7 @@
           {#if offlineFriends.length > 0}
             <button
               onclick={() => offlineCollapsed = !offlineCollapsed}
-              class="flex items-center gap-1 px-1 pt-2 pb-1 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] transition-colors cursor-pointer w-full text-left"
+              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] transition-colors cursor-pointer w-full text-left"
             >
               {#if offlineCollapsed}
                 <ChevronRight size={14} strokeWidth={3} />
@@ -406,8 +416,8 @@
               Offline ({offlineFriends.length})
             </button>
             {#if !offlineCollapsed}
-              <div class="border-b border-[var(--bg-tertiary)]"></div>
-              <div class="pt-1 pb-1">
+              <div class="border-b border-[var(--bg-tertiary)] mt-0.5"></div>
+              <div class="pt-1 pb-1 space-y-0.5">
                 {#each offlineFriends as friend (friend.uuid)}
                   {@render friendRow(friend)}
                 {/each}
