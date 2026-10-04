@@ -3,9 +3,10 @@
   import { portal } from "../../lib/portal"
   import { store } from "../../lib/launcherStore.svelte"
 
-  let { text, children }: {
+  let { text, children, enabled = true }: {
     text: string
     children: Snippet
+    enabled?: boolean
   } = $props()
 
   let show = $state(false)
@@ -25,7 +26,7 @@
   {@render children()}
 </div>
 
-{#if show && rect}
+{#if show && enabled && rect}
   <div use:portal>
     <div
       role="tooltip" class="fixed z-[100] pointer-events-none whitespace-nowrap {portalThemeClass}"
