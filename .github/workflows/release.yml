@@ -51,6 +51,7 @@ jobs:
           CONVEX_URL: ${{ secrets.CONVEX_URL }}
           CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         with:
+          projectPath: ./backend
           tagName: ${{ github.ref_name }}
           releaseName: 'Octane Launcher ${{ github.ref_name }}'
           releaseBody: ''
