@@ -7,12 +7,12 @@ if (!(process.env.CI && process.env.GITHUB_REF_NAME)) {
 
 const version = process.env.GITHUB_REF_NAME;
 
-const cargoPath = './src-tauri/Cargo.toml';
+const cargoPath = './backend/Cargo.toml';
 let cargo = fs.readFileSync(cargoPath, 'utf-8');
 cargo = cargo.replace(/^version = ".*"$/m, `version = "${version}"`);
 fs.writeFileSync(cargoPath, cargo);
 
-const tauriConfPath = './src-tauri/tauri.conf.json';
+const tauriConfPath = './backend/tauri.conf.json';
 let tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, 'utf-8'));
 tauriConf.version = version;
 fs.writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2));
