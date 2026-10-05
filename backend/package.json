@@ -1,0 +1,8 @@
+{
+  "name": "octane-launcher-backend",
+  "private": true,
+  "scripts": {
+    "dev": "cd .. && bun run dev",
+    "build": "cd .. && bun run build"
+  }
+}
