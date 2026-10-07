@@ -646,7 +646,7 @@
                       <div class="flex-1 min-w-0 py-2 px-4 flex items-center gap-3 relative z-0">
                         <div class="flex-1 min-w-0">
                           <h3 class="font-semibold text-base text-[var(--text-primary)] truncate">{world.name}</h3>
-                          <p class="text-xs text-[var(--text-muted)] mt-0.5">Created {world.created ? formatDate(world.created) : "Unknown"}</p>
+                          <p class="text-sm text-[var(--text-muted)] mt-0.5">Created {world.created ? formatDate(world.created) : "Unknown"}</p>
                           <div class="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-0.5">
                             <span>{formatFileSize(world.size)}</span>
                             {#if world.game_mode}
