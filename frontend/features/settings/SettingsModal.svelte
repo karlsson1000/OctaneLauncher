@@ -396,7 +396,7 @@
 
             <div class="mt-auto px-4 pt-4">
               <p class="text-xs leading-relaxed text-[var(--text-muted)]">
-                Octane Launcher<br />v{semanticVersion || "…"}
+                Octane Launcher<br />{semanticVersion || "…"}
               </p>
             </div>
           </nav>
