@@ -14,7 +14,7 @@ tauri-build = { version = "2", features = [] }
 dotenvy = "0.15"
 
 [dependencies]
-tauri = { version = "2", features = ["protocol-asset"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon", "image-png"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-store = "2"
 tauri-plugin-updater = "2"
@@ -32,6 +32,7 @@ uuid = { version = "1.0", features = ["serde", "v4"] }
 tiny_http = "0.12"
 sha1 = "0.10"
 tauri-plugin-shell = "2"
+tauri-plugin-single-instance = "2"
 zip = "2.2"
 sysinfo = "0.30"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
