@@ -17,15 +17,24 @@
   let contextMenu = $state<{ x: number; y: number; instance: Instance } | null>(null)
   let snapshots = $state<Snapshot[]>([])
   let loadingSnapshots = $state(true)
-  let snapshotPage = $state(0)
+  let snapshotStart = $state(0)
 
   const SNAPSHOT_PAGE_SIZE = 3
 
-  let snapshotPages = $derived<Snapshot[][]>(
-    Array.from({ length: Math.ceil(snapshots.length / SNAPSHOT_PAGE_SIZE) }, (_, i) =>
-      snapshots.slice(i * SNAPSHOT_PAGE_SIZE, (i + 1) * SNAPSHOT_PAGE_SIZE)
-    )
-  )
+  let maxSnapshotStart = $derived(Math.max(snapshots.length - SNAPSHOT_PAGE_SIZE, 0))
+
+  function goToSnapshot(i: number) {
+    snapshotStart = Math.min(Math.max(i, 0), maxSnapshotStart)
+  }
+  const DOT_COUNT = 5
+  let dotWindow = $derived.by<number[]>(() => {
+    const total = maxSnapshotStart + 1
+    if (total <= DOT_COUNT) return Array.from({ length: total }, (_, i) => i)
+    const start = Math.min(Math.max(snapshotStart - 2, 0), maxSnapshotStart - DOT_COUNT + 1)
+    return [start, start + 1, start + 2, start + 3, start + 4]
+  })
+
+
   let tooltipInstance = $state<Instance | null>(null)
   let tooltipTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -59,7 +68,7 @@
         const response = await fetch('https://launchercontent.mojang.com/v2/javaPatchNotes.json')
         const data: SnapshotsResponse = await response.json()
         snapshots = data.entries.slice(0, 30)
-        if (snapshotPage > Math.ceil(snapshots.length / SNAPSHOT_PAGE_SIZE) - 1) snapshotPage = 0
+        if (snapshotStart > Math.max(snapshots.length - SNAPSHOT_PAGE_SIZE, 0)) snapshotStart = 0
       } catch (error) {
         console.error('Failed to load snapshots:', error)
       } finally {
@@ -257,18 +266,18 @@
   <div class="max-w-7xl mx-auto">
     <div class="mb-4 flex items-center justify-between">
       <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Latest Updates</h2>
-      {#if snapshotPages.length > 1}
+      {#if maxSnapshotStart > 0}
         <div class="flex items-center gap-1">
           <button
-            onclick={() => snapshotPage = Math.max(0, snapshotPage - 1)}
-            disabled={snapshotPage === 0}
+            onclick={() => goToSnapshot(snapshotStart - 1)}
+            disabled={snapshotStart === 0}
             class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
           >
             <ChevronLeft size={18} strokeWidth={3} />
           </button>
           <button
-            onclick={() => snapshotPage = Math.min(snapshotPages.length - 1, snapshotPage + 1)}
-            disabled={snapshotPage >= snapshotPages.length - 1}
+            onclick={() => goToSnapshot(snapshotStart + 1)}
+            disabled={snapshotStart >= maxSnapshotStart}
             class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
           >
             <ChevronRight size={18} strokeWidth={3} />
@@ -286,47 +295,59 @@
       </div>
     {:else}
       <div class="overflow-hidden">
-        <div class="flex transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform" style="transform: translateX(-{snapshotPage * 100}%)">
-          {#each snapshotPages as page, i (i)}
-            <div class="grid grid-cols-3 gap-4 w-full flex-shrink-0">
-              {#each page as snapshot (snapshot.id)}
-          <div
-            role="button"
-            tabindex="0"
-            onclick={() => { invoke('open_url', { url: getVersionUrl(snapshot.version) }).catch(() => {}) }}
-            onkeydown={(e) => { if (e.key === 'Enter') invoke('open_url', { url: getVersionUrl(snapshot.version) }).catch(() => {}) }}
-            class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col"
-          >
-            <div class="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity">
-              <ExternalLink size={14} class="text-[var(--text-primary)]" />
-            </div>
-            <div class="h-40 bg-[var(--bg-secondary)] overflow-hidden relative flex-shrink-0 z-0">
-              {#if snapshot.image?.url}
-                <img src="https://launchercontent.mojang.com{snapshot.image.url}" alt={snapshot.title} class="w-full h-full object-cover" />
-              {:else}
-                <div class="w-full h-full flex items-center justify-center">
-                  <Package size={48} class="text-[var(--text-muted)]" />
+        <div
+          class="-mx-2 flex transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
+          style="transform: translateX(-{snapshotStart * 100 / 3}%)"
+        >
+          {#each snapshots as snapshot (snapshot.id)}
+            <div class="w-1/3 shrink-0 px-2">
+              <div
+                role="button"
+                tabindex="0"
+                onclick={() => { invoke('open_url', { url: getVersionUrl(snapshot.version) }).catch(() => {}) }}
+                onkeydown={(e) => { if (e.key === 'Enter') invoke('open_url', { url: getVersionUrl(snapshot.version) }).catch(() => {}) }}
+                class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col h-full"
+              >
+                <div class="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ExternalLink size={14} class="text-[var(--text-primary)]" />
                 </div>
-              {/if}
-              <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            </div>
-            <div class="p-4 flex-1 flex flex-col relative z-0">
-              <div class="flex items-center justify-between gap-2 mb-2">
-                <h3 class="text-sm font-semibold text-[var(--text-primary)] truncate">{cleanVersionName(snapshot.version)}</h3>
-                {#if snapshot.date}
-                  <span class="text-xs text-[var(--text-muted)] whitespace-nowrap">{formatDate(snapshot.date)}</span>
-                {/if}
+                <div class="h-40 bg-[var(--bg-secondary)] overflow-hidden relative flex-shrink-0 z-0">
+                  {#if snapshot.image?.url}
+                    <img src="https://launchercontent.mojang.com{snapshot.image.url}" alt={snapshot.title} class="w-full h-full object-cover" />
+                  {:else}
+                    <div class="w-full h-full flex items-center justify-center">
+                      <Package size={48} class="text-[var(--text-muted)]" />
+                    </div>
+                  {/if}
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                </div>
+                <div class="p-4 flex-1 flex flex-col relative z-0">
+                  <div class="flex items-center justify-between gap-2 mb-2">
+                    <h3 class="text-sm font-semibold text-[var(--text-primary)] truncate">{cleanVersionName(snapshot.version)}</h3>
+                    {#if snapshot.date}
+                      <span class="text-xs text-[var(--text-muted)] whitespace-nowrap">{formatDate(snapshot.date)}</span>
+                    {/if}
+                  </div>
+                  {#if snapshot.shortText}
+                    <p class="text-xs text-[var(--text-muted)] line-clamp-2 leading-snug">{snapshot.shortText}</p>
+                  {/if}
+                </div>
               </div>
-              {#if snapshot.shortText}
-                <p class="text-xs text-[var(--text-muted)] line-clamp-2 leading-snug">{snapshot.shortText}</p>
-              {/if}
-            </div>
-          </div>
-        {/each}
             </div>
           {/each}
         </div>
       </div>
+      {#if maxSnapshotStart > 0}
+        <div class="mt-4 -mb-4 h-0 overflow-visible flex items-center justify-center gap-1.5">
+          {#each dotWindow as p (p)}
+            <button
+              onclick={() => goToSnapshot(p)}
+              aria-label="Show updates from card {p + 1}"
+              class="h-1 rounded-full transition-all duration-300 cursor-pointer {snapshotStart === p ? 'w-6 bg-[var(--accent-primary)]' : 'w-2 bg-[var(--bg-hover)] hover:bg-[var(--text-muted)]'}"
+            ></button>
+          {/each}
+        </div>
+      {/if}
     {/if}
   </div>
 
