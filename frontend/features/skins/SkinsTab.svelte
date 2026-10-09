@@ -12,37 +12,6 @@
   const CACHE_DURATION = 15 * 60 * 1000
   const MIN_FETCH_INTERVAL = 10 * 1000
 
-  const CAPE_IMAGE_MAP: Record<string, string> = {
-    "migrator": "migrator",
-    "pan": "pan",
-    "15th anniversary": "15th",
-    "common": "common",
-    "vanilla": "vanilla",
-    "cherry blossom": "cherry",
-    "purple heart": "twitch",
-    "follower's": "tiktok",
-    "menace": "menace",
-    "copper": "copper",
-    "home": "home",
-    "mojang office": "mojangoffice",
-    "yearn": "yearn",
-    "founders": "founders",
-    "zombie horse": "zombiehorse",
-    "mcc 15th year": "mcc",
-    "builder": "builder",
-    "minecraft experience": "mcexp",
-    "minecon 2016": "2016",
-    "minecon 2015": "2015",
-    "minecon 2013": "2013",
-    "minecon 2012": "2012",
-    "crafter": "crafter",
-    "minecon 2011": "2011",
-    "moonlight trail": "moonlighttrail",
-    "realms mapmaker": "realms",
-    "mojang": "mojang",
-    "mojang studios": "mojangstudios",
-  }
-
   function loadCache<T>(key: string): Promise<T | null> {
     return storeGet<T>(key).then(v => v ?? null)
   }
@@ -136,7 +105,11 @@
     return variant
   }
 
-  function getCapeImageName(alias: string) { return CAPE_IMAGE_MAP[alias.toLowerCase()] ?? "unknown" }
+  const CAPE_TEX_W = 64
+  const CAPE_FRONT = { x: 1, y: 1, w: 10, h: 16 }
+  const CAPE_THUMB_SCALE = 2
+
+  function normalizeCapeUrl(url: string) { return url.replace("http://", "https://") }
 
   async function loadUserSkin(forceRefresh = false) {
     if (!store.isAuthenticated || !store.activeAccount) {
@@ -197,7 +170,7 @@
     const cacheValid =
       persisted && persisted.uuid === store.activeAccount.uuid && (now - persisted.timestamp) < CACHE_DURATION
     if (cacheValid) {
-      capes = persisted!.capes; activeCape = persisted!.activeCapeId
+      capes = persisted!.capes.map(c => ({ ...c, url: normalizeCapeUrl(c.url) })); activeCape = persisted!.activeCapeId
       originalState = { ...originalState, activeCape: persisted!.activeCapeId }
       return
     }
@@ -209,7 +182,7 @@
       lastCapeFetch[store.activeAccount.uuid] = now
       const capeData = await invoke<{ capes: Cape[] }>("get_user_capes")
       if (capeData?.capes) {
-        capes = capeData.capes
+        capes = capeData.capes.map(c => ({ ...c, url: normalizeCapeUrl(c.url) }))
         const activeId = capeData.capes.find((c: Cape) => c.state === "ACTIVE")?.id ?? null
         activeCape = activeId
         originalState = { ...originalState, activeCape: activeId }
@@ -580,14 +553,16 @@
                     onmouseleave={() => hoveredCapeId = null}
                     style="cursor: pointer; flex-shrink: 0; line-height: 0;"
                   >
-                    <div style="width: 26px; height: 38px; border-radius: 4px; border: 2px solid {isHovered ? 'var(--text-muted)' : 'transparent'}; overflow: hidden; background: var(--bg-secondary); transition: border-color 0.15s; position: relative;">
-                      <img
-                        src="/capes/{getCapeImageName(cape.alias)}.webp"
-                        alt={cape.alias}
-                        draggable={false}
-                        style="width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; display: block;"
-                        onerror={(e) => { const img = e.currentTarget as HTMLImageElement; img.onerror = null; img.src = '/logo.png' }}
-                      />
+                    <div style="width: 26px; height: 38px; border-radius: 4px; border: 2px solid {isHovered ? 'var(--text-muted)' : 'transparent'}; overflow: hidden; background: var(--bg-secondary); transition: border-color 0.15s; position: relative; display: flex; align-items: center; justify-content: center;">
+                      <div style="width: {CAPE_FRONT.w * CAPE_THUMB_SCALE}px; height: {CAPE_FRONT.h * CAPE_THUMB_SCALE}px; overflow: hidden; flex-shrink: 0;">
+                        <img
+                          src={cape.url}
+                          alt={cape.alias}
+                          draggable={false}
+                          style="width: {CAPE_TEX_W * CAPE_THUMB_SCALE}px; max-width: none; height: auto; margin-left: {-CAPE_FRONT.x * CAPE_THUMB_SCALE}px; margin-top: {-CAPE_FRONT.y * CAPE_THUMB_SCALE}px; image-rendering: pixelated; display: block;"
+                          onerror={(e) => { const img = e.currentTarget as HTMLImageElement; img.onerror = null; img.src = '/logo.png' }}
+                        />
+                      </div>
                       {#if isActive}
                         <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45);">
                           <svg width="16" height="16" viewBox="0 0 12 12" fill="none">
