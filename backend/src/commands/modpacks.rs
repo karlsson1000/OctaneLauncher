@@ -142,14 +142,6 @@ pub async fn install_modpack(
     Ok(())
 }
 
-async fn download_file_verified(
-    url: &str,
-    dest: &std::path::Path,
-    expected_sha1: Option<&str>,
-) -> Result<(), String> {
-    crate::utils::download::download_file_verified(url, dest, expected_sha1).await
-}
-
 async fn fetch_and_set_cf_pack_icon(
     app_handle: &tauri::AppHandle,
     safe_name: &str,
@@ -766,9 +758,12 @@ async fn install_from_mrpack(
                 let completed = completed.clone();
 
                 handles.push(tokio::spawn(async move {
-                    let result =
-                        download_file_verified(&entry.url, &entry.dest, entry.expected_sha1.as_deref())
-                            .await;
+                    let result = crate::utils::download::download_file_verified(
+                        &entry.url,
+                        &entry.dest,
+                        entry.expected_sha1.as_deref(),
+                    )
+                    .await;
 
                     drop(permit);
 
@@ -1106,7 +1101,7 @@ async fn install_from_curseforge_manifest(
                     let completed = completed.clone();
 
                     handles.push(tokio::spawn(async move {
-                        let result = download_file_verified(
+                        let result = crate::utils::download::download_file_verified(
                             &entry.url,
                             &entry.dest_path,
                             entry.expected_sha1.as_deref(),
