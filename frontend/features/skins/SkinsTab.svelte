@@ -38,11 +38,6 @@
   let containerSize = $state({ width: 800, height: 600 })
   let hasPendingChanges = $state(false)
   let saving = $state(false)
-  let hoveredCapeId = $state<string | null>(null)
-  let hoveredRecentIdx = $state<number | null>(null)
-  let elytraHovered = $state(false)
-  let uploadTooltipHover = $state(false)
-  let resetTooltipHover = $state(false)
 
   let containerEl: HTMLDivElement | undefined = $state()
   let canvasEl: HTMLCanvasElement | undefined = $state()
@@ -461,65 +456,51 @@
 
     <input bind:this={fileInputEl} type="file" accept="image/png" onchange={handleFileSelect} class="hidden" />
 
+    {#snippet tip(text: string)}
+      <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 px-[7px] py-[3px] rounded border border-[var(--border-color,#333)] bg-[var(--bg-secondary,#1a1a2e)] text-[var(--text-primary,#eee)] text-[11px] whitespace-nowrap pointer-events-none z-[100] hidden group-hover:block">{text}</div>
+    {/snippet}
+
     <div
       role="presentation"
       onpointerdown={(e) => e.stopPropagation()}
       style="position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 64px); flex-wrap: wrap; justify-content: center;"
     >
       <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 12px; background: var(--bg-elevated); backdrop-filter: blur(12px); justify-content: center;">
-        <!-- SkinTooltip: Upload -->
-        <div role="presentation" style="position: relative; display: inline-flex;" onmouseenter={() => uploadTooltipHover = true} onmouseleave={() => uploadTooltipHover = false}>
+        <div role="presentation" class="group relative inline-flex">
           <button
             onclick={() => fileInputEl?.click()}
             disabled={uploading || loading}
-            style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 6px; border: none; cursor: {uploading || loading ? 'not-allowed' : 'pointer'}; opacity: {uploading || loading ? 0.4 : 1}; background: transparent; color: #16a34a; transition: background 0.15s, color 0.15s; flex-shrink: 0;"
-            onmouseenter={(e) => { if (!(uploading || loading)) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)' }}
-            onmouseleave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[#16a34a] transition-colors shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
           >
             {#if uploading}
-              <Loader2 size={20} style="animation: spin 1s linear infinite;" />
+              <Loader2 size={20} class="animate-spin" />
             {:else}
               <Upload size={20} strokeWidth={2.5} />
             {/if}
           </button>
-          {#if uploadTooltipHover}
-            <div style="position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 3px 7px; border-radius: 4px; background: var(--bg-secondary, #1a1a2e); color: var(--text-primary, #eee); font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid var(--border-color, #333);">
-              Upload skin
-            </div>
-          {/if}
+          {@render tip("Upload skin")}
         </div>
 
-        <!-- SkinTooltip: Reset -->
-        <div role="presentation" style="position: relative; display: inline-flex;" onmouseenter={() => resetTooltipHover = true} onmouseleave={() => resetTooltipHover = false}>
+        <div role="presentation" class="group relative inline-flex">
           <button
             onclick={handleReset}
             disabled={loading}
-            style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 6px; border: none; cursor: {loading ? 'not-allowed' : 'pointer'}; opacity: {loading ? 0.4 : 1}; background: transparent; color: var(--text-muted); transition: background 0.15s, color 0.15s; flex-shrink: 0;"
-            onmouseenter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover)' }}
-            onmouseleave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
+            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[var(--text-muted)] transition-colors shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
           >
             <RotateCcw size={20} strokeWidth={2.5} />
           </button>
-          {#if resetTooltipHover}
-            <div style="position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 3px 7px; border-radius: 4px; background: var(--bg-secondary, #1a1a2e); color: var(--text-primary, #eee); font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid var(--border-color, #333);">
-              Reset to default skin
-            </div>
-          {/if}
+          {@render tip("Reset to default skin")}
         </div>
 
         <button
           onclick={() => skinVariant = "classic"}
-          style="padding: 6px 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; background: {skinVariant === 'classic' ? 'var(--accent-primary, #4572e3)' : 'var(--bg-secondary)'}; color: {skinVariant === 'classic' ? '#fff' : 'var(--text-muted)'}; transition: background 0.15s, color 0.15s; flex-shrink: 0; white-space: nowrap; box-sizing: border-box;"
-          onmouseenter={(e) => { if (skinVariant !== 'classic') (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover, #2a2a3e)' }}
-          onmouseleave={(e) => { if (skinVariant !== 'classic') (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-secondary)' }}
+          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border transition-colors cursor-pointer shrink-0 {skinVariant === 'classic' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
         >
           Classic
         </button>
         <button
           onclick={() => skinVariant = "slim"}
-          style="padding: 6px 10px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; background: {skinVariant === 'slim' ? 'var(--accent-primary, #4572e3)' : 'var(--bg-secondary)'}; color: {skinVariant === 'slim' ? '#fff' : 'var(--text-muted)'}; transition: background 0.15s, color 0.15s; flex-shrink: 0; white-space: nowrap; box-sizing: border-box;"
-          onmouseenter={(e) => { if (skinVariant !== 'slim') (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover, #2a2a3e)' }}
-          onmouseleave={(e) => { if (skinVariant !== 'slim') (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-secondary)' }}
+          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border transition-colors cursor-pointer shrink-0 {skinVariant === 'slim' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
         >
           Slim
         </button>
@@ -537,23 +518,15 @@
             <div style="display: flex; align-items: center; gap: 3px;">
               {#each capes as cape (cape.id)}
                 {@const isActive = activeCape === cape.id}
-                {@const isHovered = hoveredCapeId === cape.id}
-                <div
-                  role="presentation"
-                  style="position: relative; display: inline-flex;"
-                  onmouseenter={() => hoveredCapeId = cape.id}
-                  onmouseleave={() => hoveredCapeId = null}
-                >
+                <div role="presentation" class="group relative inline-flex">
                   <div
                     role="button"
                     tabindex="0"
                     onclick={() => isActive ? handleCapeRemove() : handleCapeSelect(cape.id)}
                     onkeydown={(e) => { if (e.key === 'Enter') isActive ? handleCapeRemove() : handleCapeSelect(cape.id) }}
-                    onmouseenter={() => hoveredCapeId = cape.id}
-                    onmouseleave={() => hoveredCapeId = null}
-                    style="cursor: pointer; flex-shrink: 0; line-height: 0;"
+                    class="cursor-pointer shrink-0 leading-none"
                   >
-                    <div style="width: 26px; height: 38px; border-radius: 4px; border: 2px solid {isHovered ? 'var(--text-muted)' : 'transparent'}; overflow: hidden; background: var(--bg-secondary); transition: border-color 0.15s; position: relative; display: flex; align-items: center; justify-content: center;">
+                    <div class="w-[26px] h-[38px] rounded border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-[var(--bg-secondary)] transition-colors relative flex items-center justify-center">
                       <div style="width: {CAPE_FRONT.w * CAPE_THUMB_SCALE}px; height: {CAPE_FRONT.h * CAPE_THUMB_SCALE}px; overflow: hidden; flex-shrink: 0;">
                         <img
                           src={cape.url}
@@ -564,32 +537,25 @@
                         />
                       </div>
                       {#if isActive}
-                        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.45);">
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/45">
                           <svg width="16" height="16" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 6L5 9L10 3" stroke={isHovered ? "#ef4444" : "#22c55e"} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                            <path d="M2 6L5 9L10 3" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:stroke-[#ef4444]" />
                           </svg>
                         </div>
                       {/if}
                     </div>
                   </div>
-                  {#if isHovered}
-                    <div style="position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 3px 7px; border-radius: 4px; background: var(--bg-secondary, #1a1a2e); color: var(--text-primary, #eee); font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid var(--border-color, #333);">
-                      {cape.alias}
-                    </div>
-                  {/if}
+                  {@render tip(cape.alias)}
                 </div>
               {/each}
             </div>
           {/if}
 
-          <!-- ElytraToggle -->
           {#if activeCapeUrl}
-            <div role="presentation" style="position: relative; display: inline-flex;" onmouseenter={() => elytraHovered = true} onmouseleave={() => elytraHovered = false}>
+            <div role="presentation" class="group relative inline-flex">
               <button
                 onclick={() => showElytra = !showElytra}
-                style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 6px; border: none; cursor: pointer; background: {elytraHovered ? 'var(--bg-hover)' : 'transparent'}; color: var(--text-muted); transition: background 0.15s; flex-shrink: 0;"
-                onmouseenter={() => elytraHovered = true}
-                onmouseleave={() => elytraHovered = false}
+                class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-colors cursor-pointer shrink-0"
               >
                 {#if showElytra}
                   <RectangleVertical size={20} strokeWidth={2.5} />
@@ -597,32 +563,24 @@
                   <Plane size={20} strokeWidth={2.5} />
                 {/if}
               </button>
-              {#if elytraHovered}
-                <div style="position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 3px 7px; border-radius: 4px; background: var(--bg-secondary, #1a1a2e); color: var(--text-primary, #eee); font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid var(--border-color, #333);">
-                  {showElytra ? "Show as cape" : "Show as elytra"}
-                </div>
-              {/if}
+              {@render tip(showElytra ? "Show as cape" : "Show as elytra")}
             </div>
           {/if}
         {/if}
 
         {#if hasPendingChanges}
-          <div style="display: flex; gap: 8px; margin-left: auto; flex-shrink: 0;">
+          <div class="flex gap-2 ml-auto shrink-0">
             <button
               onclick={handleDiscard}
               disabled={saving}
-              style="padding: 6px 16px; border-radius: 8px; border: none; background: var(--bg-secondary, #1a1a2e); color: var(--text-muted, #888); cursor: {saving ? 'not-allowed' : 'pointer'}; font-size: 13px; font-weight: 600; opacity: {saving ? 0.5 : 1}; transition: background 0.15s, opacity 0.15s;"
-              onmouseenter={(e) => { if (!saving) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-hover, #2a2a3e)' }}
-              onmouseleave={(e) => { if (!saving) (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-secondary, #1a1a2e)' }}
+              class="px-4 py-1.5 rounded-lg bg-[var(--bg-secondary,#1a1a2e)] text-[var(--text-muted,#888)] text-[13px] font-semibold transition-colors shrink-0 enabled:hover:bg-[var(--bg-hover,#2a2a3e)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onclick={handleSave}
               disabled={saving}
-              style="padding: 6px 16px; border-radius: 8px; border: none; background: #16a34a; color: #fff; cursor: {saving ? 'not-allowed' : 'pointer'}; font-size: 13px; font-weight: 600; opacity: {saving ? 0.6 : 1}; transition: background 0.15s, opacity 0.15s; display: flex; align-items: center; gap: 6px;"
-              onmouseenter={(e) => { if (!saving) (e.currentTarget as HTMLButtonElement).style.background = '#15803d' }}
-              onmouseleave={(e) => { if (!saving) (e.currentTarget as HTMLButtonElement).style.background = '#16a34a' }}
+              class="px-4 py-1.5 rounded-lg bg-[#16a34a] enabled:hover:bg-[#15803d] text-white text-[13px] font-semibold transition-colors flex items-center gap-1.5 shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
               {#if saving}
                 Saving…
@@ -636,31 +594,25 @@
 
       {#if recentSkins.length > 0}
         <div style="display: flex; align-items: center; gap: 4px; padding: 5px 6px; border-radius: 12px; background: var(--bg-elevated); backdrop-filter: blur(12px); flex-shrink: 0;">
-          {#each recentSkins as skin, index}
+          {#each recentSkins as skin}
             {@const match = skin.url.match(/texture\/([a-f0-9]+)/)}
             {@const hash = match ? match[1] : null}
             {@const bustUrl = hash ? `https://renders.stellarmc.gg/bust/${hash}${skin.variant === "slim" ? "?slim" : ""}` : skin.url}
-            {@const skinHovered = hoveredRecentIdx === index}
-            <div role="presentation" style="position: relative; display: inline-flex;" onmouseenter={() => hoveredRecentIdx = index} onmouseleave={() => hoveredRecentIdx = null}>
+            <div role="presentation" class="group relative inline-flex">
               <button
                 onclick={() => handleRecentSkinSelect(skin)}
                 disabled={uploading}
-                style="box-sizing: border-box; width: 40px; height: 40px; border-radius: 6px; padding: 0; border: 2px solid {skinHovered ? 'var(--text-muted)' : 'transparent'}; overflow: hidden; background: transparent; cursor: {uploading ? 'not-allowed' : 'pointer'}; opacity: {uploading ? 0.4 : 1}; transition: border-color 0.15s; flex-shrink: 0;"
-                onmouseenter={() => hoveredRecentIdx = index}
-                onmouseleave={() => hoveredRecentIdx = null}
+                class="box-border w-10 h-10 rounded-md p-0 border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-transparent transition-colors shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <img
                   src={bustUrl}
                   alt="Recent skin"
                   draggable={false}
-                  style="width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; display: block;"
+                  class="w-full h-full object-cover block"
+                  style="image-rendering: pixelated"
                 />
               </button>
-              {#if skinHovered}
-                <div style="position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); padding: 3px 7px; border-radius: 4px; background: var(--bg-secondary, #1a1a2e); color: var(--text-primary, #eee); font-size: 11px; white-space: nowrap; pointer-events: none; z-index: 100; border: 1px solid var(--border-color, #333);">
-                  Apply recent skin
-                </div>
-              {/if}
+              {@render tip("Apply recent skin")}
             </div>
           {/each}
         </div>
