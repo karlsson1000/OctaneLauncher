@@ -1,15 +1,3 @@
-export interface AuthData {
-  username: string
-  uuid: string
-  access_token: string
-}
-
-export interface AuthResponse {
-  username: string
-  uuid: string
-  access_token: string
-}
-
 export interface Instance {
   name: string
   version: string
@@ -278,12 +266,6 @@ export interface Screenshot {
   instance_name: string
   timestamp: number
   size: number
-}
-
-export interface CachedSkin {
-  url: string
-  variant: "classic" | "slim"
-  timestamp: number
 }
 
 export interface RecentSkin {
