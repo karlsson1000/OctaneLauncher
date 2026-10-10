@@ -21,6 +21,7 @@
     selectedInstance = null,
     instances = [],
     onSetSelectedInstance = (_: Instance) => {},
+    isDetailOpen = false,
   }: {
     source: ContentSource
     category: AddonCategoryConfig
@@ -29,6 +30,7 @@
     selectedInstance?: Instance | null
     instances?: Instance[]
     onSetSelectedInstance?: (instance: Instance) => void
+    isDetailOpen?: boolean
   } = $props()
 
   const adapter: AddonSourceAdapter = $derived(category.sources[source])
@@ -43,6 +45,10 @@
 
   let selectedId: string | null = $state(null)
   let pinnedHit: AddonHit | null = $state(null)
+
+  $effect(() => {
+    if (!isDetailOpen) selectedId = null
+  })
 
   $effect(() => {
     if (!category.requiresModdedLoader) return

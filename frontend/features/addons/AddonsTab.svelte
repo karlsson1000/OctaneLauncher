@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { tick } from "svelte"
   import { Search, Check, Puzzle, Layers, Image, Sparkles, Package, X } from "lucide-svelte"
   import AddonList from "./AddonList.svelte"
   import ProjectDetail from "./ProjectDetail.svelte"
@@ -45,6 +46,9 @@
     return { name: "Vanilla", color: "text-[#16a34a]" }
   }
 
+  let listScroller: HTMLDivElement | undefined
+  let savedListScroll = 0
+
   function handleViewProjectDetail(
     source: "modrinth" | "curseforge",
     projectId: string,
@@ -52,7 +56,14 @@
     projectType: string,
     author?: string,
   ) {
+    savedListScroll = listScroller?.scrollTop ?? 0
     viewDetail = { source, projectId, projectSlug, projectType, author }
+  }
+
+  async function goBackToList() {
+    viewDetail = null
+    await tick()
+    if (listScroller) listScroller.scrollTop = savedListScroll
   }
 </script>
 
@@ -138,7 +149,21 @@
 
   <div class="flex-1 min-h-0 px-8 overflow-hidden">
     <div class="h-full max-w-7xl mx-auto grid grid-cols-1 {viewDetail ? '' : 'lg:grid-cols-11 gap-2'}">
-      <div class="{viewDetail ? '' : 'lg:col-span-8'} overflow-y-auto">
+      <div class="{viewDetail ? '' : 'lg:col-span-8'} overflow-y-auto" bind:this={listScroller}>
+        <div class={viewDetail ? "hidden" : ""}>
+          {#key `${contentSource}:${store.addonsSubTab}`}
+            <AddonList
+              source={contentSource}
+              category={ADDON_CATEGORIES[store.addonsSubTab]}
+              searchQuery={searchQuery}
+              onViewProjectDetail={handleViewProjectDetail}
+              selectedInstance={store.selectedInstance}
+              instances={store.instances}
+              onSetSelectedInstance={setSelectedInstance}
+              isDetailOpen={viewDetail !== null}
+            />
+          {/key}
+        </div>
         {#if viewDetail}
           <ProjectDetail
             source={viewDetail.source}
@@ -150,20 +175,8 @@
             instances={store.instances}
             onShowCreationToast={handleStartCreating}
             onRefreshInstances={loadInstances}
-            onBack={() => viewDetail = null}
+            onBack={goBackToList}
           />
-        {:else}
-          {#key `${contentSource}:${store.addonsSubTab}`}
-            <AddonList
-              source={contentSource}
-              category={ADDON_CATEGORIES[store.addonsSubTab]}
-              searchQuery={searchQuery}
-              onViewProjectDetail={handleViewProjectDetail}
-              selectedInstance={store.selectedInstance}
-              instances={store.instances}
-              onSetSelectedInstance={setSelectedInstance}
-            />
-          {/key}
         {/if}
       </div>
 
