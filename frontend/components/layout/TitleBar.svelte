@@ -17,7 +17,7 @@
     mods: "Mods", modpacks: "Modpacks", resourcepacks: "Resource Packs", shaderpacks: "Shader Packs",
   }
 
-  const dropdownBtn = "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-sm text-sm transition-colors cursor-pointer"
+  const dropdownBtn = "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-sm text-sm cursor-pointer"
 
   $effect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -91,7 +91,7 @@
           transition:fly={{ y: -8, duration: 160 }}
           class="absolute top-full mt-1 z-50 left-1/2 -ml-24 w-48 bg-[var(--bg-tertiary)] rounded shadow-md p-1.5"
         >
-          <div class="flex flex-col gap-0.5">
+          <div class="flex flex-col">
             {#each [...store.accounts].sort((a, b) => Number(b.is_active) - Number(a.is_active)) as acc (acc.uuid)}
               <button
                 onclick={async () => {
@@ -114,7 +114,7 @@
                 {/if}
               </button>
             {/each}
-            <div class="h-px bg-[var(--border-default)]"></div>
+            <div class="h-px bg-[var(--border-default)] my-1"></div>
             <button
               onclick={async () => {
                 try { await invoke("microsoft_login_and_store"); await loadAccounts(); setShowAccountDropdown(false) } catch {}

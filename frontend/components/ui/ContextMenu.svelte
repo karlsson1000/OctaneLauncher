@@ -55,18 +55,18 @@
     class:visible={ready}
     style="left: {position.x}px; top: {position.y}px"
   >
-    <div class="blur-border bg-[var(--bg-elevated)] rounded-lg overflow-hidden min-w-[180px] max-w-[280px] px-1.5 py-2 flex flex-col gap-y-0.5">
+    <div class="bg-[var(--bg-tertiary)] rounded border border-[var(--border-subtle)] shadow-md overflow-hidden min-w-[180px] max-w-[280px] p-1.5 flex flex-col">
       {#each items as item}
         {#if item.separator}
-          <div class="h-px bg-[var(--border-subtle)] my-1 mx-1"></div>
+          <div class="h-px bg-[var(--border-default)] my-2"></div>
         {:else}
           <button
             role="menuitem"
             onclick={() => { item.onClick?.(); onClose() }}
-            class="w-full flex items-center gap-2.5 px-2 py-1.5 text-[0.95rem] rounded-md transition-colors cursor-pointer select-none
+            class="w-full flex items-center gap-2.5 px-2 py-2 text-sm rounded-sm cursor-pointer select-none
               {item.danger
                 ? 'text-red-400 hover:bg-red-500/10'
-                : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover-light)]'}"
+                : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}"
           >
             {#if item.icon}
               <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
