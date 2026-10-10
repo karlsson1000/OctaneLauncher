@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { fly } from "svelte/transition"
   import { invoke } from "@tauri-apps/api/core"
   import { Minus, Square, X, ChevronLeft, ChevronRight, ChevronDown, LogIn, LogOut, Check, UsersRound } from "lucide-svelte"
   import {
@@ -15,6 +16,8 @@
   const addonsSubTabLabels: Record<string, string> = {
     mods: "Mods", modpacks: "Modpacks", resourcepacks: "Resource Packs", shaderpacks: "Shader Packs",
   }
+
+  const dropdownBtn = "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-sm text-sm transition-colors cursor-pointer"
 
   $effect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -85,10 +88,11 @@
       {#if store.showAccountDropdown}
         <div
           data-account-dropdown
-          class="absolute top-full mt-1 w-48 bg-[var(--bg-tertiary)] rounded shadow-lg overflow-hidden z-50 left-1/2 -translate-x-1/2"
+          transition:fly={{ y: -8, duration: 160 }}
+          class="absolute top-full mt-1 z-50 left-1/2 -ml-24 w-48 bg-[var(--bg-tertiary)] rounded shadow-md p-1.5"
         >
-          <div>
-            {#each store.accounts as acc}
+          <div class="flex flex-col gap-0.5">
+            {#each [...store.accounts].sort((a, b) => Number(b.is_active) - Number(a.is_active)) as acc (acc.uuid)}
               <button
                 onclick={async () => {
                   if (!acc.is_active) {
@@ -96,7 +100,7 @@
                   }
                   setShowAccountDropdown(false)
                 }}
-                class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                class="{dropdownBtn} text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
               >
                 <img
                   src="https://avatar.mcindex.net/avatar/{acc.username}/24"
@@ -110,14 +114,12 @@
                 {/if}
               </button>
             {/each}
-          </div>
-          <div class="border-t border-[var(--border-default)]"></div>
-          <div>
+            <div class="h-px bg-[var(--border-default)]"></div>
             <button
               onclick={async () => {
                 try { await invoke("microsoft_login_and_store"); await loadAccounts(); setShowAccountDropdown(false) } catch {}
               }}
-              class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+              class="{dropdownBtn} text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
             >
               <LogIn size={16} strokeWidth={3} class="text-[#16a34a]" />
               Add Account
@@ -126,7 +128,7 @@
               onclick={async () => {
                 try { await invoke("remove_account", { uuid: activeAccount.uuid }); await loadAccounts(); setShowAccountDropdown(false) } catch {}
               }}
-              class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+              class="{dropdownBtn} text-red-400 hover:bg-[var(--bg-hover)]"
             >
               <LogOut size={16} strokeWidth={3} />
               Sign Out
