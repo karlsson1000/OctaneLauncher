@@ -374,28 +374,26 @@
   >
     <div
       role="presentation"
-      class="blur-border bg-[var(--bg-secondary)] rounded w-full max-w-md shadow-2xl modal-content"
+      class="bg-[var(--content-bg)] rounded border border-[var(--border-subtle)] shadow-md w-full max-w-2xl modal-content"
       class:closing={isClosing}
       onclick={(e) => e.stopPropagation()}
       style="pointer-events: auto"
     >
-      <div class="flex items-center justify-between px-6 pt-6 pb-5">
-        <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">New Instance</h2>
-        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover-strong)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
+      <div class="flex items-center justify-between px-5 pt-5 pb-4">
+        <div class="flex items-center gap-3 min-w-0">
+          <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">New Instance</h2>
+          <button type="button" onclick={handleImportFile} disabled={isCreating} class="h-7.5 px-3 rounded-sm text-sm font-medium transition-colors cursor-pointer bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0">
+            <FileDown size={16} strokeWidth={2} />
+            <span>Import</span>
+          </button>
+        </div>
+        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
           <X size={18} strokeWidth={2} />
         </button>
       </div>
 
-      <div class="px-6 pb-4 space-y-5">
-        <div class="flex">
-          <button type="button" onclick={handleImportFile} disabled={isCreating} class="w-full px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)]">
-            <div class="flex items-center justify-center gap-2">
-              <FileDown size={18} class="text-[var(--text-muted)]" strokeWidth={2} />
-              <span>Import File</span>
-            </div>
-          </button>
-        </div>
-
+      <div class="px-5 pb-4 grid grid-cols-2 gap-5">
+        <div class="space-y-5">
         <div>
           <label for="create-instance-name" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Instance Name</label>
           <input
@@ -403,7 +401,7 @@
             type="text"
             bind:value={newInstanceName}
             placeholder="My Minecraft Instance"
-            class="w-full bg-[var(--bg-tertiary)] rounded px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all {instanceExists && newInstanceName.trim() ? 'ring-2 ring-red-500' : ''}"
+            class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all {instanceExists && newInstanceName.trim() ? 'ring-2 ring-red-500' : ''}"
             disabled={isCreating}
           />
           {#if instanceExists && newInstanceName.trim()}
@@ -438,12 +436,12 @@
             </div>
           </div>
           {#if isLoadingVersions}
-            <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+            <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
               <Loader2 size={16} class="animate-spin" />
               <span>Loading versions...</span>
             </div>
           {:else if filteredVersions.length === 0}
-            <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+            <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
               <AlertCircle size={16} />
               <span>No compatible versions available</span>
             </div>
@@ -453,7 +451,7 @@
                 id="create-mc-version-btn"
                 type="button"
                 onclick={() => isVersionDropdownOpen = !isVersionDropdownOpen}
-                class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t' : 'rounded'}"
+                class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                 disabled={isCreating}
               >
                 {selectedVersion}
@@ -467,12 +465,12 @@
               </div>
 
               {#if isVersionDropdownOpen}
-                <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                   {#each filteredVersions as version (version.id)}
                     <button
                       type="button"
                       onclick={() => handleVersionSelect(version.id)}
-                      class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                      class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                     >
                       <span>{version.id}</span>
                       {#if selectedVersion === version.id}
@@ -485,7 +483,8 @@
             </div>
           {/if}
         </div>
-
+        </div>
+        <div class="space-y-5">
         <div>
           <label for="loader-vanilla" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Modloader</label>
           <div class="grid grid-cols-2 gap-2" role="group" aria-labelledby="modloader-label">
@@ -498,11 +497,11 @@
                 type="button"
                 onclick={() => handleLoaderChange(loader)}
                 disabled={isCreating}
-                class="px-4 py-3 rounded text-sm font-medium transition-all cursor-pointer flex items-center justify-center gap-2 {isActive ? `${colors[loader]} text-white` : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover-strong)]'}"
+                class="px-3 h-9 rounded-sm text-[13px] font-medium transition-all cursor-pointer flex items-center justify-center gap-2 {isActive ? `${colors[loader]} text-white` : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
               >
-                <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center {isActive ? 'border-white' : 'border-gray-500'}">
+                <div class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center {isActive ? 'border-white' : 'border-gray-500'}">
                   {#if isActive}
-                    <div class="w-2 h-2 rounded-full bg-white"></div>
+                    <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
                   {/if}
                 </div>
                 <span>{labels[loader]}</span>
@@ -512,10 +511,9 @@
         </div>
 
         {#if loaderType === "fabric"}
-          <div>
-            <label for="create-fabric-loader-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Fabric Loader Version</label>
+          <div class="mt-5.5">
             {#if isLoadingFabric}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
                 <Loader2 size={16} class="animate-spin text-[#3b82f6]" />
                 <span>Loading versions...</span>
               </div>
@@ -525,7 +523,7 @@
                   id="create-fabric-loader-btn"
                   type="button"
                   onclick={() => isFabricDropdownOpen = !isFabricDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isFabricDropdownOpen ? 'rounded-t' : 'rounded'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isFabricDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isCreating}
                 >
                   {selectedFabricVersion} {fabricVersions.find((v: FabricVersion) => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
@@ -539,12 +537,12 @@
                 </div>
 
                 {#if isFabricDropdownOpen}
-                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                     {#each fabricVersions as version (version.version)}
                       <button
                         type="button"
                         onclick={() => { selectedFabricVersion = version.version; isFabricDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
                         {#if selectedFabricVersion === version.version}
@@ -560,15 +558,14 @@
         {/if}
 
         {#if loaderType === "neoforge"}
-          <div>
-            <label for="create-neoforge-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">NeoForge Version</label>
+          <div class="mt-5.5">
             {#if isLoadingNeoforge}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
                 <Loader2 size={16} class="animate-spin text-[#f97316]" />
                 <span>Loading NeoForge versions...</span>
               </div>
             {:else if neoforgeVersions.length === 0}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
                 <AlertCircle size={16} />
                 <span>No NeoForge versions available for Minecraft {selectedVersion}</span>
               </div>
@@ -578,7 +575,7 @@
                   id="create-neoforge-btn"
                   type="button"
                   onclick={() => isNeoforgeDropdownOpen = !isNeoforgeDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isNeoforgeDropdownOpen ? 'rounded-t' : 'rounded'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isNeoforgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isCreating}
                 >
                   {selectedNeoforgeVersion}
@@ -592,12 +589,12 @@
                 </div>
 
                 {#if isNeoforgeDropdownOpen}
-                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                     {#each neoforgeVersions as version (version.neoforge_version)}
                       <button
                         type="button"
                         onclick={() => { selectedNeoforgeVersion = version.neoforge_version; isNeoforgeDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version.neoforge_version}</span>
                         {#if selectedNeoforgeVersion === version.neoforge_version}
@@ -613,15 +610,14 @@
         {/if}
 
         {#if loaderType === "forge"}
-          <div>
-            <label for="create-forge-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Forge Version</label>
+          <div class="mt-5.5">
             {#if isLoadingForge}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
                 <Loader2 size={16} class="animate-spin text-[#e05d2e]" />
                 <span>Loading Forge versions...</span>
               </div>
             {:else if forgeVersions.length === 0}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
                 <AlertCircle size={16} />
                 <span>No Forge versions available for Minecraft {selectedVersion}</span>
               </div>
@@ -631,7 +627,7 @@
                   id="create-forge-btn"
                   type="button"
                   onclick={() => isForgeDropdownOpen = !isForgeDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isForgeDropdownOpen ? 'rounded-t' : 'rounded'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isForgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isCreating}
                 >
                   {selectedForgeVersion}
@@ -645,12 +641,12 @@
                 </div>
 
                 {#if isForgeDropdownOpen}
-                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                     {#each forgeVersions as version (version.forge_version)}
                       <button
                         type="button"
                         onclick={() => { selectedForgeVersion = version.forge_version; isForgeDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version.forge_version}</span>
                         {#if selectedForgeVersion === version.forge_version}
@@ -664,13 +660,14 @@
             {/if}
           </div>
         {/if}
+        </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 px-6 pb-6 pt-3">
-        <button onclick={handleClose} disabled={isCreating} class="px-5 py-3 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
+      <div class="flex items-center justify-end gap-2 px-5 pb-5 pt-1">
+        <button onclick={handleClose} disabled={isCreating} class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
           Cancel
         </button>
-        <button onclick={handleCreateInstance} disabled={isCreateDisabled} class="px-5 py-3 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+        <button onclick={handleCreateInstance} disabled={isCreateDisabled} class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
           {#if isCreating}
             <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             <span>Creating...</span>
