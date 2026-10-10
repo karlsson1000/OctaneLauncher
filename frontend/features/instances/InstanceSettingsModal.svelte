@@ -477,14 +477,14 @@
   >
     <div
       role="presentation"
-      class="blur-border bg-[var(--bg-secondary)] rounded w-full max-w-2xl shadow-2xl modal-content"
+      class="border border-[var(--border-subtle)] bg-[var(--bg-secondary)] rounded w-full max-w-2xl shadow-2xl modal-content"
       class:closing={isClosing}
       onclick={(e) => e.stopPropagation()}
       style="pointer-events: auto"
     >
       <div class="flex items-center justify-between px-6 pt-6 pb-5">
         <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Instance Settings</h2>
-        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover-strong)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
+        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
           <X size={18} strokeWidth={2} />
         </button>
       </div>
@@ -519,7 +519,7 @@
                   Remove Icon
                 </button>
               {:else}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
                   Upload Icon
                 </button>
               {/if}
@@ -581,12 +581,12 @@
                   {/if}
                 </div>
                 {#if isVersionDropdownOpen}
-                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                     {#each minecraftVersions as version (version)}
                       <button
                         type="button"
                         onclick={() => handleVersionSelect(version)}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version}</span>
                         {#if selectedMinecraftVersion === version}
@@ -630,12 +630,12 @@
                     {/if}
                   </div>
                   {#if isFabricDropdownOpen}
-                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                       {#each fabricVersions as version (version.version)}
                         <button
                           type="button"
                           onclick={() => handleFabricSelect(version.version)}
-                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                         >
                           <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
                           {#if selectedFabricVersion === version.version}
@@ -675,12 +675,12 @@
                     {/if}
                   </div>
                   {#if isNeoforgeDropdownOpen}
-                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                       {#each neoforgeVersions as version (version.full_version)}
                         <button
                           type="button"
                           onclick={() => handleNeoforgeSelect(version.full_version)}
-                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                         >
                           <span>{version.full_version}</span>
                           {#if selectedNeoforgeVersion === version.full_version}
@@ -720,12 +720,12 @@
                     {/if}
                   </div>
                   {#if isForgeDropdownOpen}
-                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b shadow-lg max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
                       {#each forgeVersions as version (version.full_version)}
                         <button
                           type="button"
                           onclick={() => handleForgeSelect(version.full_version)}
-                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover-strong)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                         >
                           <span>{version.full_version}</span>
                           {#if selectedForgeVersion === version.full_version}

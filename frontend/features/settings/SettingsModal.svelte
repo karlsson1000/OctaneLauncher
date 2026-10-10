@@ -364,7 +364,7 @@
     >
       <div
         role="presentation"
-        class="blur-border bg-[var(--bg-primary)] rounded w-full max-w-5xl h-full max-h-[74vh] flex flex-col modal-content overflow-hidden"
+        class="border border-[var(--border-subtle)] bg-[var(--bg-primary)] rounded w-full max-w-5xl h-full max-h-[74vh] flex flex-col modal-content overflow-hidden"
         class:closing={isClosing}
         onclick={(e) => e.stopPropagation()}
       >
