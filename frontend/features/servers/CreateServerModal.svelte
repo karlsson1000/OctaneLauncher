@@ -116,7 +116,7 @@
   onclick={() => { if (backdropArmed) handleClose() }}
 >
   <div
-    class="bg-[var(--content-bg)] rounded border border-[var(--border-subtle)] shadow-md w-full max-w-2xl modal-content"
+    class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-full max-w-2xl modal-content"
     class:closing={isClosing}
     role="presentation"
     onclick={(e) => e.stopPropagation()}

@@ -124,7 +124,7 @@
     onclick={handleClose}
   >
     <div
-      class="bg-[var(--content-bg)] rounded border border-[var(--border-subtle)] shadow-md w-full max-w-2xl modal-content p-5 space-y-5"
+      class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-full max-w-2xl modal-content p-5 space-y-5"
       role="presentation"
       class:closing={isClosing}
       onclick={(e) => e.stopPropagation()}

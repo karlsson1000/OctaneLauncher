@@ -55,7 +55,7 @@
     class:visible={ready}
     style="left: {position.x}px; top: {position.y}px"
   >
-    <div class="bg-[var(--bg-tertiary)] rounded border border-[var(--border-subtle)] shadow-md overflow-hidden min-w-[180px] max-w-[280px] p-1.5 flex flex-col">
+    <div class="bg-[var(--bg-tertiary)] rounded-md border border-[var(--border-subtle)] shadow-md overflow-hidden min-w-[180px] max-w-[280px] p-1.5 flex flex-col">
       {#each items as item}
         {#if item.separator}
           <div class="h-px bg-[var(--border-default)] my-2"></div>

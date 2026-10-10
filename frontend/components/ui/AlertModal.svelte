@@ -47,7 +47,7 @@
   >
     <div
       role="presentation"
-      class="bg-[var(--content-bg)] rounded border border-[var(--border-subtle)] shadow-md w-full max-w-lg modal-content"
+      class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-full max-w-lg modal-content"
       class:closing={isClosing}
       onclick={(e) => e.stopPropagation()}
       style="pointer-events: auto"

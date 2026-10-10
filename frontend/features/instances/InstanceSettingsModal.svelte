@@ -477,7 +477,7 @@
   >
     <div
       role="presentation"
-      class="border border-[var(--border-subtle)] bg-[var(--bg-secondary)] rounded w-full max-w-2xl shadow-2xl modal-content"
+      class="border border-[var(--border-subtle)] bg-[var(--bg-secondary)] rounded-md w-full max-w-2xl shadow-2xl modal-content"
       class:closing={isClosing}
       onclick={(e) => e.stopPropagation()}
       style="pointer-events: auto"
