@@ -319,7 +319,7 @@
       <div class="relative space-y-4 bg-[var(--bg-tertiary)] rounded-md p-4">
         <button
           onclick={onBack}
-          class="absolute top-2 right-2 z-20 flex items-center justify-center w-9 h-9 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+          class="sticky top-2 float-right ml-2 z-20 flex items-center justify-center w-9 h-9 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
         >
           <X size={18} />
         </button>
