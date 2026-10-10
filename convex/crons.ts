@@ -9,4 +9,10 @@ crons.interval(
   internal.sessions.cleanupExpired,
 );
 
+crons.interval(
+  "mark stale users offline",
+  { minutes: 2 },
+  internal.friends.markStaleOffline,
+);
+
 export default crons;

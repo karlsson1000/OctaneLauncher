@@ -74,6 +74,29 @@ export const updateStatus = internalMutation({
   },
 });
 
+const STALE_AFTER_MS = 5 * 60 * 1000;
+
+export const markStaleOffline = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const cutoff = Date.now() - STALE_AFTER_MS;
+    const stale = await ctx.db
+      .query("users")
+      .filter((q) =>
+        q.and(
+          q.neq(q.field("status"), "offline"),
+          q.lt(q.field("lastSeen"), cutoff),
+        ),
+      )
+      .take(500);
+    await Promise.all(
+      stale.map((u) =>
+        ctx.db.patch(u._id, { status: "offline", currentInstance: undefined }),
+      ),
+    );
+  },
+});
+
 export const sendRequest = internalMutation({
   args: { fromUuid: v.string(), toUsername: v.string() },
   handler: async (ctx, args) => {
