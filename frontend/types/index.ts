@@ -311,6 +311,16 @@ export interface SnapshotsResponse {
   entries: Snapshot[]
 }
 
+export interface SystemInfo {
+  total_memory_mb: number
+  available_memory_mb: number
+}
+
+export interface StorageCategory {
+  name: string
+  size_bytes: number
+}
+
 export type FriendStatus = "online" | "offline" | "ingame"
 
 export interface Friend {

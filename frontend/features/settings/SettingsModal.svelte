@@ -1,12 +1,14 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
-  import { Loader2, ImagePlus, FolderOpen, X, Check, ChevronDown, Paintbrush, Play, AppWindow, HardDrive } from "lucide-svelte"
+  import { Loader2, ImagePlus, FolderOpen, X, Check, ChevronDown, ChevronUp, Paintbrush, Play, AppWindow, HardDrive } from "lucide-svelte"
   import AlertModal from "../../components/ui/AlertModal.svelte"
   import TrashSection from "./TrashSection.svelte"
   import { untrack } from "svelte"
+  import { fade } from "svelte/transition"
   import { store, setSettings, loadBackground, setShowOnboarding } from "../../lib/launcherStore.svelte"
   import { storeSet } from "../../lib/store"
-  import type { LauncherSettings } from "../../types"
+  import type { LauncherSettings, StorageCategory, SystemInfo } from "../../types"
+  import { formatFileSize } from "../../lib/format"
 
   const THEMES = [
     { id: "octane", label: "Octane", colors: ["#15171c", "#252932", "#4572e3", "#e6e6e6"] },
@@ -36,24 +38,13 @@
 
   let { isOpen, onClose }: { isOpen: boolean; onClose: () => void } = $props()
 
-  interface SystemInfo {
-    total_memory_mb: number
-    available_memory_mb: number
-    recommended_max_memory_mb: number
-  }
-
-  interface StorageCategory {
-    name: string
-    size_bytes: number
-  }
-
   let activeTab = $state<TabId>("appearance")
   let javaInstallations: string[] = $state([])
   let isLoadingJava = $state(false)
   let showCustomPath = $state(false)
   let customPathValue = $state("")
   let systemInfo: SystemInfo | null = $state(null)
-  let sidebarBgPreview: string | null = $state(null)
+  let backgroundPreview: string | null = $state(null)
   let appVersion = $state("")
   let semanticVersion = $state("")
   let storageCategories: StorageCategory[] = $state([])
@@ -70,6 +61,46 @@
   let javaDropdownEl: HTMLDivElement | undefined = $state()
   let javaDropdownUp = $state(false)
   let javaDropdownMaxH = $state(240)
+  let contentH = $state(0)
+  let heightReady = $state(false)
+  let isResizing = $state(false)
+  let resizeMs = $state(0)
+  let contentScrollerEl: HTMLDivElement | undefined = $state()
+  let resizeTimeout: ReturnType<typeof setTimeout> | undefined
+
+  function holdOverflow(ms: number) {
+    isResizing = true
+    if (resizeTimeout) clearTimeout(resizeTimeout)
+    resizeTimeout = setTimeout(() => { isResizing = false }, ms)
+  }
+
+  function applyHeight(h: number) {
+    if (h <= 0) return
+    if (contentH === 0) {
+      contentH = h
+      requestAnimationFrame(() => { heightReady = true })
+      return
+    }
+    const delta = Math.abs(h - contentH)
+    if (delta < 1) return
+    resizeMs = delta < 4 ? 0 : Math.round(Math.min(240, Math.max(120, 100 + delta * 0.9)))
+    contentH = h
+    holdOverflow(resizeMs + 60)
+  }
+
+  function observeHeight(node: HTMLElement) {
+    const ro = new ResizeObserver(() => applyHeight(node.offsetHeight))
+    ro.observe(node)
+    return {
+      destroy() {
+        ro.disconnect()
+        contentH = 0
+        heightReady = false
+        isResizing = false
+        if (resizeTimeout) clearTimeout(resizeTimeout)
+      },
+    }
+  }
 
   function toggleJavaDropdown() {
     if (isJavaDropdownOpen) {
@@ -221,13 +252,6 @@
     }
   }
 
-  function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-  }
-
   async function loadSystemInfo() {
     try {
       const info = await invoke<SystemInfo>("get_system_info")
@@ -240,7 +264,7 @@
   async function loadSidebarBackground() {
     try {
       const bg = await invoke<string | null>("get_background")
-      sidebarBgPreview = bg
+      backgroundPreview = bg
     } catch (error) {
       console.error("Failed to load background:", error)
     }
@@ -281,7 +305,7 @@
     handleSettingChangeDebounced({ ...store.settings!, java_args: normalized === "" ? null : normalized } as LauncherSettings)
   }
 
-  async function handleFileSelect(e: any) {
+  async function handleFileSelect(e: Event & { currentTarget: HTMLInputElement }) {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -302,7 +326,7 @@
 
         try {
           await invoke("set_background", { imageData: base64 })
-          sidebarBgPreview = base64
+          backgroundPreview = base64
           loadBackground()
         } catch (error) {
           console.error("Failed to save background:", error)
@@ -321,7 +345,7 @@
   async function handleRemoveBackground() {
     try {
       await invoke("remove_background")
-      sidebarBgPreview = null
+      backgroundPreview = null
       loadBackground()
     } catch (error) {
       console.error("Failed to remove background:", error)
@@ -346,410 +370,407 @@
 
 {#if isOpen}
   {#if !store.settings}
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div class="bg-[var(--bg-primary)] rounded-lg p-8">
-        <div class="flex items-center gap-2 text-[var(--text-muted)]">
-          <Loader2 size={20} class="animate-spin" />
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md p-5">
+        <div class="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+          <Loader2 size={18} class="animate-spin" />
           <span>Loading settings...</span>
         </div>
       </div>
     </div>
   {:else}
     <div
-      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6 modal-backdrop"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop"
       class:closing={isClosing}
       role="presentation"
       onclick={handleClose}
       onkeydown={(e) => { if (e.key === 'Escape') handleClose() }}
     >
       <div
+        class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-full max-w-3xl modal-content p-5 space-y-5"
         role="presentation"
-        class="border border-[var(--border-subtle)] bg-[var(--bg-primary)] rounded-md w-full max-w-5xl h-full max-h-[74vh] flex flex-col modal-content overflow-hidden"
         class:closing={isClosing}
-        onclick={(e) => e.stopPropagation()}
-      >
-        <div class="flex items-center justify-between pl-7 pr-9 pt-5 pb-1">
-          <h2 class="text-lg font-semibold text-[var(--text-primary)]">Settings</h2>
-          <div class="flex items-center gap-3">
+          onclick={(e) => e.stopPropagation()}
+          style="pointer-events: auto"
+        >
+        {#snippet menuOption(label: string, checked: boolean, onclick: () => void)}
+          <button
+            role="menuitem"
+            {onclick}
+            class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+          >
+            <span class="truncate min-w-0">{label}</span>
+            {#if checked}<Check size={15} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />{/if}
+          </button>
+        {/snippet}
+
+        <div class="flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight leading-tight">Settings</h2>
+            <p class="text-[13px] text-[var(--text-muted)] truncate">Octane Launcher {semanticVersion || "…"}</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 self-start">
             {#if appVersion}
-              <span class="text-xs text-[var(--text-muted)] font-mono px-2 py-1 rounded-md bg-[var(--bg-elevated)]">{appVersion.split('-')[1] || appVersion}</span>
+              <span class="h-[30px] -mt-0.5 px-2.5 inline-flex items-center rounded-sm text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-tertiary)]">{appVersion.split('-')[1] || appVersion}</span>
             {/if}
-            <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-md transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
-              <X size={18} />
+            <button
+              onclick={handleClose}
+              class="p-1.5 -mt-0.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
+            >
+              <X size={18} strokeWidth={2} />
             </button>
           </div>
         </div>
 
-        <div class="flex flex-1 min-h-0 gap-4 px-7 pb-7 pt-4">
-          <nav class="w-44 flex-shrink-0 flex flex-col gap-y-1">
-            {#each TABS as tab (tab.id)}
-              <button
-                onclick={() => { activeTab = tab.id }}
-                class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-left text-[15px] font-medium transition-colors cursor-pointer {activeTab === tab.id
-                  ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}"
-              >
-                <tab.icon size={18} strokeWidth={2} class={"flex-shrink-0 " + (activeTab === tab.id ? "text-[var(--accent-primary)]" : "")} />
-                <span>{tab.label}</span>
-              </button>
-            {/each}
+        <div class="grid grid-cols-4 gap-1 p-1 rounded-md bg-[var(--bg-tertiary)] -mt-2">
+          {#each TABS as tab (tab.id)}
+            <button
+              onclick={() => { if (activeTab === tab.id) return; holdOverflow(300); activeTab = tab.id; contentScrollerEl?.scrollTo({ top: 0 }) }}
+              class="h-9 rounded-sm text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2 {activeTab === tab.id
+                ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+            >
+              <tab.icon size={16} strokeWidth={2} class={"shrink-0 " + (activeTab === tab.id ? "text-[var(--accent-primary)]" : "")} />
+              <span>{tab.label}</span>
+            </button>
+          {/each}
+        </div>
 
-            <div class="mt-auto px-4 pt-4">
-              <p class="text-xs leading-relaxed text-[var(--text-muted)]">
-                Octane Launcher<br />{semanticVersion || "…"}
-              </p>
-            </div>
-          </nav>
-
-          <div class="flex-1 min-w-0 overflow-y-auto pr-2 space-y-6">
-            {#if activeTab === "appearance"}
-              <section class="bg-[var(--bg-elevated)] rounded-lg p-4">
-                <h4 class="text-base font-semibold text-[var(--text-primary)] mb-1">Theme</h4>
-                <p class="text-xs text-[var(--text-muted)] mb-5">Pick the color scheme for the whole launcher.</p>
-                <div class="grid grid-cols-4 gap-4">
-                  {#each THEMES as theme (theme.id)}
-                    <button
-                      onclick={() => store.settings && handleSettingChange({ ...store.settings, theme: theme.id })}
-                      class="group rounded-lg overflow-hidden text-left cursor-pointer transition-all relative {store.settings?.theme === theme.id
-                        ? 'ring-2 ring-[var(--accent-primary)]'
-                        : 'hover:brightness-110'}"
-                    >
-                      <div class="flex h-20" style="background: {theme.colors[0]}">
-                        <div class="w-7 h-full flex flex-col gap-1.5 p-1.5" style="background: {theme.colors[1]}">
-                          <div class="w-full h-2 rounded-sm" style="background: {theme.colors[2]}"></div>
-                          <div class="w-full h-2 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
-                          <div class="w-full h-2 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
-                        </div>
-                        <div class="flex-1 p-2.5 space-y-1.5">
-                          <div class="h-2 w-14 rounded-sm" style="background: {theme.colors[3]}"></div>
-                          <div class="h-2 w-20 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
-                          <div class="h-8 w-full rounded-md mt-2 opacity-15" style="background: {theme.colors[1]}"></div>
-                        </div>
-                      </div>
-                      <div class="flex items-center justify-between px-3.5 py-2.5" style="background: {theme.colors[1]}">
-                        <span class="text-xs font-semibold" style="color: {theme.colors[3]}">{theme.label}</span>
-                        <div class="w-3.5 h-3.5 rounded-full flex items-center justify-center" style="background: {theme.colors[2]}">
-                          {#if store.settings?.theme === theme.id}<Check size={10} class="text-white" strokeWidth={3} />{/if}
-                        </div>
-                      </div>
-                    </button>
-                  {/each}
-                </div>
-              </section>
-
-              <section id="settings-background" class="bg-[var(--bg-elevated)] rounded-lg p-4">
-                <h4 class="text-base font-semibold text-[var(--text-primary)] mb-4">Custom background</h4>
-                {#if sidebarBgPreview}
-                  <div class="relative group">
-                    <div class="h-40 rounded-lg overflow-hidden bg-[var(--bg-primary)]">
-                      <img src={sidebarBgPreview} alt="Background" class="w-full h-full object-cover" />
-                    </div>
-                    <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                      <button onclick={() => fileInputEl?.click()} class="px-3 py-1.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-lg text-xs font-medium cursor-pointer">Change</button>
-                      <button onclick={handleRemoveBackground} class="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium cursor-pointer">Remove</button>
-                    </div>
-                  </div>
-                {:else}
-                  <button onclick={() => fileInputEl?.click()} class="w-full h-28 bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer">
-                    <ImagePlus size={22} class="text-[var(--text-muted)]" />
-                    <span class="text-xs text-[var(--text-muted)]">Click to upload an image · PNG, JPG up to 10MB</span>
-                  </button>
-                {/if}
-                <input bind:this={fileInputEl} type="file" accept="image/*" onchange={handleFileSelect} class="hidden" />
-                {#if sidebarBgPreview}
-                  <div class="mt-4">
-                    <div class="flex items-center justify-between mb-1">
-                      <span class="text-sm text-[var(--text-primary)]">Darkness</span>
-                      <span class="text-sm font-mono text-[var(--text-muted)]">{store.settings?.background_darkness ?? 80}%</span>
-                    </div>
-                    <div class="relative h-6 flex items-center">
-                      <div class="absolute inset-x-0 h-2 bg-[var(--bg-primary)] rounded-full"></div>
-                      <div class="absolute h-2 rounded-full" style="width: calc(8px + (100% - 16px) * {store.settings?.background_darkness ?? 80} / 100); background: var(--accent-primary)"></div>
-                      <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: calc(8px + (100% - 16px) * {store.settings?.background_darkness ?? 80} / 100)"></div>
-                      <input
-                        type="range" min="0" max="100" step="1"
-                        value={store.settings?.background_darkness ?? 80}
-                        oninput={(e) => handleSettingChangeDebounced({ ...store.settings!, background_darkness: Number((e.currentTarget as HTMLInputElement).value) } as LauncherSettings)}
-                        class="absolute inset-0 w-full opacity-0 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                  <div class="mt-2">
-                    <div class="flex items-center justify-between mb-1">
-                      <span class="text-sm text-[var(--text-primary)]">Blur</span>
-                      <span class="text-sm font-mono text-[var(--text-muted)]">{store.settings?.background_blur ?? 0}px</span>
-                    </div>
-                    <div class="relative h-6 flex items-center">
-                      <div class="absolute inset-x-0 h-2 bg-[var(--bg-primary)] rounded-full"></div>
-                      <div class="absolute h-2 rounded-full" style="width: calc(8px + (100% - 16px) * {store.settings?.background_blur ?? 0} / 20); background: var(--accent-primary)"></div>
-                      <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: calc(8px + (100% - 16px) * {store.settings?.background_blur ?? 0} / 20)"></div>
-                      <input
-                        type="range" min="0" max="20" step="1"
-                        value={store.settings?.background_blur ?? 0}
-                        oninput={(e) => handleSettingChangeDebounced({ ...store.settings!, background_blur: Number((e.currentTarget as HTMLInputElement).value) } as LauncherSettings)}
-                        class="absolute inset-0 w-full opacity-0 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-                {/if}
-              </section>
-            {:else if activeTab === "game"}
-              <section id="settings-memory" class="bg-[var(--bg-elevated)] rounded-lg p-4">
-                <div class="flex items-center justify-between mb-4">
-                  <div>
-                    <h4 class="text-base font-semibold text-[var(--text-primary)]">Memory allocation</h4>
-                    <p class="text-xs text-[var(--text-muted)] mt-0.5">
-                      {systemInfo ? `${(systemInfo.available_memory_mb / 1024).toFixed(1)} GB` : "?"} currently available on your system
-                    </p>
-                  </div>
-                  <div class="flex items-baseline">
-                    <input
-                      type="text"
-                      inputmode="decimal"
-                      aria-label="Memory allocation in GB"
-                      bind:value={ramTextValue}
-                      onfocus={() => ramTextFocused = true}
-                      onblur={commitRamText}
-                      onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur() }}
-                      class="w-[4ch] rounded-md px-1 -mx-1 text-3xl font-bold text-[var(--text-primary)] font-mono text-right cursor-text bg-[var(--bg-primary)] hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
-                    />
-                    <span class="text-sm text-[var(--text-muted)] font-sans font-normal ml-1">GB</span>
-                  </div>
-                </div>
-                <div class="relative h-6 flex items-center">
-                  <div class="absolute inset-x-0 h-2 bg-[var(--bg-primary)] rounded-full"></div>
-                  <div class="absolute h-2 rounded-full" style="width: {ramPercent}%; background: var(--accent-primary)"></div>
-                  <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: {ramPercent}%"></div>
-                  <input
-                    type="range" min="1024" max={systemInfo?.total_memory_mb || 32768} step="512"
-                    bind:value={ramSliderValue}
-                    oninput={() => handleSettingChangeDebounced({ ...store.settings!, memory_mb: ramSliderValue } as LauncherSettings)}
-                    class="absolute inset-0 w-full opacity-0 cursor-pointer"
-                  />
-                </div>
-              </section>
-
-              <section id="settings-java" class="bg-[var(--bg-elevated)] rounded-lg p-4">
-                <div class="flex items-start justify-between gap-6 mb-4">
-                  <div class="min-w-0">
-                    <h4 class="text-base font-semibold text-[var(--text-primary)]">Java runtime</h4>
-                    <p class="text-xs text-[var(--text-muted)] mt-0.5">Which runtime Minecraft runs on.</p>
-                  </div>
-                  <button onclick={loadJavaInstallations} disabled={isLoadingJava} class="flex-shrink-0 px-4 py-2 text-sm font-medium rounded-lg bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5">
-                    {#if isLoadingJava}<Loader2 size={14} class="animate-spin" />{/if}
-                    Rescan
-                  </button>
-                </div>
-
-                <div class="relative" bind:this={javaDropdownEl}>
+        <div
+          bind:this={contentScrollerEl}
+          class="max-h-[56vh] custom-scrollbar {isResizing ? 'overflow-y-hidden' : 'overflow-y-auto'} {heightReady ? 'transition-[height] motion-reduce:transition-none' : ''}"
+          style:height={contentH > 0 ? `${contentH}px` : "auto"}
+          style:transition-duration="{resizeMs}ms"
+          style:transition-timing-function="cubic-bezier(0.4, 0, 0.2, 1)"
+        >
+        <div use:observeHeight>
+        {#key activeTab}
+        <div class="space-y-3" in:fade={{ duration: 120 }}>
+          {#if activeTab === "appearance"}
+            <section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+              <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Theme</h4>
+              <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-4">Pick the color scheme for the whole launcher.</p>
+              <div class="grid grid-cols-4 gap-3">
+                {#each THEMES as theme (theme.id)}
                   <button
-                    onclick={toggleJavaDropdown}
-                    class="w-full bg-[var(--bg-primary)] px-4 py-2 text-sm text-[var(--text-primary)] text-left flex items-center justify-between cursor-pointer min-w-0 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
+                    onclick={() => store.settings && handleSettingChange({ ...store.settings, theme: theme.id })}
+                    class="group rounded-md overflow-hidden text-left cursor-pointer transition-all relative {store.settings?.theme === theme.id
+                      ? 'ring-2 ring-[var(--accent-primary)]'
+                      : 'hover:brightness-110'}"
                   >
-                    <span class="truncate">
-                      {showCustomPath ? "Custom Path..." : (store.settings?.java_path || "Auto-detect (Recommended)")}
-                    </span>
-                    <ChevronDown size={14} class="flex-shrink-0 ml-2 transition-transform {isJavaDropdownOpen ? 'rotate-180' : ''}" />
-                  </button>
-
-                  {#if isJavaDropdownOpen}
-                    <div class="absolute z-[60] w-full bg-[var(--bg-secondary)] rounded-lg overflow-y-auto custom-scrollbar {javaDropdownUp ? 'bottom-full mb-2' : 'mt-2'}" style="max-height: {javaDropdownMaxH}px">
-                      <button
-                        onclick={() => { showCustomPath = false; customPathValue = ""; handleSettingChange({ ...store.settings!, java_path: null } as LauncherSettings); isJavaDropdownOpen = false }}
-                        class="w-full px-4 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] first:rounded-t-xl last:rounded-b-xl flex items-center justify-between cursor-pointer"
-                      >
-                        <span>Auto-detect (Recommended)</span>
-                        {#if !store.settings?.java_path && !showCustomPath}<Check size={14} class="text-[var(--accent-primary)]" />{/if}
-                      </button>
-                      {#each javaInstallations as path (path)}
-                        <button
-                          onclick={() => { showCustomPath = false; customPathValue = ""; handleSettingChange({ ...store.settings!, java_path: path } as LauncherSettings); isJavaDropdownOpen = false }}
-                          class="w-full px-4 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between cursor-pointer"
-                        >
-                          <span class="truncate">{path}</span>
-                          {#if store.settings?.java_path === path && !showCustomPath}<Check size={14} class="text-[var(--accent-primary)] flex-shrink-0 ml-2" />{/if}
-                        </button>
-                      {/each}
-                      <button
-                        onclick={() => { showCustomPath = true; customPathValue = store.settings?.java_path || ""; isJavaDropdownOpen = false }}
-                        class="w-full px-4 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between cursor-pointer"
-                      >
-                        <span>Custom Path...</span>
-                        {#if showCustomPath}<Check size={14} class="text-[var(--accent-primary)]" />{/if}
-                      </button>
+                    <div class="flex h-16" style="background: {theme.colors[0]}">
+                      <div class="w-6 h-full flex flex-col gap-1 p-1" style="background: {theme.colors[1]}">
+                        <div class="w-full h-1.5 rounded-sm" style="background: {theme.colors[2]}"></div>
+                        <div class="w-full h-1.5 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
+                        <div class="w-full h-1.5 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
+                      </div>
+                      <div class="flex-1 p-2 space-y-1">
+                        <div class="h-1.5 w-10 rounded-sm" style="background: {theme.colors[3]}"></div>
+                        <div class="h-1.5 w-14 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
+                        <div class="h-6 w-full rounded-sm mt-1.5 opacity-15" style="background: {theme.colors[1]}"></div>
+                      </div>
                     </div>
-                  {/if}
-                </div>
+                    <div class="flex items-center justify-between px-2.5 py-2" style="background: {theme.colors[1]}">
+                      <span class="text-xs font-semibold" style="color: {theme.colors[3]}">{theme.label}</span>
+                      <div class="w-3.5 h-3.5 rounded-full flex items-center justify-center" style="background: {theme.colors[2]}">
+                        {#if store.settings?.theme === theme.id}<Check size={10} class="text-white" strokeWidth={3} />{/if}
+                      </div>
+                    </div>
+                  </button>
+                {/each}
+              </div>
+            </section>
 
-                {#if showCustomPath}
+            <section id="settings-background" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+              <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight mb-3">Custom background</h4>
+              {#if backgroundPreview}
+                <div class="relative group">
+                  <div class="h-36 rounded-md overflow-hidden bg-[var(--content-bg)]">
+                    <img src={backgroundPreview} alt="Background" class="w-full h-full object-cover" />
+                  </div>
+                  <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
+                    <button onclick={() => fileInputEl?.click()} class="h-8 px-3 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-xs font-medium cursor-pointer transition-colors">Change</button>
+                    <button onclick={handleRemoveBackground} class="h-8 px-3 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium cursor-pointer transition-colors">Remove</button>
+                  </div>
+                </div>
+              {:else}
+                <button onclick={() => fileInputEl?.click()} class="w-full h-24 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] rounded-md transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer">
+                  <ImagePlus size={20} class="text-[var(--text-muted)]" />
+                  <span class="text-xs text-[var(--text-muted)]">Click to upload an image · PNG, JPG up to 10MB</span>
+                </button>
+              {/if}
+              <input bind:this={fileInputEl} type="file" accept="image/*" onchange={handleFileSelect} class="hidden" />
+              {#if backgroundPreview}
+                {#snippet settingSlider(label: string, display: string, min: number, max: number, step: number, value: number, oninput: (v: number) => void)}
+                  {@const pct = max > min ? (value - min) / (max - min) : 0}
+                  <div>
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-sm text-[var(--text-primary)]">{label}</span>
+                      <span class="text-sm font-mono text-[var(--text-muted)]">{display}</span>
+                    </div>
+                    <div class="relative h-6 flex items-center">
+                      <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
+                      <div class="absolute h-2 rounded-full" style="width: calc(8px + (100% - 16px) * {pct}); background: var(--accent-primary)"></div>
+                      <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: calc(8px + (100% - 16px) * {pct})"></div>
+                      <input
+                        type="range" {min} {max} {step}
+                        value={value}
+                        oninput={(e) => oninput(Number((e.currentTarget as HTMLInputElement).value))}
+                        class="absolute inset-0 w-full opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                {/snippet}
+                <div class="mt-4">
+                  {@render settingSlider("Darkness", `${store.settings?.background_darkness ?? 80}%`, 0, 100, 1, store.settings?.background_darkness ?? 80, (v) => handleSettingChangeDebounced({ ...store.settings!, background_darkness: v } as LauncherSettings))}
+                </div>
+                <div class="mt-2">
+                  {@render settingSlider("Blur", `${store.settings?.background_blur ?? 0}px`, 0, 20, 1, store.settings?.background_blur ?? 0, (v) => handleSettingChangeDebounced({ ...store.settings!, background_blur: v } as LauncherSettings))}
+                </div>
+              {/if}
+            </section>
+          {:else if activeTab === "game"}
+            <section id="settings-memory" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+              <div class="flex items-center justify-between gap-3 mb-3">
+                <div class="min-w-0">
+                  <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Memory allocation</h4>
+                  <p class="text-xs text-[var(--text-muted)] mt-0.5">
+                    {systemInfo ? `${(systemInfo.available_memory_mb / 1024).toFixed(1)} GB` : "?"} currently available on your system
+                  </p>
+                </div>
+                <div class="flex items-baseline shrink-0">
                   <input
                     type="text"
-                    class="w-full bg-[var(--bg-primary)] rounded-lg px-4 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono min-w-0 mt-2"
-                    placeholder="C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
-                    bind:value={customPathValue}
-                    onblur={() => { if (customPathValue.trim()) handleSettingChange({ ...store.settings!, java_path: customPathValue.trim() } as LauncherSettings) }}
-                    onkeydown={(e) => { if (e.key === 'Enter' && customPathValue.trim()) { handleSettingChange({ ...store.settings!, java_path: customPathValue.trim() } as LauncherSettings); (e.currentTarget as HTMLInputElement).blur() } }}
+                    inputmode="decimal"
+                    aria-label="Memory allocation in GB"
+                    bind:value={ramTextValue}
+                    onfocus={() => ramTextFocused = true}
+                    onblur={commitRamText}
+                    onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur() }}
+                    class="w-[4ch] rounded-sm px-1 -mx-1 text-2xl font-bold text-[var(--text-primary)] font-mono text-right cursor-text bg-[var(--content-bg)] hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
                   />
-                {/if}
-
-                <div class="mt-5 pt-4 border-t border-[var(--bg-hover)]">
-                  <h5 class="text-sm font-semibold text-[var(--text-primary)] mb-1">Custom Java arguments</h5>
-                  <p class="text-xs text-[var(--text-muted)] mb-3">
-                    Extra JVM flags appended at launch for every instance.
-                  </p>
-                  <textarea
-                    bind:value={javaArgsText}
-                    oninput={(e) => handleJavaArgsChange((e.currentTarget as HTMLTextAreaElement).value)}
-                    onfocus={() => (javaArgsFocused = true)}
-                    onblur={() => commitJavaArgsFocus()}
-                    rows={2}
-                    spellcheck="false"
-                    placeholder="-Xmx4G -XX:+UseG1GC"
-                    class="w-full bg-[var(--bg-primary)] rounded-lg px-4 py-2.5 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none resize-y min-h-[60px] max-h-40 custom-scrollbar"
-                  ></textarea>
+                  <span class="text-sm text-[var(--text-muted)] font-sans font-normal ml-1">GB</span>
                 </div>
-              </section>
-            {:else if activeTab === "launcher"}
-              <section class="bg-[var(--bg-elevated)] rounded-lg p-4 flex items-center justify-between gap-8">
+              </div>
+              <div class="relative h-6 flex items-center">
+                <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
+                <div class="absolute h-2 rounded-full" style="width: {ramPercent}%; background: var(--accent-primary)"></div>
+                <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: {ramPercent}%"></div>
+                <input
+                  type="range" min="1024" max={systemInfo?.total_memory_mb || 32768} step="512"
+                  bind:value={ramSliderValue}
+                  oninput={() => handleSettingChangeDebounced({ ...store.settings!, memory_mb: ramSliderValue } as LauncherSettings)}
+                  class="absolute inset-0 w-full opacity-0 cursor-pointer"
+                />
+              </div>
+            </section>
+
+            <section id="settings-java" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+              <div class="flex items-center justify-between gap-3 mb-3">
                 <div class="min-w-0">
-                  <h4 class="text-base font-semibold text-[var(--text-primary)]">Default tab</h4>
+                  <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Java runtime</h4>
+                  <p class="text-xs text-[var(--text-muted)] mt-0.5">Which runtime Minecraft runs on.</p>
+                </div>
+                <button
+                  onclick={loadJavaInstallations}
+                  disabled={isLoadingJava}
+                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                >
+                  {#if isLoadingJava}<Loader2 size={14} class="animate-spin" />{/if}
+                  Rescan
+                </button>
+              </div>
+
+              <div class="relative" bind:this={javaDropdownEl}>
+                <button
+                  onclick={toggleJavaDropdown}
+                  class="w-full h-9 bg-[var(--content-bg)] px-3 text-sm text-[var(--text-primary)] text-left flex items-center justify-between cursor-pointer min-w-0 rounded-md hover:bg-[var(--bg-hover)] transition-colors"
+                >
+                  <span class="truncate">
+                    {showCustomPath ? "Custom Path..." : (store.settings?.java_path || "Auto-detect (Recommended)")}
+                  </span>
+                  <ChevronDown size={14} class="shrink-0 ml-2 transition-transform {isJavaDropdownOpen ? 'rotate-180' : ''}" />
+                </button>
+
+                {#if isJavaDropdownOpen}
+                  <div role="menu" class="dropdown-menu absolute z-[60] w-full bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-y-auto custom-scrollbar p-1.5 flex flex-col {javaDropdownUp ? 'bottom-full mb-1.5' : 'mt-1.5'}" class:drop-up={javaDropdownUp} style="max-height: {javaDropdownMaxH}px">
+                    {@render menuOption("Auto-detect (Recommended)", !store.settings?.java_path && !showCustomPath, () => { showCustomPath = false; customPathValue = ""; handleSettingChange({ ...store.settings!, java_path: null } as LauncherSettings); isJavaDropdownOpen = false })}
+                    {#each javaInstallations as path (path)}
+                      {@render menuOption(path, store.settings?.java_path === path && !showCustomPath, () => { showCustomPath = false; customPathValue = ""; handleSettingChange({ ...store.settings!, java_path: path } as LauncherSettings); isJavaDropdownOpen = false })}
+                    {/each}
+                    {@render menuOption("Custom Path...", showCustomPath, () => { showCustomPath = true; customPathValue = store.settings?.java_path || ""; isJavaDropdownOpen = false })}
+                  </div>
+                {/if}
+              </div>
+
+              {#if showCustomPath}
+                <input
+                  type="text"
+                  class="w-full h-9 bg-[var(--content-bg)] rounded-md px-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono min-w-0 mt-2"
+                  placeholder="C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
+                  bind:value={customPathValue}
+                  onblur={() => { if (customPathValue.trim()) handleSettingChange({ ...store.settings!, java_path: customPathValue.trim() } as LauncherSettings) }}
+                  onkeydown={(e) => { if (e.key === 'Enter' && customPathValue.trim()) { handleSettingChange({ ...store.settings!, java_path: customPathValue.trim() } as LauncherSettings); (e.currentTarget as HTMLInputElement).blur() } }}
+                />
+              {/if}
+
+              <div class="mt-4 pt-3 border-t border-[var(--border-subtle)]">
+                <h5 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Custom Java arguments</h5>
+                <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-2.5">
+                  Extra JVM flags appended at launch for every instance.
+                </p>
+                <textarea
+                  bind:value={javaArgsText}
+                  oninput={(e) => handleJavaArgsChange((e.currentTarget as HTMLTextAreaElement).value)}
+                  onfocus={() => (javaArgsFocused = true)}
+                  onblur={() => commitJavaArgsFocus()}
+                  rows={2}
+                  spellcheck="false"
+                  placeholder="-Xmx4G -XX:+UseG1GC"
+                  class="w-full bg-[var(--content-bg)] rounded-md px-3 py-2 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-y min-h-[56px] max-h-40 custom-scrollbar"
+                ></textarea>
+              </div>
+            </section>
+          {:else if activeTab === "launcher"}
+            {#snippet toggleRow(label: string, desc: string, checked: boolean, toggle: () => void, id?: string)}
+              <div {id} class="flex items-center gap-3 py-2.5">
+                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+                <div class="flex-1 min-w-0" onclick={toggle}>
+                  <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">{label}</p>
+                  <p class="text-xs text-[var(--text-muted)] mt-0.5">{desc}</p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={checked}
+                  aria-label={label}
+                  onclick={toggle}
+                  class="relative w-9 h-[22px] rounded-full transition-colors shrink-0 cursor-pointer {checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
+                >
+                  <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform {checked ? 'translate-x-[14px]' : ''}"></span>
+                </button>
+              </div>
+            {/snippet}
+
+            <section class="rounded-md bg-[var(--bg-tertiary)] px-4 py-1.5 divide-y divide-[var(--border-subtle)]">
+              <div class="flex items-center gap-3 py-2.5">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">Default tab</p>
                   <p class="text-xs text-[var(--text-muted)] mt-0.5">The tab shown when the launcher opens.</p>
                 </div>
-                <div class="relative flex-shrink-0" bind:this={tabDropdownEl}>
+                <div class="relative shrink-0" bind:this={tabDropdownEl}>
                   <button
                     onclick={() => isTabDropdownOpen = !isTabDropdownOpen}
-                    class="bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] px-4 py-2 text-sm text-[var(--text-primary)] rounded-lg flex items-center gap-2 cursor-pointer capitalize transition-colors min-w-[140px] justify-between"
+                    class="relative h-8 pl-3 pr-8 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center gap-2 cursor-pointer capitalize transition-colors min-w-[130px]"
                   >
                     {store.settings?.default_tab || "home"}
-                    <ChevronDown size={14} class="transition-transform {isTabDropdownOpen ? 'rotate-180' : ''}" />
+                    <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                      {#if isTabDropdownOpen}
+                        <ChevronUp size={14} strokeWidth={3} />
+                      {:else}
+                        <ChevronDown size={14} strokeWidth={3} />
+                      {/if}
+                    </div>
                   </button>
                   {#if isTabDropdownOpen}
-                    <div class="absolute right-0 z-[60] w-full min-w-[160px] bg-[var(--bg-secondary)] rounded-lg overflow-hidden mt-2">
+                    <div role="menu" class="dropdown-menu drop-right absolute right-0 z-[60] w-full min-w-[160px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5">
                       {#each ["home", "instances", "addons", "skins", "screenshots", "servers"] as tab (tab)}
-                        <button
-                          onclick={() => { handleSettingChange({ ...store.settings!, default_tab: tab } as LauncherSettings); isTabDropdownOpen = false }}
-                          class="w-full px-4 py-2 text-sm text-left hover:bg-[var(--bg-hover)] text-[var(--text-primary)] flex items-center justify-between cursor-pointer capitalize"
-                        >
-                          {tab}
-                          {#if (store.settings?.default_tab || "home") === tab}<Check size={14} class="text-[var(--accent-primary)]" />{/if}
-                        </button>
+                        {@render menuOption(tab.charAt(0).toUpperCase() + tab.slice(1), (store.settings?.default_tab || "home") === tab, () => { handleSettingChange({ ...store.settings!, default_tab: tab } as LauncherSettings); isTabDropdownOpen = false })}
                       {/each}
                     </div>
                   {/if}
                 </div>
-              </section>
+              </div>
 
-              <section id="settings-console" class="bg-[var(--bg-elevated)] rounded-lg p-4 flex items-center justify-between gap-8">
-                <div class="min-w-0">
-                  <h4 class="text-base font-semibold text-[var(--text-primary)]">Auto-navigate to console</h4>
-                  <p class="text-xs text-[var(--text-muted)] mt-0.5">Switch to the Console tab when a game launches</p>
-                </div>
-                <button
-                  onclick={() => handleSettingChange({ ...store.settings!, auto_navigate_to_console: !(store.settings?.auto_navigate_to_console ?? true) } as LauncherSettings)}
-                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 {(store.settings?.auto_navigate_to_console ?? true) ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
-                  role="switch"
-                  aria-checked={(store.settings?.auto_navigate_to_console ?? true)}
-                  aria-label="Toggle auto-navigate to console"
-                >
-                  <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform {(store.settings?.auto_navigate_to_console ?? true) ? 'translate-x-[22px]' : 'translate-x-0.5'}"></span>
-                </button>
-              </section>
+              {@render toggleRow(
+                "Auto-navigate to console",
+                "Switch to the Console tab when a game launches",
+                store.settings?.auto_navigate_to_console ?? true,
+                () => handleSettingChange({ ...store.settings!, auto_navigate_to_console: !(store.settings?.auto_navigate_to_console ?? true) } as LauncherSettings),
+                "settings-console"
+              )}
 
-              <section class="bg-[var(--bg-elevated)] rounded-lg p-4 flex items-center justify-between gap-8">
-                <div class="min-w-0">
-                  <h4 class="text-base font-semibold text-[var(--text-primary)]">Discord Rich Presence</h4>
-                  <p class="text-xs text-[var(--text-muted)] mt-0.5">Show Octane Launcher activity on Discord</p>
-                </div>
-                <button
-                  onclick={() => handleSettingChange({ ...store.settings!, discord_rpc: !(store.settings?.discord_rpc ?? true) } as LauncherSettings)}
-                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 {(store.settings?.discord_rpc ?? true) ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
-                  role="switch"
-                  aria-checked={(store.settings?.discord_rpc ?? true)}
-                  aria-label="Toggle Discord Rich Presence"
-                >
-                  <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform {(store.settings?.discord_rpc ?? true) ? 'translate-x-[22px]' : 'translate-x-0.5'}"></span>
-                </button>
-              </section>
+              {@render toggleRow(
+                "Discord Rich Presence",
+                "Show Octane Launcher activity on Discord",
+                store.settings?.discord_rpc ?? true,
+                () => handleSettingChange({ ...store.settings!, discord_rpc: !(store.settings?.discord_rpc ?? true) } as LauncherSettings)
+              )}
 
-              <section class="bg-[var(--bg-elevated)] rounded-lg p-4 flex items-center justify-between gap-8">
-                <div class="min-w-0">
-                  <h4 class="text-base font-semibold text-[var(--text-primary)]">Cat mode</h4>
-                  <p class="text-xs text-[var(--text-muted)] mt-0.5">A cat lays down at the top of the launcher.</p>
-                </div>
-                <button
-                  onclick={() => handleSettingChange({ ...store.settings!, cat_mode: !(store.settings?.cat_mode ?? false) } as LauncherSettings)}
-                  class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 {(store.settings?.cat_mode ?? false) ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
-                  role="switch"
-                  aria-checked={(store.settings?.cat_mode ?? false)}
-                  aria-label="Toggle cat mode"
-                >
-                  <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform {(store.settings?.cat_mode ?? false) ? 'translate-x-[22px]' : 'translate-x-0.5'}"></span>
-                </button>
-              </section>
+              {@render toggleRow(
+                "Cat mode",
+                "A cat lays down at the top of the launcher.",
+                store.settings?.cat_mode ?? false,
+                () => handleSettingChange({ ...store.settings!, cat_mode: !(store.settings?.cat_mode ?? false) } as LauncherSettings)
+              )}
 
-              <section class="bg-[var(--bg-elevated)] rounded-lg p-4 flex items-center justify-between gap-8">
-                <div class="min-w-0 pr-4">
-                  <h4 class="text-base font-semibold text-[var(--text-primary)]">Run onboarding again</h4>
+              <div class="flex items-center gap-3 py-2.5">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">Run onboarding again</p>
                   <p class="text-xs text-[var(--text-muted)] mt-0.5">Revisit first-time setup or import instances from other launchers.</p>
                 </div>
                 <button
                   onclick={() => { onClose(); setShowOnboarding(true) }}
-                  class="flex-shrink-0 px-4 py-2 text-sm font-medium rounded-lg bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer transition-colors"
+                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer transition-colors"
                 >
                   Show onboarding
                 </button>
-              </section>
-            {:else if activeTab === "storage"}
-              <section id="settings-storage" class="bg-[var(--bg-elevated)] rounded-lg p-4">
-                <h4 class="text-base font-semibold text-[var(--text-primary)] mb-4">Disk usage</h4>
-                {#if storageLoading}
-                  <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-                    <Loader2 size={14} class="animate-spin" />
-                    <span>Calculating storage usage...</span>
-                  </div>
-                {:else if storageCategories.length === 0}
-                  <div class="text-xs text-[var(--text-muted)]">No data</div>
-                {:else}
-                  <div class="h-2 rounded-full overflow-hidden flex bg-[var(--bg-primary)]">
-                    {#each storageCategories as cat (cat.name)}
-                      <div
-                        style="width: {(cat.size_bytes / totalBytes) * 100}%; background-color: {storageColors[cat.name] || '#6b7280'}"
-                        class="h-full first:rounded-l-full last:rounded-r-full"
-                      ></div>
-                    {/each}
-                  </div>
-                  <div class="flex flex-wrap gap-x-5 gap-y-1.5 mt-3">
-                    {#each storageCategories as cat (cat.name)}
-                      <div class="flex items-center gap-1.5 text-xs">
-                        <div class="w-2.5 h-2.5 rounded-sm" style="background-color: {storageColors[cat.name] || '#6b7280'}"></div>
-                        <span class="text-[var(--text-muted)]">{cat.name}</span>
-                        <span class="text-[var(--text-primary)] font-medium">{formatBytes(cat.size_bytes)}</span>
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-              </section>
+              </div>
+            </section>
+          {:else if activeTab === "storage"}
+            <section id="settings-storage" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+              <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight mb-3">Disk usage</h4>
+              {#if storageLoading}
+                <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                  <Loader2 size={14} class="animate-spin" />
+                  <span>Calculating storage usage...</span>
+                </div>
+              {:else if storageCategories.length === 0}
+                <div class="text-xs text-[var(--text-muted)]">No data</div>
+              {:else}
+                <div class="h-2 rounded-full overflow-hidden flex bg-[var(--content-bg)]">
+                  {#each storageCategories as cat (cat.name)}
+                    <div
+                      style="width: {(cat.size_bytes / totalBytes) * 100}%; background-color: {storageColors[cat.name] || '#6b7280'}"
+                      class="h-full first:rounded-l-full last:rounded-r-full"
+                    ></div>
+                  {/each}
+                </div>
+                <div class="flex flex-wrap gap-x-5 gap-y-1.5 mt-3">
+                  {#each storageCategories as cat (cat.name)}
+                    <div class="flex items-center gap-1.5 text-xs">
+                      <div class="w-2.5 h-2.5 rounded-sm" style="background-color: {storageColors[cat.name] || '#6b7280'}"></div>
+                      <span class="text-[var(--text-muted)]">{cat.name}</span>
+                      <span class="text-[var(--text-primary)] font-medium">{formatFileSize(cat.size_bytes)}</span>
+                    </div>
+                  {/each}
+                </div>
+              {/if}
+            </section>
 
-              <section id="settings-directory" class="bg-[var(--bg-elevated)] rounded-lg p-4 flex items-center justify-between gap-8">
-                <div class="min-w-0">
-                  <h4 class="text-base font-semibold text-[var(--text-primary)]">Game directory</h4>
+            <section id="settings-directory" class="rounded-md bg-[var(--bg-tertiary)] px-4 py-1.5">
+              <div class="flex items-center gap-3 py-2.5">
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">Game directory</p>
                   <p class="text-xs text-[var(--text-muted)] font-mono break-all mt-0.5">{store.launcherDirectory || "Loading..."}</p>
                 </div>
                 <button
                   onclick={() => handleOpenDirectory(store.launcherDirectory)}
                   disabled={!store.launcherDirectory}
-                  class="flex-shrink-0 px-4 py-2 text-sm font-medium rounded-lg bg-[var(--bg-primary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
+                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
                 >
                   <FolderOpen size={14} />
                   Open folder
                 </button>
-              </section>
+              </div>
+            </section>
 
-              <section class="bg-[var(--bg-elevated)] rounded-lg p-4">
-                <TrashSection onAlert={(alert) => alertModal = alert} />
-              </section>
-            {/if}
-          </div>
+            <section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+              <TrashSection onAlert={(alert) => alertModal = alert} />
+            </section>
+          {/if}
+        </div>
+        {/key}
+        </div>
         </div>
       </div>
     </div>
@@ -759,3 +780,4 @@
     {/if}
   {/if}
 {/if}
+

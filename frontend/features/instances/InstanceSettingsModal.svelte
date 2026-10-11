@@ -1,17 +1,11 @@
 <script lang="ts">
-  import { X, Trash2, Camera, ImagePlus, Loader2, Check, Cpu, ChevronDown, ChevronUp } from "lucide-svelte"
+  import { X, Trash2, Camera, ImagePlus, Loader2, Check, ChevronDown, ChevronUp } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import ConfirmModal from "../../components/ui/ConfirmModal.svelte"
   import AlertModal from "../../components/ui/AlertModal.svelte"
-  import type { Instance, FabricVersion, NeoForgeVersion, ForgeVersion, LauncherSettings } from "../../types"
+  import type { Instance, FabricVersion, NeoForgeVersion, ForgeVersion, LauncherSettings, SystemInfo } from "../../types"
   import { instanceIconSrc, bumpInstanceIcon, clearInstanceIcon } from "../../lib/icons"
   import { store, handleInstanceRenamed, deleteInstanceOptimistically } from "../../lib/launcherStore.svelte"
-
-  interface SystemInfo {
-    total_memory_mb: number
-    available_memory_mb: number
-    recommended_max_memory_mb: number
-  }
 
   let { isOpen, instance, instanceIcon, onClose, onInstanceUpdated, onInstanceDeleted, onInstanceRenamed }: {
     isOpen: boolean
@@ -477,20 +471,20 @@
   >
     <div
       role="presentation"
-      class="border border-[var(--border-subtle)] bg-[var(--bg-secondary)] rounded-md w-full max-w-2xl shadow-2xl modal-content"
+      class="border border-[var(--border-subtle)] bg-[var(--content-bg)] rounded-md w-full max-w-2xl shadow-md modal-content"
       class:closing={isClosing}
       onclick={(e) => e.stopPropagation()}
       style="pointer-events: auto"
     >
-      <div class="flex items-center justify-between px-6 pt-6 pb-5">
-        <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">Instance Settings</h2>
-        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
+      <div class="flex items-center justify-between px-5 pt-5 pb-4">
+        <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Instance Settings</h2>
+        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
           <X size={18} strokeWidth={2} />
         </button>
       </div>
 
-      <div class="px-6 pb-6">
-        <div class="grid grid-cols-2 gap-x-6 gap-y-5">
+      <div class="px-5 pb-5">
+        <div class="grid grid-cols-2 gap-x-5 gap-y-5 items-start">
 
           <!-- Icon -->
           <div>
@@ -498,14 +492,14 @@
             <div class="flex items-center gap-4">
               <input id="instance-icon-input" bind:this={fileInputEl} type="file" accept="image/*" onchange={handleIconChange} class="hidden" />
               {#if localIcon}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 rounded overflow-hidden relative cursor-pointer group bg-[var(--bg-tertiary)]">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden relative cursor-pointer group bg-[var(--bg-tertiary)]">
                   <img src={localIcon} alt={instance.name} class="w-full h-full object-cover" />
                   <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Camera size={16} class="text-[var(--text-muted)]" />
                   </div>
                 </button>
               {:else}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-muted)] hover:border-[var(--accent-primary)]/50 rounded flex items-center justify-center transition-all bg-[var(--bg-tertiary)] cursor-pointer">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-muted)] hover:border-[var(--accent-primary)]/50 rounded-sm flex items-center justify-center transition-all bg-[var(--bg-tertiary)] cursor-pointer">
                   {#if isUploadingIcon}
                     <Loader2 size={18} class="text-[var(--accent-primary)] animate-spin" />
                   {:else}
@@ -515,11 +509,11 @@
               {/if}
 
               {#if localIcon}
-                <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-4 py-3.5 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded-sm text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
                   Remove Icon
                 </button>
               {:else}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 py-3.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-sm text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
                   Upload Icon
                 </button>
               {/if}
@@ -537,7 +531,7 @@
                 oninput={() => renameError = null}
                 onblur={(e) => { const trimmed = (e.target as HTMLInputElement).value.trim(); if (trimmed && trimmed !== instance.name) handleRename(trimmed) }}
                 onkeydown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
-                class="w-full bg-[var(--bg-tertiary)] rounded px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all"
+                class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all"
                 placeholder="Enter instance name"
                 disabled={isRenamingInstance}
               />
@@ -556,7 +550,7 @@
           <div>
             <label for="minecraft-version-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Minecraft Version</label>
             {#if isLoadingVersions}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
+              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
                 <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
                 <span>Loading...</span>
               </div>
@@ -566,7 +560,7 @@
                   id="minecraft-version-btn"
                   type="button"
                   onclick={() => isVersionDropdownOpen = !isVersionDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t' : 'rounded'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isUpdatingVersion}
                 >
                   {selectedMinecraftVersion}
@@ -590,7 +584,7 @@
                       >
                         <span>{version}</span>
                         {#if selectedMinecraftVersion === version}
-                          <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
+                          <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
                         {/if}
                       </button>
                     {/each}
@@ -601,142 +595,80 @@
           </div>
 
           <!-- Loader version (Fabric / NeoForge / Forge) -->
+          {#snippet loaderSelect(
+            id: string,
+            label: string,
+            loading: boolean,
+            open: boolean,
+            toggle: () => void,
+            disabled: boolean,
+            updating: boolean,
+            buttonText: string,
+            items: Array<{ key: string; label: string }>,
+            selectedKey: string,
+            onSelect: (key: string) => void,
+            setRef: (el: HTMLDivElement | undefined) => void
+          )}
+            <div>
+              <label for={id} class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">{label}</label>
+              {#if loading}
+                <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
+                  <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
+                  <span>Loading...</span>
+                </div>
+              {:else}
+                <div
+                  class="relative"
+                  {@attach (node) => {
+                    setRef(node as HTMLDivElement)
+                    return () => setRef(undefined)
+                  }}
+                >
+                  <button
+                    {id}
+                    type="button"
+                    onclick={toggle}
+                    class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {open ? 'rounded-t-sm' : 'rounded-sm'}"
+                    {disabled}
+                  >
+                    {buttonText}
+                  </button>
+                  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {#if updating}
+                      <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
+                    {:else if open}
+                      <ChevronUp size={18} strokeWidth={3} />
+                    {:else}
+                      <ChevronDown size={18} strokeWidth={3} />
+                    {/if}
+                  </div>
+                  {#if open}
+                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+                      {#each items as item (item.key)}
+                        <button
+                          type="button"
+                          onclick={() => onSelect(item.key)}
+                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        >
+                          <span>{item.label}</span>
+                          {#if selectedKey === item.key}
+                            <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
+                          {/if}
+                        </button>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {/snippet}
           <div>
             {#if isFabricInstance}
-              <label for="fabric-loader-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Fabric Loader Version</label>
-              {#if isLoadingFabric}
-                <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
-                  <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
-                  <span>Loading...</span>
-                </div>
-              {:else}
-                <div class="relative" bind:this={fabricDropdownRef}>
-                  <button
-                    id="fabric-loader-btn"
-                    type="button"
-                    onclick={() => isFabricDropdownOpen = !isFabricDropdownOpen}
-                    class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isFabricDropdownOpen ? 'rounded-t' : 'rounded'}"
-                    disabled={isUpdatingFabric}
-                  >
-                    {selectedFabricVersion} {fabricVersions.find((v: FabricVersion) => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
-                  </button>
-                  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    {#if isUpdatingFabric}
-                      <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
-                    {:else if isFabricDropdownOpen}
-                      <ChevronUp size={18} strokeWidth={3} />
-                    {:else}
-                      <ChevronDown size={18} strokeWidth={3} />
-                    {/if}
-                  </div>
-                  {#if isFabricDropdownOpen}
-                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
-                      {#each fabricVersions as version (version.version)}
-                        <button
-                          type="button"
-                          onclick={() => handleFabricSelect(version.version)}
-                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                        >
-                          <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
-                          {#if selectedFabricVersion === version.version}
-                            <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
-                          {/if}
-                        </button>
-                      {/each}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
+              {@render loaderSelect("fabric-loader-btn", "Fabric Loader Version", isLoadingFabric, isFabricDropdownOpen, () => isFabricDropdownOpen = !isFabricDropdownOpen, isUpdatingFabric, isUpdatingFabric, `${selectedFabricVersion}${fabricVersions.find((v: FabricVersion) => v.version === selectedFabricVersion)?.stable ? " (Stable)" : ""}`, fabricVersions.map((v: FabricVersion) => ({ key: v.version, label: `${v.version}${v.stable ? " (Stable)" : ""}` })), selectedFabricVersion, (key) => handleFabricSelect(key), (el) => { fabricDropdownRef = el })}
             {:else if isNeoforgeInstance}
-              <label for="neoforge-loader-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">NeoForge Loader Version</label>
-              {#if isLoadingNeoforge}
-                <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
-                  <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
-                  <span>Loading...</span>
-                </div>
-              {:else}
-                <div class="relative" bind:this={neoforgeDropdownRef}>
-                  <button
-                    id="neoforge-loader-btn"
-                    type="button"
-                    onclick={() => isNeoforgeDropdownOpen = !isNeoforgeDropdownOpen}
-                    class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isNeoforgeDropdownOpen ? 'rounded-t' : 'rounded'}"
-                    disabled={isUpdatingNeoforge}
-                  >
-                    {selectedNeoforgeVersion}
-                  </button>
-                  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    {#if isUpdatingNeoforge}
-                      <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
-                    {:else if isNeoforgeDropdownOpen}
-                      <ChevronUp size={18} strokeWidth={3} />
-                    {:else}
-                      <ChevronDown size={18} strokeWidth={3} />
-                    {/if}
-                  </div>
-                  {#if isNeoforgeDropdownOpen}
-                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
-                      {#each neoforgeVersions as version (version.full_version)}
-                        <button
-                          type="button"
-                          onclick={() => handleNeoforgeSelect(version.full_version)}
-                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                        >
-                          <span>{version.full_version}</span>
-                          {#if selectedNeoforgeVersion === version.full_version}
-                            <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
-                          {/if}
-                        </button>
-                      {/each}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
+              {@render loaderSelect("neoforge-loader-btn", "NeoForge Loader Version", isLoadingNeoforge, isNeoforgeDropdownOpen, () => isNeoforgeDropdownOpen = !isNeoforgeDropdownOpen, isUpdatingNeoforge, isUpdatingNeoforge, selectedNeoforgeVersion, neoforgeVersions.map((v: NeoForgeVersion) => ({ key: v.full_version, label: v.full_version })), selectedNeoforgeVersion, (key) => handleNeoforgeSelect(key), (el) => { neoforgeDropdownRef = el })}
             {:else if isForgeInstance}
-              <label for="forge-loader-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Forge Loader Version</label>
-              {#if isLoadingForge}
-                <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded">
-                  <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
-                  <span>Loading...</span>
-                </div>
-              {:else}
-                <div class="relative" bind:this={forgeDropdownRef}>
-                  <button
-                    id="forge-loader-btn"
-                    type="button"
-                    onclick={() => isForgeDropdownOpen = !isForgeDropdownOpen}
-                    class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isForgeDropdownOpen ? 'rounded-t' : 'rounded'}"
-                    disabled={isUpdatingForge}
-                  >
-                    {selectedForgeVersion}
-                  </button>
-                  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    {#if isUpdatingForge}
-                      <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
-                    {:else if isForgeDropdownOpen}
-                      <ChevronUp size={18} strokeWidth={3} />
-                    {:else}
-                      <ChevronDown size={18} strokeWidth={3} />
-                    {/if}
-                  </div>
-                  {#if isForgeDropdownOpen}
-                    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
-                      {#each forgeVersions as version (version.full_version)}
-                        <button
-                          type="button"
-                          onclick={() => handleForgeSelect(version.full_version)}
-                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                        >
-                          <span>{version.full_version}</span>
-                          {#if selectedForgeVersion === version.full_version}
-                            <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
-                          {/if}
-                        </button>
-                      {/each}
-                    </div>
-                  {/if}
-                </div>
-              {/if}
+              {@render loaderSelect("forge-loader-btn", "Forge Loader Version", isLoadingForge, isForgeDropdownOpen, () => isForgeDropdownOpen = !isForgeDropdownOpen, isUpdatingForge, isUpdatingForge, selectedForgeVersion, forgeVersions.map((v: ForgeVersion) => ({ key: v.full_version, label: v.full_version })), selectedForgeVersion, (key) => handleForgeSelect(key), (el) => { forgeDropdownRef = el })}
             {/if}
           </div>
 
@@ -744,16 +676,15 @@
           <div class="col-span-2">
             <div class="flex items-center justify-between mb-2.5">
               <div class="flex items-center gap-2 text-[var(--text-primary)]">
-                <Cpu size={18} class="text-[var(--accent-primary)]" />
                 <span class="text-sm font-medium">RAM Allocation</span>
               </div>
-              <button
-                onclick={() => { const next = !useCustomRam; useCustomRam = next; saveRamSettings(instanceMemoryMb, next) }}
-                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 {useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover)]'}"
-                aria-label="Toggle custom RAM"
-              >
-                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform {useCustomRam ? 'translate-x-6' : 'translate-x-1'}"></span>
-              </button>
+                <button
+                  onclick={() => { const next = !useCustomRam; useCustomRam = next; saveRamSettings(instanceMemoryMb, next) }}
+                  class="relative w-9 h-[22px] rounded-full transition-colors shrink-0 cursor-pointer {useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
+                  aria-label="Toggle custom RAM"
+                >
+                  <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform {useCustomRam ? 'translate-x-[14px]' : ''}"></span>
+                </button>
             </div>
             <div class="transition-opacity {useCustomRam ? 'opacity-100' : 'opacity-40 pointer-events-none'}">
               <div class="bg-[var(--bg-tertiary)] rounded p-4 space-y-3">
@@ -762,7 +693,7 @@
                   <span class="text-xs text-[var(--text-muted)]">{systemInfo ? `of ${(systemInfo.total_memory_mb / 1024).toFixed(0)} GB total` : ""}</span>
                 </div>
                 <div class="relative h-6 flex items-center">
-                  <div class="absolute inset-x-0 h-2 bg-[var(--bg-secondary)] rounded-full"></div>
+                  <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
                   <div class="absolute h-2 rounded-full" style="width: {ramPercent}%; background: var(--accent-primary)"></div>
                   <div class="absolute w-4 h-4 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 shadow-md top-1/2 -mt-2" style="left: {ramPercent}%"></div>
                   <input
@@ -780,7 +711,7 @@
           <div class="col-span-2 pt-3">
             <button
               onclick={handleDelete}
-              class="w-full px-4 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded font-medium text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+              class="w-full px-4 h-11 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-sm font-medium text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <Trash2 size={16} />
               <span>Delete Instance</span>

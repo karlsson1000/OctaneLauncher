@@ -2,8 +2,11 @@
   import { invoke } from "@tauri-apps/api/core"
   import { Loader2, Trash2, Package, Image } from "lucide-svelte"
   import type { TrashItem } from "../../types"
+  import { formatFileSize } from "../../lib/format"
 
-  let { onAlert }: { onAlert: (alert: any) => void } = $props()
+  let { onAlert }: {
+    onAlert: (alert: { isOpen: boolean; title: string; message: string; type: "warning" | "danger" | "success" | "info" }) => void
+  } = $props()
 
   let items = $state<TrashItem[]>([])
   let loading = $state(false)
@@ -42,13 +45,6 @@
     emptying = false
   }
 
-  function formatBytes(bytes: number) {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
-  }
-
   function formatDate(rfc3339: string) {
     const d = new Date(rfc3339)
     return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
@@ -62,7 +58,7 @@
       <span class="font-medium text-sm">Trash</span>
       {#if !loading && count > 0}
         <span class="text-xs text-[var(--text-muted)]">
-          {count} item{count !== 1 ? "s" : ""} ({formatBytes(totalSize)})
+          {count} item{count !== 1 ? "s" : ""} ({formatFileSize(totalSize)})
         </span>
       {/if}
     </div>
@@ -93,7 +89,7 @@
     {:else}
       <div class="space-y-1 max-h-48 overflow-y-auto">
         {#each items as item (item.id)}
-          <div class="flex items-center gap-2 px-1.5 py-1 rounded bg-[var(--bg-secondary)] text-xs">
+          <div class="flex items-center gap-2 px-1.5 py-1 rounded bg-[var(--bg-hover)] text-xs">
             {#if item.original_type === "screenshot"}
               <Image size={14} class="text-[var(--text-muted)] shrink-0" />
             {:else}
@@ -101,7 +97,7 @@
             {/if}
             <span class="text-[var(--text-primary)] truncate flex-1" title={item.original_name}>{item.original_name}</span>
             <span class="text-[var(--text-muted)] shrink-0">{formatDate(item.moved_at)}</span>
-            <span class="text-[var(--text-muted)] shrink-0 w-14 text-right">{formatBytes(item.size)}</span>
+            <span class="text-[var(--text-muted)] shrink-0 w-14 text-right">{formatFileSize(item.size)}</span>
           </div>
         {/each}
       </div>
