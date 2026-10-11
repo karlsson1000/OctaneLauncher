@@ -1,7 +1,9 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
   import { open } from "@tauri-apps/plugin-dialog"
-  import { X, Loader2, AlertCircle, FileDown, Check, ChevronDown, ChevronUp } from "lucide-svelte"
+  import { fly, slide } from "svelte/transition"
+  import { cubicIn, cubicOut } from "svelte/easing"
+  import { X, Loader2, AlertCircle, FileDown, Check, ChevronDown, ChevronUp, ArrowLeft, ArrowRight } from "lucide-svelte"
   import AlertModal from "../../components/ui/AlertModal.svelte"
   import type { FabricVersion, NeoForgeVersion, ForgeVersion, Instance } from "../../types"
 
@@ -13,6 +15,21 @@
     releaseTime: string
   }
 
+  type LoaderType = "vanilla" | "fabric" | "neoforge" | "forge"
+  type CreateStep = "name" | "version" | "loader"
+
+  const STEPS: CreateStep[] = ["name", "version", "loader"]
+  const STEP_ORDER: Record<CreateStep, number> = { name: 0, version: 1, loader: 2 }
+
+  const LOADERS: { id: LoaderType; label: string; bg: string }[] = [
+    { id: "vanilla", label: "Vanilla", bg: "bg-[#16a34a]" },
+    { id: "fabric", label: "Fabric", bg: "bg-[#3b82f6]" },
+    { id: "neoforge", label: "NeoForge", bg: "bg-[#f97316]" },
+    { id: "forge", label: "Forge", bg: "bg-[#e05d2e]" },
+  ]
+
+  const pageClass = "px-5 pt-5 flex flex-col"
+
   let { instances, onClose, onSuccess, onStartCreating }: {
     instances: Instance[]
     onClose: () => void
@@ -20,10 +37,14 @@
     onStartCreating: (instanceName: string) => void
   } = $props()
 
+  let step = $state<CreateStep>("name")
+  let navDir = $state(1)
+  let loaderDir = $state(1)
+
   let isCreating = $state(false)
   let selectedVersion = $state("")
   let newInstanceName = $state("")
-  let loaderType = $state<"vanilla" | "fabric" | "neoforge" | "forge">("vanilla")
+  let loaderType = $state<LoaderType>("vanilla")
   let fabricVersions = $state<FabricVersion[]>([])
   let selectedFabricVersion = $state("")
   let neoforgeVersions = $state<NeoForgeVersion[]>([])
@@ -47,14 +68,7 @@
   let isLoadingVersions = $state(false)
   let fabricSupportedVersions = $state<string[]>([])
   let neoforgeSupportedVersions = $state<string[]>([])
-  let isVersionDropdownOpen = $state(false)
-  let isFabricDropdownOpen = $state(false)
-  let isNeoforgeDropdownOpen = $state(false)
-  let isForgeDropdownOpen = $state(false)
-  let versionDropdownRef = $state<HTMLDivElement | undefined>(undefined)
-  let fabricDropdownRef = $state<HTMLDivElement | undefined>(undefined)
-  let neoforgeDropdownRef = $state<HTMLDivElement | undefined>(undefined)
-  let forgeDropdownRef = $state<HTMLDivElement | undefined>(undefined)
+  let openDropdown = $state<"mc" | "fabric" | "neoforge" | "forge" | null>(null)
 
   let backdropArmed = false
 
@@ -72,20 +86,16 @@
   })
 
   $effect(() => {
-    versionDropdownRef;
-    fabricDropdownRef;
-    neoforgeDropdownRef;
-    forgeDropdownRef;
-
     function handleClickOutside(event: MouseEvent) {
-      if (versionDropdownRef && !versionDropdownRef.contains(event.target as Node)) isVersionDropdownOpen = false
-      if (fabricDropdownRef && !fabricDropdownRef.contains(event.target as Node)) isFabricDropdownOpen = false
-      if (neoforgeDropdownRef && !neoforgeDropdownRef.contains(event.target as Node)) isNeoforgeDropdownOpen = false
-      if (forgeDropdownRef && !forgeDropdownRef.contains(event.target as Node)) isForgeDropdownOpen = false
+      if (!(event.target as HTMLElement | null)?.closest("[data-dropdown]")) openDropdown = null
     }
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   })
+
+  function autofocus(node: HTMLElement) {
+    node.focus({ preventScroll: true })
+  }
 
   async function loadVersionsWithMetadata() {
     isLoadingVersions = true
@@ -125,25 +135,21 @@
     }
   }
 
-  function getFilteredVersions(): MinecraftVersion[] {
-    let filtered = versionFilter === "snapshot"
-      ? allVersions.filter((v: MinecraftVersion) => v.type === "snapshot")
-      : allVersions.filter((v: MinecraftVersion) => v.type === "release")
+  let filteredVersions = $derived(
+    allVersions.filter((v: MinecraftVersion) => v.type === versionFilter)
+  )
+  let mcOptions = $derived(filteredVersions.map((v: MinecraftVersion) => ({ value: v.id, label: v.id })))
 
-    if (loaderType === "fabric" && versionFilter === "release") {
-      filtered = filtered.filter((v: MinecraftVersion) => fabricSupportedVersions.includes(v.id))
-    }
-    if (loaderType === "neoforge" && versionFilter === "release") {
-      filtered = filtered.filter((v: MinecraftVersion) => neoforgeSupportedVersions.includes(v.id))
-    }
-    if (loaderType === "forge" && versionFilter === "release") {
-      filtered = filtered.filter((v: MinecraftVersion) => forgeSupportedVersions.includes(v.id))
-    }
-
-    return filtered
+  function isLoaderSupported(loader: LoaderType, version: string): boolean {
+    if (loader === "vanilla") return true
+    if (allVersions.find((v: MinecraftVersion) => v.id === version)?.type === "snapshot") return false
+    const supported = loader === "fabric" ? fabricSupportedVersions
+      : loader === "neoforge" ? neoforgeSupportedVersions
+      : forgeSupportedVersions
+    return supported.includes(version)
   }
 
-  let filteredVersions = $derived(getFilteredVersions())
+  let hasUnavailableLoaders = $derived(LOADERS.some((l) => !isLoaderSupported(l.id, selectedVersion)))
 
   async function loadForgeVersions(forVersion: string) {
     isLoadingForge = true
@@ -151,7 +157,7 @@
       const versions = await invoke<ForgeVersion[]>("get_forge_versions")
       const filtered = versions.filter((v: ForgeVersion) => v.minecraft_version === forVersion)
       forgeVersions = filtered
-      if (filtered.length > 0) selectedForgeVersion = filtered[0].forge_version
+      selectedForgeVersion = filtered.length > 0 ? filtered[0].forge_version : ""
     } catch (error) {
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to load Forge versions" + `: ${error}`, type: "danger" }
     } finally {
@@ -180,7 +186,7 @@
       const versions = await invoke<NeoForgeVersion[]>("get_neoforge_versions")
       const filtered = versions.filter((v: NeoForgeVersion) => v.minecraft_version === forVersion)
       neoforgeVersions = filtered
-      if (filtered.length > 0) selectedNeoforgeVersion = filtered[0].neoforge_version
+      selectedNeoforgeVersion = filtered.length > 0 ? filtered[0].neoforge_version : ""
     } catch (error) {
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to load NeoForge versions" + `: ${error}`, type: "danger" }
     } finally {
@@ -188,73 +194,36 @@
     }
   }
 
-  function handleLoaderChange(newLoader: "vanilla" | "fabric" | "neoforge" | "forge") {
+  function handleLoaderChange(newLoader: LoaderType) {
+    if (!isLoaderSupported(newLoader, selectedVersion)) return
+    loaderDir = LOADERS.findIndex((l) => l.id === newLoader) > LOADERS.findIndex((l) => l.id === loaderType) ? 1 : -1
     loaderType = newLoader
+    openDropdown = null
 
-    if (newLoader === "fabric") {
-      if (versionFilter === "snapshot") versionFilter = "release"
+    if (newLoader === "fabric" && fabricVersions.length === 0) loadFabricVersions()
+    if (newLoader === "neoforge") loadNeoforgeVersions(selectedVersion)
+    if (newLoader === "forge") loadForgeVersions(selectedVersion)
+  }
 
-      const currentIsUnsupported = !fabricSupportedVersions.includes(selectedVersion)
-        || allVersions.find((v: MinecraftVersion) => v.id === selectedVersion)?.type === "snapshot"
-      if (currentIsUnsupported && fabricSupportedVersions.length > 0 && allVersions.length > 0) {
-        const firstSupported = allVersions.find((v: MinecraftVersion) =>
-          v.type === "release" &&
-          fabricSupportedVersions.includes(v.id)
-        )
-        if (firstSupported) selectedVersion = firstSupported.id
-      }
-
-      if (fabricVersions.length === 0) loadFabricVersions()
+  function applyVersion(versionId: string) {
+    selectedVersion = versionId
+    if (loaderType !== "vanilla" && !isLoaderSupported(loaderType, versionId)) {
+      loaderType = "vanilla"
+      return
     }
-
-    if (newLoader === "neoforge") {
-      if (versionFilter === "snapshot") versionFilter = "release"
-
-      const currentIsUnsupported = !neoforgeSupportedVersions.includes(selectedVersion)
-        || allVersions.find((v: MinecraftVersion) => v.id === selectedVersion)?.type === "snapshot"
-      if (currentIsUnsupported && neoforgeSupportedVersions.length > 0 && allVersions.length > 0) {
-        const firstSupported = allVersions.find((v: MinecraftVersion) =>
-          v.type === "release" &&
-          neoforgeSupportedVersions.includes(v.id)
-        )
-        if (firstSupported) {
-          selectedVersion = firstSupported.id
-          loadNeoforgeVersions(firstSupported.id)
-        }
-      } else {
-        loadNeoforgeVersions(selectedVersion)
-      }
-    }
-
-    if (newLoader === "forge") {
-      if (versionFilter === "snapshot") versionFilter = "release"
-
-      const currentIsUnsupported = !forgeSupportedVersions.includes(selectedVersion)
-        || allVersions.find((v: MinecraftVersion) => v.id === selectedVersion)?.type === "snapshot"
-      if (currentIsUnsupported && forgeSupportedVersions.length > 0 && allVersions.length > 0) {
-        const firstSupported = allVersions.find((v: MinecraftVersion) =>
-          v.type === "release" &&
-          forgeSupportedVersions.includes(v.id)
-        )
-        if (firstSupported) {
-          selectedVersion = firstSupported.id
-          loadForgeVersions(firstSupported.id)
-        }
-      } else {
-        loadForgeVersions(selectedVersion)
-      }
-    }
+    if (loaderType === "neoforge") loadNeoforgeVersions(versionId)
+    if (loaderType === "forge") loadForgeVersions(versionId)
   }
 
   function handleVersionSelect(versionId: string) {
-    selectedVersion = versionId
-    isVersionDropdownOpen = false
-    if (loaderType === "neoforge") {
-      loadNeoforgeVersions(versionId)
-    }
-    if (loaderType === "forge") {
-      loadForgeVersions(versionId)
-    }
+    openDropdown = null
+    applyVersion(versionId)
+  }
+
+  function handleVersionFilterChange(filter: "release" | "snapshot") {
+    versionFilter = filter
+    const first = allVersions.find((v: MinecraftVersion) => v.type === filter)
+    if (first) applyVersion(first.id)
   }
 
   function handleClose() {
@@ -327,39 +296,162 @@
     }
   }
 
-  function handleVersionFilterChange(filter: "release" | "snapshot") {
-    versionFilter = filter
-    const available = (filter === "snapshot"
-      ? allVersions.filter((v: MinecraftVersion) => v.type === "snapshot")
-      : allVersions.filter((v: MinecraftVersion) => v.type === "release")
-    ).filter((v: MinecraftVersion) => {
-      if (loaderType === "fabric" && filter === "release") return fabricSupportedVersions.includes(v.id)
-      if (loaderType === "neoforge" && filter === "release") return neoforgeSupportedVersions.includes(v.id)
-      if (loaderType === "forge" && filter === "release") return forgeSupportedVersions.includes(v.id)
-      return true
-    })
-
-    if (available.length > 0) {
-      selectedVersion = available[0].id
-      if (loaderType === "neoforge") loadNeoforgeVersions(available[0].id)
-      if (loaderType === "forge") loadForgeVersions(available[0].id)
-    }
-  }
-
   let isCreateDisabled = $derived(
     isCreating
     || !newInstanceName.trim()
     || instanceExists
-    || (loaderType === "fabric" && !selectedFabricVersion)
-    || (loaderType === "neoforge" && !selectedNeoforgeVersion)
-    || (loaderType === "forge" && !selectedForgeVersion)
     || isLoadingVersions
-    || filteredVersions.length === 0
+    || !selectedVersion
+    || (loaderType === "fabric" && (isLoadingFabric || !selectedFabricVersion))
+    || (loaderType === "neoforge" && (isLoadingNeoforge || !selectedNeoforgeVersion))
+    || (loaderType === "forge" && (isLoadingForge || !selectedForgeVersion))
   )
+
+  let canContinue = $derived(
+    step === "name" ? !!newInstanceName.trim() && !instanceExists
+    : step === "version" ? !!selectedVersion && !isLoadingVersions
+    : !isCreateDisabled
+  )
+
+  function goTo(next: CreateStep) {
+    if (next === step) return
+    navDir = STEP_ORDER[next] > STEP_ORDER[step] ? 1 : -1
+    openDropdown = null
+    step = next
+  }
+
+  function goNext() {
+    if (!canContinue) return
+    if (step === "name") goTo("version")
+    else if (step === "version") goTo("loader")
+    else handleCreateInstance()
+  }
+
+  function goBack() {
+    if (step === "loader") goTo("version")
+    else if (step === "version") goTo("name")
+  }
+
+  let activeLoader = $derived(LOADERS.find((l) => l.id === loaderType) ?? LOADERS[0])
 </script>
 
+{#snippet dropdown(
+  id: "mc" | "fabric" | "neoforge" | "forge",
+  options: { value: string; label: string }[],
+  selected: string,
+  display: string,
+  onPick: (value: string) => void,
+  listHeight: string = "max-h-48"
+)}
+  <div class="relative" data-dropdown>
+    <button
+      id="create-{id}-btn"
+      type="button"
+      onclick={() => (openDropdown = openDropdown === id ? null : id)}
+      class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {openDropdown === id ? 'rounded-t-sm' : 'rounded-sm'}"
+      disabled={isCreating}
+    >
+      {display}
+    </button>
+    <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+      {#if openDropdown === id}
+        <ChevronUp size={18} strokeWidth={3} />
+      {:else}
+        <ChevronDown size={18} strokeWidth={3} />
+      {/if}
+    </div>
+
+    {#if openDropdown === id}
+      <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md {listHeight} overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+        {#each options as option (option.value)}
+          <button
+            type="button"
+            onclick={() => onPick(option.value)}
+            class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+          >
+            <span>{option.label}</span>
+            {#if selected === option.value}
+              <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
+            {/if}
+          </button>
+        {/each}
+      </div>
+    {/if}
+  </div>
+{/snippet}
+
+{#snippet statusBox(kind: "loading" | "empty", text: string, color?: string)}
+  <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
+    {#if kind === "loading"}
+      <Loader2 size={16} class="animate-spin" style={color ? `color: ${color}` : undefined} />
+    {:else}
+      <AlertCircle size={16} />
+    {/if}
+    <span>{text}</span>
+  </div>
+{/snippet}
+
+{#snippet pageHeader()}
+  <div class="flex items-center justify-between gap-3 px-5 pt-5">
+    <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight leading-tight min-w-0 truncate">{newInstanceName.trim() ? `Creating ${newInstanceName.trim()}` : "New Instance"}</h2>
+    <div class="flex items-center gap-4 shrink-0">
+      <div class="flex items-center gap-1.5">
+        {#each STEPS as s (s)}
+          <div
+            class="h-1 rounded-full transition-all duration-300 {step === s ? 'w-6 bg-[var(--accent-primary)]' : STEP_ORDER[s] < STEP_ORDER[step] ? 'w-2 bg-[var(--accent-primary)]/50' : 'w-2 bg-[var(--bg-hover)]'}"
+          ></div>
+        {/each}
+      </div>
+      <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0">
+        <X size={18} strokeWidth={2} />
+      </button>
+    </div>
+  </div>
+{/snippet}
+
+{#snippet pageFooter()}
+  <div class="flex items-center justify-between gap-2 px-5 pb-5 pt-3">
+    {#if step === "name"}
+      <button
+        onclick={handleClose}
+        disabled={isCreating}
+        class="h-8 px-4 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+      >
+        Cancel
+      </button>
+    {:else}
+      <button
+        onclick={goBack}
+        disabled={isCreating}
+        class="h-8 pl-3 pr-4 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md flex items-center gap-1.5 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+      >
+        <ArrowLeft size={14} strokeWidth={3} />
+        Back
+      </button>
+    {/if}
+
+    <button
+      onclick={goNext}
+      disabled={!canContinue}
+      class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+    >
+      {#if step === "loader"}
+        {#if isCreating}
+          <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          <span>Creating...</span>
+        {:else}
+          <span>Create Instance</span>
+        {/if}
+      {:else}
+        <span>Continue</span>
+        <ArrowRight size={14} strokeWidth={3} />
+      {/if}
+    </button>
+  </div>
+{/snippet}
+
 <div
-    class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop {isClosing ? 'closing' : ''}"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-hidden modal-backdrop {isClosing ? 'closing' : ''}"
     class:closing={isClosing}
     role="presentation"
     onmousedown={(e) => { backdropArmed = e.target === e.currentTarget }}
@@ -369,308 +461,187 @@
   >
     <div
       role="presentation"
-      class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-full max-w-2xl modal-content"
+      class="w-full max-w-lg h-[380px] flex flex-col overflow-x-clip bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md modal-content"
       class:closing={isClosing}
       onclick={(e) => e.stopPropagation()}
       style="pointer-events: auto"
     >
-      <div class="flex items-center justify-between px-5 pt-5 pb-4">
-        <div class="flex items-center gap-3 min-w-0">
-          <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">New Instance</h2>
-          <button type="button" onclick={handleImportFile} disabled={isCreating} class="h-7.5 px-3 rounded-sm text-sm font-medium cursor-pointer bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0">
-            <FileDown size={16} strokeWidth={2} />
-            <span>Import</span>
-          </button>
-        </div>
-        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
-          <X size={18} strokeWidth={2} />
-        </button>
-      </div>
+      {@render pageHeader()}
 
-      <div class="px-5 pb-4 grid grid-cols-2 gap-5">
-        <div class="space-y-5">
-        <div>
-          <label for="create-instance-name" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Instance Name</label>
-          <input
-            id="create-instance-name"
-            type="text"
-            bind:value={newInstanceName}
-            placeholder="My Minecraft Instance"
-            class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all {instanceExists && newInstanceName.trim() ? 'ring-2 ring-red-500' : ''}"
-            disabled={isCreating}
-          />
-          {#if instanceExists && newInstanceName.trim()}
-            <div class="flex items-center gap-1.5 mt-2 text-xs text-red-400">
-              <AlertCircle size={12} strokeWidth={2} />
-              <span>An instance with this name already exists</span>
-            </div>
-          {/if}
-        </div>
+      <div class="flex-1 min-h-0 grid">
+      {#if step === "name"}
+        <div class="col-start-1 row-start-1 {pageClass}" in:fly={{ x: 72 * navDir, duration: 420, delay: 200, easing: cubicOut }} out:fly={{ x: -72 * navDir, duration: 300, easing: cubicIn }}>
+          <div class="flex-1 min-h-0 flex flex-col">
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">Name your instance</h3>
 
-        <div>
-          <div class="flex items-center justify-between mb-2.5">
-            <label for="create-mc-version-btn" class="text-sm font-medium text-[var(--text-primary)]">Minecraft Version</label>
-            <div class="flex items-center gap-2">
-              <button
-                type="button"
-                onclick={() => handleVersionFilterChange("release")}
+            <div class="mt-3">
+              <label for="create-instance-name" class="sr-only">Instance Name</label>
+              <input
+                id="create-instance-name"
+                type="text"
+                autocomplete="off"
+                autocapitalize="off"
+                spellcheck="false"
+                bind:value={newInstanceName}
+                use:autofocus
+                onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); goNext() } }}
+                placeholder="My Minecraft Instance"
+                class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none border transition-colors {instanceExists && newInstanceName.trim() ? 'border-red-500/60' : 'border-transparent'}"
                 disabled={isCreating}
-                class="text-xs font-medium cursor-pointer {versionFilter === 'release' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-muted)]'}"
-              >
-                Releases
-              </button>
-              <span class="text-gray-600">|</span>
-              <button
-                type="button"
-                onclick={() => handleVersionFilterChange("snapshot")}
-                disabled={isCreating || loaderType === "fabric" || loaderType === "neoforge" || loaderType === "forge"}
-                class="text-xs font-medium {loaderType === 'fabric' || loaderType === 'neoforge' || loaderType === 'forge' ? 'text-gray-600 cursor-not-allowed' : versionFilter === 'snapshot' ? 'text-[var(--text-primary)] cursor-pointer' : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer'}"
-              >
-                Snapshots
-              </button>
-            </div>
-          </div>
-          {#if isLoadingVersions}
-            <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
-              <Loader2 size={16} class="animate-spin" />
-              <span>Loading versions...</span>
-            </div>
-          {:else if filteredVersions.length === 0}
-            <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
-              <AlertCircle size={16} />
-              <span>No compatible versions available</span>
-            </div>
-          {:else}
-            <div class="relative" bind:this={versionDropdownRef}>
-              <button
-                id="create-mc-version-btn"
-                type="button"
-                onclick={() => isVersionDropdownOpen = !isVersionDropdownOpen}
-                class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
-                disabled={isCreating}
-              >
-                {selectedVersion}
-              </button>
-              <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                {#if isVersionDropdownOpen}
-                  <ChevronUp size={18} strokeWidth={3} />
-                {:else}
-                  <ChevronDown size={18} strokeWidth={3} />
-                {/if}
-              </div>
-
-              {#if isVersionDropdownOpen}
-                <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
-                  {#each filteredVersions as version (version.id)}
-                    <button
-                      type="button"
-                      onclick={() => handleVersionSelect(version.id)}
-                      class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                    >
-                      <span>{version.id}</span>
-                      {#if selectedVersion === version.id}
-                        <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
-                      {/if}
-                    </button>
-                  {/each}
+              />
+              {#if instanceExists && newInstanceName.trim()}
+                <div class="flex items-center gap-1.5 mt-2 text-xs text-red-400">
+                  <AlertCircle size={12} strokeWidth={2} />
+                  <span>An instance with this name already exists</span>
                 </div>
               {/if}
             </div>
-          {/if}
-        </div>
-        </div>
-        <div class="space-y-5">
-        <div>
-          <label for="loader-vanilla" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Modloader</label>
-          <div class="grid grid-cols-2 gap-2" role="group" aria-labelledby="modloader-label">
-            {#each ["vanilla", "fabric", "neoforge", "forge"] as const as loader}
-              {@const colors: Record<string, string> = { vanilla: "bg-[#16a34a]", fabric: "bg-[#3b82f6]", neoforge: "bg-[#f97316]", forge: "bg-[#e05d2e]" }}
-              {@const labels: Record<string, string> = { vanilla: "Vanilla", fabric: "Fabric", neoforge: "NeoForge", forge: "Forge" }}
-              {@const isActive = loaderType === loader}
-              <button
-                id={loader === "vanilla" ? "loader-vanilla" : undefined}
-                type="button"
-                onclick={() => handleLoaderChange(loader)}
-                disabled={isCreating}
-                class="px-3 h-9 rounded-sm text-[13px] font-medium cursor-pointer flex items-center justify-center gap-2 {isActive ? `${colors[loader]} text-white` : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
-              >
-                <div class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center {isActive ? 'border-white' : 'border-gray-500'}">
-                  {#if isActive}
-                    <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                  {/if}
-                </div>
-                <span>{labels[loader]}</span>
-              </button>
-            {/each}
+
+            <p class="text-[13px] text-[var(--text-secondary)] mt-5">Or upload a custom .mrpack or .zip instead</p>
+            <button
+              type="button"
+              onclick={handleImportFile}
+              disabled={isCreating}
+              class="mt-1.5 self-start h-7.5 px-3 rounded-sm text-sm font-medium cursor-pointer bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <FileDown size={16} strokeWidth={2} />
+              <span>Import from file</span>
+            </button>
           </div>
         </div>
-
-        {#if loaderType === "fabric"}
-          <div class="mt-5.5">
-            {#if isLoadingFabric}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
-                <Loader2 size={16} class="animate-spin text-[#3b82f6]" />
-                <span>Loading versions...</span>
-              </div>
-            {:else}
-              <div class="relative" bind:this={fabricDropdownRef}>
+      {:else if step === "version"}
+        <div class="col-start-1 row-start-1 {pageClass}" in:fly={{ x: 72 * navDir, duration: 420, delay: 200, easing: cubicOut }} out:fly={{ x: -72 * navDir, duration: 300, easing: cubicIn }}>
+          <div class="flex-1 min-h-0 flex flex-col">
+            <div>
+              <label for="create-mc-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Choose a Minecraft version</label>
+              <div class="grid grid-cols-2 gap-1 p-1 rounded-md bg-[var(--bg-tertiary)] mb-3">
                 <button
-                  id="create-fabric-loader-btn"
                   type="button"
-                  onclick={() => isFabricDropdownOpen = !isFabricDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isFabricDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
+                  onclick={() => handleVersionFilterChange("release")}
                   disabled={isCreating}
+                  class="h-8 rounded-sm text-sm font-medium cursor-pointer disabled:cursor-not-allowed {versionFilter === 'release' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
                 >
-                  {selectedFabricVersion} {fabricVersions.find((v: FabricVersion) => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
+                  Releases
                 </button>
-                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  {#if isFabricDropdownOpen}
-                    <ChevronUp size={18} strokeWidth={3} />
-                  {:else}
-                    <ChevronDown size={18} strokeWidth={3} />
-                  {/if}
-                </div>
+                <button
+                  type="button"
+                  onclick={() => handleVersionFilterChange("snapshot")}
+                  disabled={isCreating}
+                  class="h-8 rounded-sm text-sm font-medium cursor-pointer disabled:cursor-not-allowed {versionFilter === 'snapshot' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+                >
+                  Snapshots
+                </button>
+              </div>
 
-                {#if isFabricDropdownOpen}
-                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
-                    {#each fabricVersions as version (version.version)}
-                      <button
-                        type="button"
-                        onclick={() => { selectedFabricVersion = version.version; isFabricDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                      >
-                        <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
-                        {#if selectedFabricVersion === version.version}
-                          <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
-                        {/if}
-                      </button>
-                    {/each}
+              {#if isLoadingVersions}
+                {@render statusBox("loading", "Loading versions...")}
+              {:else if filteredVersions.length === 0}
+                {@render statusBox("empty", "No versions available")}
+              {:else}
+                {@render dropdown("mc", mcOptions, selectedVersion, selectedVersion, handleVersionSelect, "max-h-64")}
+              {/if}
+            </div>
+          </div>
+        </div>
+      {:else}
+        <div class="col-start-1 row-start-1 {pageClass}" in:fly={{ x: 72 * navDir, duration: 420, delay: 200, easing: cubicOut }} out:fly={{ x: -72 * navDir, duration: 300, easing: cubicIn }}>
+          <div class="flex-1 min-h-0 flex flex-col">
+            <h3 class="text-sm font-semibold text-[var(--text-primary)]">Choose a modloader</h3>
+            {#if hasUnavailableLoaders}
+              <p class="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">Greyed-out loaders don't support this version.</p>
+            {/if}
+
+            <div class="mt-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Modloader">
+              {#each LOADERS as loader (loader.id)}
+                {@const isActive = loaderType === loader.id}
+                {@const supported = isLoaderSupported(loader.id, selectedVersion)}
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  title={supported ? undefined : `${loader.label} isn't available for Minecraft ${selectedVersion}`}
+                  onclick={() => handleLoaderChange(loader.id)}
+                  disabled={isCreating || !supported}
+                  class="px-3 h-9 rounded-sm text-[13px] font-medium flex items-center justify-center gap-2 {!supported ? 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] opacity-40 cursor-not-allowed' : isActive ? `${loader.bg} text-white cursor-pointer` : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)] cursor-pointer'}"
+                >
+                  <div class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center {isActive ? 'border-white' : 'border-gray-500'}">
+                    {#if isActive}
+                      <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                    {/if}
                   </div>
+                  <span>{loader.label}</span>
+                </button>
+              {/each}
+            </div>
+
+            {#if loaderType !== "vanilla"}
+            <div class="mt-5 grid" transition:slide={{ duration: 250, easing: cubicOut }}>
+            {#key loaderType}
+            <div class="col-start-1 row-start-1" in:fly={{ x: 20 * loaderDir, duration: 250, delay: 120, easing: cubicOut }} out:fly={{ x: -20 * loaderDir, duration: 150, easing: cubicIn }}>
+            {#if loaderType === "fabric"}
+              <div>
+                <label for="create-fabric-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Fabric Loader</label>
+                {#if isLoadingFabric}
+                  {@render statusBox("loading", "Loading versions...", "#3b82f6")}
+                {:else}
+                  {@render dropdown(
+                    "fabric",
+                    fabricVersions.map((v: FabricVersion) => ({ value: v.version, label: `${v.version}${v.stable ? " (Stable)" : ""}` })),
+                    selectedFabricVersion,
+                    `${selectedFabricVersion} ${fabricVersions.find((v: FabricVersion) => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}`,
+                    (v) => { selectedFabricVersion = v; openDropdown = null }
+                  )}
                 {/if}
               </div>
             {/if}
-          </div>
-        {/if}
 
-        {#if loaderType === "neoforge"}
-          <div class="mt-5.5">
-            {#if isLoadingNeoforge}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
-                <Loader2 size={16} class="animate-spin text-[#f97316]" />
-                <span>Loading NeoForge versions...</span>
-              </div>
-            {:else if neoforgeVersions.length === 0}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
-                <AlertCircle size={16} />
-                <span>No NeoForge versions available for Minecraft {selectedVersion}</span>
-              </div>
-            {:else}
-              <div class="relative" bind:this={neoforgeDropdownRef}>
-                <button
-                  id="create-neoforge-btn"
-                  type="button"
-                  onclick={() => isNeoforgeDropdownOpen = !isNeoforgeDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isNeoforgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
-                  disabled={isCreating}
-                >
-                  {selectedNeoforgeVersion}
-                </button>
-                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  {#if isNeoforgeDropdownOpen}
-                    <ChevronUp size={18} strokeWidth={3} />
-                  {:else}
-                    <ChevronDown size={18} strokeWidth={3} />
-                  {/if}
-                </div>
-
-                {#if isNeoforgeDropdownOpen}
-                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
-                    {#each neoforgeVersions as version (version.neoforge_version)}
-                      <button
-                        type="button"
-                        onclick={() => { selectedNeoforgeVersion = version.neoforge_version; isNeoforgeDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                      >
-                        <span>{version.neoforge_version}</span>
-                        {#if selectedNeoforgeVersion === version.neoforge_version}
-                          <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
-                        {/if}
-                      </button>
-                    {/each}
-                  </div>
+            {#if loaderType === "neoforge"}
+              <div>
+                <label for="create-neoforge-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">NeoForge Version</label>
+                {#if isLoadingNeoforge}
+                  {@render statusBox("loading", "Loading NeoForge versions...", "#f97316")}
+                {:else if neoforgeVersions.length === 0}
+                  {@render statusBox("empty", `No NeoForge versions available for Minecraft ${selectedVersion}`)}
+                {:else}
+                  {@render dropdown(
+                    "neoforge",
+                    neoforgeVersions.map((v: NeoForgeVersion) => ({ value: v.neoforge_version, label: v.neoforge_version })),
+                    selectedNeoforgeVersion,
+                    selectedNeoforgeVersion,
+                    (v) => { selectedNeoforgeVersion = v; openDropdown = null }
+                  )}
                 {/if}
               </div>
             {/if}
-          </div>
-        {/if}
 
-        {#if loaderType === "forge"}
-          <div class="mt-5.5">
-            {#if isLoadingForge}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
-                <Loader2 size={16} class="animate-spin text-[#e05d2e]" />
-                <span>Loading Forge versions...</span>
-              </div>
-            {:else if forgeVersions.length === 0}
-              <div class="flex items-center gap-2 text-[var(--text-muted)] text-sm py-3.5 px-4 bg-[var(--bg-tertiary)] rounded-sm">
-                <AlertCircle size={16} />
-                <span>No Forge versions available for Minecraft {selectedVersion}</span>
-              </div>
-            {:else}
-              <div class="relative" bind:this={forgeDropdownRef}>
-                <button
-                  id="create-forge-btn"
-                  type="button"
-                  onclick={() => isForgeDropdownOpen = !isForgeDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isForgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
-                  disabled={isCreating}
-                >
-                  {selectedForgeVersion}
-                </button>
-                <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  {#if isForgeDropdownOpen}
-                    <ChevronUp size={18} strokeWidth={3} />
-                  {:else}
-                    <ChevronDown size={18} strokeWidth={3} />
-                  {/if}
-                </div>
-
-                {#if isForgeDropdownOpen}
-                  <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md max-h-60 overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
-                    {#each forgeVersions as version (version.forge_version)}
-                      <button
-                        type="button"
-                        onclick={() => { selectedForgeVersion = version.forge_version; isForgeDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                      >
-                        <span>{version.forge_version}</span>
-                        {#if selectedForgeVersion === version.forge_version}
-                          <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
-                        {/if}
-                      </button>
-                    {/each}
-                  </div>
+            {#if loaderType === "forge"}
+              <div>
+                <label for="create-forge-btn" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Forge Version</label>
+                {#if isLoadingForge}
+                  {@render statusBox("loading", "Loading Forge versions...", "#e05d2e")}
+                {:else if forgeVersions.length === 0}
+                  {@render statusBox("empty", `No Forge versions available for Minecraft ${selectedVersion}`)}
+                {:else}
+                  {@render dropdown(
+                    "forge",
+                    forgeVersions.map((v: ForgeVersion) => ({ value: v.forge_version, label: v.forge_version })),
+                    selectedForgeVersion,
+                    selectedForgeVersion,
+                    (v) => { selectedForgeVersion = v; openDropdown = null }
+                  )}
                 {/if}
               </div>
             {/if}
+            </div>
+            {/key}
+            </div>
+            {/if}
           </div>
-        {/if}
         </div>
+      {/if}
       </div>
 
-      <div class="flex items-center justify-end gap-2 px-5 pb-5 pt-1">
-        <button onclick={handleClose} disabled={isCreating} class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
-          Cancel
-        </button>
-        <button onclick={handleCreateInstance} disabled={isCreateDisabled} class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-          {#if isCreating}
-            <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            <span>Creating...</span>
-          {:else}
-            <span>Create Instance</span>
-          {/if}
-        </button>
-      </div>
+      {@render pageFooter()}
     </div>
   </div>
 
