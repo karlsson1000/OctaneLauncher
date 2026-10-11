@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte"
   import { Server, Plus, Search, Trash2, Play, GripVertical } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import CreateServerModal from "./CreateServerModal.svelte"
@@ -7,54 +8,71 @@
   import { store } from "../../lib/launcherStore.svelte"
   import { sanitizeHtml } from "../../lib/sanitize"
 
-  let servers: ServerInfo[] = $state([])
+  const DEFAULT_PORT = 25565
+  const REFRESH_MS = 5 * 60 * 1000
+  const FETCH_TIMEOUT_MS = 10_000
+  const ROW_HEIGHT = 100
+
+  const formatAddress = (address: string, port: number) =>
+    port === DEFAULT_PORT ? address : `${address}:${port}`
+
+  const pingColor = (ping: number) =>
+    ping < 80 ? "#16a34a" : ping < 200 ? "#eab308" : "#e93636"
+
+  function joinButtonClass(busy: boolean, online: boolean) {
+    if (busy) return "bg-red-500/10 text-red-400 cursor-not-allowed"
+    if (online) return "bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
+    return "bg-[var(--bg-hover-strong)] text-[var(--text-muted)] cursor-not-allowed"
+  }
+
+  let servers = $state<ServerInfo[]>([])
   let searchQuery = $state("")
   let showAddModal = $state(false)
   let serverToDelete = $state<string | null>(null)
   let launchingServer = $state<string | null>(null)
+
   let isAnyInstanceRunning = $derived(store.runningInstances.size > 0)
+  let hasServers = $derived(servers.length > 0)
+  let isFiltering = $derived(searchQuery.trim() !== "")
 
-  $effect(() => { loadServers() })
-
-  $effect(() => {
-    const hasServers = servers.length > 0
-    if (!hasServers) return
-    const interval = setInterval(() => {
-      servers.forEach(server => refreshServerStatus(server))
-    }, 5 * 60 * 1000)
-    return () => clearInterval(interval)
+  let filteredServers = $derived.by(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return servers
+    return servers.filter(
+      s => s.name.toLowerCase().includes(query) || s.address.toLowerCase().includes(query)
+    )
   })
 
-  async function loadServers() {
+  onMount(() => {
+    loadServers()
+    return cleanupDrag
+  })
+
+  $effect(() => {
+    if (!hasServers) return
+    const id = setInterval(refreshAll, REFRESH_MS)
+    return () => clearInterval(id)
+  })
+
+  async function pingServer(address: string, port: number): Promise<number | undefined> {
     try {
-      const serverList = await invoke<ServerInfo[]>("get_servers")
-      servers = serverList
-      serverList.forEach(server => refreshServerStatus(server))
-    } catch (error) {
-      console.error("Failed to load servers:", error)
-      servers = []
+      return await invoke<number>("ping_server", { address, port })
+    } catch (e) {
+      console.error("Failed to ping server:", e)
+      return undefined
     }
   }
 
   async function fetchServerStatus(address: string, port: number): Promise<ServerInfo | null> {
     try {
-      const fullAddress = port === 25565 ? address : `${address}:${port}`
+      const fullAddress = formatAddress(address, port)
       const response = await fetch(`https://api.mcsrvstat.us/3/${fullAddress}`, {
-        headers: { "User-Agent": "OctaneLauncher/1.0" },
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       })
-
       if (!response.ok) throw new Error(`API returned ${response.status}`)
 
       const data: McSrvStatResponse = await response.json()
-
-      let ping: number | undefined = undefined
-      if (data.online) {
-        try {
-          ping = await invoke<number>("ping_server", { address, port })
-        } catch (e) {
-          console.error("Failed to ping server:", e)
-        }
-      }
+      const ping = data.online ? await pingServer(address, port) : undefined
 
       return {
         name: address,
@@ -66,7 +84,7 @@
         players_list: data.players?.list,
         version: data.version || data.protocol?.name,
         motd: data.motd?.clean?.join("\n"),
-        motd_html: data.motd?.html?.map(sanitizeHtml),
+        motd_html: data.motd?.html?.map(line => sanitizeHtml(line)),
         favicon: data.icon ? `https://api.mcsrvstat.us/icon/${fullAddress}` : undefined,
         last_checked: Date.now(),
         ping,
@@ -77,26 +95,60 @@
     }
   }
 
-  async function refreshServerStatus(server: ServerInfo) {
+  async function persistStatus(serverName: string, status: ServerInfo) {
     try {
-      const statusData = await fetchServerStatus(server.address, server.port)
-      if (statusData) {
-        const updated = { ...statusData, name: server.name }
-        servers = servers.map(s => s.name === server.name ? updated : s)
-        try {
-          await invoke("update_server_status", { serverName: server.name, status: statusData })
-        } catch (e) { console.error("Failed to save server status:", e) }
-      }
-    } catch (error) {
-      console.error("Failed to refresh server:", error)
+      await invoke("update_server_status", { serverName, status })
+    } catch (e) {
+      console.error("Failed to save server status:", e)
     }
   }
 
-  async function handleDeleteServer() {
-    if (!serverToDelete) return
+  async function refreshServerStatus(server: ServerInfo) {
+    const status = await fetchServerStatus(server.address, server.port)
+    if (!status) return
+    if (!servers.some(s => s.name === server.name)) return
+
+    servers = servers.map(s => (s.name === server.name ? { ...status, name: server.name } : s))
+    await persistStatus(server.name, status)
+  }
+
+  function refreshAll() {
+    servers.forEach(s => refreshServerStatus(s))
+  }
+
+  async function loadServers() {
     try {
-      await invoke("delete_server", { serverName: serverToDelete })
-      await loadServers()
+      servers = await invoke<ServerInfo[]>("get_servers")
+      refreshAll()
+    } catch (error) {
+      console.error("Failed to load servers:", error)
+      servers = []
+    }
+  }
+
+  async function handleServerAdded(newServer: ServerInfo) {
+    try {
+      await invoke("add_server", {
+        name: newServer.name,
+        address: newServer.address,
+        port: newServer.port,
+      })
+    } catch (error) {
+      console.error("Failed to save server:", error)
+      alert(`Failed to add server: ${error}`)
+      return
+    }
+
+    servers = [...servers, { ...newServer, status: "unknown" }]
+    refreshServerStatus(newServer)
+  }
+
+  async function handleDeleteServer() {
+    const name = serverToDelete
+    if (!name) return
+    try {
+      await invoke("delete_server", { serverName: name })
+      servers = servers.filter(s => s.name !== name)
     } catch (error) {
       console.error("Delete error:", error)
     } finally {
@@ -104,196 +156,8 @@
     }
   }
 
-  async function handleServerAdded(newServer: ServerInfo) {
-    try {
-      await invoke("add_server", { name: newServer.name, address: newServer.address, port: newServer.port })
-    } catch (error) {
-      console.error("Failed to save server:", error)
-      alert(`Failed to add server: ${error}`)
-      return
-    }
-
-    const statusData = await fetchServerStatus(newServer.address, newServer.port)
-
-    if (statusData) {
-      const serverWithStatus = { ...statusData, name: newServer.name }
-      servers = [...servers, serverWithStatus]
-      try {
-        await invoke("update_server_status", { serverName: newServer.name, status: statusData })
-      } catch (e) { console.error("Failed to save server status:", e) }
-    } else {
-      servers = [...servers, { ...newServer, status: "unknown" }]
-    }
-  }
-
-  let filteredServers = $derived(
-    servers.filter(server =>
-      server.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      server.address.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  )
-
-  let dragState: {
-    fromIndex: number
-    draggedOverIndex: number | null
-    ghostEl: HTMLElement | null
-    origCardEl: HTMLElement | null
-    offsetY: number
-    initialLeft: number
-    minY: number
-    maxY: number
-  } | null = null
-
-  let draggedOverIndex: number | null = $state(null)
-
-  let pointerMoveImpl = (_e: PointerEvent) => {}
-  let pointerUpImpl = (_e: PointerEvent) => {}
-  let pointerCancelImpl = (_e: PointerEvent) => {}
-
-  function stablePointerMove(e: PointerEvent) { pointerMoveImpl(e) }
-  function stablePointerUp(e: PointerEvent) { pointerUpImpl(e) }
-  function stablePointerCancel(e: PointerEvent) { pointerCancelImpl(e) }
-
-  function cleanupDrag() {
-    document.removeEventListener("pointermove", stablePointerMove)
-    document.removeEventListener("pointerup", stablePointerUp)
-    document.removeEventListener("pointercancel", stablePointerCancel)
-    if (dragState) {
-      if (dragState.ghostEl && dragState.ghostEl.parentNode) {
-        dragState.ghostEl.parentNode.removeChild(dragState.ghostEl)
-      }
-      if (dragState.origCardEl) {
-        dragState.origCardEl.style.opacity = ""
-      }
-    }
-    dragState = null
-    draggedOverIndex = null
-  }
-
-  pointerMoveImpl = (e: PointerEvent) => {
-    const state = dragState
-    if (!state || !state.ghostEl) return
-
-    state.ghostEl.style.left = `${state.initialLeft}px`
-    const clampedY = Math.max(state.minY, Math.min(e.clientY - state.offsetY, state.maxY))
-    state.ghostEl.style.top = `${clampedY}px`
-
-    const els = document.elementsFromPoint(e.clientX, e.clientY)
-    for (const el of els) {
-      if (el === state.ghostEl) continue
-      const card = (el as HTMLElement).closest("[data-server-card]") as HTMLElement | null
-      if (card && card !== state.ghostEl) {
-        const idx = Number(card.dataset.serverIndex)
-        if (!isNaN(idx) && idx !== state.draggedOverIndex) {
-          state.draggedOverIndex = idx
-          draggedOverIndex = idx
-        }
-        return
-      }
-    }
-    if (state.draggedOverIndex !== null) {
-      state.draggedOverIndex = null
-      draggedOverIndex = null
-    }
-  }
-
-  pointerUpImpl = (_e: PointerEvent) => {
-    const state = dragState
-    if (!state) return
-    const fromIdx = state.fromIndex
-    const toIdx = state.draggedOverIndex
-    cleanupDrag()
-    if (toIdx === null || fromIdx === toIdx) return
-
-    const list = filteredServers
-    const reordered = list.slice()
-    const [moved] = reordered.splice(fromIdx, 1)
-    reordered.splice(toIdx, 0, moved)
-
-    if (searchQuery) {
-      const movedNames = new Set(reordered.map(s => s.name))
-      const remaining = servers.filter(s => !movedNames.has(s.name))
-      persistReorder([...reordered, ...remaining])
-    } else {
-      persistReorder(reordered)
-    }
-  }
-
-  pointerCancelImpl = (_e: PointerEvent) => {
-    cleanupDrag()
-  }
-
-  async function persistReorder(ordered: ServerInfo[]) {
-    servers = ordered
-    try {
-      await invoke("reorder_servers", { serverNames: ordered.map(s => s.name) })
-    } catch (e) {
-      console.error("Failed to reorder servers:", e)
-    }
-  }
-
-  function handleGripPointerDown(e: PointerEvent, index: number) {
-    if (searchQuery.trim()) return
-    e.preventDefault()
-    e.stopPropagation()
-
-    const gripEl = e.currentTarget as HTMLElement
-    const cardEl = gripEl.closest("[data-server-card]") as HTMLElement | null
-    if (!cardEl) return
-
-    const rect = cardEl.getBoundingClientRect()
-    const offsetY = e.clientY - rect.top
-    const initialLeft = rect.left
-
-    const listEl = cardEl.parentElement
-    let minY = -Infinity
-    let maxY = Infinity
-    if (listEl) {
-      const listRect = listEl.getBoundingClientRect()
-      minY = listRect.top
-      maxY = listRect.bottom - rect.height
-    }
-
-    const ghost = cardEl.cloneNode(true) as HTMLElement
-    ghost.removeAttribute("data-server-card")
-    ghost.dataset.serverIndex = "-1"
-    ghost.style.position = "fixed"
-    ghost.style.left = `${initialLeft}px`
-    ghost.style.top = `${e.clientY - offsetY}px`
-    ghost.style.width = `${rect.width}px`
-    ghost.style.pointerEvents = "none"
-    ghost.style.zIndex = "9999"
-    ghost.style.transform = "scale(1.03)"
-    ghost.style.opacity = "0.95"
-    ghost.style.transition = "none"
-    ghost.style.outline = "none"
-    ghost.style.willChange = "transform, left, top"
-    document.body.appendChild(ghost)
-
-    cardEl.style.opacity = "0.3"
-
-    dragState = {
-      fromIndex: index,
-      draggedOverIndex: index,
-      ghostEl: ghost,
-      origCardEl: cardEl,
-      offsetY,
-      initialLeft,
-      minY,
-      maxY,
-    }
-    draggedOverIndex = index
-    document.addEventListener("pointermove", stablePointerMove)
-    document.addEventListener("pointerup", stablePointerUp)
-    document.addEventListener("pointercancel", stablePointerCancel)
-  }
-
   async function handleLaunchServer(server: ServerInfo, e: MouseEvent) {
     e.stopPropagation()
-    if (server.status !== "online") {
-      alert("Server must be online to connect")
-      return
-    }
     launchingServer = server.name
     try {
       await invoke("launch_server", {
@@ -308,13 +172,116 @@
       launchingServer = null
     }
   }
+
+  interface DragState {
+    fromIndex: number
+    ghostEl: HTMLElement
+    origCardEl: HTMLElement
+    offsetY: number
+    minY: number
+    maxY: number
+  }
+
+  let dragState: DragState | null = null
+  let draggedOverIndex = $state<number | null>(null)
+
+  function cleanupDrag() {
+    document.removeEventListener("pointermove", onPointerMove)
+    document.removeEventListener("pointerup", onPointerUp)
+    document.removeEventListener("pointercancel", cleanupDrag)
+    if (dragState) {
+      dragState.ghostEl.remove()
+      dragState.origCardEl.style.opacity = ""
+    }
+    dragState = null
+    draggedOverIndex = null
+  }
+
+  function onPointerMove(e: PointerEvent) {
+    if (!dragState) return
+    const { ghostEl, offsetY, minY, maxY } = dragState
+
+    ghostEl.style.top = `${Math.max(minY, Math.min(e.clientY - offsetY, maxY))}px`
+
+    const card = document
+      .elementFromPoint(e.clientX, e.clientY)
+      ?.closest<HTMLElement>("[data-server-card]")
+    const idx = card ? Number(card.dataset.serverIndex) : NaN
+    draggedOverIndex = Number.isNaN(idx) ? null : idx
+  }
+
+  function onPointerUp() {
+    if (!dragState) return
+    const from = dragState.fromIndex
+    const to = draggedOverIndex
+    cleanupDrag()
+    if (to === null || to === from) return
+
+    const reordered = servers.slice()
+    const [moved] = reordered.splice(from, 1)
+    reordered.splice(to, 0, moved)
+    persistReorder(reordered)
+  }
+
+  async function persistReorder(ordered: ServerInfo[]) {
+    servers = ordered
+    try {
+      await invoke("reorder_servers", { serverNames: ordered.map(s => s.name) })
+    } catch (e) {
+      console.error("Failed to reorder servers:", e)
+    }
+  }
+
+  function handleGripPointerDown(e: PointerEvent, index: number) {
+    if (isFiltering) return
+    e.preventDefault()
+    e.stopPropagation()
+
+    const cardEl = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-server-card]")
+    if (!cardEl) return
+
+    const rect = cardEl.getBoundingClientRect()
+    const listRect = cardEl.parentElement?.getBoundingClientRect()
+
+    const ghost = cardEl.cloneNode(true) as HTMLElement
+    ghost.removeAttribute("data-server-card")
+    Object.assign(ghost.style, {
+      position: "fixed",
+      left: `${rect.left}px`,
+      top: `${rect.top}px`,
+      width: `${rect.width}px`,
+      pointerEvents: "none",
+      zIndex: "9999",
+      transform: "scale(1.03)",
+      opacity: "0.95",
+      transition: "none",
+      outline: "none",
+      willChange: "transform, top",
+    })
+    document.body.appendChild(ghost)
+    cardEl.style.opacity = "0.3"
+
+    dragState = {
+      fromIndex: index,
+      ghostEl: ghost,
+      origCardEl: cardEl,
+      offsetY: e.clientY - rect.top,
+      minY: listRect?.top ?? -Infinity,
+      maxY: listRect ? listRect.bottom - rect.height : Infinity,
+    }
+    draggedOverIndex = index
+
+    document.addEventListener("pointermove", onPointerMove)
+    document.addEventListener("pointerup", onPointerUp)
+    document.addEventListener("pointercancel", cleanupDrag)
+  }
 </script>
 
 <div class="p-8 space-y-4">
   <div class="max-w-7xl mx-auto">
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
-        {#if servers.length > 0}
+        {#if hasServers}
           <div class="relative rounded-md bg-[var(--bg-tertiary)]">
             <Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
             <input
@@ -337,7 +304,7 @@
       </div>
     </div>
 
-    {#if servers.length === 0}
+    {#if !hasServers}
       <div class="flex flex-col items-center justify-center py-14">
         <Server size={48} class="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
         <h3 class="text-base font-semibold text-[var(--text-primary)] mb-1">No servers added</h3>
@@ -359,23 +326,25 @@
     {:else}
       <div class="space-y-4">
         {#each filteredServers as server, index (server.name)}
-          {@const displayAddress = server.port === 25565 ? server.address : `${server.address}:${server.port}`}
           {@const isLaunching = launchingServer === server.name}
           {@const isOnline = server.status === "online"}
+          {@const isBusy = isLaunching || isAnyInstanceRunning}
           {@const isOver = draggedOverIndex === index}
           <div
             data-server-card
             data-server-index={index}
-            class="group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] {isOver ? 'outline outline-2 outline-[var(--accent-primary)]' : 'transition-colors'}"
-            style="height: 100px"
+            class="group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] {isOver ? 'outline outline-1 outline-[var(--accent-primary)]' : 'transition-colors'}"
+            style="height: {ROW_HEIGHT}px"
           >
             <div
               role="presentation"
+              aria-label="Drag to reorder"
               onpointerdown={e => handleGripPointerDown(e, index)}
               class="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               <GripVertical size={18} strokeWidth={2} />
             </div>
+
             <div class="flex-shrink-0">
               {#if server.favicon}
                 <img
@@ -394,17 +363,15 @@
             <div class="flex-1 min-w-0">
               <p class="font-semibold text-xl text-[var(--text-primary)] truncate leading-none mb-2">{server.name}</p>
               {#if server.motd_html}
-                <p class="text-base truncate leading-snug">{@html server.motd_html[0]}</p>
-                {#if server.motd_html[1]}
-                  <p class="text-base truncate leading-snug">{@html server.motd_html[1]}</p>
-                {/if}
+                {#each server.motd_html.slice(0, 2) as line}
+                  <p class="text-base truncate leading-snug">{@html line}</p>
+                {/each}
               {:else if server.motd}
-                <p class="text-base text-[var(--text-muted)] truncate leading-snug">{server.motd.split("\n")[0]}</p>
-                {#if server.motd.includes("\n")}
-                  <p class="text-base text-[var(--text-muted)] truncate leading-snug">{server.motd.split("\n")[1]}</p>
-                {/if}
+                {#each server.motd.split("\n").slice(0, 2) as line}
+                  <p class="text-base text-[var(--text-muted)] truncate leading-snug">{line}</p>
+                {/each}
               {:else}
-                <p class="text-base text-[var(--text-muted)] truncate">{displayAddress}</p>
+                <p class="text-base text-[var(--text-muted)] truncate">{formatAddress(server.address, server.port)}</p>
               {/if}
             </div>
 
@@ -413,7 +380,7 @@
                 {#if server.ping === undefined}
                   <span class="text-base font-medium text-[var(--text-muted)]">N/A</span>
                 {:else}
-                  <span class="text-base font-medium" style="color: {server.ping < 80 ? '#16a34a' : server.ping < 200 ? '#eab308' : '#e93636'}">{server.ping}ms</span>
+                  <span class="text-base font-medium" style="color: {pingColor(server.ping)}">{server.ping}ms</span>
                 {/if}
               {/if}
               {#if isOnline && server.players_online !== undefined}
@@ -430,6 +397,7 @@
             <div class="flex-shrink-0 items-center gap-2 hidden group-hover:flex">
               <button
                 onclick={e => { e.stopPropagation(); serverToDelete = server.name }}
+                aria-label="Remove server"
                 class="w-10 h-10 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors cursor-pointer"
               >
                 <Trash2 size={18} strokeWidth={2} />
@@ -437,11 +405,11 @@
 
               <button
                 onclick={e => handleLaunchServer(server, e)}
-                disabled={!isOnline || isLaunching || isAnyInstanceRunning}
+                disabled={!isOnline || isBusy}
                 title={!isOnline ? "Server offline" : isAnyInstanceRunning ? "Instance already running" : undefined}
-                class="flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded transition-all cursor-pointer {isLaunching || isAnyInstanceRunning ? 'bg-red-500/10 text-red-400 cursor-not-allowed' : isOnline ? 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]' : 'bg-[var(--bg-hover-strong)] text-[var(--text-muted)] cursor-not-allowed'} disabled:opacity-50"
+                class="flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded transition-all cursor-pointer disabled:opacity-50 {joinButtonClass(isBusy, isOnline)}"
               >
-                {#if isLaunching || isAnyInstanceRunning}
+                {#if isBusy}
                   <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
                 {:else}
                   <Play size={18} fill="currentColor" strokeWidth={0} />
