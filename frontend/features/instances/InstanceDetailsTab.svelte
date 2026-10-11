@@ -433,7 +433,7 @@
               <button
                 onclick={() => handleLaunch(instance)}
                 disabled={!store.isAuthenticated || store.launchingInstanceName !== null || store.runningInstances.has(instance.name)}
-                class="px-6 py-2 rounded-md font-semibold text-base flex items-center gap-2 transition-all cursor-pointer {store.launchingInstanceName === instance.name || store.runningInstances.has(instance.name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-6 py-2 rounded-md font-semibold text-base flex items-center gap-2 cursor-pointer {store.launchingInstanceName === instance.name || store.runningInstances.has(instance.name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {#if store.launchingInstanceName === instance.name || store.runningInstances.has(instance.name)}
                     <div class="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
@@ -443,10 +443,10 @@
                   <span>Play</span>
                 {/if}
               </button>
-              <button onclick={handleOpenFolder} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer">
+              <button onclick={handleOpenFolder} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer">
                 <FolderOpen size={18} strokeWidth={2.5} /><span>Open Folder</span>
               </button>
-              <button onclick={() => isSettingsOpen = true} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer" title="Instance Settings">
+              <button onclick={() => isSettingsOpen = true} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer" title="Instance Settings">
                 <Settings size={19} strokeWidth={2.5} />
               </button>
             </div>
@@ -461,16 +461,16 @@
 
       <!-- Section tabs -->
       <div class="flex-shrink-0 flex gap-1 mb-4">
-        <button onclick={() => detailSection = "mods"} class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer {tabClass('mods')}">
+        <button onclick={() => detailSection = "mods"} class="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer {tabClass('mods')}">
           Mods
         </button>
-        <button onclick={() => detailSection = "worlds"} class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer {tabClass('worlds')}">
+        <button onclick={() => detailSection = "worlds"} class="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer {tabClass('worlds')}">
           Worlds
         </button>
-        <button onclick={() => detailSection = "resourcepacks"} class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer {tabClass('resourcepacks')}">
+        <button onclick={() => detailSection = "resourcepacks"} class="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer {tabClass('resourcepacks')}">
           Resource Packs
         </button>
-        <button onclick={() => detailSection = "shaderpacks"} class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer {tabClass('shaderpacks')}">
+        <button onclick={() => detailSection = "shaderpacks"} class="px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer {tabClass('shaderpacks')}">
           Shader Packs
         </button>
       </div>
@@ -486,7 +486,7 @@
               <div class="flex items-center gap-2">
                 {#if instance.loader === "fabric"}
                   {#if availableUpdates.length > 0}
-                    <button onclick={updateAllMods} disabled={isUpdatingMods} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium transition-colors cursor-pointer">
+                    <button onclick={updateAllMods} disabled={isUpdatingMods} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium cursor-pointer">
                       {#if isUpdatingMods}
                         <Loader2 size={14} class="animate-spin" /><span>Updating...</span>
                       {:else}
@@ -494,7 +494,7 @@
                       {/if}
                     </button>
                   {:else}
-                    <button onclick={checkForUpdates} disabled={isCheckingUpdates} class="flex items-center gap-1.5 px-2 py-0.5 {allModsUpToDate ? 'bg-[#16a34a] hover:bg-[#15803d] text-white' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-muted)] hover:text-[var(--text-primary)]'} rounded text-xs font-medium transition-colors cursor-pointer">
+                    <button onclick={checkForUpdates} disabled={isCheckingUpdates} class="flex items-center gap-1.5 px-2 py-0.5 {allModsUpToDate ? 'bg-[#16a34a] hover:bg-[#15803d] text-white' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-muted)] hover:text-[var(--text-primary)]'} rounded text-xs font-medium cursor-pointer">
                       {#if isCheckingUpdates}
                         <Loader2 size={14} class="animate-spin" /><span>Checking...</span>
                       {:else if allModsUpToDate}
@@ -510,9 +510,9 @@
 
             <div class="relative mb-3">
               <Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
-              <input type="text" bind:value={modSearchQuery} placeholder="Search mods..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
+              <input type="text" bind:value={modSearchQuery} placeholder="Search mods..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none" />
               {#if modSearchQuery}
-                <button onclick={() => modSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>
+                <button onclick={() => modSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer"><X size={14} /></button>
               {/if}
             </div>
           </div>
@@ -551,7 +551,7 @@
                           <div class="flex items-center gap-2">
                             <h3 class="font-semibold text-base text-[var(--text-primary)] truncate">{mod.name || mod.filename}</h3>
                             {#if hasUpdate}
-                              <button onclick={() => { const u = availableUpdates.find(up => up.filename === mod.filename); if (u) updateSingleMod(u) }} class="px-1.5 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-xs rounded font-medium transition-colors cursor-pointer">Update</button>
+                              <button onclick={() => { const u = availableUpdates.find(up => up.filename === mod.filename); if (u) updateSingleMod(u) }} class="px-1.5 py-0.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-xs rounded font-medium cursor-pointer">Update</button>
                             {/if}
                           </div>
                           <p class="text-sm text-[var(--text-muted)] truncate">{mod.filename}{mod.disabled && !mod.filename.endsWith(".disabled") ? ".disabled" : ""}</p>
@@ -561,7 +561,7 @@
                             <button onclick={() => handleToggleMod(mod)} class="w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer {mod.disabled ? 'bg-[var(--bg-hover-strong)] border-[var(--text-muted)]' : 'bg-[#16a34a] border-[#16a34a]'}" aria-label="Toggle mod">
                             <Check size={16} strokeWidth={4} color={mod.disabled ? "#7d8590" : "#0f1115"} />
                           </button>
-                          <button onclick={() => handleDeleteMod(mod.filename)} class="p-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded transition-all cursor-pointer">
+                          <button onclick={() => handleDeleteMod(mod.filename)} class="p-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded cursor-pointer">
                             <Trash2 size={20} />
                           </button>
                         </div>
@@ -582,16 +582,16 @@
                 <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Worlds</h2>
                 <span class="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{worlds.length} world{worlds.length === 1 ? "" : "s"}</span>
               </div>
-              <button onclick={handleOpenWorldsFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+              <button onclick={handleOpenWorldsFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs cursor-pointer">
                 <ExternalLink size={14} /><span>Open Folder</span>
               </button>
             </div>
 
             <div class="relative mb-3">
               <Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
-              <input type="text" bind:value={worldSearchQuery} placeholder="Search worlds..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
+              <input type="text" bind:value={worldSearchQuery} placeholder="Search worlds..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none" />
               {#if worldSearchQuery}
-                <button onclick={() => worldSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>
+                <button onclick={() => worldSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer"><X size={14} /></button>
               {/if}
             </div>
           </div>
@@ -636,15 +636,15 @@
                           </div>
                         </div>
                         <div class="flex items-center gap-1">
-                          <button onclick={() => handleLaunchWorld(world.folder_name)} disabled={!store.isAuthenticated || store.launchingInstanceName !== null || store.runningInstances.has(instance.name) || launchingWorld !== null} class="p-2.5 rounded-md transition-all cursor-pointer {(store.launchingInstanceName === instance.name || launchingWorld === world.folder_name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-40 disabled:cursor-not-allowed" title="Play this world">
+                          <button onclick={() => handleLaunchWorld(world.folder_name)} disabled={!store.isAuthenticated || store.launchingInstanceName !== null || store.runningInstances.has(instance.name) || launchingWorld !== null} class="p-2.5 rounded-md cursor-pointer {(store.launchingInstanceName === instance.name || launchingWorld === world.folder_name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-40 disabled:cursor-not-allowed" title="Play this world">
                             {#if store.launchingInstanceName === instance.name || launchingWorld === world.folder_name}
                               <div class="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
                             {:else}
                               <Play size={20} fill="currentColor" strokeWidth={0} />
                             {/if}
                           </button>
-                          <button onclick={() => handleOpenWorldFolder(world.folder_name)} class="p-2.5 hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer" title="Open world folder"><FolderOpen size={20} /></button>
-                          <button onclick={() => handleDeleteWorld(world.folder_name, world.name)} class="p-2.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
+                          <button onclick={() => handleOpenWorldFolder(world.folder_name)} class="p-2.5 hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md cursor-pointer" title="Open world folder"><FolderOpen size={20} /></button>
+                          <button onclick={() => handleDeleteWorld(world.folder_name, world.name)} class="p-2.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
                         </div>
                       </div>
                     </div>
@@ -663,15 +663,15 @@
                 <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Resource Packs</h2>
                 <span class="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{resourcePacks.length} pack{resourcePacks.length === 1 ? "" : "s"}</span>
               </div>
-              <button onclick={handleOpenResourcePacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+              <button onclick={handleOpenResourcePacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs cursor-pointer">
                 <ExternalLink size={14} /><span>Open Folder</span>
               </button>
             </div>
             <div class="relative mb-3">
               <Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
-              <input type="text" bind:value={resourcePackSearchQuery} placeholder="Search resource packs..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
+              <input type="text" bind:value={resourcePackSearchQuery} placeholder="Search resource packs..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none" />
               {#if resourcePackSearchQuery}
-                <button onclick={() => resourcePackSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>
+                <button onclick={() => resourcePackSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer"><X size={14} /></button>
               {/if}
             </div>
           </div>
@@ -710,7 +710,7 @@
                           <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(pack.size)}</p>
                         </div>
                         <div class="flex flex-col items-center gap-1 self-center">
-                          <button onclick={() => handleDeleteResourcePack(pack.filename)} class="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
+                          <button onclick={() => handleDeleteResourcePack(pack.filename)} class="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md cursor-pointer">
                             <Trash2 size={20} />
                           </button>
                         </div>
@@ -731,15 +731,15 @@
                 <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Shader Packs</h2>
                 <span class="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{shaderPacks.length} pack{shaderPacks.length === 1 ? "" : "s"}</span>
               </div>
-              <button onclick={handleOpenShaderPacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+              <button onclick={handleOpenShaderPacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs cursor-pointer">
                 <ExternalLink size={14} /><span>Open Folder</span>
               </button>
             </div>
             <div class="relative mb-3">
               <Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none" />
-              <input type="text" bind:value={shaderPackSearchQuery} placeholder="Search shader packs..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none transition-colors" />
+              <input type="text" bind:value={shaderPackSearchQuery} placeholder="Search shader packs..." class="w-full bg-[var(--bg-tertiary)] rounded-md pl-8 pr-8 py-1.5 text-sm text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none" />
               {#if shaderPackSearchQuery}
-                <button onclick={() => shaderPackSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] transition-colors cursor-pointer"><X size={14} /></button>
+                <button onclick={() => shaderPackSearchQuery = ""} class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer"><X size={14} /></button>
               {/if}
             </div>
           </div>
@@ -778,7 +778,7 @@
                           <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(pack.size)}</p>
                         </div>
                         <div class="flex flex-col items-center gap-1 self-center">
-                          <button onclick={() => handleDeleteShaderPack(pack.filename)} class="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer">
+                          <button onclick={() => handleDeleteShaderPack(pack.filename)} class="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md cursor-pointer">
                             <Trash2 size={20} />
                           </button>
                         </div>

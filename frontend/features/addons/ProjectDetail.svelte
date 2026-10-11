@@ -313,7 +313,7 @@
       <div class="relative space-y-4 bg-[var(--bg-tertiary)] rounded-md p-4">
         <button
           onclick={onBack}
-          class="sticky top-2 float-right ml-2 z-20 flex items-center justify-center w-9 h-9 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+          class="sticky top-2 float-right ml-2 z-20 flex items-center justify-center w-9 h-9 rounded-full bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] cursor-pointer"
         >
           <X size={18} />
         </button>
@@ -391,7 +391,7 @@
                     <button
                       onclick={() => handleInstallVersion(version)}
                       disabled={downloading || installed || done || (!isModpack && !selectedInstance)}
-                      class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                      class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
                     >
                       {#if downloading}
                         <Loader2 size={14} class="animate-spin" />
@@ -419,7 +419,7 @@
                     <button
                       onclick={() => handleInstallCurseforgeFile(file)}
                       disabled={downloading || installed || done || !file.downloadUrl || (!isModpack && !selectedInstance)}
-                      class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 flex-shrink-0"
+                      class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
                     >
                       {#if downloading}
                         <Loader2 size={14} class="animate-spin" />

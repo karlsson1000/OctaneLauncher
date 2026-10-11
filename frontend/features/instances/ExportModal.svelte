@@ -136,7 +136,7 @@
         </div>
         <button
           onclick={handleClose}
-          class="p-1.5 -mt-0.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0 self-start"
+          class="p-1.5 -mt-0.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0 self-start"
         >
           <X size={18} strokeWidth={2} />
         </button>
@@ -148,14 +148,14 @@
             <button
               onclick={() => exportFormat = "mrpack"}
               disabled={isExporting}
-              class="h-9 rounded-sm text-sm font-medium transition-colors cursor-pointer disabled:cursor-not-allowed {exportFormat === 'mrpack' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+              class="h-9 rounded-sm text-sm font-medium cursor-pointer disabled:cursor-not-allowed {exportFormat === 'mrpack' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
             >
               .mrpack
             </button>
             <button
               onclick={() => exportFormat = "zip"}
               disabled={isExporting}
-              class="h-9 rounded-sm text-sm font-medium transition-colors cursor-pointer disabled:cursor-not-allowed {exportFormat === 'zip' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+              class="h-9 rounded-sm text-sm font-medium cursor-pointer disabled:cursor-not-allowed {exportFormat === 'zip' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
             >
               .zip
             </button>
@@ -187,7 +187,7 @@
                 aria-label={label}
                 onclick={toggle}
                 disabled={isExporting}
-                class="relative w-9 h-[22px] rounded-full transition-colors shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
+                class="relative w-9 h-[22px] rounded-full shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
               >
                 <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform {checked ? 'translate-x-[14px]' : ''}"></span>
               </button>
@@ -207,14 +207,14 @@
         <button
           onclick={handleClose}
           disabled={isExporting}
-          class="h-8 px-4 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          class="h-8 px-4 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           onclick={handleExport}
           disabled={isExporting}
-          class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {#if isExporting}
             <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

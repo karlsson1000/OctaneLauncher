@@ -64,9 +64,9 @@
             role="menuitem"
             onclick={() => { item.onClick?.(); onClose() }}
             class="w-full flex items-center gap-2.5 px-2 py-2 text-sm rounded-sm cursor-pointer select-none
-              {item.danger
-                ? 'text-red-400 hover:bg-red-500/10'
-                : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}"
+ {item.danger
+ ? 'text-red-400 hover:bg-red-500/10'
+ : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'}"
           >
             {#if item.icon}
               <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center">

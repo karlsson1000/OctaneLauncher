@@ -251,20 +251,20 @@ import { instanceIconSrc } from "../../lib/icons"
         {#if store.instances.length > 0}
           <button
             onclick={handleCycleSort}
-            class="h-8 px-2.5 hover:bg-[var(--bg-tertiary)] rounded flex items-center gap-1.5 transition-colors cursor-pointer group"
+            class="h-8 px-2.5 hover:bg-[var(--bg-tertiary)] rounded flex items-center gap-1.5 cursor-pointer group"
           >
-            <span class="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-muted)] transition-colors font-medium">Sort by:</span>
-            <span class="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors font-semibold">{SORT_LABELS[sortBy]}</span>
+            <span class="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-muted)] font-medium">Sort by:</span>
+            <span class="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-primary)] font-semibold">{SORT_LABELS[sortBy]}</span>
             {#if sortIsDesc}
-              <ChevronDown size={14} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" strokeWidth={2.5} />
+              <ChevronDown size={14} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" strokeWidth={2.5} />
             {:else}
-              <ChevronUp size={14} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" strokeWidth={2.5} />
+              <ChevronUp size={14} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" strokeWidth={2.5} />
             {/if}
           </button>
         {/if}
         <button
           onclick={handleCreateNew}
-          class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
+          class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer"
         >
           <Plus size={16} />
           New
@@ -279,7 +279,7 @@ import { instanceIconSrc } from "../../lib/icons"
         <p class="text-sm text-[var(--text-muted)] mb-4">Create your first instance to get started</p>
         <button
           onclick={handleCreateNew}
-          class="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+          class="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 cursor-pointer"
         >
           <Plus size={16} strokeWidth={2} />
           <span>Create Instance</span>
@@ -318,7 +318,7 @@ import { instanceIconSrc } from "../../lib/icons"
                     onclick={() => { setSelectedInstance(instance); handleShowDetails(instance) }}
                     oncontextmenu={(e) => handleContextMenu(e, instance)}
                     onkeydown={(e) => { if (e.key === 'Enter') { setSelectedInstance(instance); handleShowDetails(instance) } }}
-                    class="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative overflow-hidden"
+                    class="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] cursor-pointer group relative overflow-hidden"
                   >
                     <div class="relative flex-shrink-0">
                       {#if instanceIconSrc(instance.icon_path, instance.name)}
@@ -364,7 +364,7 @@ import { instanceIconSrc } from "../../lib/icons"
                             else handleQuickLaunch(instance)
                           }}
                           disabled={store.launchingInstanceName !== null && !isRunning}
-                          class="flex-shrink-0 w-12 h-12 mr-4 flex items-center justify-center rounded transition-all cursor-pointer {(isRunning || isLaunching) ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
+                          class="flex-shrink-0 w-12 h-12 mr-4 flex items-center justify-center rounded cursor-pointer {(isRunning || isLaunching) ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
                         >
                           {#if isLaunching || isRunning}
                             <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
@@ -403,7 +403,7 @@ import { instanceIconSrc } from "../../lib/icons"
                     onclick={() => { setSelectedInstance(instance); handleShowDetails(instance) }}
                     oncontextmenu={(e) => handleContextMenu(e, instance)}
                     onkeydown={(e) => { if (e.key === 'Enter') { setSelectedInstance(instance); handleShowDetails(instance) } }}
-                    class="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative overflow-hidden"
+                    class="bg-[var(--bg-tertiary)] rounded-md flex items-center hover:bg-[var(--bg-hover)] cursor-pointer group relative overflow-hidden"
                   >
                     <div class="relative flex-shrink-0">
                       {#if instanceIconSrc(instance.icon_path, instance.name)}
@@ -449,7 +449,7 @@ import { instanceIconSrc } from "../../lib/icons"
                             else handleQuickLaunch(instance)
                           }}
                           disabled={store.launchingInstanceName !== null && !isRunning}
-                          class="flex-shrink-0 w-12 h-12 mr-4 flex items-center justify-center rounded transition-all cursor-pointer {(isRunning || isLaunching) ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
+                          class="flex-shrink-0 w-12 h-12 mr-4 flex items-center justify-center rounded cursor-pointer {(isRunning || isLaunching) ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
                         >
                           {#if isLaunching || isRunning}
                             <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
@@ -514,7 +514,7 @@ import { instanceIconSrc } from "../../lib/icons"
           {#each otherGroups as g (g)}
             <button
               onclick={() => { handleCreateGroup(gmi, g); showGroupModal = false }}
-              class="flex items-center gap-2.5 px-2 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-sm transition-colors cursor-pointer text-left"
+              class="flex items-center gap-2.5 px-2 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-sm cursor-pointer text-left"
             >
               <FolderOpen size={16} strokeWidth={2} class="text-[var(--text-muted)] flex-shrink-0" />
               <span class="truncate">{g}</span>
@@ -537,7 +537,7 @@ import { instanceIconSrc } from "../../lib/icons"
             }
             if (e.key === "Escape") showGroupModal = false
           }}
-          class="flex-1 min-w-0 h-9 bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-sm px-3 text-sm outline-none border border-transparent transition-colors"
+          class="flex-1 min-w-0 h-9 bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-sm px-3 text-sm outline-none border border-transparent"
         />
         <button
           onclick={() => {
@@ -547,7 +547,7 @@ import { instanceIconSrc } from "../../lib/icons"
             }
           }}
           disabled={!groupModalValue.trim()}
-          class="h-9 px-4 text-sm bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          class="h-9 px-4 text-sm bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
         >
           Create
         </button>

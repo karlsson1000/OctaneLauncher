@@ -69,7 +69,7 @@
             <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">{title}</h2>
             <button
               onclick={handleClose}
-              class="p-1.5 -mt-1 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
+              class="p-1.5 -mt-1 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
             >
               <X size={18} strokeWidth={2} />
             </button>
@@ -82,7 +82,7 @@
         <button
           bind:this={confirmBtn}
           onclick={handleClose}
-          class="h-8 px-4 rounded-md font-medium text-sm transition-colors cursor-pointer flex items-center {getButtonStyle()}"
+          class="h-8 px-4 rounded-md font-medium text-sm cursor-pointer flex items-center {getButtonStyle()}"
         >
           {confirmText || "OK"}
         </button>

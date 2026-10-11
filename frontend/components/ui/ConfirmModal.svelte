@@ -91,7 +91,7 @@
             <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">{title}</h2>
             <button
               onclick={handleClose}
-              class="p-1.5 -mt-1 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
+              class="p-1.5 -mt-1 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
             >
               <X size={18} strokeWidth={2} />
             </button>
@@ -112,7 +112,7 @@
             class="flex items-center gap-2 select-none text-left"
           >
             <div
-              class="w-4 h-4 rounded-sm flex items-center justify-center transition-colors shrink-0 {isChecked ? 'bg-red-500' : 'border border-[var(--border-default)] bg-[var(--bg-elevated)]'}"
+              class="w-4 h-4 rounded-sm flex items-center justify-center shrink-0 {isChecked ? 'bg-red-500' : 'border border-[var(--border-default)] bg-[var(--bg-elevated)]'}"
             >
               {#if isChecked}
                 <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"/></svg>
@@ -124,13 +124,13 @@
         <div class="flex items-center gap-2">
           <button
             onclick={handleClose}
-            class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm transition-colors cursor-pointer"
+            class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm cursor-pointer"
           >
             {cancelText || "Cancel"}
           </button>
           <button
             onclick={handleConfirmClick}
-            class="h-8 px-4 rounded-md font-medium text-sm transition-colors cursor-pointer flex items-center {getConfirmButtonStyle()}"
+            class="h-8 px-4 rounded-md font-medium text-sm cursor-pointer flex items-center {getConfirmButtonStyle()}"
           >
             {confirmText || "Confirm"}
           </button>

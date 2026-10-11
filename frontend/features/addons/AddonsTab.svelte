@@ -88,7 +88,7 @@
           {@const isActive = store.addonsSubTab === tab.id}
           <button
             onclick={() => { setAddonsSubTab(tab.id); viewDetail = null }}
-            class="flex items-center gap-2 text-2xl font-semibold tracking-tight transition-colors cursor-pointer {isActive ? tab.color : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+            class="flex items-center gap-2 text-2xl font-semibold tracking-tight cursor-pointer {isActive ? tab.color : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
           >
             <Icon size={24} strokeWidth={2} />
             <span>{tab.label}</span>
@@ -109,7 +109,7 @@
           <button
             data-source-button
             onclick={() => showSourceDropdown = !showSourceDropdown}
-            class="w-10 h-10 flex items-center justify-center bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors cursor-pointer"
+            class="w-10 h-10 flex items-center justify-center bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md cursor-pointer"
           >
             <img
               src={contentSource === "modrinth" ? "/modrinth.svg" : "/curseforge.svg"}
@@ -121,14 +121,14 @@
             <div data-source-dropdown class="dropdown-menu absolute top-full mt-2 left-0 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-md overflow-hidden z-50 min-w-[140px] shadow-md p-1.5 flex flex-col gap-1">
               <button
                 onclick={() => { contentSource = "modrinth"; showSourceDropdown = false }}
-                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm transition-colors cursor-pointer {contentSource === 'modrinth' ? 'bg-[#16a34a]/10 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer {contentSource === 'modrinth' ? 'bg-[#16a34a]/10 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
               >
                 <img src="/modrinth.svg" alt="Modrinth" class="w-6 h-6" />
                 Modrinth
               </button>
               <button
                 onclick={() => { contentSource = "curseforge"; showSourceDropdown = false }}
-                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm transition-colors cursor-pointer {contentSource === 'curseforge' ? 'bg-[#f97316]/20 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer {contentSource === 'curseforge' ? 'bg-[#f97316]/20 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
               >
                 <img src="/curseforge.svg" alt="CurseForge" class="w-6 h-6" />
                 CurseForge
@@ -148,7 +148,7 @@
           {#if searchQuery}
             <button
               onclick={() => (searchQuery = "")}
-              class="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 h-6 w-6 flex items-center justify-center rounded transition-colors cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 h-6 w-6 flex items-center justify-center rounded cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               <X size={16} strokeWidth={2} />
             </button>
@@ -207,7 +207,7 @@
                   {@const loader = getLoaderDisplay(instance)}
                   <button
                     onclick={() => setSelectedInstance(instance)}
-                    class="w-full flex items-center gap-3 px-3 py-1.5 text-left text-sm rounded-md transition-colors cursor-pointer {store.selectedInstance?.name === instance.name ? 'bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-tertiary)]'}"
+                    class="w-full flex items-center gap-3 px-3 py-1.5 text-left text-sm rounded-md cursor-pointer {store.selectedInstance?.name === instance.name ? 'bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-tertiary)]'}"
                   >
                     {#if icon}
                       <img src={icon} alt={instance.name} class="w-11 h-11 rounded object-cover flex-shrink-0" />

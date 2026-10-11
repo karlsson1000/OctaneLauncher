@@ -467,7 +467,7 @@
     >
       <div class="flex items-center justify-between px-5 pt-5 pb-4">
         <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Instance Settings</h2>
-        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
+        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
           <X size={18} strokeWidth={2} />
         </button>
       </div>
@@ -488,7 +488,7 @@
                   </div>
                 </button>
               {:else}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-muted)] hover:border-[var(--accent-primary)]/50 rounded-sm flex items-center justify-center transition-all bg-[var(--bg-tertiary)] cursor-pointer">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-muted)] hover:border-[var(--accent-primary)]/50 rounded-sm flex items-center justify-center bg-[var(--bg-tertiary)] cursor-pointer">
                   {#if isUploadingIcon}
                     <Loader2 size={18} class="text-[var(--accent-primary)] animate-spin" />
                   {:else}
@@ -498,11 +498,11 @@
               {/if}
 
               {#if localIcon}
-                <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded-sm text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
                   Remove Icon
                 </button>
               {:else}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-sm text-sm font-medium transition-all disabled:opacity-50 cursor-pointer">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
                   Upload Icon
                 </button>
               {/if}
@@ -549,7 +549,7 @@
                   id="minecraft-version-btn"
                   type="button"
                   onclick={() => isVersionDropdownOpen = !isVersionDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isUpdatingVersion}
                 >
                   {selectedMinecraftVersion}
@@ -569,7 +569,7 @@
                       <button
                         type="button"
                         onclick={() => handleVersionSelect(version)}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version}</span>
                         {#if selectedMinecraftVersion === version}
@@ -617,7 +617,7 @@
                     {id}
                     type="button"
                     onclick={toggle}
-                    class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {open ? 'rounded-t-sm' : 'rounded-sm'}"
+                    class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {open ? 'rounded-t-sm' : 'rounded-sm'}"
                     {disabled}
                   >
                     {buttonText}
@@ -637,7 +637,7 @@
                         <button
                           type="button"
                           onclick={() => onSelect(item.key)}
-                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                         >
                           <span>{item.label}</span>
                           {#if selectedKey === item.key}
@@ -669,7 +669,7 @@
               </div>
                 <button
                   onclick={() => { const next = !useCustomRam; useCustomRam = next; saveRamSettings(instanceMemoryMb, next) }}
-                  class="relative w-9 h-[22px] rounded-full transition-colors shrink-0 cursor-pointer {useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
+                  class="relative w-9 h-[22px] rounded-full shrink-0 cursor-pointer {useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
                   aria-label="Toggle custom RAM"
                 >
                   <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform {useCustomRam ? 'translate-x-[14px]' : ''}"></span>
@@ -700,7 +700,7 @@
           <div class="col-span-2 pt-3">
             <button
               onclick={handleDelete}
-              class="w-full px-4 h-11 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-sm font-medium text-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+              class="w-full px-4 h-11 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-sm font-medium text-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Trash2 size={16} />
               <span>Delete Instance</span>

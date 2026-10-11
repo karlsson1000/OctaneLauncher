@@ -377,12 +377,12 @@
       <div class="flex items-center justify-between px-5 pt-5 pb-4">
         <div class="flex items-center gap-3 min-w-0">
           <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">New Instance</h2>
-          <button type="button" onclick={handleImportFile} disabled={isCreating} class="h-7.5 px-3 rounded-sm text-sm font-medium transition-colors cursor-pointer bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0">
+          <button type="button" onclick={handleImportFile} disabled={isCreating} class="h-7.5 px-3 rounded-sm text-sm font-medium cursor-pointer bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shrink-0">
             <FileDown size={16} strokeWidth={2} />
             <span>Import</span>
           </button>
         </div>
-        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
+        <button onclick={handleClose} class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer">
           <X size={18} strokeWidth={2} />
         </button>
       </div>
@@ -415,7 +415,7 @@
                 type="button"
                 onclick={() => handleVersionFilterChange("release")}
                 disabled={isCreating}
-                class="text-xs font-medium transition-colors cursor-pointer {versionFilter === 'release' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-muted)]'}"
+                class="text-xs font-medium cursor-pointer {versionFilter === 'release' ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-muted)]'}"
               >
                 Releases
               </button>
@@ -424,7 +424,7 @@
                 type="button"
                 onclick={() => handleVersionFilterChange("snapshot")}
                 disabled={isCreating || loaderType === "fabric" || loaderType === "neoforge" || loaderType === "forge"}
-                class="text-xs font-medium transition-colors {loaderType === 'fabric' || loaderType === 'neoforge' || loaderType === 'forge' ? 'text-gray-600 cursor-not-allowed' : versionFilter === 'snapshot' ? 'text-[var(--text-primary)] cursor-pointer' : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer'}"
+                class="text-xs font-medium {loaderType === 'fabric' || loaderType === 'neoforge' || loaderType === 'forge' ? 'text-gray-600 cursor-not-allowed' : versionFilter === 'snapshot' ? 'text-[var(--text-primary)] cursor-pointer' : 'text-[var(--text-muted)] hover:text-[var(--text-muted)] cursor-pointer'}"
               >
                 Snapshots
               </button>
@@ -446,7 +446,7 @@
                 id="create-mc-version-btn"
                 type="button"
                 onclick={() => isVersionDropdownOpen = !isVersionDropdownOpen}
-                class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
+                class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isVersionDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                 disabled={isCreating}
               >
                 {selectedVersion}
@@ -465,11 +465,11 @@
                     <button
                       type="button"
                       onclick={() => handleVersionSelect(version.id)}
-                      class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                      class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                     >
                       <span>{version.id}</span>
                       {#if selectedVersion === version.id}
-                        <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
+                        <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
                       {/if}
                     </button>
                   {/each}
@@ -492,7 +492,7 @@
                 type="button"
                 onclick={() => handleLoaderChange(loader)}
                 disabled={isCreating}
-                class="px-3 h-9 rounded-sm text-[13px] font-medium transition-all cursor-pointer flex items-center justify-center gap-2 {isActive ? `${colors[loader]} text-white` : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
+                class="px-3 h-9 rounded-sm text-[13px] font-medium cursor-pointer flex items-center justify-center gap-2 {isActive ? `${colors[loader]} text-white` : 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
               >
                 <div class="w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center {isActive ? 'border-white' : 'border-gray-500'}">
                   {#if isActive}
@@ -518,7 +518,7 @@
                   id="create-fabric-loader-btn"
                   type="button"
                   onclick={() => isFabricDropdownOpen = !isFabricDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isFabricDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isFabricDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isCreating}
                 >
                   {selectedFabricVersion} {fabricVersions.find((v: FabricVersion) => v.version === selectedFabricVersion)?.stable ? "(Stable)" : ""}
@@ -537,11 +537,11 @@
                       <button
                         type="button"
                         onclick={() => { selectedFabricVersion = version.version; isFabricDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version.version} {version.stable ? "(Stable)" : ""}</span>
                         {#if selectedFabricVersion === version.version}
-                          <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
+                          <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
                         {/if}
                       </button>
                     {/each}
@@ -570,7 +570,7 @@
                   id="create-neoforge-btn"
                   type="button"
                   onclick={() => isNeoforgeDropdownOpen = !isNeoforgeDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isNeoforgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isNeoforgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isCreating}
                 >
                   {selectedNeoforgeVersion}
@@ -589,11 +589,11 @@
                       <button
                         type="button"
                         onclick={() => { selectedNeoforgeVersion = version.neoforge_version; isNeoforgeDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version.neoforge_version}</span>
                         {#if selectedNeoforgeVersion === version.neoforge_version}
-                          <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
+                          <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
                         {/if}
                       </button>
                     {/each}
@@ -622,7 +622,7 @@
                   id="create-forge-btn"
                   type="button"
                   onclick={() => isForgeDropdownOpen = !isForgeDropdownOpen}
-                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isForgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
+                  class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isForgeDropdownOpen ? 'rounded-t-sm' : 'rounded-sm'}"
                   disabled={isCreating}
                 >
                   {selectedForgeVersion}
@@ -641,11 +641,11 @@
                       <button
                         type="button"
                         onclick={() => { selectedForgeVersion = version.forge_version; isForgeDropdownOpen = false }}
-                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                        class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                       >
                         <span>{version.forge_version}</span>
                         {#if selectedForgeVersion === version.forge_version}
-                          <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
+                          <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
                         {/if}
                       </button>
                     {/each}
@@ -659,10 +659,10 @@
       </div>
 
       <div class="flex items-center justify-end gap-2 px-5 pb-5 pt-1">
-        <button onclick={handleClose} disabled={isCreating} class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
+        <button onclick={handleClose} disabled={isCreating} class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed">
           Cancel
         </button>
-        <button onclick={handleCreateInstance} disabled={isCreateDisabled} class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+        <button onclick={handleCreateInstance} disabled={isCreateDisabled} class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
           {#if isCreating}
             <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             <span>Creating...</span>

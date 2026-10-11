@@ -148,7 +148,7 @@
         <div class="flex items-center gap-2">
           <button
             onclick={handleOpenScreenshotsFolder}
-            class="w-8 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded flex items-center justify-center transition-colors cursor-pointer"
+            class="w-8 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded flex items-center justify-center cursor-pointer"
             title="Open screenshots folder"
           >
             <FolderOpen size={16} />
@@ -158,7 +158,7 @@
             <button
               type="button"
               onclick={() => isInstanceDropdownOpen = !isInstanceDropdownOpen}
-              class="h-8 bg-[var(--bg-tertiary)] px-3 pr-8 text-sm text-[var(--text-primary)] focus:outline-none transition-all text-left cursor-pointer {isInstanceDropdownOpen ? 'rounded-t' : 'rounded'}"
+              class="h-8 bg-[var(--bg-tertiary)] px-3 pr-8 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isInstanceDropdownOpen ? 'rounded-t' : 'rounded'}"
             >
               {selectedInstance ? `${selectedInstance} (${instanceCounts[selectedInstance]})` : `All Instances (${screenshots.length})`}
             </button>
@@ -172,7 +172,7 @@
                 <button
                   type="button"
                   onclick={() => { selectedInstance = null; isInstanceDropdownOpen = false }}
-                  class="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                  class="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                 >
                   <span>All Instances ({screenshots.length})</span>
                   {#if !selectedInstance}
@@ -183,7 +183,7 @@
                   <button
                     type="button"
                     onclick={() => { selectedInstance = instanceName; isInstanceDropdownOpen = false }}
-                    class="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                    class="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
                   >
                     <span>{instanceName} ({count})</span>
                     {#if selectedInstance === instanceName}
@@ -197,7 +197,7 @@
 
           <button
             onclick={() => sortBy = sortBy === "date" ? "instance" : "date"}
-            class="px-3 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded text-sm flex items-center gap-2 transition-colors cursor-pointer"
+            class="px-3 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded text-sm flex items-center gap-2 cursor-pointer"
           >
             {#if sortBy === "date"}
               <Calendar size={14} />
@@ -262,7 +262,7 @@
                 </button>
                 <button
                   onclick={(e) => { e.stopPropagation(); handleDeleteScreenshot(screenshot); }}
-                  class="w-8 h-8 flex items-center justify-center text-white hover:text-red-400 transition-colors cursor-pointer"
+                  class="w-8 h-8 flex items-center justify-center text-white hover:text-red-400 cursor-pointer"
                   style="filter: drop-shadow(0 1px 3px rgba(0,0,0,0.45)) drop-shadow(0 1px 1px rgba(0,0,0,0.35))"
                   title="Delete screenshot"
                 >
@@ -293,21 +293,21 @@
             {#if filteredScreenshots.length > 1}
               <span class="absolute left-1/2 -translate-x-1/2 text-base text-[var(--text-secondary)] select-none whitespace-nowrap pointer-events-none">{currentImageIndex + 1} / {filteredScreenshots.length}</span>
             {/if}
-            <button onclick={closeViewer} class="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors cursor-pointer shrink-0" title="Close">
+            <button onclick={closeViewer} class="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md cursor-pointer shrink-0" title="Close">
               <X size={24} strokeWidth={2.5} />
             </button>
             <span class="text-base text-[var(--text-muted)] select-none flex-1 min-w-0 truncate whitespace-nowrap">{filteredScreenshots[currentImageIndex].filename}</span>
-            <button onclick={() => handleOpenScreenshot(filteredScreenshots[currentImageIndex])} class="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors cursor-pointer shrink-0" title="Open">
+            <button onclick={() => handleOpenScreenshot(filteredScreenshots[currentImageIndex])} class="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-md cursor-pointer shrink-0" title="Open">
               <ExternalLink size={20} strokeWidth={2.5} />
             </button>
-            <button onclick={() => handleViewerDelete(filteredScreenshots[currentImageIndex])} class="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-400 hover:bg-[var(--bg-hover)] rounded-md transition-colors cursor-pointer shrink-0" title="Delete">
+            <button onclick={() => handleViewerDelete(filteredScreenshots[currentImageIndex])} class="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-400 hover:bg-[var(--bg-hover)] rounded-md cursor-pointer shrink-0" title="Delete">
               <Trash2 size={20} strokeWidth={2.5} />
             </button>
             {#if filteredScreenshots.length > 1}
-              <button onclick={prevImage} class="w-9 h-9 flex items-center justify-center rounded-md bg-[var(--bg-hover)] hover:bg-[var(--accent-primary)] hover:text-white text-[var(--text-secondary)] transition-colors cursor-pointer shrink-0" title="Previous">
+              <button onclick={prevImage} class="w-9 h-9 flex items-center justify-center rounded-md bg-[var(--bg-hover)] hover:bg-[var(--accent-primary)] hover:text-white text-[var(--text-secondary)] cursor-pointer shrink-0" title="Previous">
                 <ChevronLeft size={24} strokeWidth={2.5} />
               </button>
-              <button onclick={nextImage} class="w-9 h-9 flex items-center justify-center rounded-md bg-[var(--bg-hover)] hover:bg-[var(--accent-primary)] hover:text-white text-[var(--text-secondary)] transition-colors cursor-pointer shrink-0" title="Next">
+              <button onclick={nextImage} class="w-9 h-9 flex items-center justify-center rounded-md bg-[var(--bg-hover)] hover:bg-[var(--accent-primary)] hover:text-white text-[var(--text-secondary)] cursor-pointer shrink-0" title="Next">
                 <ChevronRight size={24} strokeWidth={2.5} />
               </button>
             {/if}

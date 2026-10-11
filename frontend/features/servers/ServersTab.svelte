@@ -288,7 +288,7 @@
       <div class="flex items-center gap-2">
         <button
           onclick={() => showAddModal = true}
-          class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 transition-colors cursor-pointer"
+          class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer"
         >
           <Plus size={16} />
           Add Server
@@ -303,7 +303,7 @@
         <p class="text-sm text-[var(--text-muted)] mb-4">Add your first server to get started</p>
         <button
           onclick={() => showAddModal = true}
-          class="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 transition-all cursor-pointer"
+          class="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 cursor-pointer"
         >
           <Plus size={16} strokeWidth={2} />
           <span>Add Server</span>
@@ -325,14 +325,14 @@
           <div
             data-server-card
             data-server-index={index}
-            class="group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] {isOver ? 'outline outline-1 outline-[var(--accent-primary)]' : 'transition-colors'}"
+            class="group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] {isOver ? 'outline outline-1 outline-[var(--accent-primary)]' : ''}"
             style="height: {ROW_HEIGHT}px"
           >
             <div
               role="presentation"
               aria-label="Drag to reorder"
               onpointerdown={e => handleGripPointerDown(e, index)}
-              class="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              class="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               <GripVertical size={18} strokeWidth={2} />
             </div>
@@ -390,7 +390,7 @@
               <button
                 onclick={e => { e.stopPropagation(); serverToDelete = server.name }}
                 aria-label="Remove server"
-                class="w-10 h-10 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors cursor-pointer"
+                class="w-10 h-10 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[#ef4444] hover:bg-[#ef4444]/10 cursor-pointer"
               >
                 <Trash2 size={18} strokeWidth={2} />
               </button>
@@ -399,7 +399,7 @@
                 onclick={e => handleLaunchServer(server, e)}
                 disabled={!isOnline || isBusy}
                 title={!isOnline ? "Server offline" : isAnyInstanceRunning ? "Instance already running" : undefined}
-                class="flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded transition-all cursor-pointer disabled:opacity-50 {joinButtonClass(isBusy, isOnline)}"
+                class="flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded cursor-pointer disabled:opacity-50 {joinButtonClass(isBusy, isOnline)}"
               >
                 {#if isBusy}
                   <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>

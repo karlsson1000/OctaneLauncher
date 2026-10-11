@@ -45,14 +45,14 @@
     <button
       onclick={navigateBack}
       disabled={store.historyIndex <= 0}
-      class="h-6 w-6 flex items-center justify-center rounded transition-colors {store.historyIndex > 0 ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] cursor-pointer' : 'text-[var(--text-disabled)] cursor-not-allowed'}"
+      class="h-6 w-6 flex items-center justify-center rounded {store.historyIndex > 0 ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] cursor-pointer' : 'text-[var(--text-disabled)] cursor-not-allowed'}"
     >
       <ChevronLeft size={18} strokeWidth={3} />
     </button>
     <button
       onclick={navigateForward}
       disabled={store.historyIndex >= historyLen - 1}
-      class="h-6 w-6 flex items-center justify-center rounded transition-colors {store.historyIndex < historyLen - 1 ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] cursor-pointer' : 'text-[var(--text-disabled)] cursor-not-allowed'}"
+      class="h-6 w-6 flex items-center justify-center rounded {store.historyIndex < historyLen - 1 ? 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] cursor-pointer' : 'text-[var(--text-disabled)] cursor-not-allowed'}"
     >
       <ChevronRight size={18} strokeWidth={3} />
     </button>
@@ -74,7 +74,7 @@
       <button
         data-account-button
         onclick={() => setShowAccountDropdown(!store.showAccountDropdown)}
-        class="flex items-center gap-1.5 px-2 h-7 rounded text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all cursor-pointer"
+        class="flex items-center gap-1.5 px-2 h-7 rounded text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
       >
         <img
           src="https://avatar.mcindex.net/avatar/{activeAccount.username}/16"
@@ -141,7 +141,7 @@
         onclick={async () => {
           try { await invoke("microsoft_login_and_store"); await loadAccounts() } catch {}
         }}
-        class="flex items-center gap-1.5 px-2 h-6 rounded text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all cursor-pointer"
+        class="flex items-center gap-1.5 px-2 h-6 rounded text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
       >
         <LogIn size={14} strokeWidth={2} class="text-[#16a34a]" />
         Sign in
@@ -153,7 +153,7 @@
     <button
       data-friends-toggle
       onclick={() => setShowFriendsPanel(!store.showFriendsPanel)}
-      class="h-7 w-7 flex items-center justify-center rounded transition-colors cursor-pointer {store.showFriendsPanel ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
+      class="h-7 w-7 flex items-center justify-center rounded cursor-pointer {store.showFriendsPanel ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
       title="Friends"
     >
       <UsersRound size={18} strokeWidth={2} />
@@ -161,13 +161,13 @@
   </div>
 
   <div class="flex items-center" style={noDragRegion}>
-    <button onclick={() => appWindow.minimize()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer">
+    <button onclick={() => appWindow.minimize()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer">
       <Minus size={18} strokeWidth={3} />
     </button>
-    <button onclick={() => appWindow.toggleMaximize()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer">
+    <button onclick={() => appWindow.toggleMaximize()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer">
       <Square size={14} strokeWidth={3} />
     </button>
-    <button onclick={() => appWindow.close()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 transition-colors cursor-pointer">
+    <button onclick={() => appWindow.close()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 cursor-pointer">
       <X size={18} strokeWidth={3} />
     </button>
   </div>

@@ -199,7 +199,7 @@
               <button
                 onclick={handleSignIn}
                 disabled={isSigningIn}
-                class="w-full px-4 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-60 text-white text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2 min-h-[34px]"
+                class="w-full px-4 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-60 text-white text-sm font-medium cursor-pointer flex items-center justify-center gap-2 min-h-[34px]"
               >
                 {#if isSigningIn}
                   <Loader2 size={15} class="animate-spin" />
@@ -213,7 +213,7 @@
             <button
               onclick={handleSignIn}
               disabled={isSigningIn}
-              class="mt-10 mx-auto w-64 px-4 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-60 text-white text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2"
+              class="mt-10 mx-auto w-64 px-4 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-60 text-white text-sm font-medium cursor-pointer flex items-center justify-center gap-2"
             >
               {#if isSigningIn}
                 <Loader2 size={15} class="animate-spin" />
@@ -254,9 +254,9 @@
             <div class="mt-4 max-h-[54vh] overflow-y-auto custom-scrollbar -mx-2 px-2 space-y-0.5">
               {#each detected as item (item.path)}
                 <label
-                  class="flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors {!item.mc_version || isImporting
-                    ? 'opacity-40'
-                    : 'cursor-pointer hover:bg-[var(--bg-secondary)]'}"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-md {!item.mc_version || isImporting
+ ? 'opacity-40'
+ : 'cursor-pointer hover:bg-[var(--bg-secondary)]'}"
                 >
                   <input
                     type="checkbox"
@@ -288,7 +288,7 @@
             <button
               onclick={() => goTo("welcome")}
               disabled={isImporting}
-              class="flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer disabled:opacity-40"
+              class="flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer disabled:opacity-40"
             >
               <ArrowLeft size={14} />
               Back
@@ -298,7 +298,7 @@
                 <button
                   onclick={handleImport}
                   disabled={selectedCount === 0 || isImporting}
-                  class="px-5 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors cursor-pointer flex items-center gap-2"
+                  class="px-5 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:cursor-not-allowed text-white text-sm font-medium cursor-pointer flex items-center gap-2"
                 >
                   {#if isImporting}
                     <Loader2 size={14} class="animate-spin" />
@@ -310,7 +310,7 @@
               {:else}
                 <button
                   onclick={() => goTo("done")}
-                  class="flex items-center gap-1.5 px-5 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium transition-colors cursor-pointer"
+                  class="flex items-center gap-1.5 px-5 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium cursor-pointer"
                 >
                   Get started
                   <ArrowRight size={14} />
@@ -334,7 +334,7 @@
           </p>
           <button
             onclick={finish}
-            class="self-center mt-6 px-8 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium transition-colors cursor-pointer"
+            class="self-center mt-6 px-8 py-1.5 rounded-md bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white text-sm font-medium cursor-pointer"
           >
             Get started
           </button>
@@ -347,7 +347,7 @@
     <button
       onclick={skipStep}
       disabled={isImporting}
-      class="fixed bottom-6 right-8 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer disabled:opacity-40"
+      class="fixed bottom-6 right-8 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer disabled:opacity-40"
     >
       Skip
     </button>

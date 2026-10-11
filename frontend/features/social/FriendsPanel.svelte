@@ -260,7 +260,7 @@
     <div class="flex-1"></div>
       <button
         onclick={() => { showSearch = !showSearch; if (showSearch) showRequests = false }}
-        class="h-7 w-7 flex items-center justify-center rounded transition-colors cursor-pointer {showSearch ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
+        class="h-7 w-7 flex items-center justify-center rounded cursor-pointer {showSearch ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
         title="Search or add friends"
       >
         <Search size={18} strokeWidth={2.5} />
@@ -268,7 +268,7 @@
       <div class="relative">
         <button
           onclick={() => { showRequests = !showRequests; if (showRequests) showSearch = false }}
-          class="h-7 w-7 flex items-center justify-center rounded transition-colors cursor-pointer {showRequests ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
+          class="h-7 w-7 flex items-center justify-center rounded cursor-pointer {showRequests ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
           title="Pending requests"
         >
           <Inbox size={18} strokeWidth={2.5} />
@@ -308,7 +308,7 @@
             <button
               onclick={() => handleSendRequest(searchQuery.trim())}
               disabled={sending}
-              class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+              class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] cursor-pointer"
             >
               {#if sending}
                 <Loader2 size={14} class="animate-spin" />
@@ -329,7 +329,7 @@
           {#if requests.length > 0}
             <div class="max-h-40 overflow-y-auto">
               {#each requests as req (req.id)}
-                <div class="flex items-center gap-2 px-1 py-2 transition-colors">
+                <div class="flex items-center gap-2 px-1 py-2">
                   <img
                     src="https://avatar.mcindex.net/avatar/{req.from_username}/24"
                     alt={req.from_username}
@@ -340,14 +340,14 @@
                   </div>
                   <button
                     onclick={() => handleAcceptRequest(req.id)}
-                    class="p-1 hover:bg-[#16a34a]/20 rounded text-[var(--text-muted)] hover:text-[#16a34a] transition-colors cursor-pointer"
+                    class="p-1 hover:bg-[#16a34a]/20 rounded text-[var(--text-muted)] hover:text-[#16a34a] cursor-pointer"
                     title="Accept"
                   >
                     <UserCheck size={16} strokeWidth={3} />
                   </button>
                   <button
                     onclick={() => handleRejectRequest(req.id)}
-                    class="p-1 hover:bg-red-500/20 rounded text-[var(--text-muted)] hover:text-red-400 transition-colors cursor-pointer"
+                    class="p-1 hover:bg-red-500/20 rounded text-[var(--text-muted)] hover:text-red-400 cursor-pointer"
                     title="Reject"
                   >
                     <UserX size={16} strokeWidth={3} />
@@ -376,7 +376,7 @@
           {#if onlineFriends.length > 0}
             <button
               onclick={() => onlineCollapsed = !onlineCollapsed}
-              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] transition-colors cursor-pointer w-full text-left"
+              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] cursor-pointer w-full text-left"
             >
               {#if onlineCollapsed}
                 <ChevronRight size={14} strokeWidth={3} />
@@ -398,7 +398,7 @@
           {#if offlineFriends.length > 0}
             <button
               onclick={() => offlineCollapsed = !offlineCollapsed}
-              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] transition-colors cursor-pointer w-full text-left"
+              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] cursor-pointer w-full text-left"
             >
               {#if offlineCollapsed}
                 <ChevronRight size={14} strokeWidth={3} />

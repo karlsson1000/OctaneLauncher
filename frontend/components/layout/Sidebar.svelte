@@ -154,7 +154,7 @@
                 <button
                   onclick={() => openRecentInstance(instance)}
                   oncontextmenu={(e) => { e.preventDefault(); setSidebarContextMenu({ x: e.clientX, y: e.clientY, instance }) }}
-                  class="w-11 h-11 flex items-center justify-center rounded-lg transition-all cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)]"
+                  class="w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)]"
                 >
                   {#if icon}
                     <img src={icon} alt={instance.name} class="w-9 h-9 rounded object-cover" />
@@ -180,7 +180,7 @@
             <Tooltip text={tab.label} enabled={!dragBlock}>
               <button
                 onclick={() => { setActiveTab(tab.id); setShowInstanceDetails(false) }}
-                class="w-11 h-11 flex items-center justify-center rounded-lg transition-all cursor-pointer {isActive ? 'bg-[var(--bg-active)] text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)]'}"
+                class="w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer {isActive ? 'bg-[var(--bg-active)] text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)]'}"
               >
                 <Icon size={28} strokeWidth={2} />
               </button>
@@ -198,7 +198,7 @@
         <button
           onclick={handleInstallUpdate}
           disabled={store.isInstallingUpdate}
-          class="w-11 h-11 flex items-center justify-center rounded-lg transition-all cursor-pointer {store.isInstallingUpdate ? 'text-[#16a34a] animate-pulse' : 'text-[#16a34a] hover:bg-[var(--bg-active)]'}"
+          class="w-11 h-11 flex items-center justify-center rounded-lg cursor-pointer {store.isInstallingUpdate ? 'text-[#16a34a] animate-pulse' : 'text-[#16a34a] hover:bg-[var(--bg-active)]'}"
         >
           <Download size={28} strokeWidth={2} />
         </button>
@@ -208,7 +208,7 @@
     <Tooltip text="New instance">
       <button
         onclick={handleCreateNew}
-        class="w-11 h-11 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-all cursor-pointer"
+        class="w-11 h-11 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] cursor-pointer"
       >
         <Plus size={28} strokeWidth={2} />
       </button>
@@ -217,7 +217,7 @@
     <Tooltip text="Settings">
       <button
         onclick={handleOpenSettings}
-        class="w-11 h-11 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] transition-all cursor-pointer"
+        class="w-11 h-11 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] cursor-pointer"
       >
         <Settings size={28} strokeWidth={2} />
       </button>

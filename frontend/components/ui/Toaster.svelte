@@ -22,7 +22,7 @@
         <button
           title="Dismiss"
           onclick={(e) => { e.stopPropagation(); dismissToast(toast.id) }}
-          class="flex-shrink-0 -mr-1 p-0.5 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+          class="flex-shrink-0 -mr-1 p-0.5 flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
         >
           <X size={16} strokeWidth={2.5} />
         </button>

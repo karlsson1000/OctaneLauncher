@@ -470,7 +470,7 @@
           <button
             onclick={() => fileInputEl?.click()}
             disabled={uploading || loading}
-            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[#16a34a] transition-colors shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[#16a34a] shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
           >
             {#if uploading}
               <Loader2 size={20} class="animate-spin" />
@@ -485,7 +485,7 @@
           <button
             onclick={handleReset}
             disabled={loading}
-            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[var(--text-muted)] transition-colors shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[var(--text-muted)] shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
           >
             <RotateCcw size={20} strokeWidth={2.5} />
           </button>
@@ -494,13 +494,13 @@
 
         <button
           onclick={() => skinVariant = "classic"}
-          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border transition-colors cursor-pointer shrink-0 {skinVariant === 'classic' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
+          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border cursor-pointer shrink-0 {skinVariant === 'classic' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
         >
           Classic
         </button>
         <button
           onclick={() => skinVariant = "slim"}
-          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border transition-colors cursor-pointer shrink-0 {skinVariant === 'slim' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
+          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border cursor-pointer shrink-0 {skinVariant === 'slim' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
         >
           Slim
         </button>
@@ -526,7 +526,7 @@
                     onkeydown={(e) => { if (e.key === 'Enter') isActive ? handleCapeRemove() : handleCapeSelect(cape.id) }}
                     class="cursor-pointer shrink-0 leading-none"
                   >
-                    <div class="w-[26px] h-[38px] rounded border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-[var(--bg-secondary)] transition-colors relative flex items-center justify-center">
+                    <div class="w-[26px] h-[38px] rounded border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-[var(--bg-secondary)] relative flex items-center justify-center">
                       <div style="width: {CAPE_FRONT.w * CAPE_THUMB_SCALE}px; height: {CAPE_FRONT.h * CAPE_THUMB_SCALE}px; overflow: hidden; flex-shrink: 0;">
                         <img
                           src={cape.url}
@@ -555,7 +555,7 @@
             <div role="presentation" class="group relative inline-flex">
               <button
                 onclick={() => showElytra = !showElytra}
-                class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-muted)] transition-colors cursor-pointer shrink-0"
+                class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-muted)] cursor-pointer shrink-0"
               >
                 {#if showElytra}
                   <RectangleVertical size={20} strokeWidth={2.5} />
@@ -573,14 +573,14 @@
             <button
               onclick={handleDiscard}
               disabled={saving}
-              class="px-4 py-1.5 rounded-lg bg-[var(--bg-secondary,#1a1a2e)] text-[var(--text-muted,#888)] text-[13px] font-semibold transition-colors shrink-0 enabled:hover:bg-[var(--bg-hover,#2a2a3e)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              class="px-4 py-1.5 rounded-lg bg-[var(--bg-secondary,#1a1a2e)] text-[var(--text-muted,#888)] text-[13px] font-semibold shrink-0 enabled:hover:bg-[var(--bg-hover,#2a2a3e)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onclick={handleSave}
               disabled={saving}
-              class="px-4 py-1.5 rounded-lg bg-[#16a34a] enabled:hover:bg-[#15803d] text-white text-[13px] font-semibold transition-colors flex items-center gap-1.5 shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              class="px-4 py-1.5 rounded-lg bg-[#16a34a] enabled:hover:bg-[#15803d] text-white text-[13px] font-semibold flex items-center gap-1.5 shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
               {#if saving}
                 Saving…
@@ -602,7 +602,7 @@
               <button
                 onclick={() => handleRecentSkinSelect(skin)}
                 disabled={uploading}
-                class="box-border w-10 h-10 rounded-md p-0 border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-transparent transition-colors shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                class="box-border w-10 h-10 rounded-md p-0 border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-transparent shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <img
                   src={bustUrl}

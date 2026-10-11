@@ -393,7 +393,7 @@
             {/if}
             <button
               onclick={handleClose}
-              class="p-1.5 -mt-0.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
+              class="p-1.5 -mt-0.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
             >
               <X size={18} strokeWidth={2} />
             </button>
@@ -404,9 +404,9 @@
           {#each TABS as tab (tab.id)}
             <button
               onclick={() => { if (activeTab === tab.id) return; holdOverflow(300); activeTab = tab.id; contentScrollerEl?.scrollTo({ top: 0 }) }}
-              class="h-9 rounded-sm text-sm font-medium transition-colors cursor-pointer flex items-center justify-center gap-2 {activeTab === tab.id
-                ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+              class="h-9 rounded-sm text-sm font-medium cursor-pointer flex items-center justify-center gap-2 {activeTab === tab.id
+ ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm'
+ : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
             >
               <tab.icon size={16} strokeWidth={2} class={"shrink-0 " + (activeTab === tab.id ? "text-[var(--accent-primary)]" : "")} />
               <span>{tab.label}</span>
@@ -433,8 +433,8 @@
                   <button
                     onclick={() => store.settings && handleSettingChange({ ...store.settings, theme: theme.id })}
                     class="group rounded-md overflow-hidden text-left cursor-pointer transition-all relative {store.settings?.theme === theme.id
-                      ? 'ring-2 ring-[var(--accent-primary)]'
-                      : 'hover:brightness-110'}"
+ ? 'ring-2 ring-[var(--accent-primary)]'
+ : 'hover:brightness-110'}"
                   >
                     <div class="flex h-16" style="background: {theme.colors[0]}">
                       <div class="w-6 h-full flex flex-col gap-1 p-1" style="background: {theme.colors[1]}">
@@ -467,12 +467,12 @@
                     <img src={backgroundPreview} alt="Background" class="w-full h-full object-cover" />
                   </div>
                   <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
-                    <button onclick={() => fileInputEl?.click()} class="h-8 px-3 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-xs font-medium cursor-pointer transition-colors">Change</button>
-                    <button onclick={handleRemoveBackground} class="h-8 px-3 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium cursor-pointer transition-colors">Remove</button>
+                    <button onclick={() => fileInputEl?.click()} class="h-8 px-3 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-xs font-medium cursor-pointer">Change</button>
+                    <button onclick={handleRemoveBackground} class="h-8 px-3 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium cursor-pointer">Remove</button>
                   </div>
                 </div>
               {:else}
-                <button onclick={() => fileInputEl?.click()} class="w-full h-24 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] rounded-md transition-colors flex flex-col items-center justify-center gap-1.5 cursor-pointer">
+                <button onclick={() => fileInputEl?.click()} class="w-full h-24 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] rounded-md flex flex-col items-center justify-center gap-1.5 cursor-pointer">
                   <ImagePlus size={20} class="text-[var(--text-muted)]" />
                   <span class="text-xs text-[var(--text-muted)]">Click to upload an image · PNG, JPG up to 10MB</span>
                 </button>
@@ -552,7 +552,7 @@
                 <button
                   onclick={loadJavaInstallations}
                   disabled={isLoadingJava}
-                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   {#if isLoadingJava}<Loader2 size={14} class="animate-spin" />{/if}
                   Rescan
@@ -562,7 +562,7 @@
               <div class="relative" bind:this={javaDropdownEl}>
                 <button
                   onclick={toggleJavaDropdown}
-                  class="w-full h-9 bg-[var(--content-bg)] px-3 text-sm text-[var(--text-primary)] text-left flex items-center justify-between cursor-pointer min-w-0 rounded-md hover:bg-[var(--bg-hover)] transition-colors"
+                  class="w-full h-9 bg-[var(--content-bg)] px-3 text-sm text-[var(--text-primary)] text-left flex items-center justify-between cursor-pointer min-w-0 rounded-md hover:bg-[var(--bg-hover)]"
                 >
                   <span class="truncate">
                     {showCustomPath ? "Custom Path..." : (store.settings?.java_path || "Auto-detect (Recommended)")}
@@ -622,7 +622,7 @@
                   aria-checked={checked}
                   aria-label={label}
                   onclick={toggle}
-                  class="relative w-9 h-[22px] rounded-full transition-colors shrink-0 cursor-pointer {checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
+                  class="relative w-9 h-[22px] rounded-full shrink-0 cursor-pointer {checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
                 >
                   <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform {checked ? 'translate-x-[14px]' : ''}"></span>
                 </button>
@@ -638,7 +638,7 @@
                 <div class="relative shrink-0" bind:this={tabDropdownEl}>
                   <button
                     onclick={() => isTabDropdownOpen = !isTabDropdownOpen}
-                    class="relative h-8 pl-3 pr-8 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center gap-2 cursor-pointer capitalize transition-colors min-w-[130px]"
+                    class="relative h-8 pl-3 pr-8 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center gap-2 cursor-pointer capitalize min-w-[130px]"
                   >
                     {store.settings?.default_tab || "home"}
                     <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -688,7 +688,7 @@
                 </div>
                 <button
                   onclick={() => { onClose(); setShowOnboarding(true) }}
-                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer transition-colors"
+                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer"
                 >
                   Show onboarding
                 </button>
@@ -734,7 +734,7 @@
                 <button
                   onclick={() => handleOpenDirectory(store.launcherDirectory)}
                   disabled={!store.launcherDirectory}
-                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5 transition-colors"
+                  class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
                   <FolderOpen size={14} />
                   Open folder

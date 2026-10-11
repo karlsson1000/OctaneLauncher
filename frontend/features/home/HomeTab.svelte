@@ -148,7 +148,7 @@
               : handleLaunch(lastPlayedInstance)
             }
             disabled={heroDisabled}
-            class="h-11 px-5 rounded-md flex items-center justify-center gap-3 text-lg font-semibold transition-all cursor-pointer disabled:opacity-40 {heroBtnClass}"
+            class="h-11 px-5 rounded-md flex items-center justify-center gap-3 text-lg font-semibold cursor-pointer disabled:opacity-40 {heroBtnClass}"
             title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
           >
             {#if isLastPlayedLaunching || isLastPlayedRunning}
@@ -169,10 +169,10 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <button onclick={handleNavigateToInstances} class="flex items-center gap-2 cursor-pointer group">
-              <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--text-primary)] transition-colors">
+              <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--text-primary)]">
                 Recently Played
               </h2>
-              <ChevronRight size={18} strokeWidth={3} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)] transition-colors" />
+              <ChevronRight size={18} strokeWidth={3} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
             </button>
           </div>
         </div>
@@ -195,7 +195,7 @@
               if (tooltipTimer) clearTimeout(tooltipTimer)
               tooltipInstance = null
             }}
-            class="bg-[var(--bg-tertiary)] rounded-md p-2 flex items-center gap-2 hover:bg-[var(--bg-hover)] transition-all cursor-pointer group relative"
+            class="bg-[var(--bg-tertiary)] rounded-md p-2 flex items-center gap-2 hover:bg-[var(--bg-hover)] cursor-pointer group relative"
           >
             {#if tooltipInstance === instance}
               <div class="absolute bottom-full left-0 right-0 mb-2 z-50 pointer-events-none">
@@ -247,7 +247,7 @@
                 else handleLaunch(instance)
               }}
               disabled={store.launchingInstanceName !== null && !isLaunching && !isRunning}
-              class="absolute right-2 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded transition-all {(isRunning || isLaunching) ? 'bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20 cursor-pointer' : store.launchingInstanceName !== null ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f] cursor-pointer'}"
+              class="absolute right-2 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded {(isRunning || isLaunching) ? 'bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20 cursor-pointer' : store.launchingInstanceName !== null ? 'opacity-0 pointer-events-none' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f] cursor-pointer'}"
               title={isRunning ? "Stop instance" : "Launch instance"}
             >
               {#if isLaunching || isRunning}
@@ -270,14 +270,14 @@
           <button
             onclick={() => goToSnapshot(snapshotStart - 1)}
             disabled={snapshotStart === 0}
-            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
           >
             <ChevronLeft size={18} strokeWidth={3} />
           </button>
           <button
             onclick={() => goToSnapshot(snapshotStart + 1)}
             disabled={snapshotStart >= maxSnapshotStart}
-            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
           >
             <ChevronRight size={18} strokeWidth={3} />
           </button>
@@ -342,7 +342,7 @@
             <button
               onclick={() => goToSnapshot(p)}
               aria-label="Show updates from card {p + 1}"
-              class="h-1 rounded-full transition-all duration-300 cursor-pointer {snapshotStart === p ? 'w-6 bg-[var(--accent-primary)]' : 'w-2 bg-[var(--bg-hover)] hover:bg-[var(--text-muted)]'}"
+              class="h-1 rounded-full cursor-pointer {snapshotStart === p ? 'w-6 bg-[var(--accent-primary)]' : 'w-2 bg-[var(--bg-hover)] hover:bg-[var(--text-muted)]'}"
             ></button>
           {/each}
         </div>

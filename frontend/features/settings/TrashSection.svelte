@@ -66,7 +66,7 @@
       <button
         onclick={handleEmptyTrash}
         disabled={emptying}
-        class="px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 {confirmClear ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10'}"
+        class="px-2.5 py-1 rounded text-xs font-medium cursor-pointer disabled:opacity-50 {confirmClear ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10'}"
       >
         {#if emptying}
           <Loader2 size={12} class="animate-spin" />

@@ -201,7 +201,7 @@
               {#each instances as instance}
                 <button
                   onclick={() => activeInstance = instance}
-                  class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap transition-all cursor-pointer {activeInstance === instance ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'}"
+                  class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap cursor-pointer {activeInstance === instance ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'}"
                 >
                   {instance}
                 </button>
@@ -213,7 +213,7 @@
             <button
               onclick={handlePopOut}
               title="Open in new window"
-              class="h-10 w-10 flex items-center justify-center rounded-md transition-colors cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+              class="h-10 w-10 flex items-center justify-center rounded-md cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
             >
               <PictureInPicture size={24} strokeWidth={2} />
             </button>
@@ -270,7 +270,7 @@
         <button
           onclick={handleUploadToMcLogs}
           disabled={!activeInstance || activeLogs.length === 0 || uploadState.loading}
-          class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadState.url ? 'bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]' : uploadState.error ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'}"
+          class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadState.url ? 'bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]' : uploadState.error ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'}"
           title="Upload logs to mclo.gs"
         >
           {#if uploadState.loading}
@@ -289,7 +289,7 @@
         <button
           onclick={onClear}
           disabled={!activeInstance || activeLogs.length === 0}
-          class="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          class="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Trash2 size={16} strokeWidth={2} />
           <span>Clear {activeInstance || "Console"}</span>

@@ -127,7 +127,7 @@
       </div>
       <button
         onclick={handleClose}
-        class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+        class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
       >
         <X size={18} strokeWidth={2} />
       </button>
@@ -168,7 +168,7 @@
               onclick={testConnection}
               disabled={!serverAddress.trim() || !isValidPort || isTesting}
               title={isTesting ? "Testing connection..." : testResult?.success ? "Connection OK — test again" : "Test connection"}
-              class="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 h-6 w-6 flex items-center justify-center rounded transition-colors cursor-pointer disabled:cursor-not-allowed {testResult && !isTesting ? (testResult.success ? 'text-green-400 hover:text-green-300' : 'text-red-400 hover:text-red-300') : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-40'}"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 h-6 w-6 flex items-center justify-center rounded cursor-pointer disabled:cursor-not-allowed {testResult && !isTesting ? (testResult.success ? 'text-green-400 hover:text-green-300' : 'text-red-400 hover:text-red-300') : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-40'}"
             >
               {#if isTesting}
                 <Loader2 size={16} class="animate-spin" />
@@ -217,14 +217,14 @@
       <button
         onclick={handleClose}
         disabled={isCreating}
-        class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        class="h-8 px-4 bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
       >
         Cancel
       </button>
       <button
         onclick={handleCreateServer}
         disabled={isCreateDisabled}
-        class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium text-sm flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        class="h-8 px-4 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         {#if isCreating}
           <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
