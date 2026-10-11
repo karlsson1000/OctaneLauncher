@@ -342,7 +342,7 @@
             <button
               onclick={() => goToSnapshot(p)}
               aria-label="Show updates from card {p + 1}"
-              class="h-1 rounded-full cursor-pointer {snapshotStart === p ? 'w-6 bg-[var(--accent-primary)]' : 'w-2 bg-[var(--bg-hover)] hover:bg-[var(--text-muted)]'}"
+              class="h-1 rounded-full transition-all duration-300 cursor-pointer {snapshotStart === p ? 'w-6 bg-[var(--accent-primary)]' : 'w-2 bg-[var(--bg-hover)] hover:bg-[var(--text-muted)]'}"
             ></button>
           {/each}
         </div>
