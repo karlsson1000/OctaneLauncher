@@ -1,15 +1,15 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition"
   import {
-    House, LibraryBig, Package, Blocks, Shirt, Image, Images, SquareTerminal, Terminal,
-    Settings, Plus, Cpu, Coffee, Palette, HardDrive, FolderOpen, User,
+    House, LibraryBig, Package, Blocks, Shirt, Images, SquareTerminal,
+    Settings, Plus, Paintbrush, Play, AppWindow, HardDrive, User,
     Search,
   } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import {
     store, setActiveTab, setShowInstanceDetails, setSelectedInstance,
     setShowSettingsModal, setShowCreateModal, loadAccounts,
-    setAddonsSubTab, setShowSearchPalette,
+    setAddonsSubTab, setShowSearchPalette, openSettingsAt,
   } from "../../lib/launcherStore.svelte"
   import { getMinecraftVersion } from "../../lib/version"
 
@@ -20,6 +20,7 @@
     icon: typeof House
     keywords?: string
     disabled?: boolean
+    section: string
     action: () => void
   }
 
@@ -27,14 +28,11 @@
   let selected = $state(0)
   let inputEl = $state<HTMLInputElement>()
 
-  const SETTINGS_SECTIONS = [
-    { id: "memory", label: "Memory Allocation", icon: Cpu },
-    { id: "java", label: "Java", icon: Coffee },
-    { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "background", label: "Background", icon: Image },
-    { id: "console", label: "Console Settings", icon: Terminal },
-    { id: "directory", label: "Game Directory", icon: FolderOpen },
-    { id: "storage", label: "Storage", icon: HardDrive },
+  const SETTINGS_TABS = [
+    { id: "appearance" as const, label: "Appearance settings", icon: Paintbrush },
+    { id: "game" as const, label: "Game settings", icon: Play },
+    { id: "launcher" as const, label: "Launcher settings", icon: AppWindow },
+    { id: "storage" as const, label: "Storage settings", icon: HardDrive },
   ]
 
   function close() {
@@ -46,6 +44,7 @@
       id: `tab-${tab}`,
       label,
       icon,
+      section: "Navigate",
       keywords: `open go navigate${extraKeywords ? ` ${extraKeywords}` : ""}`,
       action: () => {
         setActiveTab(tab)
@@ -67,6 +66,7 @@
         id: "action-new-instance",
         label: "Create New Instance",
         icon: Plus,
+        section: "Actions",
         keywords: "new add instance create",
         action: () => setShowCreateModal(true),
       },
@@ -75,21 +75,23 @@
         label: "Settings",
         hint: "Open settings",
         icon: Settings,
+        section: "Settings",
         keywords: "options preferences",
         action: () => setShowSettingsModal(true),
       },
     ]
 
-    for (const section of SETTINGS_SECTIONS) {
+    for (const tab of SETTINGS_TABS) {
       list.push({
-        id: `settings-${section.id}`,
-        label: section.label,
+        id: `settings-${tab.id}`,
+        label: tab.label,
         hint: "Settings",
-        icon: section.icon,
+        icon: tab.icon,
+        section: "Settings",
         keywords: "settings option preference",
         action: () => {
-          store.settingsScrollTarget = section.id
-          setShowSettingsModal(true)
+          openSettingsAt(tab.id)
+          close()
         },
       })
     }
@@ -101,6 +103,7 @@
         label: `Search ${tab} for "${query.trim()}"`,
         hint: "Addons",
         icon: Blocks,
+        section: "Addons",
         action: () => {
           store.pendingAddonsSearch = query.trim()
           setAddonsSubTab(tab)
@@ -116,6 +119,7 @@
         label: instance.name,
         hint: `${getMinecraftVersion(instance)} · ${instance.loader || "vanilla"}`,
         icon: Package,
+        section: "Instances",
         keywords: "instance open play launch",
         action: () => {
           setSelectedInstance(instance)
@@ -126,21 +130,13 @@
     }
 
     if (store.isAuthenticated && store.accounts.length > 0) {
-      list.push({
-        id: "accounts-header",
-        label: "Switch account",
-        icon: User,
-        keywords: "account user switch sign in",
-        disabled: true,
-        action: () => {},
-      })
-
       for (const account of store.accounts) {
         list.push({
           id: `account-${account.uuid}`,
           label: account.username,
           hint: account.is_active ? "Active" : "Switch to this account",
           icon: User,
+          section: "Accounts",
           keywords: "account user switch",
           action: () => {
             invoke("switch_account", { uuid: account.uuid })
@@ -211,7 +207,7 @@
   >
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div
-      class="w-full max-w-lg bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-xl overflow-hidden shadow-2xl"
+      class="w-full max-w-lg bg-[var(--content-bg)] border border-[var(--border-subtle)] rounded-md overflow-hidden shadow-md"
       transition:fly={{ y: -8, duration: 150 }}
       onclick={(e) => e.stopPropagation()}
       role="dialog"
@@ -237,13 +233,16 @@
         {:else}
           {#each entries as entry, i (entry.id)}
             {@const Icon = entry.icon}
+            {#if i > 0 && entries[i - 1].section !== entry.section}
+              <div class="h-px bg-[var(--border-default)] my-1" role="separator"></div>
+            {/if}
             <button
               onclick={() => run(entry)}
               onmousemove={() => (selected = i)}
-              class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors {selected === i ? 'bg-[var(--bg-secondary)]' : ''} {entry.disabled ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}"
+              class="w-full flex items-center gap-3 px-2 py-1.5 rounded-sm text-left text-base {selected === i ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'} {entry.disabled ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}"
             >
-              <Icon size={15} class="text-[var(--text-muted)] flex-shrink-0" />
-              <span class="text-sm text-[var(--text-primary)] truncate flex-1">{entry.label}</span>
+              <Icon size={16} class="text-[var(--text-muted)] flex-shrink-0" />
+              <span class="text-sm truncate flex-1">{entry.label}</span>
               {#if entry.hint}
                 <span class="text-xs text-[var(--text-muted)]">{entry.hint}</span>
               {/if}

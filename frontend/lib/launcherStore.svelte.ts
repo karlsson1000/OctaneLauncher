@@ -72,7 +72,7 @@ export const store = $state({
   showOnboarding: false,
   exportModalInstance: null as Instance | null,
   showSearchPalette: false,
-  settingsScrollTarget: null as string | null,
+  pendingSettingsTab: null as "appearance" | "game" | "launcher" | "storage" | null,
   pendingAddonsSearch: null as string | null,
 })
 
@@ -409,6 +409,11 @@ function setCreatingInstanceName(v: string | null) { store.creatingInstanceName 
 function setConfirmModal(v: ConfirmModalState | null) { store.confirmModal = v }
 function setAlertModal(v: AlertModalState | null) { store.alertModal = v }
 function setShowSettingsModal(v: boolean) { store.showSettingsModal = v }
+
+function openSettingsAt(tab: "appearance" | "game" | "launcher" | "storage") {
+  store.pendingSettingsTab = tab
+  store.showSettingsModal = true
+}
 function setSidebarContextMenu(v: SidebarMenu | null) { store.sidebarContextMenu = v }
 function setShowAccountDropdown(v: boolean) { store.showAccountDropdown = v }
 function setShowFriendsPanel(v: boolean) {
@@ -532,6 +537,7 @@ export {
   setConfirmModal,
   setAlertModal,
   setShowSettingsModal,
+  openSettingsAt,
   setSidebarContextMenu,
   setShowAccountDropdown,
   setShowFriendsPanel,

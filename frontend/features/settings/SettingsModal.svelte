@@ -26,16 +26,6 @@
     { id: "storage", label: "Storage", icon: HardDrive },
   ]
 
-  const SECTION_TAB: Record<string, TabId> = {
-    memory: "game",
-    console: "launcher",
-    java: "game",
-    appearance: "appearance",
-    background: "appearance",
-    directory: "storage",
-    storage: "storage",
-  }
-
   let { isOpen, onClose }: { isOpen: boolean; onClose: () => void } = $props()
 
   let activeTab = $state<TabId>("appearance")
@@ -176,15 +166,9 @@
         loadAppVersion()
         loadStorageUsage()
 
-        const target = store.settingsScrollTarget
-        if (target) {
-          activeTab = SECTION_TAB[target] ?? "appearance"
-          store.settingsScrollTarget = null
-          setTimeout(() => {
-            document
-              .getElementById(`settings-${target}`)
-              ?.scrollIntoView({ behavior: "smooth", block: "center" })
-          }, 80)
+        if (store.pendingSettingsTab) {
+          activeTab = store.pendingSettingsTab
+          store.pendingSettingsTab = null
         }
       })
     }
@@ -481,7 +465,7 @@
               </div>
             </section>
 
-            <section id="settings-background" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+            <section class="rounded-md bg-[var(--bg-tertiary)] p-4">
               <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight mb-3">Custom background</h4>
               {#if backgroundPreview}
                 <div class="relative group">
@@ -530,7 +514,7 @@
               {/if}
             </section>
           {:else if activeTab === "game"}
-            <section id="settings-memory" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+            <section class="rounded-md bg-[var(--bg-tertiary)] p-4">
               <div class="flex items-center justify-between gap-3 mb-3">
                 <div class="min-w-0">
                   <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Memory allocation</h4>
@@ -565,7 +549,7 @@
               </div>
             </section>
 
-            <section id="settings-java" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+            <section class="rounded-md bg-[var(--bg-tertiary)] p-4">
               <div class="flex items-center justify-between gap-3 mb-3">
                 <div class="min-w-0">
                   <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Java runtime</h4>
@@ -717,7 +701,7 @@
               </div>
             </section>
           {:else if activeTab === "storage"}
-            <section id="settings-storage" class="rounded-md bg-[var(--bg-tertiary)] p-4">
+            <section class="rounded-md bg-[var(--bg-tertiary)] p-4">
               <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight mb-3">Disk usage</h4>
               {#if storageLoading}
                 <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
@@ -747,7 +731,7 @@
               {/if}
             </section>
 
-            <section id="settings-directory" class="rounded-md bg-[var(--bg-tertiary)] px-4 py-1.5">
+            <section class="rounded-md bg-[var(--bg-tertiary)] px-4 py-1.5">
               <div class="flex items-center gap-3 py-2.5">
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">Game directory</p>
