@@ -346,6 +346,8 @@
     }
   }
 
+  let backdropArmed = false
+
   function handleClose() {
     isClosing = true
     setTimeout(() => { isClosing = false; onClose() }, 150)
@@ -367,7 +369,9 @@
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop"
       class:closing={isClosing}
       role="presentation"
-      onclick={handleClose}
+      onmousedown={(e) => { backdropArmed = e.target === e.currentTarget }}
+      onmouseup={(e) => { backdropArmed = backdropArmed && e.target === e.currentTarget }}
+      onclick={() => { if (backdropArmed) handleClose() }}
       onkeydown={(e) => { if (e.key === 'Escape') handleClose() }}
     >
       <div

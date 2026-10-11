@@ -39,6 +39,8 @@
     setShowSearchPalette(false)
   }
 
+  let backdropArmed = false
+
   function goTab(tab: Parameters<typeof setActiveTab>[0], label: string, icon: typeof House, extraKeywords?: string) {
     return {
       id: `tab-${tab}`,
@@ -201,7 +203,9 @@
   <div
     class="fixed inset-0 z-[100] bg-black/70 flex items-start justify-center pt-[14vh]"
     transition:fade={{ duration: 120 }}
-    onclick={close}
+    onmousedown={(e) => { backdropArmed = e.target === e.currentTarget }}
+    onmouseup={(e) => { backdropArmed = backdropArmed && e.target === e.currentTarget }}
+    onclick={() => { if (backdropArmed) close() }}
     onkeydown={() => {}}
     role="presentation"
   >
