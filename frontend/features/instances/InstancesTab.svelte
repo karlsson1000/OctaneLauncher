@@ -501,24 +501,26 @@ import { instanceIconSrc } from "../../lib/icons"
   >
     <div
       role="presentation"
-      class="blur-border bg-[var(--bg-secondary)] rounded-lg w-80 shadow-xl modal-content p-4"
+      class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-80 modal-content p-5 space-y-4"
       onclick={(e) => e.stopPropagation()}
     >
-      <h3 class="text-base font-semibold text-[var(--text-primary)] tracking-tight">Add to group</h3>
-      <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-3">Move "{gmi.name}" into a group</p>
+      <div>
+        <h3 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Add to group</h3>
+        <p class="text-[13px] text-[var(--text-muted)] mt-0.5 truncate">Move "{gmi.name}" into a group</p>
+      </div>
 
       {#if otherGroups.length > 0}
-        <div class="flex flex-col gap-y-0.5 max-h-48 overflow-y-auto custom-scrollbar mb-1">
+        <div class="flex flex-col max-h-48 overflow-y-auto custom-scrollbar">
           {#each otherGroups as g (g)}
             <button
               onclick={() => { handleCreateGroup(gmi, g); showGroupModal = false }}
-              class="flex items-center gap-2.5 px-2 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover-light)] rounded-md transition-colors cursor-pointer text-left"
+              class="flex items-center gap-2.5 px-2 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-sm transition-colors cursor-pointer text-left"
             >
               <FolderOpen size={16} strokeWidth={2} class="text-[var(--text-muted)] flex-shrink-0" />
               <span class="truncate">{g}</span>
             </button>
           {/each}
-          <div class="h-px bg-[var(--border-subtle)] my-2"></div>
+          <div class="h-px bg-[var(--border-default)] my-1"></div>
         </div>
       {/if}
 
@@ -535,7 +537,7 @@ import { instanceIconSrc } from "../../lib/icons"
             }
             if (e.key === "Escape") showGroupModal = false
           }}
-          class="flex-1 min-w-0 bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-md px-3 py-2 text-sm outline-none border border-transparent transition-colors"
+          class="flex-1 min-w-0 h-9 bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-sm px-3 text-sm outline-none border border-transparent transition-colors"
         />
         <button
           onclick={() => {
@@ -545,7 +547,7 @@ import { instanceIconSrc } from "../../lib/icons"
             }
           }}
           disabled={!groupModalValue.trim()}
-          class="px-3 py-1.5 text-sm bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          class="h-9 px-4 text-sm bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
         >
           Create
         </button>
