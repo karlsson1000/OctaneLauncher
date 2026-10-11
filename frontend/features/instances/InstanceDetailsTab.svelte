@@ -100,7 +100,6 @@
       const worldsList = await invoke<World[]>("get_instance_worlds", { instanceName: instance.name })
       worlds = worldsList
     } catch (error) {
-      console.error("Failed to load worlds:", error)
       worlds = []
     } finally {
       isLoadingWorlds = false
@@ -113,7 +112,6 @@
       const mods = await invoke<InstalledMod[]>("get_installed_mods_with_metadata", { instanceName: instance.name })
       installedMods = mods
     } catch (error) {
-      console.error("Failed to load installed mods:", error)
       installedMods = []
     } finally {
       isLoadingMods = false
@@ -126,7 +124,6 @@
       const packs = await invoke<ModFileWithMetadata[]>("get_installed_resourcepacks_with_metadata", { instanceName: instance.name })
       resourcePacks = packs
     } catch (error) {
-      console.error("Failed to load resource packs:", error)
       resourcePacks = []
     } finally {
       isLoadingResourcePacks = false
@@ -139,7 +136,6 @@
       const packs = await invoke<ModFileWithMetadata[]>("get_installed_shaderpacks_with_metadata", { instanceName: instance.name })
       shaderPacks = packs
     } catch (error) {
-      console.error("Failed to load shader packs:", error)
       shaderPacks = []
     } finally {
       isLoadingShaderPacks = false
@@ -164,7 +160,6 @@
         upToDateTimer = setTimeout(() => (allModsUpToDate = false), 3000)
       }
     } catch (error) {
-      console.error("Failed to check for updates:", error)
       alertModal = { isOpen: true, title: "Error", message: `Failed to check for updates: ${String(error)}`, type: "danger" }
     } finally {
       isCheckingUpdates = false
@@ -180,7 +175,6 @@
     })
     if (update.filename !== update.latestVersion.filename) {
       await invoke("delete_mod", { instanceName: instance.name, filename: update.filename }).catch((err: Error) =>
-        console.error(`Failed to delete old version ${update.filename}:`, err)
       )
     }
   }
@@ -198,7 +192,6 @@
         try {
           await applyModUpdate(update)
         } catch (error) {
-          console.error(`Failed to update mod ${update.filename}:`, error)
         }
       }
     })
@@ -216,7 +209,6 @@
       availableUpdates = availableUpdates.filter(u => u.filename !== update.filename)
       await loadInstalledMods()
     } catch (error) {
-      console.error(`Failed to update mod ${update.filename}:`, error)
     }
   }
 
@@ -251,7 +243,6 @@
     try {
       await invoke("open_instance_folder", { instanceName: instance.name })
     } catch (error) {
-      console.error("Failed to open folder:", error)
     }
   }
 
@@ -261,7 +252,6 @@
       await loadInstalledMods()
       availableUpdates = []
     } catch (error) {
-      console.error("Failed to delete mod:", error)
       alertModal = { isOpen: true, title: "Error", message: `Failed to delete mod: ${String(error)}`, type: "danger" }
     }
   }
@@ -278,7 +268,6 @@
           await invoke("delete_world", { instanceName: instance.name, folderName })
           await loadWorlds()
         } catch (error) {
-          console.error("Failed to delete world:", error)
           alertModal = { isOpen: true, title: "Error", message: `Failed to delete world: ${String(error)}`, type: "danger" }
         }
       }
@@ -290,7 +279,6 @@
       await invoke("delete_resourcepack", { instanceName: instance.name, filename })
       await loadResourcePacks()
     } catch (error) {
-      console.error("Failed to delete resource pack:", error)
       alertModal = { isOpen: true, title: "Error", message: `Failed to delete resource pack: ${String(error)}`, type: "danger" }
     }
   }
@@ -300,7 +288,6 @@
       await invoke("delete_shaderpack", { instanceName: instance.name, filename })
       await loadShaderPacks()
     } catch (error) {
-      console.error("Failed to delete shader pack:", error)
       alertModal = { isOpen: true, title: "Error", message: `Failed to delete shader pack: ${String(error)}`, type: "danger" }
     }
   }
@@ -316,7 +303,6 @@
       await invoke("toggle_mod", { instanceName: instance.name, filename: mod.filename, disable: disabled })
     } catch (error) {
       installedMods = installedMods.map(m => m.filename === filename ? mod : m)
-      console.error("Failed to toggle mod:", error)
       alertModal = { isOpen: true, title: "Error", message: `Failed to ${mod.disabled ? "enable" : "disable"} mod: ${String(error)}`, type: "danger" }
     }
   }
@@ -325,7 +311,6 @@
     try {
       await invoke("open_worlds_folder", { instanceName: instance.name })
     } catch (error) {
-      console.error("Failed to open worlds folder:", error)
       alertModal = { isOpen: true, title: "Error", message: `Failed to open worlds folder: ${String(error)}`, type: "danger" }
     }
   }
@@ -334,7 +319,6 @@
     try {
       await invoke("open_world_folder", { instanceName: instance.name, folderName })
     } catch (error) {
-      console.error("Failed to open world folder:", error)
       alertModal = { isOpen: true, title: "Error", message: `Failed to open world folder: ${String(error)}`, type: "danger" }
     }
   }
@@ -349,7 +333,6 @@
     try {
       await invoke("open_resourcepacks_folder", { instanceName: instance.name })
     } catch (error) {
-      console.error("Failed to open resourcepacks folder:", error)
     }
   }
 
@@ -357,7 +340,6 @@
     try {
       await invoke("open_shaderpacks_folder", { instanceName: instance.name })
     } catch (error) {
-      console.error("Failed to open shaderpacks folder:", error)
     }
   }
 

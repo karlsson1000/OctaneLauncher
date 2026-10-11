@@ -116,7 +116,6 @@
         itemStatus[item.path] = "done"
         importedCount++
       } catch (error) {
-        console.error(`Failed to import ${item.name}:`, error)
         itemStatus[item.path] = "error"
       }
     }

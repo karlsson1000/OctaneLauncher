@@ -220,7 +220,6 @@
       appVersion = version
       semanticVersion = version.split('-')[0]
     } catch (error) {
-      console.error("Failed to get app version:", error)
     }
   }
 
@@ -230,7 +229,6 @@
       const data = await invoke<StorageCategory[]>("get_storage_usage")
       storageCategories = data
     } catch (error) {
-      console.error("Failed to load storage usage:", error)
     } finally {
       storageLoading = false
     }
@@ -241,7 +239,6 @@
       const info = await invoke<SystemInfo>("get_system_info")
       systemInfo = info
     } catch (error) {
-      console.error("Failed to get system info:", error)
     }
   }
 
@@ -250,7 +247,6 @@
       const bg = await invoke<string | null>("get_background")
       backgroundPreview = bg
     } catch (error) {
-      console.error("Failed to load background:", error)
     }
   }
 
@@ -260,7 +256,6 @@
       const installations = await invoke<string[]>("detect_java_installations")
       javaInstallations = installations
     } catch (error) {
-      console.error("Failed to detect Java installations:", error)
     } finally {
       isLoadingJava = false
     }
@@ -272,7 +267,6 @@
       await storeSet('octane_theme', newSettings.theme ?? 'octane')
       setSettings(newSettings)
     } catch (error) {
-      console.error("Failed to save settings:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to save settings" + `: ${error}`, type: "danger" }
     }
   }
@@ -313,13 +307,11 @@
           backgroundPreview = base64
           loadBackground()
         } catch (error) {
-          console.error("Failed to save background:", error)
           alertModal = { isOpen: true, title: "An error occurred", message: "Failed to save background" + `: ${error}`, type: "danger" }
         }
       }
       reader.readAsDataURL(file)
     } catch (error) {
-      console.error("Failed to read file:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to read image file", type: "danger" }
     }
 
@@ -332,7 +324,6 @@
       backgroundPreview = null
       loadBackground()
     } catch (error) {
-      console.error("Failed to remove background:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to remove background" + `: ${error}`, type: "danger" }
     }
   }
@@ -341,7 +332,6 @@
     try {
       await invoke("open_directory", { path })
     } catch (error) {
-      console.error("Failed to open directory:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to open directory" + `: ${error}`, type: "danger" }
     }
   }

@@ -98,7 +98,6 @@
         await fetchCurseforgeFiles()
       }
     } catch (e) {
-      console.error("Failed to fetch project details:", e)
       error = String(e)
     } finally {
       isLoading = false
@@ -131,7 +130,6 @@
       }
       versions = result
     } catch (e) {
-      console.error("Failed to fetch versions:", e)
     } finally {
       isLoadingVersions = false
     }
@@ -149,7 +147,6 @@
       })
       curseforgeFiles = result.data
     } catch (e) {
-      console.error("Failed to fetch CurseForge files:", e)
     } finally {
       isLoadingVersions = false
     }
@@ -169,7 +166,6 @@
         installedFiles = new Set(packs)
       }
     } catch (e) {
-      console.error("Failed to load installed files:", e)
     }
   }
 
@@ -211,7 +207,6 @@
         }
       }
     } catch (e) {
-      console.error("Download error:", e)
     } finally {
       const n = new Set(downloadingMap)
       n.delete(version.id)
@@ -253,7 +248,6 @@
         installedFiles = new Set(installedFiles).add(file.fileName)
       }
     } catch (e) {
-      console.error("Download error:", e)
     } finally {
       const n = new Set(downloadingMap)
       n.delete(file.id.toString())

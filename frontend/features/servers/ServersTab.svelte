@@ -58,7 +58,6 @@
     try {
       return await invoke<number>("ping_server", { address, port })
     } catch (e) {
-      console.error("Failed to ping server:", e)
       return undefined
     }
   }
@@ -90,7 +89,6 @@
         ping,
       }
     } catch (error) {
-      console.error("Failed to fetch server status:", error)
       return null
     }
   }
@@ -99,7 +97,6 @@
     try {
       await invoke("update_server_status", { serverName, status })
     } catch (e) {
-      console.error("Failed to save server status:", e)
     }
   }
 
@@ -121,7 +118,6 @@
       servers = await invoke<ServerInfo[]>("get_servers")
       refreshAll()
     } catch (error) {
-      console.error("Failed to load servers:", error)
       servers = []
     }
   }
@@ -134,7 +130,6 @@
         port: newServer.port,
       })
     } catch (error) {
-      console.error("Failed to save server:", error)
       alert(`Failed to add server: ${error}`)
       return
     }
@@ -150,7 +145,6 @@
       await invoke("delete_server", { serverName: name })
       servers = servers.filter(s => s.name !== name)
     } catch (error) {
-      console.error("Delete error:", error)
     } finally {
       serverToDelete = null
     }
@@ -167,7 +161,6 @@
       })
       setTimeout(() => { launchingServer = null }, 1000)
     } catch (error) {
-      console.error("Failed to launch server:", error)
       alert(`Failed to launch server: ${error}`)
       launchingServer = null
     }
@@ -228,7 +221,6 @@
     try {
       await invoke("reorder_servers", { serverNames: ordered.map(s => s.name) })
     } catch (e) {
-      console.error("Failed to reorder servers:", e)
     }
   }
 

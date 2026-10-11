@@ -120,7 +120,6 @@
         hits = [...hits, ...result.hits.filter(h => !ids.has(h.id))]
       }
     } catch (error) {
-      console.error("Addon search error:", error)
     } finally {
       if (token === requestToken) {
         if (replace) isSearching = false

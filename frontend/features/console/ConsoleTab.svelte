@@ -141,7 +141,6 @@
         setTimeout(() => { uploadState = { loading: false, url: null, error: null } }, 3000)
       }
     } catch (err) {
-      console.error('Failed to upload logs:', err)
       uploadState = { loading: false, url: null, error: "Network error occurred" }
       setTimeout(() => { uploadState = { loading: false, url: null, error: null } }, 3000)
     }
@@ -178,7 +177,6 @@
     })
 
     win.once("tauri://error", (e) => {
-      console.error("Failed to open console window:", e)
       isPopedOut = false
     })
 

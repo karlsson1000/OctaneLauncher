@@ -84,7 +84,7 @@
     if (!store.activeAccount) return
     recentSkins = [{ url, variant, timestamp: Date.now() }, ...recentSkins.filter(s => s.url !== url)].slice(0, 3)
     try { await invoke<void>("save_recent_skin", { accountUuid: store.activeAccount.uuid, skinUrl: url, variant }) }
-    catch { console.error("Failed to save recent skin") }
+ catch { }
   }
 
   function applyUploadedSkin(result: { url: string; variant: string }): "classic" | "slim" | null {
@@ -185,7 +185,7 @@
           uuid: store.activeAccount.uuid, capes: capeData.capes, activeCapeId: activeId, timestamp: now,
         })
       }
-    } catch { console.error("Failed to load capes") } finally { loadingCapes = false }
+ } catch { } finally { loadingCapes = false }
   }
 
   function handleCapeSelect(capeId: string) {

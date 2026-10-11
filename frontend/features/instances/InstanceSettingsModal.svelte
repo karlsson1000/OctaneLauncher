@@ -153,7 +153,6 @@
         instanceMemoryMb = 4096
       }
     } catch (error) {
-      console.error("Failed to load instance RAM settings:", error)
       useCustomRam = false
       instanceMemoryMb = 4096
     }
@@ -164,7 +163,6 @@
       const info = await invoke<SystemInfo>("get_system_info")
       systemInfo = info
     } catch (error) {
-      console.error("Failed to load system info:", error)
     }
   }
 
@@ -183,7 +181,6 @@
       }
       onInstanceUpdated()
     } catch (error) {
-      console.error("Failed to save RAM settings:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to save RAM settings: ${String(error)}`, type: "danger" }
     }
   }
@@ -199,7 +196,6 @@
       const versions = await invoke<string[]>("get_minecraft_versions_by_type", { versionType: "release" })
       minecraftVersions = versions
     } catch (error) {
-      console.error("Failed to load Minecraft versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to load Minecraft versions: ${String(error)}`, type: "danger" }
     } finally {
       isLoadingVersions = false
@@ -212,7 +208,6 @@
       const versions = await invoke<FabricVersion[]>("get_fabric_versions")
       fabricVersions = versions
     } catch (error) {
-      console.error("Failed to load Fabric versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to load Fabric versions: ${String(error)}`, type: "danger" }
     } finally {
       isLoadingFabric = false
@@ -239,7 +234,6 @@
           await invoke("update_instance_minecraft_version", { instanceName: instance.name, newMinecraftVersion: newVersion })
           onInstanceUpdated()
         } catch (error) {
-          console.error("Failed to update Minecraft version:", error)
           alertModal = { isOpen: true, title: "An error occurred", message: `Failed to update Minecraft version: ${String(error)}`, type: "danger" }
           selectedMinecraftVersion = getMinecraftVersion(instance.version)
         } finally {
@@ -261,7 +255,6 @@
       await invoke("update_instance_fabric_loader", { instanceName: instance.name, fabricVersion: newVersion })
       onInstanceUpdated()
     } catch (error) {
-      console.error("Failed to update Fabric loader:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to update Fabric loader: ${String(error)}`, type: "danger" }
       selectedFabricVersion = instance.loader_version || ""
     } finally {
@@ -275,7 +268,6 @@
       const versions = await invoke<NeoForgeVersion[]>("get_neoforge_versions")
       neoforgeVersions = versions
     } catch (error) {
-      console.error("Failed to load NeoForge versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to load NeoForge versions: ${String(error)}`, type: "danger" }
     } finally {
       isLoadingNeoforge = false
@@ -294,7 +286,6 @@
       await invoke("update_instance_neoforge_loader", { instanceName: instance.name, neoforgeVersion: newVersion })
       onInstanceUpdated()
     } catch (error) {
-      console.error("Failed to update NeoForge loader:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to update NeoForge loader: ${String(error)}`, type: "danger" }
       selectedNeoforgeVersion = instance.loader_version || ""
     } finally {
@@ -308,7 +299,6 @@
       const versions = await invoke<ForgeVersion[]>("get_forge_versions")
       forgeVersions = versions
     } catch (error) {
-      console.error("Failed to load Forge versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to load Forge versions: ${String(error)}`, type: "danger" }
     } finally {
       isLoadingForge = false
@@ -327,7 +317,6 @@
       await invoke("update_instance_forge_loader", { instanceName: instance.name, forgeFullVersion: newVersion })
       onInstanceUpdated()
     } catch (error) {
-      console.error("Failed to update Forge loader:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: `Failed to update Forge loader: ${String(error)}`, type: "danger" }
       selectedForgeVersion = instance.loader_version || ""
     } finally {
@@ -367,7 +356,6 @@
           localIcon = instanceIconSrc(iconPath, instance.name)
           onInstanceUpdated()
         } catch (error) {
-          console.error("Failed to set icon:", error)
           alertModal = { isOpen: true, title: "An error occurred", message: `Failed to set icon: ${String(error)}`, type: "danger" }
         } finally {
           isUploadingIcon = false
@@ -375,7 +363,6 @@
       }
       reader.readAsDataURL(file)
     } catch (error) {
-      console.error("Failed to read file:", error)
       isUploadingIcon = false
     }
 
@@ -396,7 +383,6 @@
           localIcon = null
           onInstanceUpdated()
         } catch (error) {
-          console.error("Failed to remove icon:", error)
           alertModal = { isOpen: true, title: "An error occurred", message: `Failed to remove icon: ${String(error)}`, type: "danger" }
         }
       }

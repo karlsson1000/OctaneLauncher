@@ -95,7 +95,6 @@
       const firstRelease = versionsData.find((v: MinecraftVersion) => v.type === "release")
       if (firstRelease) selectedVersion = firstRelease.id
     } catch (error) {
-      console.error("Failed to load versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to load versions" + `: ${error}`, type: "danger" }
     } finally {
       isLoadingVersions = false
@@ -107,7 +106,6 @@
       const supported = await invoke<string[]>("get_supported_game_versions")
       fabricSupportedVersions = supported
     } catch (error) {
-      console.error("Failed to load Fabric supported versions:", error)
     }
   }
 
@@ -116,7 +114,6 @@
       const supported = await invoke<string[]>("get_neoforge_supported_game_versions")
       neoforgeSupportedVersions = supported
     } catch (error) {
-      console.error("Failed to load NeoForge supported versions:", error)
     }
   }
 
@@ -125,7 +122,6 @@
       const supported = await invoke<string[]>("get_forge_supported_game_versions")
       forgeSupportedVersions = supported
     } catch (error) {
-      console.error("Failed to load Forge supported versions:", error)
     }
   }
 
@@ -157,7 +153,6 @@
       forgeVersions = filtered
       if (filtered.length > 0) selectedForgeVersion = filtered[0].forge_version
     } catch (error) {
-      console.error("Failed to load Forge versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to load Forge versions" + `: ${error}`, type: "danger" }
     } finally {
       isLoadingForge = false
@@ -173,7 +168,6 @@
       if (stableVersion) selectedFabricVersion = stableVersion.version
       else if (versions.length > 0) selectedFabricVersion = versions[0].version
     } catch (error) {
-      console.error("Failed to load Fabric versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to load Fabric versions" + `: ${error}`, type: "danger" }
     } finally {
       isLoadingFabric = false
@@ -188,7 +182,6 @@
       neoforgeVersions = filtered
       if (filtered.length > 0) selectedNeoforgeVersion = filtered[0].neoforge_version
     } catch (error) {
-      console.error("Failed to load NeoForge versions:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to load NeoForge versions" + `: ${error}`, type: "danger" }
     } finally {
       isLoadingNeoforge = false
@@ -300,7 +293,6 @@
       await invoke("install_modpack_from_file", { filePath, instanceName: finalName, preferredGameVersion: null })
       onSuccess()
     } catch (error) {
-      console.error("Import error:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to import instance" + `: ${error}`, type: "danger" }
     } finally {
       isCreating = false
@@ -329,7 +321,6 @@
 
       onSuccess()
     } catch (error) {
-      console.error("Create instance error:", error)
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to create instance" + `: ${error}`, type: "danger" }
     } finally {
       isCreating = false

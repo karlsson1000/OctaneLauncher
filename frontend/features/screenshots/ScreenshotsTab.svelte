@@ -20,7 +20,6 @@
       const allScreenshots = await invoke<Screenshot[]>("get_all_screenshots")
       screenshots = allScreenshots
     } catch (error) {
-      console.error("Failed to load screenshots:", error)
     } finally {
       loading = false
     }
@@ -32,19 +31,16 @@
       delete startedImages[screenshot.path]
       await loadScreenshots()
     } catch (error) {
-      console.error("Failed to delete screenshot:", error)
     }
   }
 
   async function handleOpenScreenshot(screenshot: Screenshot) {
     try { await invoke("open_screenshot", { path: screenshot.path }) } catch (error) {
-      console.error("Failed to open screenshot:", error)
     }
   }
 
   async function handleOpenScreenshotsFolder() {
     try { await invoke("open_screenshots_folder", { instanceName: selectedInstance }) } catch (error) {
-      console.error("Failed to open screenshots folder:", error)
     }
   }
 

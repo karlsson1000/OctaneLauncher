@@ -115,7 +115,6 @@ async function loadPinnedModpack(): Promise<AddonHit | null> {
       categories: [],
     }
   } catch (error) {
-    console.error("Failed to load custom modpack:", error)
     return null
   }
 }

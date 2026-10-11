@@ -55,7 +55,6 @@
     try {
       await storeSet(favoritesKey(), favorites)
     } catch (error) {
-      console.error("Failed to save favorite:", error)
     }
   }
 
@@ -69,7 +68,6 @@
     try {
       await storeSet(nicknameKey(), nicknames)
     } catch (error) {
-      console.error("Failed to save nickname:", error)
     }
     editingNicknameUuid = null
   }
@@ -92,7 +90,6 @@
       const result = await invoke<Friend[]>("get_friends")
       friends = result
     } catch (error) {
-      console.error("Failed to load friends:", error)
     } finally {
       isLoading = false
     }
@@ -103,7 +100,6 @@
       const result = await invoke<Friend[]>("get_friends")
       friends = result
     } catch (error) {
-      console.error("Failed to poll friends:", error)
     }
   }
 
@@ -112,7 +108,6 @@
       const result = await invoke<FriendRequest[]>("get_friend_requests")
       requests = result
     } catch (error) {
-      console.error("Failed to load requests:", error)
     }
   }
 
@@ -137,7 +132,6 @@
       requests = requests.filter(r => r.id !== requestId)
       loadFriends()
     } catch (error) {
-      console.error("Failed to accept request:", error)
     }
   }
 
@@ -146,7 +140,6 @@
       await invoke("reject_friend_request", { requestId })
       requests = requests.filter(r => r.id !== requestId)
     } catch (error) {
-      console.error("Failed to reject request:", error)
     }
   }
 
@@ -155,7 +148,6 @@
       await invoke("remove_friend", { friendUuid })
       friends = friends.filter(f => f.uuid !== friendUuid)
     } catch (error) {
-      console.error("Failed to remove friend:", error)
     }
   }
 

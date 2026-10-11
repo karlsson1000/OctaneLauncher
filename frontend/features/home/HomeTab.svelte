@@ -70,7 +70,6 @@
         snapshots = data.entries.slice(0, 30)
         if (snapshotStart > Math.max(snapshots.length - SNAPSHOT_PAGE_SIZE, 0)) snapshotStart = 0
       } catch (error) {
-        console.error('Failed to load snapshots:', error)
       } finally {
         loadingSnapshots = false
       }

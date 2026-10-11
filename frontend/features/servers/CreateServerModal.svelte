@@ -87,7 +87,6 @@
       onSuccess(newServer)
       handleClose()
     } catch (error) {
-      console.error("Create server error:", error)
       alertModal = {
         isOpen: true,
         title: "Error",

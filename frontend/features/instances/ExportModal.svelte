@@ -104,7 +104,6 @@
         handleClose()
       }, 1500)
     } catch (error) {
-      console.error("Export error:", error)
       alertModal = {
         isOpen: true,
         title: "Error",
