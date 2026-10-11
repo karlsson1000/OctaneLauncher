@@ -22,6 +22,18 @@
 
   let contentSource = $state<ContentSource>("modrinth")
   let showSourceDropdown = $state(false)
+
+  $effect(() => {
+    if (!showSourceDropdown) return
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest("[data-source-dropdown]") && !target.closest("[data-source-button]")) {
+        showSourceDropdown = false
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  })
   let searchQuery = $state("")
   const moddedInstances = $derived(store.instances.filter(i => i.loader === "fabric" || i.loader === "neoforge" || i.loader === "forge"))
 
@@ -95,6 +107,7 @@
         <div class="flex gap-2 items-stretch">
         <div class="relative">
           <button
+            data-source-button
             onclick={() => showSourceDropdown = !showSourceDropdown}
             class="w-10 h-10 flex items-center justify-center bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md transition-colors cursor-pointer"
           >
@@ -105,17 +118,17 @@
             />
           </button>
           {#if showSourceDropdown}
-            <div class="absolute top-full mt-2 left-0 bg-[var(--bg-tertiary)] rounded-md overflow-hidden z-50 min-w-[140px] shadow-lg">
+            <div data-source-dropdown class="dropdown-menu absolute top-full mt-2 left-0 bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] rounded-md overflow-hidden z-50 min-w-[140px] shadow-md p-1.5 flex flex-col gap-1">
               <button
                 onclick={() => { contentSource = "modrinth"; showSourceDropdown = false }}
-                class="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors cursor-pointer {contentSource === 'modrinth' ? 'bg-[#16a34a]/10 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm transition-colors cursor-pointer {contentSource === 'modrinth' ? 'bg-[#16a34a]/10 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
               >
                 <img src="/modrinth.svg" alt="Modrinth" class="w-6 h-6" />
                 Modrinth
               </button>
               <button
                 onclick={() => { contentSource = "curseforge"; showSourceDropdown = false }}
-                class="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors cursor-pointer {contentSource === 'curseforge' ? 'bg-[#f97316]/20 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm transition-colors cursor-pointer {contentSource === 'curseforge' ? 'bg-[#f97316]/20 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
               >
                 <img src="/curseforge.svg" alt="CurseForge" class="w-6 h-6" />
                 CurseForge

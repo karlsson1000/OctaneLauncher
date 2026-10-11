@@ -462,10 +462,10 @@
                   <span>Play</span>
                 {/if}
               </button>
-              <button onclick={handleOpenFolder} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer">
+              <button onclick={handleOpenFolder} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer">
                 <FolderOpen size={18} strokeWidth={2.5} /><span>Open Folder</span>
               </button>
-              <button onclick={() => isSettingsOpen = true} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer" title="Instance Settings">
+              <button onclick={() => isSettingsOpen = true} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 transition-all cursor-pointer" title="Instance Settings">
                 <Settings size={19} strokeWidth={2.5} />
               </button>
             </div>
@@ -513,7 +513,7 @@
                       {/if}
                     </button>
                   {:else}
-                    <button onclick={checkForUpdates} disabled={isCheckingUpdates} class="flex items-center gap-1.5 px-2 py-0.5 {allModsUpToDate ? 'bg-[#16a34a] hover:bg-[#15803d] text-white' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] disabled:opacity-50 text-[var(--text-muted)] hover:text-[var(--text-primary)]'} rounded text-xs font-medium transition-colors cursor-pointer">
+                    <button onclick={checkForUpdates} disabled={isCheckingUpdates} class="flex items-center gap-1.5 px-2 py-0.5 {allModsUpToDate ? 'bg-[#16a34a] hover:bg-[#15803d] text-white' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-muted)] hover:text-[var(--text-primary)]'} rounded text-xs font-medium transition-colors cursor-pointer">
                       {#if isCheckingUpdates}
                         <Loader2 size={14} class="animate-spin" /><span>Checking...</span>
                       {:else if allModsUpToDate}
@@ -601,7 +601,7 @@
                 <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Worlds</h2>
                 <span class="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{worlds.length} world{worlds.length === 1 ? "" : "s"}</span>
               </div>
-              <button onclick={handleOpenWorldsFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+              <button onclick={handleOpenWorldsFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
                 <ExternalLink size={14} /><span>Open Folder</span>
               </button>
             </div>
@@ -662,7 +662,7 @@
                               <Play size={20} fill="currentColor" strokeWidth={0} />
                             {/if}
                           </button>
-                          <button onclick={() => handleOpenWorldFolder(world.folder_name)} class="p-2.5 hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer" title="Open world folder"><FolderOpen size={20} /></button>
+                          <button onclick={() => handleOpenWorldFolder(world.folder_name)} class="p-2.5 hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md transition-all cursor-pointer" title="Open world folder"><FolderOpen size={20} /></button>
                           <button onclick={() => handleDeleteWorld(world.folder_name, world.name)} class="p-2.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md transition-all cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
                         </div>
                       </div>
@@ -682,7 +682,7 @@
                 <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Resource Packs</h2>
                 <span class="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{resourcePacks.length} pack{resourcePacks.length === 1 ? "" : "s"}</span>
               </div>
-              <button onclick={handleOpenResourcePacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+              <button onclick={handleOpenResourcePacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
                 <ExternalLink size={14} /><span>Open Folder</span>
               </button>
             </div>
@@ -750,7 +750,7 @@
                 <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Shader Packs</h2>
                 <span class="px-2 py-0.5 bg-[var(--bg-tertiary)] text-[var(--text-muted)] text-xs rounded">{shaderPacks.length} pack{shaderPacks.length === 1 ? "" : "s"}</span>
               </div>
-              <button onclick={handleOpenShaderPacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover-strong)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
+              <button onclick={handleOpenShaderPacksFolder} class="flex items-center gap-1.5 px-2 py-0.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded text-xs transition-colors cursor-pointer">
                 <ExternalLink size={14} /><span>Open Folder</span>
               </button>
             </div>
