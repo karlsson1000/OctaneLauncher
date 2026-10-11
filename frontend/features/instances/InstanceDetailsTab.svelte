@@ -174,8 +174,7 @@
       expectedSha1: update.latestVersion.sha1 ?? null,
     })
     if (update.filename !== update.latestVersion.filename) {
-      await invoke("delete_mod", { instanceName: instance.name, filename: update.filename }).catch((err: Error) =>
-      )
+      await invoke("delete_mod", { instanceName: instance.name, filename: update.filename }).catch(() => {})
     }
   }
 
