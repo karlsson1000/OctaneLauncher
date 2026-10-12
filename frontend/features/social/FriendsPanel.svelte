@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
-  import { Users, UserPlus, UserCheck, UserX, Search, Loader2, LogIn, ChevronDown, ChevronRight, Inbox, Pencil, Star } from "lucide-svelte"
+  import { Users, UserPlus, UserX, Search, Loader2, LogIn, ChevronDown, ChevronRight, Inbox, Pencil, Star, Check, X, MoreHorizontal } from "lucide-svelte"
   import type { Friend, FriendRequest } from "../../types"
   import { storeGet, storeSet } from "../../lib/store"
   import ContextMenu from "../../components/ui/ContextMenu.svelte"
@@ -12,37 +12,48 @@
   let isLoading = $state(false)
   let sending = $state(false)
   let sendError = $state<string | null>(null)
+  let sendSuccess = $state<string | null>(null)
   let searchQuery = $state("")
   let nicknames = $state<Record<string, string>>({})
   let favorites = $state<string[]>([])
   let editingNicknameUuid = $state<string | null>(null)
   let nicknameDraft = $state("")
   let nicknameInput: HTMLInputElement | undefined = $state()
-
-  $effect(() => {
-    if (editingNicknameUuid && nicknameInput) nicknameInput.focus()
-  })
+  let searchInput: HTMLInputElement | undefined = $state()
   let friendMenu = $state<{ x: number; y: number; friend: Friend } | null>(null)
+  let collapsed = $state<Record<string, boolean>>({})
+  let panel = $state<"search" | "requests" | null>(null)
 
-  const nicknameKey = () => `nicknames_${activeAccountUuid ?? "default"}`
+  const storeKey = (prefix: string) => `${prefix}_${activeAccountUuid ?? "default"}`
 
   const displayName = (friend: Friend) => nicknames[friend.uuid] || friend.username
+  const isFavorite = (friendUuid: string) => favorites.includes(friendUuid)
+  const isOnline = (friend: Friend) => friend.status === "online" || friend.status === "ingame"
+
+  const statuses: Record<string, { color: string, label: string }> = {
+    ingame: { color: "bg-[#3b82f6]", label: "In game" },
+    online: { color: "bg-[#16a34a]", label: "Online" },
+    offline: { color: "bg-[var(--bg-hover-strong)]", label: "Offline" },
+  }
+
+  const statusOf = (friend: Friend) => statuses[friend.status] ?? statuses.offline
+
+  const avatarMask = "-webkit-mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px); mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px);"
+
+  const headerButton = (active: boolean) =>
+    `h-7 w-7 flex items-center justify-center rounded cursor-pointer ${active ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"}`
 
   const loadNicknames = async () => {
     try {
-      nicknames = (await storeGet<Record<string, string>>(nicknameKey())) ?? {}
+      nicknames = (await storeGet<Record<string, string>>(storeKey("nicknames"))) ?? {}
     } catch {
       nicknames = {}
     }
   }
 
-  const favoritesKey = () => `favorites_${activeAccountUuid ?? "default"}`
-
-  const isFavorite = (friendUuid: string) => favorites.includes(friendUuid)
-
   const loadFavorites = async () => {
     try {
-      favorites = (await storeGet<string[]>(favoritesKey())) ?? []
+      favorites = (await storeGet<string[]>(storeKey("favorites"))) ?? []
     } catch {
       favorites = []
     }
@@ -53,12 +64,19 @@
       ? favorites.filter(u => u !== friendUuid)
       : [...favorites, friendUuid]
     try {
-      await storeSet(favoritesKey(), favorites)
-    } catch (error) {
+      await storeSet(storeKey("favorites"), $state.snapshot(favorites))
+    } catch {
     }
   }
 
+  const startNickname = (friend: Friend) => {
+    nicknameDraft = nicknames[friend.uuid] ?? ""
+    editingNicknameUuid = friend.uuid
+  }
+
   const saveNickname = async (friendUuid: string, value: string) => {
+    if (editingNicknameUuid !== friendUuid) return
+    editingNicknameUuid = null
     const trimmed = value.trim().slice(0, 32)
     if (trimmed) {
       nicknames[friendUuid] = trimmed
@@ -66,58 +84,38 @@
       delete nicknames[friendUuid]
     }
     try {
-      await storeSet(nicknameKey(), nicknames)
-    } catch (error) {
+      await storeSet(storeKey("nicknames"), $state.snapshot(nicknames))
+    } catch {
     }
-    editingNicknameUuid = null
   }
 
-  $effect(() => {
-    if (isOpen && isAuthenticated) {
-      loadFriends()
-      loadRequests()
-      loadNicknames()
-      loadFavorites()
-      const interval = setInterval(pollFriends, 30000)
-      return () => clearInterval(interval)
-    }
-    void activeAccountUuid
-  })
-
-  const loadFriends = async () => {
-    isLoading = true
+  const loadFriends = async (silent = false) => {
+    if (!silent) isLoading = true
     try {
-      const result = await invoke<Friend[]>("get_friends")
-      friends = result
-    } catch (error) {
+      friends = await invoke<Friend[]>("get_friends")
+    } catch {
     } finally {
       isLoading = false
     }
   }
 
-  const pollFriends = async () => {
-    try {
-      const result = await invoke<Friend[]>("get_friends")
-      friends = result
-    } catch (error) {
-    }
-  }
-
   const loadRequests = async () => {
     try {
-      const result = await invoke<FriendRequest[]>("get_friend_requests")
-      requests = result
-    } catch (error) {
+      requests = await invoke<FriendRequest[]>("get_friend_requests")
+    } catch {
     }
   }
 
   const handleSendRequest = async (username: string) => {
-    if (!username.trim()) return
+    const name = username.trim()
+    if (!name || sending) return
     sending = true
     sendError = null
+    sendSuccess = null
     try {
-      await invoke("send_friend_request", { username: username.trim() })
+      await invoke("send_friend_request", { username: name })
       searchQuery = ""
+      sendSuccess = `Request sent to ${name}`
       loadRequests()
     } catch (error) {
       sendError = String(error)
@@ -131,7 +129,7 @@
       await invoke("accept_friend_request", { requestId })
       requests = requests.filter(r => r.id !== requestId)
       loadFriends()
-    } catch (error) {
+    } catch {
     }
   }
 
@@ -139,7 +137,7 @@
     try {
       await invoke("reject_friend_request", { requestId })
       requests = requests.filter(r => r.id !== requestId)
-    } catch (error) {
+    } catch {
     }
   }
 
@@ -147,76 +145,88 @@
     try {
       await invoke("remove_friend", { friendUuid })
       friends = friends.filter(f => f.uuid !== friendUuid)
-    } catch (error) {
+    } catch {
     }
   }
 
+  const clearSearch = () => {
+    searchQuery = ""
+    sendError = null
+    sendSuccess = null
+  }
+
+  const togglePanel = (name: "search" | "requests") => {
+    panel = panel === name ? null : name
+    if (panel !== "search") clearSearch()
+  }
+
+  $effect(() => {
+    if (editingNicknameUuid && nicknameInput) nicknameInput.focus()
+  })
+
+  $effect(() => {
+    if (panel === "search" && searchInput) searchInput.focus()
+  })
+
+  $effect(() => {
+    void activeAccountUuid
+    if (isOpen && isAuthenticated) {
+      loadFriends()
+      loadRequests()
+      loadNicknames()
+      loadFavorites()
+      const interval = setInterval(() => {
+        loadFriends(true)
+        loadRequests()
+      }, 30000)
+      return () => clearInterval(interval)
+    }
+  })
+
+  let query = $derived(searchQuery.trim().toLowerCase())
+
   let filteredFriends = $derived(
-    friends.filter(f => {
-      const q = searchQuery.toLowerCase()
-      return f.username.toLowerCase().includes(q) || displayName(f).toLowerCase().includes(q)
-    })
+    friends.filter(f => f.username.toLowerCase().includes(query) || displayName(f).toLowerCase().includes(query))
   )
 
   let sortedFriends = $derived(
     [...filteredFriends].sort((a, b) => {
-      const fav = Number(isFavorite(b.uuid)) - Number(isFavorite(a.uuid))
-      if (fav !== 0) return fav
       const order: Record<string, number> = { ingame: 0, online: 1, offline: 2 }
-      return (order[a.status] ?? 2) - (order[b.status] ?? 2)
+      const byStatus = (order[a.status] ?? 2) - (order[b.status] ?? 2)
+      if (byStatus !== 0) return byStatus
+      return displayName(a).localeCompare(displayName(b))
     })
   )
-  let onlineFriends = $derived(
-    sortedFriends.filter(f => f.status === "online" || f.status === "ingame")
+
+  let favoriteFriends = $derived(sortedFriends.filter(f => isFavorite(f.uuid)))
+  let onlineFriends = $derived(sortedFriends.filter(f => !isFavorite(f.uuid) && isOnline(f)))
+  let offlineFriends = $derived(sortedFriends.filter(f => !isFavorite(f.uuid) && !isOnline(f)))
+
+  let canSendRequest = $derived(
+    query !== "" && !friends.some(f => f.username.toLowerCase() === query)
   )
-
-  let offlineFriends = $derived(
-    sortedFriends.filter(f => f.status === "offline")
-  )
-
-  let onlineCollapsed = $state(false)
-  let offlineCollapsed = $state(false)
-  let showSearch = $state(false)
-  let showRequests = $state(false)
-
 </script>
 
 {#snippet friendRow(friend: Friend)}
-  <div
-    role="button"
-    tabindex="0"
-    class="group flex items-center gap-3 px-1 py-0.5 relative rounded-md hover:bg-[var(--bg-active)] cursor-pointer"
-    onclick={(e) => {
-      if ((e.target as HTMLElement).closest("input")) return
-      friendMenu = { x: e.clientX, y: e.clientY, friend }
-    }}
-    onkeydown={(e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault()
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-        friendMenu = { x: rect.left, y: rect.bottom, friend }
-      }
-    }}
-  >
+  {@const online = isOnline(friend)}
+  {@const status = statusOf(friend)}
+  <div class="group flex items-center gap-2.5 px-1.5 py-1 rounded-md hover:bg-[var(--bg-active)]">
     <div class="relative flex-shrink-0">
       <img
         src="https://avatar.mcindex.net/avatar/{friend.username}/32"
         alt={friend.username}
-        class="w-8 h-8 rounded object-cover"
+        class="w-8 h-8 rounded object-cover transition-opacity {online ? '' : 'opacity-50 group-hover:opacity-100'}"
+        style={avatarMask}
         loading="lazy"
         decoding="async"
       />
-      <div class="absolute -bottom-0.5 -right-0.5">
-        {#if friend.status === "online"}
-          <span title="Online"><div class="w-2 h-2 rounded-full bg-[#16a34a] ring-2 ring-[var(--bg-primary)]"></div></span>
-        {:else if friend.status === "ingame"}
-          <span title="In Game"><div class="w-2 h-2 rounded-full bg-[#3b82f6] ring-2 ring-[var(--bg-primary)]"></div></span>
-        {:else}
-          <span title="Offline"><div class="w-2 h-2 rounded-full bg-[var(--bg-hover-strong)] ring-2 ring-[var(--bg-primary)]"></div></span>
-        {/if}
-      </div>
+      <span
+        title={status.label}
+        class="absolute -bottom-px -right-0.5 w-2.5 h-2.5 rounded-full {status.color}"
+      ></span>
     </div>
-    <div class="flex-1 min-w-0">
+
+    <div class="flex-1 min-w-0 {online ? '' : 'opacity-60 group-hover:opacity-100'} transition-opacity">
       {#if editingNicknameUuid === friend.uuid}
         <input
           type="text"
@@ -229,47 +239,85 @@
             else if (e.key === "Escape") editingNicknameUuid = null
           }}
           onblur={() => saveNickname(friend.uuid, nicknameDraft)}
-          class="w-full min-w-0 bg-[var(--bg-secondary)] rounded px-0 py-0 text-base font-medium text-[var(--text-primary)] focus:outline-none"
+          class="block w-full min-w-0 h-5 bg-[var(--bg-secondary)] rounded px-1 -mx-1 py-0 text-base leading-5 font-medium text-[var(--text-primary)] focus:outline-none"
         />
       {:else}
-        <div class="text-base text-[var(--text-primary)] truncate font-medium flex items-center gap-1" title={nicknames[friend.uuid] ? friend.username : undefined}>
-          {#if isFavorite(friend.uuid)}
-            <Star size={13} strokeWidth={0} fill="currentColor" class="text-amber-400 flex-shrink-0" />
-          {/if}
-          <span class="truncate">{displayName(friend)}</span>
+        <div
+          class="h-5 text-base leading-5 text-[var(--text-primary)] truncate font-medium"
+          title={nicknames[friend.uuid] ? friend.username : undefined}
+        >
+          {displayName(friend)}
         </div>
       {/if}
-      <div class="text-[13px] text-[var(--text-muted)] truncate -mt-0.75">
+      <div class="text-[13px] leading-tight text-[var(--text-muted)] truncate">
         {#if friend.status === "ingame" && friend.current_instance}
           Playing <span class="text-[#3b82f6] font-semibold">{friend.current_instance}</span>
+        {:else if friend.status === "ingame"}
+          In game
         {:else if friend.status === "online"}
-          In Launcher
+          In launcher
         {:else}
           Offline
         {/if}
       </div>
     </div>
+
+    <button
+      onclick={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect()
+        friendMenu = { x: rect.left, y: rect.bottom + 4, friend }
+      }}
+      class="flex-shrink-0 p-1 rounded cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] focus-visible:opacity-100 {friendMenu?.friend.uuid === friend.uuid ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
+    >
+      <MoreHorizontal size={16} strokeWidth={2.5} />
+    </button>
   </div>
 {/snippet}
 
-<div
-  class="flex-shrink-0 bg-[var(--bg-primary)] flex flex-col h-full overflow-hidden transition-all duration-200 ease-in-out {isOpen ? 'w-60' : 'w-0 -mr-4'}"
->
-  <div class="flex items-center gap-2 px-1 pt-2 pb-1">
-    <span class="text-xl font-semibold text-[var(--text-primary)]">Friends</span>
-    <div class="flex-1"></div>
+{#snippet group(key: string, label: string, list: Friend[])}
+  {#if list.length > 0}
+    <section>
       <button
-        onclick={() => { showSearch = !showSearch; if (showSearch) showRequests = false }}
-        class="h-7 w-7 flex items-center justify-center rounded cursor-pointer {showSearch ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
+        onclick={() => collapsed[key] = !collapsed[key]}
+        class="flex items-center gap-1 w-full px-1 pt-3 pb-1 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer text-left"
+      >
+        {#if collapsed[key]}
+          <ChevronRight size={14} strokeWidth={3} />
+        {:else}
+          <ChevronDown size={14} strokeWidth={3} />
+        {/if}
+        <span>{label} ({list.length})</span>
+      </button>
+      {#if !collapsed[key]}
+        <div class="space-y-0.5">
+          {#each list as friend (friend.uuid)}
+            {@render friendRow(friend)}
+          {/each}
+        </div>
+      {/if}
+    </section>
+  {/if}
+{/snippet}
+
+<div
+  class="flex-shrink-0 bg-[var(--bg-primary)] h-full overflow-hidden transition-all duration-200 ease-in-out {isOpen ? 'w-60' : 'w-0 -mr-4'}"
+>
+  <div class="w-60 h-full flex flex-col">
+    <div class="flex items-center gap-2 px-1 pt-2 pb-1">
+      <span class="text-xl font-semibold text-[var(--text-primary)]">Friends</span>
+      <div class="flex-1"></div>
+      <button
+        onclick={() => togglePanel("search")}
+        class={headerButton(panel === "search")}
         title="Search or add friends"
       >
         <Search size={18} strokeWidth={2.5} />
       </button>
       <div class="relative">
         <button
-          onclick={() => { showRequests = !showRequests; if (showRequests) showSearch = false }}
-          class="h-7 w-7 flex items-center justify-center rounded cursor-pointer {showRequests ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
-          title="Pending requests"
+          onclick={() => togglePanel("requests")}
+          class={headerButton(panel === "requests")}
+          title="Friend requests"
         >
           <Inbox size={18} strokeWidth={2.5} />
         </button>
@@ -277,149 +325,139 @@
           <span class="absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-semibold leading-none">{requests.length}</span>
         {/if}
       </div>
-  </div>
-
-  {#if !isAuthenticated}
-    <div class="flex-1 flex flex-col items-center justify-center px-1 py-6 text-center">
-      <LogIn size={32} class="text-[var(--text-muted)] mb-3" />
-      <p class="text-sm text-[var(--text-muted)]">Sign in to see your friends</p>
     </div>
-  {:else}
-    <div class="flex-1 flex flex-col min-h-0">
-      {#if showSearch}
-        <div class="px-1 pt-1 pb-1 space-y-1">
-          <div class="relative">
-            <Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-            <input
-              type="text"
-              placeholder="Search or add friends..."
-              bind:value={searchQuery}
-              oninput={() => sendError = null}
-              onkeydown={(e) => {
-                if (e.key === "Enter" && searchQuery.trim() && !friends.some(f => f.username.toLowerCase() === searchQuery.trim().toLowerCase())) {
-                  handleSendRequest(searchQuery.trim())
-                }
-              }}
-              class="w-full bg-[var(--bg-secondary)] rounded pl-8 pr-2 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
-            />
+
+    {#if !isAuthenticated}
+      <div class="flex-1 flex flex-col items-center justify-center px-3 py-6 text-center">
+        <LogIn size={32} class="text-[var(--text-muted)] mb-3" />
+        <p class="text-sm text-[var(--text-secondary)] font-medium">Sign in to see your friends</p>
+        <p class="text-xs text-[var(--text-muted)] mt-1">Add an account to chat and join games together</p>
+      </div>
+    {:else}
+      <div class="flex-1 flex flex-col min-h-0">
+        {#if panel === "search"}
+          <div class="px-1 pt-1 pb-1 space-y-1">
+            <div class="relative">
+              <Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+              <input
+                type="text"
+                bind:this={searchInput}
+                placeholder="Search or add by username"
+                bind:value={searchQuery}
+                oninput={() => { sendError = null; sendSuccess = null }}
+                onkeydown={(e) => {
+                  if (e.key === "Enter" && canSendRequest) handleSendRequest(searchQuery)
+                  else if (e.key === "Escape") {
+                    if (searchQuery) clearSearch()
+                    else panel = null
+                  }
+                }}
+                class="w-full bg-[var(--bg-secondary)] rounded pl-8 pr-2 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
+              />
+            </div>
+
+            {#if canSendRequest}
+              <button
+                onclick={() => handleSendRequest(searchQuery)}
+                disabled={sending}
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-[var(--text-secondary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] cursor-pointer disabled:opacity-60 disabled:cursor-default"
+              >
+                {#if sending}
+                  <Loader2 size={14} class="animate-spin flex-shrink-0" />
+                {:else}
+                  <UserPlus size={14} strokeWidth={2.5} class="flex-shrink-0" />
+                {/if}
+                <span class="truncate">Send request to <span class="font-semibold text-[var(--text-primary)]">{searchQuery.trim()}</span></span>
+              </button>
+            {/if}
+            {#if sendError}
+              <p class="text-xs text-red-400 px-1">{sendError}</p>
+            {:else if sendSuccess}
+              <p class="text-xs text-[#16a34a] px-1">{sendSuccess}</p>
+            {/if}
           </div>
+        {/if}
 
-          {#if searchQuery.trim() && !friends.some(f => f.username.toLowerCase() === searchQuery.trim().toLowerCase())}
-            <button
-              onclick={() => handleSendRequest(searchQuery.trim())}
-              disabled={sending}
-              class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] cursor-pointer"
-            >
-              {#if sending}
-                <Loader2 size={14} class="animate-spin" />
-              {:else}
-                <UserPlus size={14} strokeWidth={3} />
-              {/if}
-              Send friend request to "{searchQuery.trim()}"
-            </button>
-          {/if}
-          {#if sendError}
-            <p class="text-xs text-red-400 px-1">{sendError}</p>
-          {/if}
-        </div>
-      {/if}
-
-      {#if showRequests}
-        <div>
-          {#if requests.length > 0}
-            <div class="max-h-40 overflow-y-auto">
-              {#each requests as req (req.id)}
-                <div class="flex items-center gap-2 px-1 py-2">
-                  <img
-                    src="https://avatar.mcindex.net/avatar/{req.from_username}/24"
-                    alt={req.from_username}
-                    class="w-6 h-6 rounded object-cover flex-shrink-0"
-                  />
-                  <div class="flex-1 min-w-0">
-                    <div class="text-sm text-[var(--text-primary)] truncate">{req.from_username}</div>
+        {#if panel === "requests"}
+          <div class="px-1 pt-1 pb-1">
+            {#if requests.length > 0}
+              <div class="max-h-48 overflow-y-auto rounded-md bg-[var(--bg-secondary)] divide-y divide-[var(--bg-tertiary)]">
+                {#each requests as req (req.id)}
+                  <div class="flex items-center gap-2 px-2 py-1.5">
+                    <img
+                      src="https://avatar.mcindex.net/avatar/{req.from_username}/24"
+                      alt={req.from_username}
+                      class="w-6 h-6 rounded object-cover flex-shrink-0"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm text-[var(--text-primary)] truncate font-medium leading-tight">{req.from_username}</div>
+                      <div class="text-[11px] text-[var(--text-muted)] leading-tight">Wants to be friends</div>
+                    </div>
+                    <button
+                      onclick={() => handleAcceptRequest(req.id)}
+                      class="p-1 rounded bg-[#16a34a]/15 text-[#16a34a] hover:bg-[#16a34a]/30 cursor-pointer"
+                      title="Accept"
+                    >
+                      <Check size={14} strokeWidth={3} />
+                    </button>
+                    <button
+                      onclick={() => handleRejectRequest(req.id)}
+                      class="p-1 rounded bg-red-500/15 text-red-400 hover:bg-red-500/30 cursor-pointer"
+                      title="Decline"
+                    >
+                      <X size={14} strokeWidth={3} />
+                    </button>
                   </div>
-                  <button
-                    onclick={() => handleAcceptRequest(req.id)}
-                    class="p-1 hover:bg-[#16a34a]/20 rounded text-[var(--text-muted)] hover:text-[#16a34a] cursor-pointer"
-                    title="Accept"
-                  >
-                    <UserCheck size={16} strokeWidth={3} />
-                  </button>
-                  <button
-                    onclick={() => handleRejectRequest(req.id)}
-                    class="p-1 hover:bg-red-500/20 rounded text-[var(--text-muted)] hover:text-red-400 cursor-pointer"
-                    title="Reject"
-                  >
-                    <UserX size={16} strokeWidth={3} />
-                  </button>
+                {/each}
+              </div>
+            {:else}
+              <p class="px-1 py-2 text-xs text-[var(--text-muted)]">No pending requests</p>
+            {/if}
+          </div>
+        {/if}
+
+        <div class="flex-1 overflow-y-auto pb-2">
+          {#if isLoading && friends.length === 0}
+            <div class="space-y-1 pt-3 px-1.5">
+              {#each Array(5) as _}
+                <div class="flex items-center gap-2.5 py-1 animate-pulse">
+                  <div class="w-8 h-8 rounded bg-[var(--bg-tertiary)]"></div>
+                  <div class="flex-1 space-y-1.5">
+                    <div class="h-3 w-24 rounded bg-[var(--bg-tertiary)]"></div>
+                    <div class="h-2.5 w-16 rounded bg-[var(--bg-tertiary)]"></div>
+                  </div>
                 </div>
               {/each}
             </div>
+          {:else if friends.length === 0}
+            <div class="flex flex-col items-center justify-center py-10 text-center px-3">
+              <Users size={32} class="text-[var(--text-muted)] mb-3" />
+              <p class="text-sm text-[var(--text-secondary)] font-medium">No friends yet</p>
+              <p class="text-xs text-[var(--text-muted)] mt-1">Add someone by username to see when they're playing</p>
+              <button
+                onclick={() => panel = "search"}
+                class="mt-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] cursor-pointer"
+              >
+                <UserPlus size={14} strokeWidth={2.5} />
+                Add a friend
+              </button>
+            </div>
+          {:else if sortedFriends.length === 0}
+            <div class="flex flex-col items-center justify-center py-8 text-center px-3">
+              <p class="text-sm text-[var(--text-secondary)] font-medium">No matches</p>
+              {#if canSendRequest}
+                <p class="text-xs text-[var(--text-muted)] mt-1">Press Enter to send a request instead</p>
+              {/if}
+            </div>
           {:else}
-            <p class="px-1 pt-2 pb-2 text-xs text-[var(--text-muted)]">No pending requests</p>
+            {@render group("favorites", "Favorites", favoriteFriends)}
+            {@render group("online", "Online", onlineFriends)}
+            {@render group("offline", "Offline", offlineFriends)}
           {/if}
         </div>
-      {/if}
-
-      <div class="flex-1 overflow-y-auto">
-        {#if isLoading}
-          <div class="flex items-center justify-center py-8">
-            <Loader2 size={20} class="animate-spin text-[#3b82f6]" />
-          </div>
-        {:else if sortedFriends.length === 0}
-          <div class="flex flex-col items-center justify-center py-8 text-center px-1">
-            <Users size={32} class="text-[var(--text-muted)] mb-3" />
-            <p class="text-sm text-[var(--text-muted)]">No friends yet</p>
-            <p class="text-xs text-[var(--text-muted)] mt-1">Send a friend request to get started</p>
-          </div>
-        {:else}
-          {#if onlineFriends.length > 0}
-            <button
-              onclick={() => onlineCollapsed = !onlineCollapsed}
-              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] cursor-pointer w-full text-left"
-            >
-              {#if onlineCollapsed}
-                <ChevronRight size={14} strokeWidth={3} />
-              {:else}
-                <ChevronDown size={14} strokeWidth={3} />
-              {/if}
-              Online ({onlineFriends.length})
-            </button>
-            {#if !onlineCollapsed}
-              <div class="border-b border-[var(--bg-tertiary)] mt-0.5"></div>
-              <div class="pt-1 pb-1 space-y-0.5">
-                {#each onlineFriends as friend (friend.uuid)}
-                  {@render friendRow(friend)}
-                {/each}
-              </div>
-            {/if}
-          {/if}
-
-          {#if offlineFriends.length > 0}
-            <button
-              onclick={() => offlineCollapsed = !offlineCollapsed}
-              class="flex items-center gap-1 px-1 pt-2 text-[13px] font-medium text-[var(--text-secondary)] tracking-wider hover:text-[var(--text-primary)] cursor-pointer w-full text-left"
-            >
-              {#if offlineCollapsed}
-                <ChevronRight size={14} strokeWidth={3} />
-              {:else}
-                <ChevronDown size={14} strokeWidth={3} />
-              {/if}
-              Offline ({offlineFriends.length})
-            </button>
-            {#if !offlineCollapsed}
-              <div class="border-b border-[var(--bg-tertiary)] mt-0.5"></div>
-              <div class="pt-1 pb-1 space-y-0.5">
-                {#each offlineFriends as friend (friend.uuid)}
-                  {@render friendRow(friend)}
-                {/each}
-              </div>
-            {/if}
-          {/if}
-        {/if}
       </div>
-    </div>
-  {/if}
+    {/if}
+  </div>
 </div>
 
 {#if friendMenu}
@@ -430,7 +468,7 @@
     onClose={() => friendMenu = null}
     items={[
       { label: isFavorite(fm.friend.uuid) ? "Remove from favorites" : "Add to favorites", icon: Star, onClick: () => toggleFavorite(fm.friend.uuid) },
-      { label: "Set nickname", icon: Pencil, onClick: () => { editingNicknameUuid = fm.friend.uuid; nicknameDraft = nicknames[fm.friend.uuid] ?? "" } },
+      { label: "Set nickname", icon: Pencil, onClick: () => startNickname(fm.friend) },
       { separator: true },
       { label: "Remove friend", icon: UserX, onClick: () => handleRemoveFriend(fm.friend.uuid), danger: true },
     ]}
