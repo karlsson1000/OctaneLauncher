@@ -43,21 +43,25 @@
       :root {
         --splash-bg: #181a1f;
         --splash-text: #e8e8e8;
+        --splash-accent: #4572e3;
       }
 
       :root.theme-light {
         --splash-bg: #ffffff;
         --splash-text: #1a1a2e;
+        --splash-accent: #4361ee;
       }
 
       :root.theme-rose {
         --splash-bg: #251f2b;
         --splash-text: #e8e8ee;
+        --splash-accent: #f472b6;
       }
 
       :root.theme-forest {
         --splash-bg: #1f2b24;
         --splash-text: #e8eee9;
+        --splash-accent: #4ade80;
       }
 
       body {
@@ -69,19 +73,12 @@
 
       #splash-screen {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100vw;
-        height: 100vh;
+        inset: 0;
         background: var(--splash-bg);
         display: flex;
         align-items: center;
         justify-content: center;
         z-index: 999999;
-        margin: 0;
-        padding: 0;
       }
 
       #splash-screen.hidden {
@@ -93,28 +90,48 @@
         to { opacity: 0; }
       }
 
-      @keyframes pulse {
-        0%, 100% { 
-          opacity: 1; 
+      @keyframes logoIn {
+        from {
+          opacity: 0;
+          transform: scale(0.82);
         }
-        50% { 
-          opacity: 0.5; 
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @keyframes riseIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes loaderSlide {
+        0% {
+          left: -40%;
+        }
+        100% {
+          left: 100%;
         }
       }
 
       .splash-container {
         text-align: center;
         position: relative;
-        animation: pulse 2s ease-in-out infinite;
       }
 
       .splash-container img {
         width: 120px;
         height: 120px;
-        margin-bottom: 18px;
         display: block;
-        margin-left: auto;
-        margin-right: auto;
+        margin: 0 auto 18px;
+        animation: logoIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
       }
 
       .splash-container h1 {
@@ -123,6 +140,29 @@
         line-height: 36px;
         font-weight: 600;
         margin: 0;
+        animation: riseIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+      }
+
+      .splash-loader {
+        width: 220px;
+        height: 3px;
+        margin: 22px auto 0;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--splash-accent) 18%, transparent);
+        overflow: hidden;
+        position: relative;
+        animation: riseIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+      }
+
+      .splash-loader::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 40%;
+        border-radius: inherit;
+        background: var(--splash-accent);
+        animation: loaderSlide 1.1s cubic-bezier(0.45, 0, 0.55, 1) infinite;
       }
 
       #root {
@@ -150,6 +190,7 @@
       <div class="splash-container">
         <img src="/logo.png" alt="Octane Launcher" />
         <h1>Octane Launcher</h1>
+        <div class="splash-loader"></div>
       </div>
     </div>
     <div id="root"></div>
