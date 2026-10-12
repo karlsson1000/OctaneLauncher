@@ -67,7 +67,7 @@
       try {
         const response = await fetch('https://launchercontent.mojang.com/v2/javaPatchNotes.json')
         const data: SnapshotsResponse = await response.json()
-        snapshots = data.entries.slice(0, 30)
+        snapshots = data.entries.slice(0, 12)
         if (snapshotStart > Math.max(snapshots.length - SNAPSHOT_PAGE_SIZE, 0)) snapshotStart = 0
       } catch (error) {
       } finally {
