@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
-  import { Users, UserPlus, UserX, Search, Loader2, LogIn, ChevronDown, ChevronRight, Inbox, Pencil, Star, Check, X, MoreHorizontal } from "lucide-svelte"
+  import { Users, UserPlus, UserX, Search, Loader2, LogIn, ChevronDown, Inbox, Pencil, Star, Check, X, MoreHorizontal } from "lucide-svelte"
   import type { Friend, FriendRequest } from "../../types"
   import { storeGet, storeSet } from "../../lib/store"
   import ContextMenu from "../../components/ui/ContextMenu.svelte"
@@ -160,6 +160,10 @@
     if (panel !== "search") clearSearch()
   }
 
+  const toggleCollapsed = (key: string) => {
+    collapsed[key] = !collapsed[key]
+  }
+
   $effect(() => {
     if (editingNicknameUuid && nicknameInput) nicknameInput.focus()
   })
@@ -277,17 +281,23 @@
 {#snippet group(key: string, label: string, list: Friend[])}
   {#if list.length > 0}
     <section>
-      <button
-        onclick={() => collapsed[key] = !collapsed[key]}
-        class="flex items-center gap-1 w-full px-1 pt-3 pb-1 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer text-left"
+      <div
+        role="presentation"
+        class="flex items-center gap-1.5 w-full px-1 pt-3 pb-1 mb-1 select-none"
       >
-        {#if collapsed[key]}
-          <ChevronRight size={14} strokeWidth={3} />
-        {:else}
-          <ChevronDown size={14} strokeWidth={3} />
-        {/if}
-        <span>{label} ({list.length})</span>
-      </button>
+        <ChevronDown
+          size={16}
+          strokeWidth={3}
+          class="text-[var(--text-muted)] flex-shrink-0 transition-transform duration-150 {collapsed[key] ? '-rotate-90' : ''}"
+        />
+        <span
+          role="button"
+          tabindex="0"
+          class="text-sm font-semibold text-[var(--text-muted)] truncate cursor-pointer"
+          onclick={() => toggleCollapsed(key)}
+          onkeydown={(e) => { if (e.key === 'Enter') toggleCollapsed(key) }}
+        >{label} ({list.length})</span>
+      </div>
       {#if !collapsed[key]}
         <div class="space-y-0.5">
           {#each list as friend (friend.uuid)}
