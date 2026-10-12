@@ -70,7 +70,7 @@
           >
             {#if item.icon}
               <span class="flex-shrink-0 w-5 h-5 flex items-center justify-center">
-                <item.icon size={17} strokeWidth={2} />
+                <item.icon size={18} strokeWidth={2} />
               </span>
             {:else}
               <span class="flex-shrink-0 w-5"></span>
