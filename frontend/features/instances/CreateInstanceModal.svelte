@@ -331,8 +331,6 @@
     if (step === "loader") goTo("version")
     else if (step === "version") goTo("name")
   }
-
-  let activeLoader = $derived(LOADERS.find((l) => l.id === loaderType) ?? LOADERS[0])
 </script>
 
 {#snippet dropdown(
