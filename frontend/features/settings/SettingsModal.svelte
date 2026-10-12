@@ -661,7 +661,7 @@
 
               {@render toggleRow(
                 "Auto-navigate to console",
-                "Switch to the Console tab when a game launches",
+                "Switch to the Console tab when an instance launches.",
                 store.settings?.auto_navigate_to_console ?? true,
                 () => handleSettingChange({ ...store.settings!, auto_navigate_to_console: !(store.settings?.auto_navigate_to_console ?? true) } as LauncherSettings),
                 "settings-console"
@@ -669,7 +669,7 @@
 
               {@render toggleRow(
                 "Discord Rich Presence",
-                "Show Octane Launcher activity on Discord",
+                "Show Octane Launcher activity on Discord.",
                 store.settings?.discord_rpc ?? true,
                 () => handleSettingChange({ ...store.settings!, discord_rpc: !(store.settings?.discord_rpc ?? true) } as LauncherSettings)
               )}
