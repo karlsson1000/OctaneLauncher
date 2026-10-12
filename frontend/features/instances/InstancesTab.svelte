@@ -45,7 +45,7 @@
     forge: { label: "Forge", icon: "/loaders/forge.png", accent: "bg-[#e05d2e]" },
   }
 
-  const getLoaderMeta = (loader?: string): LoaderMeta => (loader && LOADERS[loader]) || VANILLA
+  const getLoaderMeta = (loader?: string | null): LoaderMeta => (loader && LOADERS[loader]) || VANILLA
 
   let contextMenu = $state<{ x: number; y: number; instance: Instance } | null>(null)
   let groupContextMenu = $state<{ x: number; y: number; group: string } | null>(null)
