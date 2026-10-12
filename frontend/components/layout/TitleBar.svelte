@@ -89,7 +89,7 @@
         <div
           data-account-dropdown
           transition:fly={{ y: -8, duration: 160 }}
-          class="absolute top-full mt-1 z-50 left-1/2 -ml-24 w-48 bg-[var(--bg-tertiary)] rounded shadow-md p-1.5"
+          class="absolute top-full mt-1 z-50 left-1/2 -ml-24 w-48 border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] rounded shadow-md p-1.5"
         >
           <div class="flex flex-col">
             {#each [...store.accounts].sort((a, b) => Number(b.is_active) - Number(a.is_active)) as acc (acc.uuid)}
