@@ -312,16 +312,16 @@
 
       <div class="relative flex-shrink-0">
         {#if iconSrc}
-          <img src={iconSrc} alt={instance.name} class="w-20 h-20 object-cover rounded my-2 mr-2 ml-4" />
+          <img src={iconSrc} alt={instance.name} class="w-[76px] h-[76px] object-cover rounded my-2 mr-2 ml-4" />
         {:else}
-          <div class="w-20 h-20 bg-[var(--bg-secondary)] rounded my-2 mr-2 ml-4 flex items-center justify-center">
+          <div class="w-[76px] h-[76px] bg-[var(--bg-secondary)] rounded my-2 mr-2 ml-4 flex items-center justify-center">
             <Package size={36} class="text-[var(--text-muted)]" />
           </div>
         {/if}
       </div>
 
       <div class="py-2 pl-3 flex-1 min-w-0 {isBusy ? 'pr-12' : 'pr-2 group-hover:pr-12'}">
-        <div class="text-[19px] font-semibold text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
+        <div class="text-[18px] font-semibold text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
         <div class="h-px bg-gradient-to-r from-[var(--border-default)] to-transparent my-2.5"></div>
         <div class="flex items-center gap-2 text-xs flex-wrap">
           <span class="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">{getMinecraftVersion(instance)}</span>
@@ -343,7 +343,7 @@
             else handleQuickLaunch(instance)
           }}
           disabled={store.launchingInstanceName !== null && !isRunning}
-          class="flex-shrink-0 w-14 h-14 mr-4 flex items-center justify-center rounded cursor-pointer {isBusy ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
+          class="flex-shrink-0 w-[54px] h-[54px] mr-4 flex items-center justify-center rounded cursor-pointer {isBusy ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
         >
           {#if isBusy}
             <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
