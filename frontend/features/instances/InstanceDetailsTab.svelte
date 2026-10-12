@@ -558,8 +558,12 @@
                           <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(mod.size)}</p>
                         </div>
                         <div class="flex items-center gap-3">
-                            <button onclick={() => handleToggleMod(mod)} class="w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer {mod.disabled ? 'bg-[var(--bg-hover-strong)] border-[var(--text-muted)]' : 'bg-[#16a34a] border-[#16a34a]'}" aria-label="Toggle mod">
-                            <Check size={16} strokeWidth={4} color={mod.disabled ? "#7d8590" : "#0f1115"} />
+                          <button onclick={() => handleToggleMod(mod)} class="w-6 h-6 rounded border-2 flex items-center justify-center transition-all cursor-pointer group {mod.disabled ? 'bg-transparent border-[var(--text-muted)]/60' : 'bg-[#16a34a] border-[#16a34a] hover:brightness-110'}" aria-label="Toggle mod">
+                            {#if !mod.disabled}
+                              <Check size={16} strokeWidth={4} color="#0f1115" />
+                            {:else}
+                              <Check size={16} strokeWidth={4} color="#7d8590" class="hidden group-hover:block" />
+                            {/if}
                           </button>
                           <button onclick={() => handleDeleteMod(mod.filename)} class="p-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded cursor-pointer">
                             <Trash2 size={20} />
