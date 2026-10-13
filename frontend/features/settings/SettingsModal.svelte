@@ -488,8 +488,8 @@
                     </div>
                     <div class="relative h-6 flex items-center">
                       <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
-                      <div class="absolute h-2 rounded-full" style="width: calc(8px + (100% - 16px) * {pct}); background: var(--accent-primary)"></div>
-                      <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: calc(8px + (100% - 16px) * {pct})"></div>
+                      <div class="absolute h-2 rounded-full" style="width: calc(3px + (100% - 6px) * {pct}); background: var(--accent-primary)"></div>
+                      <div class="absolute w-1.5 h-5 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 top-1/2 -mt-2.5" style="left: calc(3px + (100% - 6px) * {pct})"></div>
                       <input
                         type="range" {min} {max} {step}
                         value={value}
@@ -525,15 +525,15 @@
                     onfocus={() => ramTextFocused = true}
                     onblur={commitRamText}
                     onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur() }}
-                    class="w-[4ch] rounded-sm px-1 -mx-1 text-2xl font-bold text-[var(--text-primary)] font-mono text-right cursor-text bg-[var(--content-bg)] hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]"
+                    class="w-[4ch] rounded-sm px-1 -mx-1 text-2xl font-bold text-[var(--text-primary)] font-mono text-right cursor-text bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] focus:outline-none"
                   />
                   <span class="text-sm text-[var(--text-muted)] font-sans font-normal ml-1">GB</span>
                 </div>
               </div>
               <div class="relative h-6 flex items-center">
                 <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
-                <div class="absolute h-2 rounded-full" style="width: {ramPercent}%; background: var(--accent-primary)"></div>
-                <div class="absolute w-4 h-4 rounded-full bg-white border-2 border-[var(--accent-primary)] -translate-x-1/2" style="left: {ramPercent}%"></div>
+                <div class="absolute h-2 rounded-full" style="width: calc(3px + (100% - 6px) * {ramPercent / 100}); background: var(--accent-primary)"></div>
+                <div class="absolute w-1.5 h-5 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 top-1/2 -mt-2.5" style="left: calc(3px + (100% - 6px) * {ramPercent / 100})"></div>
                 <input
                   type="range" min="1024" max={systemInfo?.total_memory_mb || 32768} step="512"
                   bind:value={ramSliderValue}

@@ -683,8 +683,8 @@
                 </div>
                 <div class="relative h-6 flex items-center">
                   <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
-                  <div class="absolute h-2 rounded-full" style="width: {ramPercent}%; background: var(--accent-primary)"></div>
-                  <div class="absolute w-4 h-4 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 shadow-md top-1/2 -mt-2" style="left: {ramPercent}%"></div>
+                  <div class="absolute h-2 rounded-full" style="width: calc(3px + (100% - 6px) * {ramPercent / 100}); background: var(--accent-primary)"></div>
+                  <div class="absolute w-1.5 h-5 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 top-1/2 -mt-2.5" style="left: calc(3px + (100% - 6px) * {ramPercent / 100})"></div>
                   <input
                     type="range" min={minMem} max={maxMem} step="512"
                     bind:value={instanceMemoryMb}
