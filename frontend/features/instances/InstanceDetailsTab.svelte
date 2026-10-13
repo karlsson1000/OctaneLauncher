@@ -353,9 +353,6 @@
 
   let fabricLoaderVersion = $derived(getFabricLoaderVersion(instance))
   let neoforgeVersion = $derived(getNeoForgeVersion(instance))
-  let modsWithProjectId = $derived(
-    installedMods.filter(mod => mod.project_id && !mod.disabled).length
-  )
   let filteredMods = $derived(
     installedMods.filter(mod => {
       if (!modSearchQuery.trim()) return true
@@ -416,7 +413,7 @@
                 Minecraft {getMinecraftVersion(instance)}
                 {" • "}
                 {#if instance.loader === "fabric"}
-                  <span class="text-[#3b82f6]">Fabric Loader</span>
+                  <span class="text-[#3b82f6]">Fabric</span>
                   {#if fabricLoaderVersion}<span class="text-[var(--text-muted)]"> {fabricLoaderVersion}</span>{/if}
                 {:else if instance.loader === "neoforge"}
                   <span class="text-[#f97316]">NeoForge</span>
