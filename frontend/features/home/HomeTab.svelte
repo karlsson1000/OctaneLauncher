@@ -308,7 +308,7 @@
                 class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden relative group cursor-pointer transition-all flex flex-col h-full"
               >
                 <div class="absolute top-2 right-2 z-10 w-7 h-7 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ExternalLink size={14} class="text-[var(--text-primary)]" />
+                  <ExternalLink size={16} class="text-[var(--text-primary)]" />
                 </div>
                 <div class="h-40 bg-[var(--bg-secondary)] overflow-hidden relative flex-shrink-0 z-0">
                   {#if snapshot.image?.url}
