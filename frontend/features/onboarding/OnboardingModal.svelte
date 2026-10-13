@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Loader2, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from "lucide-svelte"
+  import { Loader2, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Check } from "lucide-svelte"
   import { onMount } from "svelte"
   import { fade, fly } from "svelte/transition"
   import { cubicIn, cubicOut } from "svelte/easing"
@@ -143,6 +143,24 @@
 
   let selectedCount = $derived(getSelectedItems().length)
 
+  let dragValue: boolean | null = $state(null)
+
+  function rowPointerDown(e: PointerEvent, item: ImportableInstance) {
+    if (e.button !== 0 || !item.mc_version || isImporting) return
+    e.preventDefault()
+    dragValue = !selected[item.path]
+    selected[item.path] = dragValue
+  }
+
+  function rowPointerEnter(e: PointerEvent, item: ImportableInstance) {
+    if (dragValue === null || !item.mc_version || isImporting) return
+    if ((e.buttons & 1) === 0) {
+      dragValue = null
+      return
+    }
+    selected[item.path] = dragValue
+  }
+
   function instanceMeta(item: ImportableInstance): string {
     if (!item.mc_version) return "Unknown version"
     const parts = [`Minecraft ${item.mc_version}`]
@@ -153,6 +171,8 @@
     return parts.join("  ·  ")
   }
 </script>
+
+<svelte:window onpointerup={() => dragValue = null} />
 
 <div transition:fade={{ duration: 150 }} class="fixed inset-0 z-50 bg-[var(--bg-primary)] flex flex-col overflow-hidden">
   {#if step === "welcome"}
@@ -251,19 +271,30 @@
               <Loader2 size={22} class="animate-spin text-[var(--accent-primary)]" />
             </div>
           {:else if detected.length > 0}
-            <div class="mt-4 max-h-[54vh] overflow-y-auto custom-scrollbar -mx-2 px-2 space-y-0.5">
+            <div class="mt-3 max-h-[54vh] overflow-y-auto custom-scrollbar -mx-2 px-2 space-y-0.5 select-none">
               {#each detected as item (item.path)}
+                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions: drag-to-select rows; keyboard toggling via inner checkbox -->
                 <label
-                  class="flex items-center gap-3 px-3 py-2.5 rounded-md {!item.mc_version || isImporting
- ? 'opacity-40'
- : 'cursor-pointer hover:bg-[var(--bg-secondary)]'}"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-md {dragValue !== null ? 'no-scale' : ''} {!item.mc_version || isImporting
+  ? 'opacity-40'
+  : 'cursor-pointer hover:bg-[var(--bg-secondary)]'}"
+                  onpointerdown={(e) => rowPointerDown(e, item)}
+                  onpointerenter={(e) => rowPointerEnter(e, item)}
+                  onclick={(e) => e.preventDefault()}
                 >
                   <input
                     type="checkbox"
                     bind:checked={selected[item.path]}
                     disabled={!item.mc_version || isImporting}
-                    class="accent-[#16a34a] w-4 h-4 flex-shrink-0"
+                    class="sr-only"
                   />
+                  {#key selected[item.path]}
+                    <span class="check-pop w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 mr-1 {selected[item.path] ? 'bg-[#16a34a] border-[#16a34a]' : 'bg-transparent border-[var(--text-muted)]/60'}">
+                      {#if selected[item.path]}
+                        <Check size={16} strokeWidth={4} color="#0f1115" />
+                      {/if}
+                    </span>
+                  {/key}
                   <div class="min-w-0 flex-1">
                     <div class="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</div>
                     <div class="text-xs text-[var(--text-muted)] truncate mt-0.5">{instanceMeta(item)}</div>
@@ -284,7 +315,7 @@
             </div>
           {/if}
 
-          <div class="mt-6 flex items-center justify-between">
+          <div class="mt-4 flex items-center justify-between">
             <button
               onclick={() => goTo("welcome")}
               disabled={isImporting}
