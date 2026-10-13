@@ -267,9 +267,13 @@
     </div>
 
     <button
+      onmousedown={(e) => { if (friendMenu) e.stopPropagation() }}
       onclick={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect()
-        friendMenu = { x: rect.left, y: rect.bottom + 4, friend }
+        if (friendMenu?.friend.uuid === friend.uuid) friendMenu = null
+        else {
+          const rect = e.currentTarget.getBoundingClientRect()
+          friendMenu = { x: rect.left, y: rect.bottom + 4, friend }
+        }
       }}
       class="flex-shrink-0 p-1 rounded cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] focus-visible:opacity-100 {friendMenu?.friend.uuid === friend.uuid ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}"
     >
