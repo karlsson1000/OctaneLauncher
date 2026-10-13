@@ -5,6 +5,7 @@
   import { instanceIconSrc } from "../../lib/icons"
   import type { Instance } from "../../types"
   import { getMinecraftVersion } from "../../lib/version"
+  import { formatPlaytime } from "../../lib/format"
   import ContextMenu from "../../components/ui/ContextMenu.svelte"
 
   import {
@@ -18,7 +19,7 @@
 
   type SortOption = "recently-played" | "name-asc" | "name-desc"
   type Groups = Record<string, string[]>
-  type LoaderMeta = { label: string; icon: string | null; accent: string }
+  type LoaderMeta = { label: string; accent: string; text: string }
   type MenuItem = {
     label?: string
     icon?: any
@@ -38,14 +39,32 @@
   const DEFAULT_GROUP = "__ungrouped__"
   const TOAST_MS = 5000
 
-  const VANILLA: LoaderMeta = { label: "Vanilla", icon: null, accent: "bg-[#16a34a]" }
+  const VANILLA: LoaderMeta = { label: "Vanilla", accent: "bg-[#16a34a]", text: "text-[#16a34a]" }
   const LOADERS: Record<string, LoaderMeta> = {
-    fabric: { label: "Fabric", icon: "/loaders/fabric.png", accent: "bg-[#3b82f6]" },
-    neoforge: { label: "NeoForge", icon: "/loaders/neoforge.png", accent: "bg-[#f97316]" },
-    forge: { label: "Forge", icon: "/loaders/forge.png", accent: "bg-[#e05d2e]" },
+    fabric: { label: "Fabric", accent: "bg-[#3b82f6]", text: "text-[#3b82f6]" },
+    neoforge: { label: "NeoForge", accent: "bg-[#f97316]", text: "text-[#f97316]" },
+    forge: { label: "Forge", accent: "bg-[#e05d2e]", text: "text-[#e05d2e]" },
   }
 
   const getLoaderMeta = (loader?: string | null): LoaderMeta => (loader && LOADERS[loader]) || VANILLA
+
+  function getLoaderVersion(instance: Instance): string | null {
+    switch (instance.loader) {
+      case "fabric": {
+        const parts = instance.version.split("-")
+        return parts.length >= 2 ? parts[parts.length - 2] : null
+      }
+      case "neoforge": {
+        const mcVersion = getMinecraftVersion(instance)
+        const parts = instance.version.replace("neoforge-", "").split("-").filter(part => part !== mcVersion)
+        return parts.length > 0 ? parts.join("-") : null
+      }
+      case "forge":
+        return instance.version.split("-forge-")[1] ?? null
+      default:
+        return null
+    }
+  }
 
   let contextMenu = $state<{ x: number; y: number; instance: Instance } | null>(null)
   let groupContextMenu = $state<{ x: number; y: number; group: string } | null>(null)
@@ -298,6 +317,7 @@
   {@const isLaunching = store.launchingInstanceName === instance.name}
   {@const isBusy = isRunning || isLaunching}
   {@const loader = getLoaderMeta(instance.loader)}
+  {@const loaderVersion = getLoaderVersion(instance)}
   {@const iconSrc = instanceIconSrc(instance.icon_path, instance.name)}
   <div
     role="button"
@@ -321,17 +341,20 @@
       </div>
 
       <div class="py-2 pl-3 flex-1 min-w-0 {isBusy ? 'pr-12' : 'pr-2 group-hover:pr-12'}">
-        <div class="text-[18px] font-semibold text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
-        <div class="h-px bg-gradient-to-r from-[var(--border-default)] to-transparent my-2.5"></div>
-        <div class="flex items-center gap-2 text-xs flex-wrap">
-          <span class="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">{getMinecraftVersion(instance)}</span>
-          <span class="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)] flex items-center gap-1">
-            {#if loader.icon}
-              <img src={loader.icon} alt={loader.label} class="w-4 h-4" />
-            {/if}
-            {loader.label}
-          </span>
+        <div class="flex items-center gap-3 min-w-0">
+          <h3 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight leading-tight truncate">{instance.name}</h3>
+          {#if (instance.total_playtime_seconds ?? 0) > 0}
+            <span class="flex-shrink-0 px-2 py-0.5 bg-[var(--bg-secondary)] text-[var(--text-muted)] text-xs rounded">
+              {formatPlaytime(instance.total_playtime_seconds ?? 0)}
+            </span>
+          {/if}
         </div>
+        <p class="text-sm text-[var(--text-muted)] mt-1.5 truncate">
+            {getMinecraftVersion(instance)}
+          {" • "}
+          <span class={loader.text}>{loader.label}</span>
+          {#if loaderVersion}<span class="text-[var(--text-muted)]"> {loaderVersion}</span>{/if}
+        </p>
       </div>
 
       {#if store.isAuthenticated}
