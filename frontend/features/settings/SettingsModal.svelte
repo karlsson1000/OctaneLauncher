@@ -284,7 +284,7 @@
   }
 
   async function handleFileSelect(e: Event & { currentTarget: HTMLInputElement }) {
-    const file = e.target.files?.[0]
+    const file = e.currentTarget.files?.[0]
     if (!file) return
 
     if (!file.type.startsWith('image/')) {
