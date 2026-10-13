@@ -288,7 +288,7 @@ function deleteInstanceOptimistically(instanceName: string, permanent: boolean) 
   }
 
   invoke<string>("delete_instance", { instanceName, permanent })
-    .then(() => showToast("success", `Deleted "${instanceName}"`, 5000))
+    .then(() => showToast("info", `Deleted "${instanceName}"`, 5000))
     .catch((error) => {
       console.error("Delete error:", error)
       const restored = [...store.instances]

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { AlertCircle, X, CheckCircle, XCircle, Info } from "lucide-svelte"
+  import { AlertCircle, X, CheckCircle, XCircle, Info, Check } from "lucide-svelte"
 
   let { isOpen, title, message, confirmText, cancelText, type = "warning", onConfirm, onCancel, checkboxLabel, checkboxChecked: controlledChecked, onCheckboxChange }: {
     isOpen: boolean
@@ -111,13 +111,15 @@
             onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") handleCheckboxChange(!isChecked) }}
             class="flex items-center gap-2 select-none text-left"
           >
-            <div
-              class="w-4 h-4 rounded-sm flex items-center justify-center shrink-0 {isChecked ? 'bg-red-500' : 'border border-[var(--border-default)] bg-[var(--bg-elevated)]'}"
-            >
-              {#if isChecked}
-                <svg class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"/></svg>
-              {/if}
-            </div>
+            {#key isChecked}
+              <div
+                class="check-pop w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 {isChecked ? 'bg-red-500 border-red-500' : 'bg-transparent border-[var(--text-muted)]/60'}"
+              >
+                {#if isChecked}
+                  <Check size={12} strokeWidth={4} color="#ffffff" />
+                {/if}
+              </div>
+            {/key}
             <span class="text-xs text-[var(--text-muted)] cursor-pointer">{checkboxLabel}</span>
           </div>
         {/if}

@@ -4,7 +4,7 @@
   import FriendsPanel from "./features/social/FriendsPanel.svelte"
   import SettingsModal from "./features/settings/SettingsModal.svelte"
   import CreateInstanceModal from "./features/instances/CreateInstanceModal.svelte"
-  import CreationProgressToast from "./features/instances/CreationProgressToast.svelte"
+  import CreationProgress from "./features/instances/CreationProgress.svelte"
   import InstanceDetailsTab from "./features/instances/InstanceDetailsTab.svelte"
   import ConfirmModal from "./components/ui/ConfirmModal.svelte"
   import AlertModal from "./components/ui/AlertModal.svelte"
@@ -157,13 +157,11 @@
       </main>
 
       {#if store.creatingInstanceName}
-        <div class="absolute bottom-0 left-0 right-0 z-20">
-          <CreationProgressToast
-            instanceName={store.creatingInstanceName}
-            onDismiss={dismissCreationToast}
-            onError={handleCreationError}
-          />
-        </div>
+        <CreationProgress
+          instanceName={store.creatingInstanceName}
+          onDismiss={dismissCreationToast}
+          onError={handleCreationError}
+        />
       {/if}
     </div>
 

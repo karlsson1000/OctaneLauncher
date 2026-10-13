@@ -1,6 +1,6 @@
 import { untrack } from "svelte"
 
-export type ToastType = "success" | "error"
+export type ToastType = "success" | "error" | "info"
 
 export interface Toast {
   id: number
@@ -8,11 +8,21 @@ export interface Toast {
   message: string
 }
 
-export const toastStore = $state<{ toasts: Toast[] }>({ toasts: [] })
+export type ProgressStatus = "creating" | "success" | "error"
+
+export interface ProgressToast {
+  id: string
+  title: string
+  stage: string
+  progress: number
+  status: ProgressStatus
+}
+
+export const toastStore = $state<{ toasts: Toast[]; progress: ProgressToast[] }>({ toasts: [], progress: [] })
 
 let nextId = 1
 
-export function showToast(type: ToastType, message: string, duration = 15000) {
+export function showToast(type: ToastType, message: string, duration = 10000) {
   untrack(() => {
     const id = nextId++
     toastStore.toasts.push({ id, type, message })
@@ -25,5 +35,26 @@ export function dismissToast(id: number) {
   untrack(() => {
     const index = toastStore.toasts.findIndex(t => t.id === id)
     if (index !== -1) toastStore.toasts.splice(index, 1)
+  })
+}
+
+export function upsertProgress(entry: ProgressToast) {
+  untrack(() => {
+    const existing = toastStore.progress.find(p => p.id === entry.id)
+    if (existing) {
+      existing.title = entry.title
+      existing.stage = entry.stage
+      existing.progress = entry.progress
+      existing.status = entry.status
+    } else {
+      toastStore.progress.push(entry)
+    }
+  })
+}
+
+export function dismissProgress(id: string) {
+  untrack(() => {
+    const index = toastStore.progress.findIndex(p => p.id === id)
+    if (index !== -1) toastStore.progress.splice(index, 1)
   })
 }

@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { Loader2, CheckCircle, XCircle } from "lucide-svelte"
   import { listen } from "@tauri-apps/api/event"
-  import { showToast } from "../../lib/toastStore.svelte"
+  import { showToast, upsertProgress, dismissProgress } from "../../lib/toastStore.svelte"
 
   interface ProgressPayload {
     instance: string
@@ -37,9 +36,19 @@
 
   $effect(() => {
     if (status === "success" || status === "error") {
-      const t = setTimeout(() => onDismiss(), 3000)
+      const t = setTimeout(
+        () => {
+          dismissProgress(instanceName)
+          onDismiss()
+        },
+        status === "success" ? 500 : 0,
+      )
       return () => clearTimeout(t)
     }
+  })
+
+  $effect(() => {
+    upsertProgress({ id: instanceName, title: instanceName, stage: label, progress, status })
   })
 
   $effect(() => {
@@ -90,6 +99,7 @@
       if (errorTimer) clearInterval(errorTimer)
       unlistenFns.forEach((fn) => { try { fn() } catch {} })
       unlistenFns = []
+      dismissProgress(instanceName)
     }
   })
 
@@ -104,38 +114,4 @@
           : "Starting…")
   )
 
-  let barColor = $derived(
-    status === "error"
-      ? "bg-red-500"
-      : "bg-[#16a34a]"
-  )
 </script>
-
-<div>
-  <div class="flex items-center justify-between px-4 py-1.5 bg-[var(--bg-secondary)]">
-    <div class="flex items-center gap-2 min-w-0">
-      {#if status === "creating"}
-        <Loader2 size={12} class="animate-spin text-[#16a34a] flex-shrink-0" />
-      {:else if status === "success"}
-        <CheckCircle size={12} class="text-[#16a34a] flex-shrink-0" />
-      {:else if status === "error"}
-        <XCircle size={12} class="text-red-500 flex-shrink-0" />
-      {/if}
-      <span class="text-xs text-[var(--text-secondary)] truncate">
-        <span class="text-[var(--text-primary)]">{instanceName}</span>
-        {" - "}
-        {label}
-      </span>
-    </div>
-    <span class="text-xs text-[var(--text-secondary)] flex-shrink-0 ml-4 tabular-nums">
-      {Math.round(progress)}%
-    </span>
-  </div>
-
-  <div class="h-[3px] bg-[var(--bg-tertiary)] w-full">
-    <div
-      class="h-full transition-all duration-300 ease-out {barColor}"
-      style="width: {progress}%"
-    ></div>
-  </div>
-</div>
