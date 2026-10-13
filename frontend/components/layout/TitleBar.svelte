@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fly } from "svelte/transition"
   import { invoke } from "@tauri-apps/api/core"
-  import { Minus, Square, X, ChevronLeft, ChevronRight, ChevronDown, LogIn, LogOut, Check, UsersRound } from "lucide-svelte"
+  import { Minus, Square, X, ChevronLeft, ChevronRight, ChevronDown, LogIn, LogOut, Check, PanelRight } from "lucide-svelte"
   import {
     store, navigateBack, navigateForward,
     setShowAccountDropdown, loadAccounts, appWindow,
@@ -156,7 +156,7 @@
       class="h-7 w-7 flex items-center justify-center rounded cursor-pointer {store.showFriendsPanel ? 'bg-[var(--bg-tertiary)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'}"
       title="Friends"
     >
-      <UsersRound size={18} strokeWidth={2} />
+      <PanelRight size={18} strokeWidth={2} />
     </button>
   </div>
 
