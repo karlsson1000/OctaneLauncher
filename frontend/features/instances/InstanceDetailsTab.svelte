@@ -538,11 +538,11 @@
                   <div class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all {mod.disabled ? 'opacity-60' : ''}">
                     <div class="flex min-h-0">
                       {#if mod.icon_url}
-                        <div class="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
                           <img src={mod.icon_url} alt={mod.name || mod.filename} class="w-full h-full object-contain {mod.disabled ? 'grayscale' : ''}" />
                         </div>
                       {:else}
-                        <div class="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 flex items-center justify-center flex-shrink-0 self-stretch">
                           <Package size={36} class="text-[var(--text-muted)]" strokeWidth={2} />
                         </div>
                       {/if}
@@ -620,35 +620,30 @@
                   <div class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
                     <div class="flex min-h-0">
                       {#if world.icon}
-                        <div class="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
                           <img src={world.icon} alt={world.name} class="w-full h-full object-contain" />
                         </div>
                       {:else}
-                        <div class="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 flex items-center justify-center flex-shrink-0 self-stretch">
                           <Globe size={32} class="text-[var(--text-muted)]" strokeWidth={1.5} />
                         </div>
                       {/if}
                       <div class="flex-1 min-w-0 py-2 px-4 flex items-center gap-3 relative z-0">
                         <div class="flex-1 min-w-0">
                           <h3 class="font-semibold text-base text-[var(--text-primary)] truncate">{world.name}</h3>
-                          <p class="text-sm text-[var(--text-muted)] mt-0.5">Created {world.created ? formatDate(world.created) : "Unknown"}</p>
-                          <div class="flex items-center gap-2 text-sm text-[var(--text-muted)] mt-0.5">
-                            <span>{formatFileSize(world.size)}</span>
-                            {#if world.game_mode}
-                              <span>•</span><span class="capitalize">{world.game_mode}</span>
-                            {/if}
-                          </div>
+                          <p class="text-sm text-[var(--text-muted)] truncate">Created {world.created ? formatDate(world.created) : "Unknown"}</p>
+                          <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(world.size)}{world.game_mode ? ` • ${world.game_mode.charAt(0).toUpperCase() + world.game_mode.slice(1)}` : ""}</p>
                         </div>
-                        <div class="flex items-center gap-1">
-                          <button onclick={() => handleLaunchWorld(world.folder_name)} disabled={!store.isAuthenticated || store.launchingInstanceName !== null || store.runningInstances.has(instance.name) || launchingWorld !== null} class="p-2.5 rounded-md cursor-pointer {(store.launchingInstanceName === instance.name || launchingWorld === world.folder_name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-40 disabled:cursor-not-allowed" title="Play this world">
+                        <div class="flex items-center gap-3">
+                          <button onclick={() => handleLaunchWorld(world.folder_name)} disabled={!store.isAuthenticated || store.launchingInstanceName !== null || store.runningInstances.has(instance.name) || launchingWorld !== null} class="px-5 py-1.5 mr-2 rounded-sm cursor-pointer {(store.launchingInstanceName === instance.name || launchingWorld === world.folder_name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-40 disabled:cursor-not-allowed" title="Play this world">
                             {#if store.launchingInstanceName === instance.name || launchingWorld === world.folder_name}
                               <div class="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
                             {:else}
                               <Play size={20} fill="currentColor" strokeWidth={0} />
                             {/if}
                           </button>
-                          <button onclick={() => handleOpenWorldFolder(world.folder_name)} class="p-2.5 hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded-md cursor-pointer" title="Open world folder"><FolderOpen size={20} /></button>
-                          <button onclick={() => handleDeleteWorld(world.folder_name, world.name)} class="p-2.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
+                          <button onclick={() => handleOpenWorldFolder(world.folder_name)} class="p-1 hover:bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded cursor-pointer" title="Open world folder"><FolderOpen size={20} /></button>
+                          <button onclick={() => handleDeleteWorld(world.folder_name, world.name)} class="p-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded cursor-pointer" title="Delete world"><Trash2 size={20} /></button>
                         </div>
                       </div>
                     </div>
@@ -699,11 +694,11 @@
                   <div class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
                     <div class="flex min-h-0">
                       {#if pack.icon_url}
-                        <div class="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
                           <img src={pack.icon_url} alt={pack.name || pack.filename} class="w-full h-full object-contain" />
                         </div>
                       {:else}
-                        <div class="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 flex items-center justify-center flex-shrink-0 self-stretch">
                           <Image size={36} class="text-[#f97316]" strokeWidth={1.5} />
                         </div>
                       {/if}
@@ -714,7 +709,7 @@
                           <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(pack.size)}</p>
                         </div>
                         <div class="flex flex-col items-center gap-1 self-center">
-                          <button onclick={() => handleDeleteResourcePack(pack.filename)} class="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md cursor-pointer">
+                          <button onclick={() => handleDeleteResourcePack(pack.filename)} class="p-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded cursor-pointer">
                             <Trash2 size={20} />
                           </button>
                         </div>
@@ -767,11 +762,11 @@
                   <div class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
                     <div class="flex min-h-0">
                       {#if pack.icon_url}
-                        <div class="w-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
                           <img src={pack.icon_url} alt={pack.name || pack.filename} class="w-full h-full object-contain" />
                         </div>
                       {:else}
-                        <div class="w-22 flex items-center justify-center flex-shrink-0 self-stretch">
+                        <div class="w-22 h-22 flex items-center justify-center flex-shrink-0 self-stretch">
                           <Palette size={36} class="text-[#8b5cf6]" strokeWidth={1.5} />
                         </div>
                       {/if}
@@ -782,7 +777,7 @@
                           <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(pack.size)}</p>
                         </div>
                         <div class="flex flex-col items-center gap-1 self-center">
-                          <button onclick={() => handleDeleteShaderPack(pack.filename)} class="p-1.5 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded-md cursor-pointer">
+                          <button onclick={() => handleDeleteShaderPack(pack.filename)} class="p-1 hover:bg-red-500/10 text-[var(--text-muted)] hover:text-red-400 rounded cursor-pointer">
                             <Trash2 size={20} />
                           </button>
                         </div>
