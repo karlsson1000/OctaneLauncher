@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
   import { convertFileSrc } from "@tauri-apps/api/core"
-  import { Camera, Package, X, Trash2, ExternalLink, ChevronLeft, ChevronRight, Calendar, Check, FolderOpen } from "lucide-svelte"
+  import { Camera, Package, X, Trash2, ExternalLink, ChevronLeft, ChevronRight, ChevronDown, Calendar, Check, FolderOpen } from "lucide-svelte"
   import type { Screenshot } from "../../types"
   import { formatFileSize, formatDate } from "../../lib/format"
 
@@ -12,6 +12,15 @@
   let currentImageIndex = $state(0)
   let sortBy = $state<"date" | "instance">("date")
   let isInstanceDropdownOpen = $state(false)
+  let instanceDropdownRef = $state<HTMLDivElement | undefined>(undefined)
+
+  $effect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (instanceDropdownRef && !instanceDropdownRef.contains(event.target as Node)) isInstanceDropdownOpen = false
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  })
   $effect(() => { loadScreenshots() })
 
   async function loadScreenshots() {
@@ -148,46 +157,46 @@
         <div class="flex items-center gap-2">
           <button
             onclick={handleOpenScreenshotsFolder}
-            class="w-8 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded flex items-center justify-center cursor-pointer"
+            class="w-8 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md flex items-center justify-center cursor-pointer"
             title="Open screenshots folder"
           >
             <FolderOpen size={16} />
           </button>
 
-          <div class="relative">
+          <div class="relative" bind:this={instanceDropdownRef}>
             <button
               type="button"
               onclick={() => isInstanceDropdownOpen = !isInstanceDropdownOpen}
-              class="h-8 bg-[var(--bg-tertiary)] px-3 pr-8 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isInstanceDropdownOpen ? 'rounded-t' : 'rounded'}"
+              class="relative h-8 pl-3 pr-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center gap-2 cursor-pointer"
             >
-              {selectedInstance ? `${selectedInstance} (${instanceCounts[selectedInstance]})` : `All Instances (${screenshots.length})`}
+              <span class="truncate">{selectedInstance ? `${selectedInstance} (${instanceCounts[selectedInstance]})` : `All Instances (${screenshots.length})`}</span>
             </button>
-            <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e6e6e6" stroke-width="3">
-                <polyline points={isInstanceDropdownOpen ? "18 15 12 9 6 15" : "6 9 12 15 18 9"} />
-              </svg>
+            <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]">
+              <ChevronDown size={16} strokeWidth={3} class="transition-transform {isInstanceDropdownOpen ? 'rotate-180' : ''}" />
             </div>
             {#if isInstanceDropdownOpen}
-              <div class="absolute z-10 min-w-full w-max bg-[var(--bg-tertiary)] rounded-b max-h-60 overflow-y-auto">
+              <div role="menu" class="dropdown-menu absolute left-1/2 -translate-x-1/2 z-[60] w-full min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5 max-h-60 overflow-y-auto custom-scrollbar">
                 <button
                   type="button"
+                  role="menuitem"
                   onclick={() => { selectedInstance = null; isInstanceDropdownOpen = false }}
-                  class="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+                  class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
                 >
-                  <span>All Instances ({screenshots.length})</span>
+                  <span class="truncate min-w-0">All Instances ({screenshots.length})</span>
                   {#if !selectedInstance}
-                    <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
+                    <Check size={15} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />
                   {/if}
                 </button>
                 {#each Object.entries(instanceCounts).sort(([a], [b]) => a.localeCompare(b)) as [instanceName, count]}
                   <button
                     type="button"
+                    role="menuitem"
                     onclick={() => { selectedInstance = instanceName; isInstanceDropdownOpen = false }}
-                    class="w-full px-3 py-2 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
-                  >
-                    <span>{instanceName} ({count})</span>
+                  class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                >
+                  <span class="truncate min-w-0">{instanceName} ({count})</span>
                     {#if selectedInstance === instanceName}
-                      <Check size={16} class="text-[var(--text-primary)]" strokeWidth={2} />
+                      <Check size={15} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />
                     {/if}
                   </button>
                 {/each}
@@ -197,7 +206,7 @@
 
           <button
             onclick={() => sortBy = sortBy === "date" ? "instance" : "date"}
-            class="px-3 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded text-sm flex items-center gap-2 cursor-pointer"
+            class="px-3 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md text-sm flex items-center gap-2 cursor-pointer"
           >
             {#if sortBy === "date"}
               <Calendar size={14} />
