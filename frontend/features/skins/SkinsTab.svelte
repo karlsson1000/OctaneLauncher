@@ -456,51 +456,43 @@
 
     <input bind:this={fileInputEl} type="file" accept="image/png" onchange={handleFileSelect} class="hidden" />
 
-    {#snippet tip(text: string)}
-      <div class="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 px-[7px] py-[3px] rounded border border-[var(--border-color,#333)] bg-[var(--bg-secondary,#1a1a2e)] text-[var(--text-primary,#eee)] text-[11px] whitespace-nowrap pointer-events-none z-[100] hidden group-hover:block">{text}</div>
-    {/snippet}
-
     <div
       role="presentation"
       onpointerdown={(e) => e.stopPropagation()}
-      style="position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; align-items: center; gap: 12px; max-width: calc(100% - 64px); flex-wrap: wrap; justify-content: center;"
+      class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 max-w-[calc(100%-4rem)] flex-wrap justify-center"
     >
-      <div style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 12px; background: var(--bg-elevated); backdrop-filter: blur(12px); justify-content: center;">
-        <div role="presentation" class="group relative inline-flex">
-          <button
-            onclick={() => fileInputEl?.click()}
-            disabled={uploading || loading}
-            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[#16a34a] shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {#if uploading}
-              <Loader2 size={20} class="animate-spin" />
-            {:else}
-              <Upload size={20} strokeWidth={2.5} />
-            {/if}
-          </button>
-          {@render tip("Upload skin")}
-        </div>
+      <div class="flex items-center gap-2 bg-[var(--bg-elevated)]/95 backdrop-blur-md rounded-lg px-3 py-2 justify-center">
+        <button
+          onclick={() => fileInputEl?.click()}
+          disabled={uploading || loading}
+          title="Upload skin"
+          class="flex items-center justify-center w-8 h-8 rounded-md bg-transparent text-[#16a34a] shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {#if uploading}
+            <Loader2 size={20} class="animate-spin" />
+          {:else}
+            <Upload size={20} strokeWidth={2.5} />
+          {/if}
+        </button>
 
-        <div role="presentation" class="group relative inline-flex">
-          <button
-            onclick={handleReset}
-            disabled={loading}
-            class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent text-[var(--text-muted)] shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            <RotateCcw size={20} strokeWidth={2.5} />
-          </button>
-          {@render tip("Reset to default skin")}
-        </div>
+        <button
+          onclick={handleReset}
+          disabled={loading}
+          title="Reset to default skin"
+          class="flex items-center justify-center w-8 h-8 rounded-md bg-transparent text-[var(--text-muted)] shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <RotateCcw size={20} strokeWidth={2.5} />
+        </button>
 
         <button
           onclick={() => skinVariant = "classic"}
-          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border cursor-pointer shrink-0 {skinVariant === 'classic' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
+          class="px-3 h-8 inline-flex items-center justify-center rounded-md text-[13px] font-semibold whitespace-nowrap cursor-pointer shrink-0 {skinVariant === 'classic' ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
         >
           Classic
         </button>
         <button
           onclick={() => skinVariant = "slim"}
-          class="px-[10px] py-[6px] rounded-lg text-[13px] font-semibold tracking-[0.01em] whitespace-nowrap box-border cursor-pointer shrink-0 {skinVariant === 'slim' ? 'bg-[var(--accent-primary,#4572e3)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover,#2a2a3e)]'}"
+          class="px-3 h-8 inline-flex items-center justify-center rounded-md text-[13px] font-semibold whitespace-nowrap cursor-pointer shrink-0 {skinVariant === 'slim' ? 'bg-[var(--accent-primary)] text-white' : 'bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
         >
           Slim
         </button>
@@ -518,14 +510,14 @@
             <div style="display: flex; align-items: center; gap: 3px;">
               {#each capes as cape (cape.id)}
                 {@const isActive = activeCape === cape.id}
-                <div role="presentation" class="group relative inline-flex">
-                  <div
-                    role="button"
-                    tabindex="0"
-                    onclick={() => isActive ? handleCapeRemove() : handleCapeSelect(cape.id)}
-                    onkeydown={(e) => { if (e.key === 'Enter') isActive ? handleCapeRemove() : handleCapeSelect(cape.id) }}
-                    class="cursor-pointer shrink-0 leading-none"
-                  >
+                <div
+                  role="button"
+                  tabindex="0"
+                  title={cape.alias}
+                  onclick={() => isActive ? handleCapeRemove() : handleCapeSelect(cape.id)}
+                  onkeydown={(e) => { if (e.key === 'Enter') isActive ? handleCapeRemove() : handleCapeSelect(cape.id) }}
+                  class="group cursor-pointer shrink-0 leading-none"
+                >
                     <div class="w-[26px] h-[38px] rounded border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-[var(--bg-secondary)] relative flex items-center justify-center">
                       <div style="width: {CAPE_FRONT.w * CAPE_THUMB_SCALE}px; height: {CAPE_FRONT.h * CAPE_THUMB_SCALE}px; overflow: hidden; flex-shrink: 0;">
                         <img
@@ -545,26 +537,22 @@
                       {/if}
                     </div>
                   </div>
-                  {@render tip(cape.alias)}
-                </div>
               {/each}
             </div>
           {/if}
 
           {#if activeCapeUrl}
-            <div role="presentation" class="group relative inline-flex">
-              <button
-                onclick={() => showElytra = !showElytra}
-                class="flex items-center justify-center w-[34px] h-[34px] rounded-md bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-muted)] cursor-pointer shrink-0"
-              >
-                {#if showElytra}
-                  <RectangleVertical size={20} strokeWidth={2.5} />
-                {:else}
-                  <Plane size={20} strokeWidth={2.5} />
-                {/if}
-              </button>
-              {@render tip(showElytra ? "Show as cape" : "Show as elytra")}
-            </div>
+            <button
+              onclick={() => showElytra = !showElytra}
+              title={showElytra ? "Show as cape" : "Show as elytra"}
+              class="flex items-center justify-center w-8 h-8 rounded-md bg-transparent hover:bg-[var(--bg-hover)] text-[var(--text-muted)] cursor-pointer shrink-0"
+            >
+              {#if showElytra}
+                <RectangleVertical size={22} strokeWidth={2.5} />
+              {:else}
+                <Plane size={22} strokeWidth={2.5} />
+              {/if}
+            </button>
           {/if}
         {/if}
 
@@ -573,14 +561,14 @@
             <button
               onclick={handleDiscard}
               disabled={saving}
-              class="px-4 py-1.5 rounded-lg bg-[var(--bg-secondary,#1a1a2e)] text-[var(--text-muted,#888)] text-[13px] font-semibold shrink-0 enabled:hover:bg-[var(--bg-hover,#2a2a3e)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+              class="px-4 h-8 inline-flex items-center justify-center rounded-md bg-[var(--bg-secondary)] text-[var(--text-muted)] text-[13px] font-semibold shrink-0 enabled:hover:bg-[var(--bg-hover)] enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               onclick={handleSave}
               disabled={saving}
-              class="px-4 py-1.5 rounded-lg bg-[#16a34a] enabled:hover:bg-[#15803d] text-white text-[13px] font-semibold flex items-center gap-1.5 shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              class="px-4 h-8 rounded-md bg-[#16a34a] enabled:hover:bg-[#15803d] text-white text-[13px] font-semibold flex items-center justify-center gap-1.5 shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             >
               {#if saving}
                 Saving…
@@ -593,27 +581,25 @@
       </div>
 
       {#if recentSkins.length > 0}
-        <div style="display: flex; align-items: center; gap: 4px; padding: 5px 6px; border-radius: 12px; background: var(--bg-elevated); backdrop-filter: blur(12px); flex-shrink: 0;">
+        <div class="flex items-center gap-1 bg-[var(--bg-elevated)]/95 backdrop-blur-md rounded-lg px-3 py-2 flex-shrink-0">
           {#each recentSkins as skin}
             {@const match = skin.url.match(/texture\/([a-f0-9]+)/)}
             {@const hash = match ? match[1] : null}
             {@const bustUrl = hash ? `https://renders.stellarmc.gg/bust/${hash}${skin.variant === "slim" ? "?slim" : ""}` : skin.url}
-            <div role="presentation" class="group relative inline-flex">
-              <button
-                onclick={() => handleRecentSkinSelect(skin)}
-                disabled={uploading}
-                class="box-border w-10 h-10 rounded-md p-0 border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-transparent shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                <img
-                  src={bustUrl}
-                  alt="Recent skin"
-                  draggable={false}
-                  class="w-full h-full object-cover block"
-                  style="image-rendering: pixelated"
-                />
-              </button>
-              {@render tip("Apply recent skin")}
-            </div>
+            <button
+              onclick={() => handleRecentSkinSelect(skin)}
+              disabled={uploading}
+              title="Apply recent skin"
+              class="box-border w-10 h-10 rounded-md p-0 border-2 border-transparent hover:border-[var(--text-muted)] overflow-hidden bg-transparent shrink-0 enabled:cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <img
+                src={bustUrl}
+                alt="Recent skin"
+                draggable={false}
+                class="w-full h-full object-cover block"
+                style="image-rendering: pixelated"
+              />
+            </button>
           {/each}
         </div>
       {/if}
