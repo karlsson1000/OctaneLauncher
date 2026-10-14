@@ -5,8 +5,6 @@ mod utils;
 mod models;
 
 use tauri::Manager;
-use tauri::menu::{Menu, MenuItem, PredefinedMenuItem};
-use tauri::tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
 use tauri_plugin_updater::UpdaterExt;
 use services::accounts::AccountManager;
 use models::{AppConfig, FriendStatus};
@@ -34,11 +32,6 @@ async fn set_all_accounts_offline(app: &tauri::AppHandle) {
 #[tauri::command]
 fn get_app_version() -> String {
     format!("{}-{}", env!("CARGO_PKG_VERSION"), env!("OCTANE_COMMIT_HASH"))
-}
-
-#[tauri::command]
-fn show_window(app: tauri::AppHandle) {
-    show_main_window(&app);
 }
 
 #[tauri::command]
@@ -74,12 +67,6 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
 pub struct CurseforgeConfig {
     pub api_key: Arc<str>,
 }
-
-#[allow(dead_code)]
-struct TrayState(std::sync::Mutex<Option<TrayIcon>>);
-
-static USER_HID_WINDOW: std::sync::atomic::AtomicBool =
-    std::sync::atomic::AtomicBool::new(false);
 
 fn show_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
@@ -121,61 +108,6 @@ pub fn run() {    if let Err(e) = dotenvy::dotenv() {
 
             std::thread::spawn(|| crate::services::discord::set_in_launcher());
 
-            let show_item = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let separator = PredefinedMenuItem::separator(app)?;
-            let tray_menu = Menu::with_items(app, &[&show_item, &separator, &quit_item])?;
-            let tray_icon =
-                tauri::image::Image::from_bytes(&include_bytes!("../icons/32x32.png")[..])?;
-            let tray = TrayIconBuilder::new()
-                .icon(tray_icon)
-                .tooltip("Octane Launcher")
-                .menu(&tray_menu)
-                .show_menu_on_left_click(false)
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => {
-                        show_main_window(app);
-                    }
-                    "quit" => {
-                        let app_handle = app.clone();
-                        tauri::async_runtime::spawn(async move {
-                            let _ = tokio::time::timeout(
-                                tokio::time::Duration::from_secs(1),
-                                set_all_accounts_offline(&app_handle),
-                            )
-                            .await;
-                            app_handle.exit(0);
-                        });
-                    }
-                    _ => {}
-                })
-                .on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click {
-                        button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
-                        ..
-                    } = event
-                    {
-                        show_main_window(tray.app_handle());
-                    }
-                })
-                .build(app)?;
-            app.manage(TrayState(std::sync::Mutex::new(Some(tray))));
-
-            let fallback_window = app.get_webview_window("main");
-            tauri::async_runtime::spawn(async move {
-                tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
-                if USER_HID_WINDOW.load(std::sync::atomic::Ordering::SeqCst) {
-                    return;
-                }
-                if let Some(window) = fallback_window {
-                    if !window.is_visible().unwrap_or(true) {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                }
-            });
-
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
                 let _ = crate::services::trash::TrashManager::clean_old_items(30);
@@ -198,13 +130,19 @@ pub fn run() {    if let Err(e) = dotenvy::dotenv() {
             }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                USER_HID_WINDOW.store(true, std::sync::atomic::Ordering::SeqCst);
-                let _ = window.hide();
+                let app_handle = window.app_handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let _ = tokio::time::timeout(
+                        tokio::time::Duration::from_secs(1),
+                        set_all_accounts_offline(&app_handle),
+                    )
+                    .await;
+                    app_handle.exit(0);
+                });
             }
         })
         .invoke_handler(tauri::generate_handler![
             get_app_version,
-            show_window,
             check_for_updates,
             install_update,
             microsoft_login_and_store,

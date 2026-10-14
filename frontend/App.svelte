@@ -28,7 +28,6 @@
     setExportModal, setShowSearchPalette, navigateBack, navigateForward,
   } from "./lib/launcherStore.svelte"
   import { onMount, untrack } from "svelte"
-  import { invoke } from "@tauri-apps/api/core"
   import { ArrowLeft, ArrowRight, RefreshCw, Search } from "lucide-svelte"
 
   const SPLASH_DELAY_MS = 100
@@ -93,7 +92,6 @@
   })
 
   onMount(() => {
-    invoke("show_window").catch(() => {})
     setTimeout(() => {
       store.isReady = true
       const splash = document.getElementById("splash-screen")
