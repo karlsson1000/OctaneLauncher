@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Play, Search, Plus, FolderPlus, ChevronDown, ChevronUp, Save, ClipboardCheck } from "lucide-svelte"
+  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Play, Search, Plus, FolderPlus, ChevronDown, ChevronUp, Save, ClipboardCheck, LayoutGrid, List, Check } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import { instanceIconSrc } from "../../lib/icons"
   import type { Instance } from "../../types"
@@ -28,13 +28,12 @@
     separator?: boolean
   }
 
-  const SORT_CYCLE: SortOption[] = ["recently-played", "name-asc", "name-desc"]
-
   const SORT_LABELS: Record<SortOption, string> = {
     "recently-played": "Recently played",
     "name-asc": "Name (A–Z)",
     "name-desc": "Name (Z–A)",
   }
+  const SORT_OPTIONS = Object.keys(SORT_LABELS) as SortOption[]
 
   const DEFAULT_GROUP = "__ungrouped__"
   const TOAST_MS = 5000
@@ -73,20 +72,30 @@
   let collapsed = $state<Record<string, boolean>>({})
   let searchQuery = $state("")
   let sortBy = $state<SortOption>("recently-played")
+  let layout = $state<"list" | "grid">("list")
 
   let groupModalInstance = $state<Instance | null>(null)
   let groupModalValue = $state("")
   let groupModalInputEl: HTMLInputElement | undefined = $state()
+  let groupModalClosing = $state(false)
+  let groupModalTimer: ReturnType<typeof setTimeout> | undefined
 
   onMount(async () => {
-    const [savedGroups, savedCollapsed] = await Promise.all([
+    const [savedGroups, savedCollapsed, savedLayout] = await Promise.all([
       storeGet<Groups>("instance_groups"),
       storeGet<Record<string, boolean>>("group_collapsed"),
+      storeGet<"list" | "grid">("instances_layout"),
     ])
     if (savedGroups) groups = savedGroups
     if (savedCollapsed) collapsed = savedCollapsed
+    if (savedLayout === "list" || savedLayout === "grid") layout = savedLayout
     groupsLoaded = true
   })
+
+  async function persistLayout(next: "list" | "grid") {
+    layout = next
+    await storeSet("instances_layout", next)
+  }
 
   $effect(() => {
     if (groupModalInstance && groupModalInputEl) {
@@ -163,12 +172,19 @@
     persistCollapsed({ ...collapsed, [group]: !collapsed[group] })
 
   function openGroupModal(instance: Instance) {
+    if (groupModalTimer) clearTimeout(groupModalTimer)
+    groupModalClosing = false
     groupModalInstance = instance
     groupModalValue = ""
   }
 
   function closeGroupModal() {
-    groupModalInstance = null
+    if (groupModalClosing) return
+    groupModalClosing = true
+    groupModalTimer = setTimeout(() => {
+      groupModalInstance = null
+      groupModalClosing = false
+    }, 150)
   }
 
   function submitGroupModal() {
@@ -203,10 +219,16 @@
     groupContextMenu = { x: e.clientX, y: e.clientY, group }
   }
 
-  function handleCycleSort() {
-    const currentIndex = SORT_CYCLE.indexOf(sortBy)
-    sortBy = SORT_CYCLE[(currentIndex + 1) % SORT_CYCLE.length]
-  }
+  let isSortDropdownOpen = $state(false)
+  let sortDropdownRef = $state<HTMLDivElement | undefined>(undefined)
+
+  $effect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (sortDropdownRef && !sortDropdownRef.contains(event.target as Node)) isSortDropdownOpen = false
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  })
 
   function sortInstances(list: Instance[]) {
     return [...list].sort((a, b) => {
@@ -222,8 +244,6 @@
       }
     })
   }
-
-  let sortIsDesc = $derived(sortBy === "recently-played" || sortBy === "name-desc")
 
   let filteredInstances = $derived(
     store.instances.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -379,12 +399,67 @@
   </div>
 {/snippet}
 
+{#snippet instanceIconCard(instance: Instance)}
+  {@const isRunning = store.runningInstances.has(instance.name)}
+  {@const isLaunching = store.launchingInstanceName === instance.name}
+  {@const isBusy = isRunning || isLaunching}
+  {@const loader = getLoaderMeta(instance.loader)}
+  {@const iconSrc = instanceIconSrc(instance.icon_path, instance.name)}
+  <div
+    role="button"
+    tabindex="0"
+    onclick={() => openInstance(instance)}
+    oncontextmenu={(e) => handleContextMenu(e, instance)}
+    onkeydown={(e) => { if (e.key === 'Enter') openInstance(instance) }}
+    class="group relative rounded-b-md cursor-pointer bg-[var(--bg-tertiary)] transition-all hover:brightness-120 px-3 pb-3 pt-[15px] flex flex-col items-center"
+  >
+    <div class="absolute top-0 left-0 right-0 h-[3px] {loader.accent}"></div>
+    <div class="relative w-full aspect-square">
+      {#if iconSrc}
+        <img src={iconSrc} alt={instance.name} class="w-full h-full object-cover rounded-md" />
+      {:else}
+        <div class="w-full h-full bg-[var(--bg-secondary)] rounded-md flex items-center justify-center">
+          <Package size={64} class="text-[var(--text-muted)]" />
+        </div>
+      {/if}
+      {#if store.isAuthenticated}
+        <button
+          title={isRunning ? "Stop instance" : "Launch instance"}
+          onclick={(e) => {
+            e.stopPropagation()
+            if (isRunning) handleKillInstance(instance)
+            else handleQuickLaunch(instance)
+          }}
+          disabled={store.launchingInstanceName !== null && !isRunning}
+          class="absolute bottom-1.5 right-1.5 w-12 h-12 flex items-center justify-center rounded-md cursor-pointer {(isRunning || isLaunching) ? 'bg-red-500/10 text-red-400 opacity-100 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
+        >
+          {#if isBusy}
+            <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
+          {:else}
+            <Play size={24} fill="currentColor" strokeWidth={0} />
+          {/if}
+        </button>
+      {/if}
+    </div>
+    <div class="w-full text-lg font-semibold text-[var(--text-primary)] tracking-tight leading-tight truncate mt-2">{instance.name}</div>
+    <div class="w-full text-sm text-[var(--text-muted)] truncate leading-tight mt-0.5">{getMinecraftVersion(instance)} • <span class={loader.text}>{loader.label}</span></div>
+  </div>
+{/snippet}
+
 {#snippet instanceGrid(list: Instance[])}
+  {#if layout === "grid"}
+    <div class="grid grid-cols-7 gap-x-3 gap-y-4">
+      {#each list as instance (instance.name)}
+        {@render instanceIconCard(instance)}
+      {/each}
+    </div>
+  {:else}
   <div class="grid grid-cols-2 gap-4 pl-1">
     {#each list as instance (instance.name)}
       {@render instanceCard(instance)}
     {/each}
   </div>
+  {/if}
 {/snippet}
 
 <div class="p-8 space-y-4">
@@ -405,18 +480,51 @@
       </div>
       <div class="flex items-center gap-2">
         {#if store.instances.length > 0}
-          <button
-            onclick={handleCycleSort}
-            class="h-8 px-2.5 hover:bg-[var(--bg-tertiary)] rounded flex items-center gap-1.5 cursor-pointer group"
-          >
-            <span class="text-sm text-[var(--text-muted)] font-medium">Sort by:</span>
-            <span class="text-sm text-[var(--text-muted)] group-hover:text-[var(--text-primary)] font-semibold">{SORT_LABELS[sortBy]}</span>
-            {#if sortIsDesc}
-              <ChevronDown size={14} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" strokeWidth={2.5} />
-            {:else}
-              <ChevronUp size={14} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" strokeWidth={2.5} />
+          <div class="relative" bind:this={sortDropdownRef}>
+            <button
+              onclick={() => isSortDropdownOpen = !isSortDropdownOpen}
+              class="relative h-8 pl-3 pr-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md flex items-center gap-1.5 cursor-pointer"
+            >
+              <span class="text-sm text-[var(--text-muted)] font-medium whitespace-nowrap">Sort by:</span>
+              <span class="text-sm text-[var(--text-primary)] font-semibold whitespace-nowrap">{SORT_LABELS[sortBy]}</span>
+              <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]">
+                <ChevronDown size={16} strokeWidth={3} class="transition-transform {isSortDropdownOpen ? 'rotate-180' : ''}" />
+              </span>
+            </button>
+            {#if isSortDropdownOpen}
+              <div role="menu" class="dropdown-menu drop-right absolute right-0 z-[60] w-full min-w-[180px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5">
+                {#each SORT_OPTIONS as option (option)}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onclick={() => { sortBy = option; isSortDropdownOpen = false }}
+                    class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                  >
+                    <span class="truncate min-w-0">{SORT_LABELS[option]}</span>
+                    {#if sortBy === option}
+                      <Check size={15} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />
+                    {/if}
+                  </button>
+                {/each}
+              </div>
             {/if}
-          </button>
+          </div>
+          <div class="grid grid-cols-2 gap-1 p-0.5 rounded-md bg-[var(--bg-tertiary)]">
+            <button
+              onclick={() => persistLayout("list")}
+              title="List view"
+              class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'list' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+            >
+              <List size={18} strokeWidth={2.5} />
+            </button>
+            <button
+              onclick={() => persistLayout("grid")}
+              title="Grid view"
+              class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'grid' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+            >
+              <LayoutGrid size={18} strokeWidth={2.5} />
+            </button>
+          </div>
         {/if}
         <button
           onclick={handleCreateNew}
@@ -500,12 +608,14 @@
   <div
     role="presentation"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm modal-backdrop"
+    class:closing={groupModalClosing}
     onclick={closeGroupModal}
     onkeydown={(e) => { if (e.key === 'Escape') closeGroupModal() }}
   >
     <div
       role="presentation"
       class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-80 modal-content p-5 space-y-4"
+      class:closing={groupModalClosing}
       onclick={(e) => e.stopPropagation()}
     >
       <div>
