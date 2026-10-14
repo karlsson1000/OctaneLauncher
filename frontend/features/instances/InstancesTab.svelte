@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Play, Search, Plus, FolderPlus, ChevronDown, ChevronUp, Save, ClipboardCheck, LayoutGrid, List, Check } from "lucide-svelte"
+  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Play, Search, Plus, FolderPlus, ChevronDown, Save, ClipboardCheck, LayoutGrid, List, Check } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import { instanceIconSrc } from "../../lib/icons"
   import type { Instance } from "../../types"
