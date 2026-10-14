@@ -1,123 +1,125 @@
 <script lang="ts">
+  import { onMount, untrack } from "svelte"
   import { listen } from "@tauri-apps/api/event"
   import { invoke } from "@tauri-apps/api/core"
   import { getCurrentWindow } from "@tauri-apps/api/window"
-  import { Minus, Square, X, SquareTerminal, Trash2, Upload, ExternalLink, Loader2, X as XIcon } from "lucide-svelte"
+  import { Minus, Square, X, SquareTerminal, Trash2, Upload, ExternalLink, Loader2 } from "lucide-svelte"
   import type { ConsoleLog } from "../../types"
 
-  let consoleLogs = $state<ConsoleLog[]>([])
-  let activeInstance = $state<string | null>(null)
-  let uploadState = $state<{
-    loading: boolean
-    url: string | null
-    error: string | null
-  }>({ loading: false, url: null, error: null })
-  let logTimestamps = $state(new Map<ConsoleLog, string>())
-  function getLogTime(log: ConsoleLog): string {
-    if (!logTimestamps.has(log)) {
-      logTimestamps.set(log, new Date().toLocaleTimeString())
-    }
-    return logTimestamps.get(log)!
-  }
+  type UploadState = { loading: boolean; url: string | null; error: string | null }
+  const IDLE: UploadState = { loading: false, url: null, error: null }
 
-  let consoleEndEl: HTMLDivElement | undefined = $state()
-  let containerEl: HTMLDivElement | undefined = $state()
-  let previousInstances: string[] = []
-  let scrollPositions: Record<string, number> = {}
   const appWindow = getCurrentWindow()
 
-  $effect(() => {
+  let consoleLogs = $state.raw<ConsoleLog[]>([])
+  let activeInstance = $state<string | null>(null)
+  let upload = $state<UploadState>(IDLE)
+  let containerEl = $state<HTMLDivElement>()
+
+  let previousInstances: string[] = []
+  let resetTimer: ReturnType<typeof setTimeout> | undefined
+  const scrollPositions = new Map<string, number>()
+  const pinned = new Map<string, boolean>()
+  const timestamps = new WeakMap<ConsoleLog, string>()
+
+  let instanceLogs = $derived(consoleLogs.reduce((acc, log) => {
+    (acc[log.instance] ??= []).push(log)
+    return acc
+  }, {} as Record<string, ConsoleLog[]>))
+  let instances = $derived(Object.keys(instanceLogs).sort())
+  let activeLogs = $derived(activeInstance ? instanceLogs[activeInstance] ?? [] : [])
+
+  let uploadColor = $derived(
+    upload.url
+      ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
+      : upload.error
+        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
+        : "bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]"
+  )
+  let uploadLabel = $derived(
+    upload.loading ? "Uploading..." : upload.url ? "Uploaded & Copied!" : (upload.error ?? "Upload to mclo.gs")
+  )
+
+  onMount(() => {
     const unlisten = listen<ConsoleLog>("console-log", (event) => {
+      timestamps.set(event.payload, new Date().toLocaleTimeString())
       consoleLogs = [...consoleLogs, event.payload]
     })
     return () => { unlisten.then((fn) => fn()) }
   })
 
-  let instanceLogs = $derived(consoleLogs.reduce((acc, log) => {
-    if (!acc[log.instance]) acc[log.instance] = []
-    acc[log.instance].push(log)
-    return acc
-  }, {} as Record<string, ConsoleLog[]>))
-
-  let instances = $derived(Object.keys(instanceLogs).sort())
+  $effect(() => () => clearTimeout(resetTimer))
 
   $effect(() => {
-    const prev = previousInstances
-    const newInstances = instances.filter(i => !prev.includes(i))
+    const added = instances.filter(i => !previousInstances.includes(i))
+    const current = untrack(() => activeInstance)
 
-    if (newInstances.length > 0) {
-      activeInstance = newInstances[newInstances.length - 1]
-    } else if (instances.length > 0 && !activeInstance) {
-      activeInstance = instances[instances.length - 1]
-    } else if (activeInstance && !instances.includes(activeInstance)) {
-      activeInstance = instances[instances.length - 1] || null
-    }
+    if (added.length > 0) activeInstance = added[added.length - 1]
+    else if (!current || !instances.includes(current)) activeInstance = instances[instances.length - 1] ?? null
 
     previousInstances = instances
   })
 
   $effect(() => {
-    consoleLogs.length
-    if (consoleEndEl) {
-      consoleEndEl.scrollIntoView({ behavior: "smooth" })
-    }
-  })
-
-  $effect(() => {
-    if (containerEl && activeInstance) {
-      const saved = scrollPositions[activeInstance]
-      if (saved !== undefined) {
-        containerEl.scrollTop = saved
-      } else {
-        containerEl.scrollTop = containerEl.scrollHeight
-      }
-    }
+    void activeLogs.length
+    const inst = activeInstance
+    if (!containerEl || !inst) return
+    containerEl.scrollTop = (pinned.get(inst) ?? true) ? containerEl.scrollHeight : (scrollPositions.get(inst) ?? 0)
   })
 
   function handleScroll() {
-    if (containerEl && activeInstance) {
-      scrollPositions[activeInstance] = containerEl.scrollTop
-    }
+    if (!containerEl || !activeInstance) return
+    scrollPositions.set(activeInstance, containerEl.scrollTop)
+    pinned.set(activeInstance, containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < 40)
   }
 
-  let activeLogs = $derived(activeInstance ? instanceLogs[activeInstance] || [] : [])
+  function getLogTime(log: ConsoleLog): string {
+    let time = timestamps.get(log)
+    if (!time) {
+      time = new Date().toLocaleTimeString()
+      timestamps.set(log, time)
+    }
+    return time
+  }
 
-  function formatLogs() {
-    if (!activeInstance) return ""
-    return activeLogs.map(log =>
-      `${getLogTime(log)} [${log.instance}] ${log.message}`
-    ).join('\n')
+  function getLogClass(log: ConsoleLog): string {
+    const msg = log.message.toLowerCase()
+    if (log.type === "stderr" || msg.includes("error") || msg.includes("failed")) return "text-red-400"
+    if (msg.includes("warn")) return "text-yellow-400"
+    return "text-[var(--text-primary)]"
+  }
+
+  function settleUpload(next: UploadState) {
+    upload = next
+    clearTimeout(resetTimer)
+    resetTimer = setTimeout(() => { upload = IDLE }, 3000)
   }
 
   async function handleUploadToMcLogs() {
-    uploadState = { loading: true, url: null, error: null }
+    upload = { loading: true, url: null, error: null }
+
     try {
-      const logContent = formatLogs()
-      if (!logContent.trim()) {
-        uploadState = { loading: false, url: null, error: "No logs to upload" }
-        setTimeout(() => uploadState = { loading: false, url: null, error: null }, 3000)
-        return
+      const content = activeLogs.map(log => `${getLogTime(log)} [${log.instance}] ${log.message}`).join("\n")
+      if (!content.trim()) throw new Error("No logs to upload")
+
+      let data: { success: boolean; url?: string; error?: string }
+      try {
+        const response = await fetch("https://api.mclo.gs/1/log", {
+          method: "POST",
+          body: new URLSearchParams({ content })
+        })
+        data = await response.json()
+      } catch {
+        throw new Error("Network error occurred")
       }
-      const formData = new URLSearchParams()
-      formData.append('content', logContent)
-      const response = await fetch('https://api.mclo.gs/1/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData
-      })
-      const data = await response.json()
-      if (data.success) {
-        await navigator.clipboard.writeText(data.url)
-        invoke('open_url', { url: data.url }).catch(() => {})
-        uploadState = { loading: false, url: data.url, error: null }
-        setTimeout(() => uploadState = { loading: false, url: null, error: null }, 3000)
-      } else {
-        uploadState = { loading: false, url: null, error: data.error || "Upload failed" }
-        setTimeout(() => uploadState = { loading: false, url: null, error: null }, 3000)
-      }
-    } catch {
-      uploadState = { loading: false, url: null, error: "Network error occurred" }
-      setTimeout(() => uploadState = { loading: false, url: null, error: null }, 3000)
+
+      if (!data.success || !data.url) throw new Error(data.error || "Upload failed")
+
+      await navigator.clipboard.writeText(data.url).catch(() => {})
+      invoke("open_url", { url: data.url }).catch(() => {})
+      settleUpload({ loading: false, url: data.url, error: null })
+    } catch (err) {
+      settleUpload({ loading: false, url: null, error: err instanceof Error ? err.message : "Upload failed" })
     }
   }
 
@@ -176,7 +178,7 @@
   {/if}
 
   <div class="flex-1 mx-3 bg-[var(--bg-tertiary)] rounded-lg overflow-hidden">
-    {#if consoleLogs.length === 0}
+    {#if !activeInstance}
       <div class="h-full flex items-center justify-center">
         <div class="text-center">
           <SquareTerminal size={40} class="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
@@ -185,23 +187,14 @@
         </div>
       </div>
     {:else}
-      <div
-        class="h-full overflow-y-auto p-4 font-mono text-sm"
-        bind:this={containerEl}
-        onscroll={handleScroll}
-      >
+      <div class="h-full overflow-y-auto p-4 font-mono text-sm" bind:this={containerEl} onscroll={handleScroll}>
         {#each activeLogs as log}
-          {@const isError = log.type === "stderr" || log.message.toLowerCase().includes("error") || log.message.toLowerCase().includes("failed")}
-          {@const isWarning = log.message.toLowerCase().includes("warning") || log.message.toLowerCase().includes("warn")}
-          <div
-            class="py-0.5 leading-relaxed {isError ? 'text-red-400' : isWarning ? 'text-yellow-400' : 'text-[var(--text-primary)]'}"
-          >
+          <div class="py-0.5 leading-relaxed {getLogClass(log)}">
             <span class="text-[var(--text-muted)] mr-2">{getLogTime(log)}</span>
             <span class="text-[#16a34a] mr-2">[{log.instance}]</span>
             <span>{log.message}</span>
           </div>
         {/each}
-        <div bind:this={consoleEndEl}></div>
       </div>
     {/if}
   </div>
@@ -209,29 +202,19 @@
   <div class="flex items-center justify-end gap-2 px-3 py-3 flex-shrink-0" style="-webkit-app-region: no-drag">
     <button
       onclick={handleUploadToMcLogs}
-      disabled={!activeInstance || activeLogs.length === 0 || uploadState.loading}
-      class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadState.url ? 'bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]' : uploadState.error ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'}"
+      disabled={!activeInstance || activeLogs.length === 0 || upload.loading}
+      class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadColor}"
     >
-      {#if uploadState.loading}
+      {#if upload.loading}
         <Loader2 size={16} strokeWidth={2} class="animate-spin" />
-      {:else if uploadState.url}
+      {:else if upload.url}
         <ExternalLink size={16} strokeWidth={2} />
-      {:else if uploadState.error}
-        <XIcon size={16} strokeWidth={2} />
+      {:else if upload.error}
+        <X size={16} strokeWidth={2} />
       {:else}
         <Upload size={16} strokeWidth={2} />
       {/if}
-      <span>
-        {#if uploadState.loading}
-          Uploading...
-        {:else if uploadState.url}
-          Uploaded & Copied!
-        {:else if uploadState.error}
-          {uploadState.error}
-        {:else}
-          Upload to mclo.gs
-        {/if}
-      </span>
+      <span>{uploadLabel}</span>
     </button>
     <button
       onclick={handleClear}

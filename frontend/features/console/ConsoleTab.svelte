@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { SquareTerminal, Trash2, Upload, ExternalLink, Loader2, X, PictureInPicture } from "lucide-svelte"
+  import { onMount, untrack } from "svelte"
+  import { SquareTerminal, Trash2, Upload, ExternalLink, Loader2, X, PictureInPicture, Search } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import { WebviewWindow } from "@tauri-apps/api/webviewWindow"
   import { store, handleClearConsole } from "../../lib/launcherStore.svelte"
@@ -28,128 +29,145 @@
 ⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠑⠚⠛⠒⠓⠚⠈⠊⠉⠁
 `;
 
-  let consoleEndEl = $state<HTMLDivElement>()
+  type UploadState = { loading: boolean; url: string | null; error: string | null }
+  const IDLE: UploadState = { loading: false, url: null, error: null }
+
   let containerEl = $state<HTMLDivElement>()
-  let uploadState = $state<{ loading: boolean; url: string | null; error: string | null }>({ loading: false, url: null, error: null })
-  let isPopedOut = $state(false)
+  let upload = $state<UploadState>(IDLE)
+  let isPoppedOut = $state(false)
   let activeInstance = $state<string | null>(null)
   let previousInstances: string[] = []
-  let scrollPositions: Record<string, number> = {}
+  let resetTimer: ReturnType<typeof setTimeout> | undefined
+  const scrollPositions = new Map<string, number>()
+  const pinned = new Map<string, boolean>()
+  const timestamps = new WeakMap<ConsoleLog, string>()
 
   let instances = $derived([...new Set(store.consoleLogs.map(l => l.instance))].sort())
-
   let activeLogs = $derived(activeInstance ? store.consoleLogs.filter(l => l.instance === activeInstance) : [])
+  let logSearchQuery = $state("")
+  let filteredLogs = $derived(
+    logSearchQuery.trim() === ""
+      ? activeLogs
+      : activeLogs.filter(l => l.message.toLowerCase().includes(logSearchQuery.trim().toLowerCase()))
+  )
 
-  $effect(() => {
-    let unlisten: (() => void) | undefined
+  let uploadColor = $derived(
+    upload.url
+      ? "bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]"
+      : upload.error
+        ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
+        : "bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]"
+  )
+  let uploadLabel = $derived(
+    upload.loading ? "Uploading..." : upload.url ? "Uploaded & Copied!" : (upload.error ?? "Upload to mclo.gs")
+  )
 
-    WebviewWindow.getByLabel("console").then((win) => {
-      if (win) {
-        isPopedOut = true
-        win.once("tauri://destroyed", () => { isPopedOut = false }).then((fn) => {
-          unlisten = fn
-        })
-      }
-    })
-
-    return () => { unlisten?.() }
+  onMount(async () => {
+    const win = await WebviewWindow.getByLabel("console")
+    if (win) watchPopout(win)
   })
 
-  $effect(() => {
-    const newInstances = instances.filter(i => !previousInstances.includes(i))
+  $effect(() => () => clearTimeout(resetTimer))
 
-    if (newInstances.length > 0) {
-      activeInstance = newInstances[newInstances.length - 1]
-    } else if (instances.length > 0 && !activeInstance) {
-      activeInstance = instances[instances.length - 1]
-    } else if (activeInstance && !instances.includes(activeInstance)) {
-      activeInstance = instances[instances.length - 1] || null
-    }
+  $effect(() => {
+    const added = instances.filter(i => !previousInstances.includes(i))
+    const current = untrack(() => activeInstance)
+
+    if (added.length > 0) activeInstance = added[added.length - 1]
+    else if (!current || !instances.includes(current)) activeInstance = instances[instances.length - 1] ?? null
 
     previousInstances = instances
   })
 
   $effect(() => {
-    store.consoleLogs.length;
-    if (consoleEndEl && activeInstance && containerEl) {
-      consoleEndEl.scrollIntoView({ behavior: "smooth" })
-    }
-  })
-
-  $effect(() => {
-    if (containerEl && activeInstance) {
-      const savedPosition = scrollPositions[activeInstance]
-      if (savedPosition !== undefined) {
-        containerEl.scrollTop = savedPosition
-      } else {
-        containerEl.scrollTop = containerEl.scrollHeight
-      }
-    }
+    void filteredLogs.length
+    const inst = activeInstance
+    if (!containerEl || !inst) return
+    containerEl.scrollTop = (pinned.get(inst) ?? true) ? containerEl.scrollHeight : (scrollPositions.get(inst) ?? 0)
   })
 
   function handleScroll() {
-    if (containerEl && activeInstance) {
-      scrollPositions[activeInstance] = containerEl.scrollTop
-    }
+    if (!containerEl || !activeInstance) return
+    scrollPositions.set(activeInstance, containerEl.scrollTop)
+    pinned.set(activeInstance, containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < 40)
   }
 
-  let logTimestamps = $state(new Map<ConsoleLog, string>())
   function getLogTime(log: ConsoleLog): string {
-    if (!logTimestamps.has(log)) {
-      logTimestamps.set(log, new Date().toLocaleTimeString())
+    let time = timestamps.get(log)
+    if (!time) {
+      time = new Date().toLocaleTimeString()
+      timestamps.set(log, time)
     }
-    return logTimestamps.get(log)!
+    return time
   }
 
-  function formatLogs() {
-    if (!activeInstance) return ""
-    return activeLogs.map(log =>
-      `${getLogTime(log)} [${log.instance}] ${log.message}`
-    ).join('\n')
+  function getLogClass(log: ConsoleLog): string {
+    const msg = log.message.toLowerCase()
+    if (log.type === "stderr" || msg.includes("error") || msg.includes("failed")) return "text-red-400"
+    if (msg.includes("warn")) return "text-yellow-400"
+    return "text-[var(--text-primary)]"
+  }
+
+  function highlightParts(message: string, query: string): { text: string; match: boolean }[] {
+    const q = query.trim().toLowerCase()
+    if (!q) return [{ text: message, match: false }]
+    const lower = message.toLowerCase()
+    const parts: { text: string; match: boolean }[] = []
+    let i = 0
+    while (true) {
+      const idx = lower.indexOf(q, i)
+      if (idx === -1) {
+        if (i < message.length) parts.push({ text: message.slice(i), match: false })
+        break
+      }
+      if (idx > i) parts.push({ text: message.slice(i, idx), match: false })
+      parts.push({ text: message.slice(idx, idx + q.length), match: true })
+      i = idx + q.length
+    }
+    return parts
+  }
+
+  function settleUpload(next: UploadState) {
+    upload = next
+    clearTimeout(resetTimer)
+    resetTimer = setTimeout(() => { upload = IDLE }, 3000)
   }
 
   async function handleUploadToMcLogs() {
-    uploadState = { loading: true, url: null, error: null }
+    upload = { loading: true, url: null, error: null }
 
     try {
-      const logContent = formatLogs()
+      const content = activeLogs.map(log => `${getLogTime(log)} [${log.instance}] ${log.message}`).join("\n")
+      if (!content.trim()) throw new Error("No logs to upload")
 
-      if (!logContent.trim()) {
-        uploadState = { loading: false, url: null, error: "No logs to upload" }
-        setTimeout(() => { uploadState = { loading: false, url: null, error: null } }, 3000)
-        return
+      let data: { success: boolean; url?: string; error?: string }
+      try {
+        const response = await fetch("https://api.mclo.gs/1/log", {
+          method: "POST",
+          body: new URLSearchParams({ content })
+        })
+        data = await response.json()
+      } catch {
+        throw new Error("Network error occurred")
       }
 
-      const formData = new URLSearchParams()
-      formData.append('content', logContent)
+      if (!data.success || !data.url) throw new Error(data.error || "Upload failed")
 
-      const response = await fetch('https://api.mclo.gs/1/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        await navigator.clipboard.writeText(data.url)
-        invoke('open_url', { url: data.url }).catch(() => {})
-        uploadState = { loading: false, url: data.url, error: null }
-        setTimeout(() => { uploadState = { loading: false, url: null, error: null } }, 3000)
-      } else {
-        uploadState = { loading: false, url: null, error: data.error || "Upload failed" }
-        setTimeout(() => { uploadState = { loading: false, url: null, error: null } }, 3000)
-      }
+      await navigator.clipboard.writeText(data.url).catch(() => {})
+      invoke("open_url", { url: data.url }).catch(() => {})
+      settleUpload({ loading: false, url: data.url, error: null })
     } catch (err) {
-      uploadState = { loading: false, url: null, error: "Network error occurred" }
-      setTimeout(() => { uploadState = { loading: false, url: null, error: null } }, 3000)
+      settleUpload({ loading: false, url: null, error: err instanceof Error ? err.message : "Upload failed" })
     }
   }
 
   function onClear() {
-    if (activeInstance) {
-      handleClearConsole(activeInstance)
-    }
+    if (activeInstance) handleClearConsole(activeInstance)
+  }
+
+  function watchPopout(win: WebviewWindow) {
+    isPoppedOut = true
+    win.once("tauri://destroyed", () => { isPoppedOut = false })
   }
 
   async function handlePopOut() {
@@ -157,7 +175,7 @@
     if (existing) {
       await existing.show()
       await existing.setFocus()
-      isPopedOut = true
+      watchPopout(existing)
       return
     }
 
@@ -172,36 +190,33 @@
       center: true,
     })
 
-    win.once("tauri://created", () => {
-      isPopedOut = true
-    })
-
-    win.once("tauri://error", (e) => {
-      isPopedOut = false
-    })
-
-    win.once("tauri://destroyed", () => {
-      isPopedOut = false
-    })
+    win.once("tauri://created", () => watchPopout(win))
+    win.once("tauri://error", () => { isPoppedOut = false })
   }
 </script>
 
 <div class="p-8 space-y-4">
   <div class="max-w-7xl mx-auto">
-    <div class="mb-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">Console</h1>
-          <p class="text-sm text-[var(--text-muted)] mt-0.5">View game output and logs</p>
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-2">
+        <div class="relative rounded-md bg-[var(--bg-tertiary)]">
+          <Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
+          <input
+            type="text"
+            placeholder="Search logs..."
+            bind:value={logSearchQuery}
+            class="w-72 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
+          />
         </div>
+      </div>
 
-        <div class="flex items-center gap-2">
-          {#if !isPopedOut && instances.length > 0}
-            <div class="flex items-center gap-1.5 bg-[var(--bg-secondary)] rounded-lg p-1">
-              {#each instances as instance}
+      <div class="flex items-center gap-2">
+          {#if !isPoppedOut && instances.length > 0}
+            <div class="flex items-center gap-1.5 bg-[var(--bg-secondary)] rounded-lg p-0.5">
+              {#each instances as instance (instance)}
                 <button
                   onclick={() => activeInstance = instance}
-                  class="px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap cursor-pointer {activeInstance === instance ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'}"
+                  class="px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap cursor-pointer {activeInstance === instance ? 'bg-[var(--accent-primary)] text-white' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'}"
                 >
                   {instance}
                 </button>
@@ -209,21 +224,20 @@
             </div>
           {/if}
 
-          {#if !isPopedOut}
+          {#if !isPoppedOut}
             <button
               onclick={handlePopOut}
               title="Open in new window"
-              class="h-10 w-10 flex items-center justify-center rounded-md cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]"
+              class="h-8 w-8 flex items-center justify-center rounded-md cursor-pointer bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
             >
-              <PictureInPicture size={24} strokeWidth={2} />
+              <PictureInPicture size={22} strokeWidth={2} />
             </button>
           {/if}
-        </div>
       </div>
     </div>
 
     <div class="bg-[var(--bg-tertiary)] rounded-lg overflow-hidden" style="height: calc(100vh - 250px)">
-      {#if isPopedOut}
+      {#if isPoppedOut}
         <div class="h-full flex items-center justify-center">
           <div class="text-center">
             <PictureInPicture size={48} class="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
@@ -247,44 +261,44 @@
             <p class="text-sm text-[var(--text-muted)]">Select an instance tab above</p>
           </div>
         </div>
+      {:else if filteredLogs.length === 0 && logSearchQuery.trim() !== ""}
+        <div class="h-full flex items-center justify-center">
+          <div class="text-center">
+            <p class="text-base text-[var(--text-primary)] mb-1">No matching lines</p>
+            <p class="text-sm text-[var(--text-muted)]">Try a different search query</p>
+          </div>
+        </div>
       {:else}
         <div class="h-full overflow-y-auto p-4 font-mono text-sm" bind:this={containerEl} onscroll={handleScroll}>
-          {#each activeLogs as log}
-            {@const isError = log.type === "stderr" || log.message.toLowerCase().includes("error") || log.message.toLowerCase().includes("failed")}
-            {@const isWarning = log.message.toLowerCase().includes("warning") || log.message.toLowerCase().includes("warn")}
-            <div
-              class="py-0.5 leading-relaxed {isError ? 'text-red-400' : isWarning ? 'text-yellow-400' : 'text-[var(--text-primary)]'}"
-            >
+          {#each filteredLogs as log}
+            <div class="py-0.5 leading-relaxed log-line {getLogClass(log)}">
               <span class="text-[var(--text-muted)] mr-2">{getLogTime(log)}</span>
               <span class="text-[#16a34a] mr-2">[{log.instance}]</span>
-              <span>{log.message}</span>
+              <span>{#each highlightParts(log.message, logSearchQuery) as part}{#if part.match}<span class="bg-yellow-400/30 rounded-[2px]">{part.text}</span>{:else}{part.text}{/if}{/each}</span>
             </div>
           {/each}
-          <div bind:this={consoleEndEl}></div>
         </div>
       {/if}
     </div>
 
-    {#if !isPopedOut}
+    {#if !isPoppedOut}
       <div class="flex items-center justify-end gap-2 mt-4">
         <button
           onclick={handleUploadToMcLogs}
-          disabled={!activeInstance || activeLogs.length === 0 || uploadState.loading}
-          class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadState.url ? 'bg-[#16a34a]/10 hover:bg-[#16a34a]/20 text-[#16a34a]' : uploadState.error ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]'}"
+          disabled={!activeInstance || activeLogs.length === 0 || upload.loading}
+          class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadColor}"
           title="Upload logs to mclo.gs"
         >
-          {#if uploadState.loading}
+          {#if upload.loading}
             <Loader2 size={16} strokeWidth={2} class="animate-spin" />
-          {:else if uploadState.url}
+          {:else if upload.url}
             <ExternalLink size={16} strokeWidth={2} />
-          {:else if uploadState.error}
+          {:else if upload.error}
             <X size={16} strokeWidth={2} />
           {:else}
             <Upload size={16} strokeWidth={2} />
           {/if}
-          <span>
-            {uploadState.loading ? "Uploading..." : uploadState.url ? "Uploaded & Copied!" : uploadState.error ? uploadState.error : "Upload to mclo.gs"}
-          </span>
+          <span>{uploadLabel}</span>
         </button>
         <button
           onclick={onClear}
@@ -298,3 +312,20 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .log-line {
+    animation: log-in 0.12s ease-out;
+  }
+
+  @keyframes log-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .log-line {
+      animation: none;
+    }
+  }
+</style>
