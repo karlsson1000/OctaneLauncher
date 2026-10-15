@@ -46,6 +46,7 @@ export const store = $state({
   accounts: [] as AccountInfo[],
   launchingInstanceName: null as string | null,
   runningInstances: new Set<string>(),
+  runningInstanceOwners: {} as Record<string, string>,
   showCreateModal: false,
   versions: [] as string[],
   instances: [] as Instance[],
@@ -67,7 +68,7 @@ export const store = $state({
   updateInfo: null as UpdateInfo | null,
   isInstallingUpdate: false,
   showAccountDropdown: false,
-  showFriendsPanel: false,
+  showFriendsPanel: true,
   addonsSubTab: "mods" as AddonsSubTab,
   showOnboarding: false,
   exportModalInstance: null as Instance | null,
@@ -245,6 +246,7 @@ async function handleLaunch(instance: Instance) {
     store.consoleLogs = [...store.consoleLogs, { instance: instance.name, message: "Minecraft started", type: "stdout" }]
     await loadInstances()
     store.runningInstances = new Set(store.runningInstances).add(instance.name)
+    if (store.activeAccount) store.runningInstanceOwners = { ...store.runningInstanceOwners, [instance.name]: store.activeAccount.uuid }
     store.launchingInstanceName = null
   } catch (error) {
     console.error("Launch error:", error)
@@ -362,6 +364,9 @@ async function handleKillInstance(instance: Instance) {
     const newSet = new Set(store.runningInstances)
     newSet.delete(instance.name)
     store.runningInstances = newSet
+    const owners = { ...store.runningInstanceOwners }
+    delete owners[instance.name]
+    store.runningInstanceOwners = owners
   } catch (error) {
     console.error("Failed to kill instance:", error)
     store.alertModal = {
@@ -392,6 +397,7 @@ async function handleWorldLaunch(worldName: string) {
     await invoke("launch_world", { instanceName: store.selectedInstance.name, worldName })
     await loadInstances()
     store.runningInstances = new Set(store.runningInstances).add(store.selectedInstance.name)
+    if (store.activeAccount) store.runningInstanceOwners = { ...store.runningInstanceOwners, [store.selectedInstance.name]: store.activeAccount.uuid }
     store.launchingInstanceName = null
   } catch (error) {
     console.error("World launch error:", error)
@@ -445,8 +451,10 @@ function startHeartbeat() {
   stopHeartbeat()
   const sendHeartbeat = async () => {
     try {
-      const instances = store.runningInstances
-      const firstInstance = instances.values().next().value
+      const activeUuid = store.activeAccount?.uuid
+      const firstInstance = activeUuid
+        ? [...store.runningInstances].find(name => store.runningInstanceOwners[name] === activeUuid)
+        : undefined
       if (firstInstance) {
         await invoke("update_user_status", { status: "ingame", currentInstance: firstInstance })
       } else {
@@ -476,7 +484,7 @@ async function loadAllInitialData() {
     loadSettings(),
     loadAccounts(),
     loadBackground(),
-    storeGet<boolean>("friends_panel_open").then(v => { if (v) store.showFriendsPanel = true }),
+    storeGet<boolean>("friends_panel_open").then(v => { store.showFriendsPanel = v ?? true }),
     storeGet<boolean>("onboarding_complete").then(v => { if (!v) store.showOnboarding = true }),
   ])
   if (!appliedDefaultTab && store.settings?.default_tab) {
@@ -506,6 +514,9 @@ function setupEventListeners() {
       const newSet = new Set(store.runningInstances)
       newSet.delete(event.payload.instance)
       store.runningInstances = newSet
+      const owners = { ...store.runningInstanceOwners }
+      delete owners[event.payload.instance]
+      store.runningInstanceOwners = owners
       store.launchingInstanceName = null
     }),
     listen<{ instance: string, server: string }>("server-instance-launching", (event) => {
@@ -514,6 +525,7 @@ function setupEventListeners() {
       store.consoleLogs = []
       if (store.settings?.auto_navigate_to_console !== false) store.activeTab = "console"
       store.runningInstances = new Set(store.runningInstances).add(event.payload.instance)
+      if (store.activeAccount) store.runningInstanceOwners = { ...store.runningInstanceOwners, [event.payload.instance]: store.activeAccount.uuid }
     }),
   ]).then(fns => {
     unlistenFns.push(...fns)

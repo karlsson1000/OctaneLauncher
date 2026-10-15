@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { fly } from "svelte/transition"
-  import { invoke } from "@tauri-apps/api/core"
-  import { Minus, Square, X, ChevronLeft, ChevronRight, ChevronDown, LogIn, LogOut, Check, PanelRight } from "lucide-svelte"
+  import { Minus, Square, X, ChevronLeft, ChevronRight, PanelRight } from "lucide-svelte"
   import {
     store, navigateBack, navigateForward,
-    setShowAccountDropdown, loadAccounts, appWindow,
+    appWindow,
     setShowFriendsPanel, dragRegion, noDragRegion,
   } from "../../lib/launcherStore.svelte"
 
@@ -16,21 +14,6 @@
   const addonsSubTabLabels: Record<string, string> = {
     mods: "Mods", modpacks: "Modpacks", resourcepacks: "Resource Packs", shaderpacks: "Shader Packs",
   }
-
-  const dropdownBtn = "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-sm text-sm cursor-pointer"
-
-  $effect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      if (!target.closest("[data-account-dropdown]") && !target.closest("[data-account-button]")) {
-        setShowAccountDropdown(false)
-      }
-    }
-    if (store.showAccountDropdown) {
-      document.addEventListener("mousedown", handleClickOutside)
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  })
 
   let historyLen = $derived(store.navigationHistory.length)
 </script>
@@ -67,87 +50,6 @@
   </span>
 
   <div class="flex-1" style={dragRegion}></div>
-
-  <div class="relative flex items-center mr-1" style={noDragRegion}>
-    {#if store.isAuthenticated && store.activeAccount}
-      {@const activeAccount = store.activeAccount}
-      <button
-        data-account-button
-        onclick={() => setShowAccountDropdown(!store.showAccountDropdown)}
-        class="flex items-center gap-1.5 px-2 h-7 rounded text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
-      >
-        <img
-          src="https://avatar.mcindex.net/avatar/{activeAccount.username}/16"
-          alt={activeAccount.username}
-          class="w-4 h-4 rounded object-cover flex-shrink-0"
-          style="image-rendering: pixelated"
-        />
-        <span>{activeAccount.username}</span>
-        <ChevronDown size={14} strokeWidth={3} class="transition-transform {store.showAccountDropdown ? 'rotate-180' : ''}" />
-      </button>
-      {#if store.showAccountDropdown}
-        <div
-          data-account-dropdown
-          transition:fly={{ y: -8, duration: 160 }}
-          class="absolute top-full mt-1 z-50 left-1/2 -ml-24 w-48 border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] rounded shadow-md p-1.5"
-        >
-          <div class="flex flex-col">
-            {#each [...store.accounts].sort((a, b) => Number(b.is_active) - Number(a.is_active)) as acc (acc.uuid)}
-              <button
-                onclick={async () => {
-                  if (!acc.is_active) {
-                    try { await invoke("switch_account", { uuid: acc.uuid }); await loadAccounts() } catch {}
-                  }
-                  setShowAccountDropdown(false)
-                }}
-                class="{dropdownBtn} text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-              >
-                <img
-                  src="https://avatar.mcindex.net/avatar/{acc.username}/24"
-                  alt={acc.username}
-                  class="w-6 h-6 rounded object-cover flex-shrink-0"
-                  style="image-rendering: pixelated"
-                />
-                <span class="flex-1 text-left">{acc.username}</span>
-                {#if acc.is_active}
-                  <Check size={14} strokeWidth={3} class="text-[#16a34a]" />
-                {/if}
-              </button>
-            {/each}
-            <div class="h-px bg-[var(--border-default)] my-1"></div>
-            <button
-              onclick={async () => {
-                try { await invoke("microsoft_login_and_store"); await loadAccounts(); setShowAccountDropdown(false) } catch {}
-              }}
-              class="{dropdownBtn} text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-            >
-              <LogIn size={16} strokeWidth={3} class="text-[#16a34a]" />
-              Add Account
-            </button>
-            <button
-              onclick={async () => {
-                try { await invoke("remove_account", { uuid: activeAccount.uuid }); await loadAccounts(); setShowAccountDropdown(false) } catch {}
-              }}
-              class="{dropdownBtn} text-red-400 hover:bg-[var(--bg-hover)]"
-            >
-              <LogOut size={16} strokeWidth={3} />
-              Sign Out
-            </button>
-          </div>
-        </div>
-      {/if}
-    {:else}
-      <button
-        onclick={async () => {
-          try { await invoke("microsoft_login_and_store"); await loadAccounts() } catch {}
-        }}
-        class="flex items-center gap-1.5 px-2 h-6 rounded text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer"
-      >
-        <LogIn size={14} strokeWidth={2} class="text-[#16a34a]" />
-        Sign in
-      </button>
-    {/if}
-  </div>
 
   <div class="flex items-center" style={noDragRegion}>
     <button

@@ -1,8 +1,11 @@
 <script lang="ts">
+  import { tick } from "svelte"
+  import { fly } from "svelte/transition"
   import { invoke } from "@tauri-apps/api/core"
-  import { Users, UserPlus, UserX, Search, Loader2, LogIn, ChevronDown, Inbox, Pencil, Star, Check, X, MoreHorizontal } from "lucide-svelte"
+  import { Users, UserPlus, UserX, Search, Loader2, LogIn, LogOut, ChevronDown, Inbox, Pencil, Star, Check, X, MoreHorizontal } from "lucide-svelte"
   import type { Friend, FriendRequest } from "../../types"
   import { storeGet, storeSet } from "../../lib/store"
+  import { store, setShowAccountDropdown, loadAccounts } from "../../lib/launcherStore.svelte"
   import ContextMenu from "../../components/ui/ContextMenu.svelte"
 
   let { isOpen, isAuthenticated, activeAccountUuid }: { isOpen: boolean, isAuthenticated: boolean, activeAccountUuid?: string } = $props()
@@ -22,13 +25,15 @@
   let searchInput: HTMLInputElement | undefined = $state()
   let friendMenu = $state<{ x: number; y: number; friend: Friend } | null>(null)
   let collapsed = $state<Record<string, boolean>>({})
-  let panel = $state<"search" | "requests" | null>(null)
+  let tab = $state<"friends" | "requests">("friends")
 
   const storeKey = (prefix: string) => `${prefix}_${activeAccountUuid ?? "default"}`
 
   const displayName = (friend: Friend) => nicknames[friend.uuid] || friend.username
   const isFavorite = (friendUuid: string) => favorites.includes(friendUuid)
   const isOnline = (friend: Friend) => friend.status === "online" || friend.status === "ingame"
+
+  let ownGame = $derived(activeAccountUuid ? [...store.runningInstances].find(name => store.runningInstanceOwners[name] === activeAccountUuid) : undefined)
 
   const statuses: Record<string, { color: string, label: string }> = {
     ingame: { color: "bg-[#3b82f6]", label: "In game" },
@@ -40,8 +45,10 @@
 
   const avatarMask = "-webkit-mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px); mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px);"
 
-  const headerButton = (active: boolean) =>
-    `h-7 w-7 flex items-center justify-center rounded cursor-pointer ${active ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"}`
+  const tabButton = (active: boolean) =>
+    `h-8 flex-1 min-w-0 flex items-center justify-center gap-1.5 rounded text-base font-semibold cursor-pointer ${active ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"}`
+
+  const dropdownBtn = "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-sm text-sm cursor-pointer"
 
   const loadNicknames = async () => {
     try {
@@ -155,13 +162,14 @@
     sendSuccess = null
   }
 
-  const togglePanel = (name: "search" | "requests") => {
-    panel = panel === name ? null : name
-    if (panel !== "search") clearSearch()
-  }
-
   const toggleCollapsed = (key: string) => {
     collapsed[key] = !collapsed[key]
+  }
+
+  const goToAddFriend = async () => {
+    tab = "requests"
+    await tick()
+    searchInput?.focus()
   }
 
   $effect(() => {
@@ -169,7 +177,20 @@
   })
 
   $effect(() => {
-    if (panel === "search" && searchInput) searchInput.focus()
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest("[data-account-dropdown]") && !target.closest("[data-account-button]")) {
+        setShowAccountDropdown(false)
+      }
+    }
+    if (store.showAccountDropdown) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  })
+
+  $effect(() => {
+    if (!isOpen && store.showAccountDropdown) setShowAccountDropdown(false)
   })
 
   $effect(() => {
@@ -189,12 +210,8 @@
 
   let query = $derived(searchQuery.trim().toLowerCase())
 
-  let filteredFriends = $derived(
-    friends.filter(f => f.username.toLowerCase().includes(query) || displayName(f).toLowerCase().includes(query))
-  )
-
   let sortedFriends = $derived(
-    [...filteredFriends].sort((a, b) => {
+    [...friends].sort((a, b) => {
       const order: Record<string, number> = { ingame: 0, online: 1, offline: 2 }
       const byStatus = (order[a.status] ?? 2) - (order[b.status] ?? 2)
       if (byStatus !== 0) return byStatus
@@ -317,54 +334,163 @@
   class="flex-shrink-0 bg-[var(--bg-primary)] h-full overflow-hidden transition-all duration-200 ease-in-out {isOpen ? 'w-60' : 'w-0 -mr-4'}"
 >
   <div class="w-60 h-full flex flex-col">
-    <div class="flex items-center gap-2 px-1 pt-2 pb-1">
-      <span class="text-xl font-semibold text-[var(--text-primary)]">Friends</span>
-      <div class="flex-1"></div>
-      <button
-        onclick={() => togglePanel("search")}
-        class={headerButton(panel === "search")}
-        title="Search or add friends"
-      >
-        <Search size={18} strokeWidth={2.5} />
-      </button>
-      <div class="relative">
+    <div class="relative px-1 pb-1">
+      {#if store.isAuthenticated && store.activeAccount}
+        {@const activeAccount = store.activeAccount}
         <button
-          onclick={() => togglePanel("requests")}
-          class={headerButton(panel === "requests")}
-          title="Friend requests"
+          data-account-button
+          onclick={() => setShowAccountDropdown(!store.showAccountDropdown)}
+          class="w-full flex items-center gap-2.5 px-2.5 h-12 rounded cursor-pointer {store.showAccountDropdown ? 'bg-[var(--bg-hover)]' : 'bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)]'}"
         >
-          <Inbox size={18} strokeWidth={2.5} />
+          <div class="relative flex-shrink-0">
+            <img
+              src="https://avatar.mcindex.net/avatar/{activeAccount.username}/32"
+              alt={activeAccount.username}
+              class="w-8 h-8 rounded object-cover"
+              style="image-rendering: pixelated;"
+            />
+          </div>
+          <div class="flex-1 min-w-0 text-left">
+            <div class="h-5 text-base leading-5 text-[var(--text-primary)] truncate font-semibold">{activeAccount.username}</div>
+            <div class="text-[13px] font-normal leading-tight text-[var(--text-muted)] truncate">
+              {#if ownGame}
+                Playing <span class="text-[#3b82f6] font-semibold">{ownGame}</span>
+              {:else}
+                In launcher
+              {/if}
+            </div>
+          </div>
+          <ChevronDown size={16} strokeWidth={3} class="flex-shrink-0 text-[var(--text-secondary)] transition-transform {store.showAccountDropdown ? 'rotate-180' : ''}" />
         </button>
-        {#if requests.length > 0}
-          <span class="absolute -top-1 -right-1 min-w-4 h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-semibold leading-none">{requests.length}</span>
+        {#if store.showAccountDropdown}
+          <div
+            data-account-dropdown
+            transition:fly={{ y: -8, duration: 160 }}
+            class="absolute top-full mt-1 left-1 right-1 z-50 border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] rounded shadow-md p-1.5"
+          >
+            <div class="flex flex-col">
+              {#each [...store.accounts].sort((a, b) => Number(b.is_active) - Number(a.is_active)) as acc (acc.uuid)}
+                <button
+                  onclick={async () => {
+                    if (!acc.is_active) {
+                      try { await invoke("switch_account", { uuid: acc.uuid }); await loadAccounts() } catch {}
+                    }
+                    setShowAccountDropdown(false)
+                  }}
+                  class="{dropdownBtn} text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                >
+                  <img
+                    src="https://avatar.mcindex.net/avatar/{acc.username}/24"
+                    alt={acc.username}
+                    class="w-6 h-6 rounded object-cover flex-shrink-0"
+                    style="image-rendering: pixelated"
+                  />
+                  <span class="flex-1 min-w-0 text-left truncate">{acc.username}</span>
+                  {#if acc.is_active}
+                    <Check size={14} strokeWidth={3} class="text-[#16a34a] flex-shrink-0" />
+                  {/if}
+                </button>
+              {/each}
+              <div class="h-px bg-[var(--border-default)] my-1"></div>
+              <button
+                onclick={async () => {
+                  try { await invoke("microsoft_login_and_store"); await loadAccounts(); setShowAccountDropdown(false) } catch {}
+                }}
+                class="{dropdownBtn} text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+              >
+                <LogIn size={16} strokeWidth={3} class="text-[#16a34a]" />
+                Add Account
+              </button>
+              <button
+                onclick={async () => {
+                  try { await invoke("remove_account", { uuid: activeAccount.uuid }); await loadAccounts(); setShowAccountDropdown(false) } catch {}
+                }}
+                class="{dropdownBtn} text-red-400 hover:bg-[var(--bg-hover)]"
+              >
+                <LogOut size={16} strokeWidth={3} />
+                Sign Out
+              </button>
+            </div>
+          </div>
         {/if}
-      </div>
+      {:else}
+        <button
+          onclick={async () => {
+            try { await invoke("microsoft_login_and_store"); await loadAccounts() } catch {}
+          }}
+          class="w-full flex items-center justify-center gap-2 px-2 h-12 rounded text-base font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] cursor-pointer"
+        >
+          <LogIn size={16} strokeWidth={2} class="text-[#16a34a]" />
+          Sign in
+        </button>
+      {/if}
+    </div>
+
+    <div class="flex items-center gap-1 px-1 pt-2 pb-1">
+      <button onclick={() => tab = "friends"} class={tabButton(tab === "friends")}>
+        Friends
+      </button>
+      <button onclick={() => tab = "requests"} class={tabButton(tab === "requests")}>
+        Requests
+        {#if requests.length > 0}
+          <span class="min-w-4 h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-semibold leading-none">{requests.length}</span>
+        {/if}
+      </button>
     </div>
 
     {#if !isAuthenticated}
       <div class="flex-1 flex flex-col items-center justify-center px-3 py-6 text-center">
         <LogIn size={32} class="text-[var(--text-muted)] mb-3" />
-        <p class="text-sm text-[var(--text-secondary)] font-medium">Sign in to see your friends</p>
-        <p class="text-xs text-[var(--text-muted)] mt-1">Add an account to chat and join games together</p>
+        <p class="text-sm text-[var(--text-secondary)] font-medium">Sign in to see friends</p>
       </div>
     {:else}
       <div class="flex-1 flex flex-col min-h-0">
-        {#if panel === "search"}
+        {#if tab === "friends"}
+          <div class="flex-1 overflow-y-auto pb-2">
+            {#if isLoading && friends.length === 0}
+              <div class="space-y-1 pt-3 px-1.5">
+                {#each Array(5) as _}
+                  <div class="flex items-center gap-2.5 py-1 animate-pulse">
+                    <div class="w-8 h-8 rounded bg-[var(--bg-tertiary)]"></div>
+                    <div class="flex-1 space-y-1.5">
+                      <div class="h-3 w-24 rounded bg-[var(--bg-tertiary)]"></div>
+                      <div class="h-2.5 w-16 rounded bg-[var(--bg-tertiary)]"></div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {:else if friends.length === 0}
+              <div class="flex flex-col items-center justify-center py-10 text-center px-3">
+                <Users size={32} class="text-[var(--text-muted)] mb-3" />
+                <p class="text-sm text-[var(--text-secondary)] font-medium">No friends yet</p>
+                <p class="text-xs text-[var(--text-muted)] mt-1">Add someone by username to see when they're playing</p>
+                <button
+                  onclick={goToAddFriend}
+                  class="mt-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] cursor-pointer"
+                >
+                  <UserPlus size={14} strokeWidth={2.5} />
+                  Add a friend
+                </button>
+              </div>
+            {:else}
+              {@render group("favorites", "Favorites", favoriteFriends)}
+              {@render group("online", "Online", onlineFriends)}
+              {@render group("offline", "Offline", offlineFriends)}
+            {/if}
+          </div>
+        {:else}
           <div class="px-1 pt-1 pb-1 space-y-1">
             <div class="relative">
               <Search size={14} class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 type="text"
                 bind:this={searchInput}
-                placeholder="Search or add by username"
+                placeholder="Add a friend"
                 bind:value={searchQuery}
                 oninput={() => { sendError = null; sendSuccess = null }}
                 onkeydown={(e) => {
                   if (e.key === "Enter" && canSendRequest) handleSendRequest(searchQuery)
-                  else if (e.key === "Escape") {
-                    if (searchQuery) clearSearch()
-                    else panel = null
-                  }
+                  else if (e.key === "Escape") clearSearch()
                 }}
                 class="w-full bg-[var(--bg-secondary)] rounded pl-8 pr-2 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none"
               />
@@ -390,12 +516,10 @@
               <p class="text-xs text-[#16a34a] px-1">{sendSuccess}</p>
             {/if}
           </div>
-        {/if}
 
-        {#if panel === "requests"}
-          <div class="px-1 pt-1 pb-1">
+          <div class="flex-1 overflow-y-auto px-1 pt-1 pb-2">
             {#if requests.length > 0}
-              <div class="max-h-48 overflow-y-auto rounded-md bg-[var(--bg-secondary)] divide-y divide-[var(--bg-tertiary)]">
+              <div class="rounded-md bg-[var(--bg-secondary)] divide-y divide-[var(--bg-tertiary)]">
                 {#each requests as req (req.id)}
                   <div class="flex items-center gap-2 px-2 py-1.5">
                     <img
@@ -425,50 +549,13 @@
                 {/each}
               </div>
             {:else}
-              <p class="px-1 py-2 text-xs text-[var(--text-muted)]">No pending requests</p>
+              <div class="flex flex-col items-center justify-center py-10 text-center px-3">
+                <Inbox size={32} class="text-[var(--text-muted)] mb-3" />
+                <p class="text-sm text-[var(--text-secondary)] font-medium">No pending requests</p>
+              </div>
             {/if}
           </div>
         {/if}
-
-        <div class="flex-1 overflow-y-auto pb-2">
-          {#if isLoading && friends.length === 0}
-            <div class="space-y-1 pt-3 px-1.5">
-              {#each Array(5) as _}
-                <div class="flex items-center gap-2.5 py-1 animate-pulse">
-                  <div class="w-8 h-8 rounded bg-[var(--bg-tertiary)]"></div>
-                  <div class="flex-1 space-y-1.5">
-                    <div class="h-3 w-24 rounded bg-[var(--bg-tertiary)]"></div>
-                    <div class="h-2.5 w-16 rounded bg-[var(--bg-tertiary)]"></div>
-                  </div>
-                </div>
-              {/each}
-            </div>
-          {:else if friends.length === 0}
-            <div class="flex flex-col items-center justify-center py-10 text-center px-3">
-              <Users size={32} class="text-[var(--text-muted)] mb-3" />
-              <p class="text-sm text-[var(--text-secondary)] font-medium">No friends yet</p>
-              <p class="text-xs text-[var(--text-muted)] mt-1">Add someone by username to see when they're playing</p>
-              <button
-                onclick={() => panel = "search"}
-                class="mt-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] cursor-pointer"
-              >
-                <UserPlus size={14} strokeWidth={2.5} />
-                Add a friend
-              </button>
-            </div>
-          {:else if sortedFriends.length === 0}
-            <div class="flex flex-col items-center justify-center py-8 text-center px-3">
-              <p class="text-sm text-[var(--text-secondary)] font-medium">No matches</p>
-              {#if canSendRequest}
-                <p class="text-xs text-[var(--text-muted)] mt-1">Press Enter to send a request instead</p>
-              {/if}
-            </div>
-          {:else}
-            {@render group("favorites", "Favorites", favoriteFriends)}
-            {@render group("online", "Online", onlineFriends)}
-            {@render group("offline", "Offline", offlineFriends)}
-          {/if}
-        </div>
       </div>
     {/if}
   </div>
