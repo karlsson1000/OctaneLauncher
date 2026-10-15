@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, Download, Loader2, ChevronUp } from "lucide-svelte"
+  import { X, Download, ArrowDownToLine, Check, Loader2, ChevronUp } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import { Marked } from "marked"
   import type {
@@ -307,7 +307,7 @@
   }
 </script>
 
-{#snippet versionsBody(asMenu)}
+{#snippet versionsBody(asMenu: boolean = false)}
   {#if !isModpack && !selectedInstance}
     <p class="text-sm text-[var(--text-muted)]">Select an instance to install</p>
   {:else if isLoadingVersions}
@@ -325,7 +325,15 @@
           {@const installed = isInstalled(version.files.find(f => f.primary)?.filename || version.files[0]?.filename || "")}
           {@const downloading = downloadingMap.has(version.id)}
           {@const done = completedIds.has(version.id)}
-          <div class="{asMenu ? 'flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}">
+          {@const rowDisabled = downloading || installed || done || (!isModpack && !selectedInstance)}
+          <svelte:element
+            this={asMenu ? "button" : "div"}
+            type={asMenu ? "button" : undefined}
+            role={asMenu ? "menuitem" : undefined}
+            disabled={asMenu ? rowDisabled : undefined}
+            onclick={asMenu ? () => handleInstallVersion(version) : undefined}
+            class="{asMenu ? 'w-full text-left flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none cursor-pointer hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}"
+          >
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
               <div class="text-xs text-[var(--text-muted)] mt-0.5">
@@ -336,27 +344,47 @@
                 &middot; {formatGameVersions(version.game_versions)}
               </div>
             </div>
-            <button
-              onclick={() => handleInstallVersion(version)}
-              disabled={downloading || installed || done || (!isModpack && !selectedInstance)}
-              class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
-            >
-              {#if downloading}
-                <Loader2 size={14} class="animate-spin" />
-              {:else if installed || done}
-                Installed
-              {:else}
-                <Download size={14} />Install
-              {/if}
-            </button>
-          </div>
+            {#if asMenu}
+              <span class="flex items-center justify-center flex-shrink-0 w-7 h-7">
+                {#if downloading}
+                  <Loader2 size={20} strokeWidth={2.5} class="animate-spin text-[#16a34a]" />
+                {:else if installed || done}
+                  <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
+                {:else}
+                  <ArrowDownToLine size={20} strokeWidth={2.5} class="text-[#16a34a]" />
+                {/if}
+              </span>
+            {:else}
+              <button
+                onclick={() => handleInstallVersion(version)}
+                disabled={rowDisabled}
+                class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
+              >
+                {#if downloading}
+                  <Loader2 size={14} class="animate-spin" />
+                {:else if installed || done}
+                  Installed
+                {:else}
+                  <Download size={14} />Install
+                {/if}
+              </button>
+            {/if}
+          </svelte:element>
         {/each}
       {:else}
         {#each curseforgeFiles as file (file.id)}
           {@const installed = isInstalled(file.fileName)}
           {@const downloading = downloadingMap.has(file.id.toString())}
           {@const done = completedIds.has(file.id.toString())}
-          <div class="{asMenu ? 'flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}">
+          {@const rowDisabled = downloading || installed || done || !file.downloadUrl || (!isModpack && !selectedInstance)}
+          <svelte:element
+            this={asMenu ? "button" : "div"}
+            type={asMenu ? "button" : undefined}
+            role={asMenu ? "menuitem" : undefined}
+            disabled={asMenu ? rowDisabled : undefined}
+            onclick={asMenu ? () => handleInstallCurseforgeFile(file) : undefined}
+            class="{asMenu ? 'w-full text-left flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none cursor-pointer hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}"
+          >
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-[var(--text-primary)] truncate">{file.fileName}</div>
               <div class="text-xs text-[var(--text-muted)] mt-0.5">
@@ -364,20 +392,32 @@
                 &middot; {(file.fileLength / 1024 / 1024).toFixed(1)} MB
               </div>
             </div>
-            <button
-              onclick={() => handleInstallCurseforgeFile(file)}
-              disabled={downloading || installed || done || !file.downloadUrl || (!isModpack && !selectedInstance)}
-              class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
-            >
-              {#if downloading}
-                <Loader2 size={14} class="animate-spin" />
-              {:else if installed}
-                Installed
-              {:else}
-                <Download size={14} />Install
-              {/if}
-            </button>
-          </div>
+            {#if asMenu}
+              <span class="flex items-center justify-center flex-shrink-0 w-7 h-7">
+                {#if downloading}
+                  <Loader2 size={20} strokeWidth={2.5} class="animate-spin text-[#16a34a]" />
+                {:else if installed || done}
+                  <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
+                {:else}
+                  <ArrowDownToLine size={20} strokeWidth={2.5} class="text-[#16a34a]" />
+                {/if}
+              </span>
+            {:else}
+              <button
+                onclick={() => handleInstallCurseforgeFile(file)}
+                disabled={rowDisabled}
+                class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
+              >
+                {#if downloading}
+                  <Loader2 size={14} class="animate-spin" />
+                {:else if installed}
+                  Installed
+                {:else}
+                  <Download size={14} />Install
+                {/if}
+              </button>
+            {/if}
+          </svelte:element>
         {/each}
       {/if}
     </div>

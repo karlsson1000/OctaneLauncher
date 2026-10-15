@@ -92,7 +92,7 @@
   })
 </script>
 
-{#snippet installTargets(asMenu)}
+{#snippet installTargets(asMenu: boolean = false)}
   {#if moddedInstances.length === 0}
     <p class="text-xs text-[#3a3f4b] px-1">No modded instances</p>
   {:else}
