@@ -355,7 +355,7 @@
         </div>
       </div>
       {#if maxSnapshotStart > 0}
-        <div class="mt-4 -mb-4 h-0 overflow-visible flex items-center justify-center gap-1.5">
+        <div class="mt-6 -mb-4 h-0 overflow-visible flex items-center justify-center gap-1.5">
           {#each dotWindow as p (p)}
             <button
               onclick={() => goToSnapshot(p)}
