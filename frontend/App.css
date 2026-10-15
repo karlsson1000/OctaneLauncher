@@ -8,106 +8,106 @@
 /* Octane theme */
 :root,
 .theme-octane {
-  --bg-primary: #15171c;
-  --bg-secondary: #181a1f;
-  --bg-elevated: #1a1d23;
-  --bg-active: #1F2229;
-  --bg-tertiary: #1e2126;
-  --bg-surface: #252932;
-  --bg-hover: #2a2d35;
-  --bg-hover-strong: #3a3f4b;
+  --bg-primary: #1a1c21;
+  --bg-secondary: #1c1e24;
+  --bg-elevated: #20232a;
+  --bg-active: #252832;
+  --bg-tertiary: #22252c;
+  --bg-surface: #2a2e38;
+  --bg-hover: #30343e;
+  --bg-hover-strong: #3b414e;
   --text-primary: #e6e6e6;
   --text-secondary: #8a94a6;
   --text-muted: #7d8590;
-  --text-disabled: #2e3340;
-  --border-default: #2a2d35;
-  --border-subtle: rgba(255, 255, 255, 0.08);
+  --text-disabled: #484e5b;
+  --border-default: #30343e;
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --accent-primary: #4572e3;
   --accent-hover: #3461d9;
-  --scrollbar-thumb: #3d424d;
-  --scrollbar-track: #1a1d23;
-  --scrollbar-hover: #4d525d;
-  --scrollbar-thumb-custom: #3a3f4b;
-  --scrollbar-hover-custom: #454a58;
-  --content-bg: #181a1f;
+  --scrollbar-thumb: #414653;
+  --scrollbar-track: #20232a;
+  --scrollbar-hover: #4b515e;
+  --scrollbar-thumb-custom: #3b414e;
+  --scrollbar-hover-custom: #454b59;
+  --content-bg: #1c1e24;
 }
 
 /* Light theme */
 .theme-light {
-  --bg-primary: #f2f2f5;
-  --bg-secondary: #ffffff;
-  --bg-elevated: #e8e8ed;
-  --bg-active: #dddde3;
-  --bg-tertiary: #e8e8ed;
-  --bg-surface: #ffffff;
-  --bg-hover: #e0e0e6;
-  --bg-hover-strong: #c8c8d0;
-  --text-primary: #1a1a2e;
-  --text-secondary: #5c5c72;
-  --text-muted: #8e8ea0;
-  --text-disabled: #c8c8d0;
-  --border-default: #dddde3;
-  --border-subtle: rgba(0, 0, 0, 0.06);
-  --accent-primary: #4361ee;
-  --accent-hover: #3a56d4;
-  --scrollbar-thumb: #c8c8d0;
-  --scrollbar-track: #f0f0f5;
-  --scrollbar-hover: #aaaabc;
-  --scrollbar-thumb-custom: #c8c8d0;
-  --scrollbar-hover-custom: #aaaabc;
-  --content-bg: #ffffff;
+  --bg-primary: #e8e9ee;
+  --bg-secondary: #ececf1;
+  --bg-elevated: #e2e3e9;
+  --bg-active: #d5d7e0;
+  --bg-tertiary: #dedfe6;
+  --bg-surface: #e6e7ed;
+  --bg-hover: #d9dbe4;
+  --bg-hover-strong: #c6c9d5;
+  --text-primary: #20212b;
+  --text-secondary: #646b7b;
+  --text-muted: #7d8492;
+  --text-disabled: #b0b4c0;
+  --border-default: #d2d4de;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --accent-primary: #4572e3;
+  --accent-hover: #3461d9;
+  --scrollbar-thumb: #bfc3cf;
+  --scrollbar-track: #e2e3e9;
+  --scrollbar-hover: #aeb3c1;
+  --scrollbar-thumb-custom: #c6c9d5;
+  --scrollbar-hover-custom: #b4b9c7;
+  --content-bg: #ececf1;
 }
 
 /* Rose theme */
 .theme-rose {
-  --bg-primary: #1f1a24;
-  --bg-secondary: #251f2b;
-  --bg-elevated: #2d2533;
-  --bg-active: #3a3042;
-  --bg-tertiary: #2d2533;
-  --bg-surface: #3a3042;
-  --bg-hover: #3a3042;
+  --bg-primary: #28212e;
+  --bg-secondary: #2b2431;
+  --bg-elevated: #302736;
+  --bg-active: #382d40;
+  --bg-tertiary: #332a3a;
+  --bg-surface: #3b3143;
+  --bg-hover: #403649;
   --bg-hover-strong: #4d4056;
   --text-primary: #e8e8ee;
   --text-secondary: #d4a0b8;
   --text-muted: #a08898;
-  --text-disabled: #4d4056;
-  --border-default: #3a3042;
-  --border-subtle: rgba(244, 114, 182, 0.08);
+  --text-disabled: #625068;
+  --border-default: #3b3143;
+  --border-subtle: rgba(244, 114, 182, 0.06);
   --accent-primary: #f472b6;
   --accent-hover: #f9a8d4;
   --scrollbar-thumb: #4d4056;
-  --scrollbar-track: #251f2b;
-  --scrollbar-hover: #5e4e68;
+  --scrollbar-track: #302736;
+  --scrollbar-hover: #5a4964;
   --scrollbar-thumb-custom: #4d4056;
-  --scrollbar-hover-custom: #5e4e68;
-  --content-bg: #251f2b;
+  --scrollbar-hover-custom: #5a4964;
+  --content-bg: #2b2431;
 }
 
 /* Forest theme */
 .theme-forest {
-  --bg-primary: #1a241e;
-  --bg-secondary: #1f2b24;
-  --bg-elevated: #25332a;
-  --bg-active: #30423a;
-  --bg-tertiary: #25332a;
-  --bg-surface: #30423a;
-  --bg-hover: #30423a;
-  --bg-hover-strong: #40564a;
+  --bg-primary: #222c25;
+  --bg-secondary: #252f29;
+  --bg-elevated: #2a352e;
+  --bg-active: #323f37;
+  --bg-tertiary: #2d3831;
+  --bg-surface: #35443b;
+  --bg-hover: #394a40;
+  --bg-hover-strong: #455b4d;
   --text-primary: #e8eee9;
   --text-secondary: #a0d4b2;
   --text-muted: #88a098;
-  --text-disabled: #40564a;
-  --border-default: #30423a;
-  --border-subtle: rgba(74, 222, 128, 0.08);
-  --accent-primary: #4ade80;
-  --accent-hover: #a7f3c7;
-  --scrollbar-thumb: #40564a;
-  --scrollbar-track: #1f2b24;
-  --scrollbar-hover: #4e6859;
-  --scrollbar-thumb-custom: #40564a;
-  --scrollbar-hover-custom: #4e6859;
-  --content-bg: #1f2b24;
+  --text-disabled: #526859;
+  --border-default: #35443b;
+  --border-subtle: rgba(74, 222, 128, 0.06);
+  --accent-primary: #43d978;
+  --accent-hover: #62df90;
+  --scrollbar-thumb: #455b4d;
+  --scrollbar-track: #2a352e;
+  --scrollbar-hover: #526b5c;
+  --scrollbar-thumb-custom: #455b4d;
+  --scrollbar-hover-custom: #526b5c;
+  --content-bg: #252f29;
 }
 
 ::-webkit-scrollbar {
