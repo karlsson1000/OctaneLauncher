@@ -118,7 +118,7 @@
   }
 </script>
 
-<div class="p-12 pt-[75px] space-y-10">
+<div class="px-8 pb-8 pt-[75px] space-y-10">
   <div class="max-w-7xl mx-auto">
     <div class="w-full h-36 bg-[var(--bg-tertiary)] rounded-md relative flex items-center px-8">
       {#if store.activeAccount}
