@@ -115,7 +115,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--content-bg);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -129,7 +129,7 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--content-bg);
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .screenshot-card {
@@ -186,7 +186,7 @@
 }
 
 .custom-scrollbar {
-  scrollbar-color: var(--scrollbar-thumb-custom) var(--content-bg);
+  scrollbar-color: var(--scrollbar-thumb-custom) transparent;
 }
 
 /* Shared modal animations */
