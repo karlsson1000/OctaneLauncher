@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Package, ExternalLink, FolderOpen, Copy, FileArchive, Trash2, Play, ChevronLeft, ChevronRight } from "lucide-svelte"
+  import { Package, ExternalLink, FolderOpen, Copy, FileArchive, Trash2, Play, ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import type { Instance, Snapshot, SnapshotsResponse } from "../../types"
   import { getMinecraftVersion } from "../../lib/version"
@@ -19,9 +19,13 @@
   let loadingSnapshots = $state(true)
   let snapshotStart = $state(0)
 
-  const SNAPSHOT_PAGE_SIZE = 3
+  let snapshotPageSize = $derived(store.showFriendsPanel ? 2 : 3)
 
-  let maxSnapshotStart = $derived(Math.max(snapshots.length - SNAPSHOT_PAGE_SIZE, 0))
+  let maxSnapshotStart = $derived(Math.max(snapshots.length - snapshotPageSize, 0))
+
+  $effect(() => {
+    if (snapshotStart > maxSnapshotStart) snapshotStart = maxSnapshotStart
+  })
 
   function goToSnapshot(i: number) {
     snapshotStart = Math.min(Math.max(i, 0), maxSnapshotStart)
@@ -48,7 +52,7 @@
     [...store.instances]
       .filter(i => i.last_played)
       .sort((a, b) => new Date(b.last_played!).getTime() - new Date(a.last_played!).getTime())
-      .slice(0, 5)
+      .slice(0, store.showFriendsPanel ? 4 : 5)
   )
 
   let isLastPlayedRunning = $derived(lastPlayedInstance ? store.runningInstances.has(lastPlayedInstance.name) : false)
@@ -68,7 +72,7 @@
         const response = await fetch('https://launchercontent.mojang.com/v2/javaPatchNotes.json')
         const data: SnapshotsResponse = await response.json()
         snapshots = data.entries.slice(0, 12)
-        if (snapshotStart > Math.max(snapshots.length - SNAPSHOT_PAGE_SIZE, 0)) snapshotStart = 0
+        if (snapshotStart > maxSnapshotStart) snapshotStart = 0
       } catch (error) {
       } finally {
         loadingSnapshots = false
@@ -80,6 +84,11 @@
   function handleContextMenu(e: MouseEvent, instance: Instance) {
     e.preventDefault()
     contextMenu = { x: e.clientX, y: e.clientY, instance }
+  }
+
+  function handleDotsMenu(e: MouseEvent, instance: Instance) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    contextMenu = { x: rect.left, y: rect.bottom + 4, instance }
   }
 
   function formatDate(dateString: string): string {
@@ -141,23 +150,32 @@
       </div>
 
       <div class="{store.isAuthenticated && lastPlayedInstance ? 'w-auto' : (store.activeAccount ? 'w-44' : 'w-0')} flex-shrink-0 flex items-center justify-end">
-        {#if store.isAuthenticated && lastPlayedInstance}
-          <button
-            onclick={() => isLastPlayedRunning && handleKillInstance
-              ? handleKillInstance(lastPlayedInstance)
-              : handleLaunch(lastPlayedInstance)
-            }
-            disabled={heroDisabled}
-            class="h-11 px-5 rounded-md flex items-center justify-center gap-3 text-lg font-semibold cursor-pointer disabled:opacity-40 {heroBtnClass}"
-            title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
-          >
-            {#if isLastPlayedLaunching || isLastPlayedRunning}
-              <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
-            {:else}
-              <Play size={24} fill="currentColor" strokeWidth={0} />
-            {/if}
-            <span class="truncate max-w-[140px]">{isLastPlayedRunning ? "Stop" : isLastPlayedLaunching ? "Launching..." : lastPlayedInstance.name}</span>
-          </button>
+        {#if store.isAuthenticated && lastPlayedInstance && !store.showFriendsPanel}
+          <div class="flex items-center gap-px">
+            <button
+              onclick={() => isLastPlayedRunning && handleKillInstance
+                ? handleKillInstance(lastPlayedInstance)
+                : handleLaunch(lastPlayedInstance)
+              }
+              disabled={heroDisabled}
+              class="h-10 px-5 rounded-l-md rounded-r-none flex items-center justify-center gap-3 text-lg font-semibold cursor-pointer disabled:opacity-40 {heroBtnClass}"
+              title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
+            >
+              {#if isLastPlayedLaunching || isLastPlayedRunning}
+                <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
+              {:else}
+                <Play size={24} fill="currentColor" strokeWidth={0} />
+              {/if}
+              <span class="truncate max-w-[140px]">{isLastPlayedRunning ? "Stop" : isLastPlayedLaunching ? "Launching..." : lastPlayedInstance.name}</span>
+            </button>
+            <button
+              onclick={(e) => handleDotsMenu(e, lastPlayedInstance)}
+              class="h-10 w-11 rounded-r-md rounded-l-none flex items-center justify-center cursor-pointer {heroBtnClass}"
+              aria-label="Instance options"
+            >
+              <MoreHorizontal size={22} strokeWidth={2} />
+            </button>
+          </div>
         {/if}
       </div>
     </div>
@@ -177,7 +195,7 @@
           </div>
         </div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+      <div class="grid gap-3 {store.showFriendsPanel ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}">
         {#each recentInstances as instance (instance.name)}
           {@const isRunning = store.runningInstances.has(instance.name)}
           {@const isLaunching = store.launchingInstanceName === instance.name}
@@ -296,10 +314,10 @@
       <div class="overflow-hidden">
         <div
           class="-mx-2 flex transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
-          style="transform: translateX(-{snapshotStart * 100 / 3}%)"
+          style="transform: translateX(-{snapshotStart * 100 / snapshotPageSize}%)"
         >
           {#each snapshots as snapshot (snapshot.id)}
-            <div class="w-1/3 shrink-0 px-2">
+            <div class="shrink-0 px-2" style="width: {100 / snapshotPageSize}%">
               <div
                 role="button"
                 tabindex="0"

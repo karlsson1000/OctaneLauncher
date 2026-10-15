@@ -448,7 +448,7 @@
 
 {#snippet instanceGrid(list: Instance[])}
   {#if layout === "grid"}
-    <div class="grid grid-cols-7 gap-x-3 gap-y-4">
+    <div class="grid gap-x-3 gap-y-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
       {#each list as instance (instance.name)}
         {@render instanceIconCard(instance)}
       {/each}

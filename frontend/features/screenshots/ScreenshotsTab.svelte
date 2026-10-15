@@ -4,6 +4,7 @@
   import { Camera, Package, X, Trash2, ExternalLink, ChevronLeft, ChevronRight, ChevronDown, Calendar, Check, FolderOpen } from "lucide-svelte"
   import type { Screenshot } from "../../types"
   import { formatFileSize, formatDate } from "../../lib/format"
+  import { store } from "../../lib/launcherStore.svelte"
 
   let screenshots = $state<Screenshot[]>([])
   let loading = $state(true)
@@ -138,7 +139,7 @@
           <div class="w-16 h-8 bg-[var(--bg-tertiary)] rounded"></div>
         </div>
       </div>
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid {store.showFriendsPanel ? 'grid-cols-2' : 'grid-cols-3'} gap-3">
         {#each skeletonItems as _}
           <div class="rounded-md overflow-hidden">
             <div class="aspect-video bg-[var(--bg-tertiary)] animate-pulse"></div>
@@ -230,7 +231,7 @@
           </p>
         </div>
       {:else}
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid {store.showFriendsPanel ? 'grid-cols-2' : 'grid-cols-3'} gap-3">
           {#each filteredScreenshots as screenshot, index (screenshot.path)}
             <div
               use:lazyLoad={screenshot.path}
