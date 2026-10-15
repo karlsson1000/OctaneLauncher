@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, Download, Loader2 } from "lucide-svelte"
+  import { X, Download, Loader2, ChevronUp } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import { Marked } from "marked"
   import type {
@@ -8,6 +8,7 @@
   } from "../../types"
   import { getMinecraftVersion } from "../../lib/version"
   import { sanitizeHtml } from "../../lib/sanitize"
+  import { store } from "../../lib/launcherStore.svelte"
 
   let {
     source,
@@ -52,6 +53,18 @@
   let installedFiles = $state<Set<string>>(new Set())
   let downloadingMap = $state<Set<string>>(new Set())
   let completedIds = $state<Set<string>>(new Set())
+
+  let showVersionsPicker = $state(false)
+  let versionsPickerRef: HTMLDivElement | undefined = $state()
+
+  $effect(() => {
+    if (!showVersionsPicker) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (versionsPickerRef && !versionsPickerRef.contains(e.target as Node)) showVersionsPicker = false
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  })
 
   function uniqueInstanceName(name: string): string {
     return instances.some(i => i.name === name) ? `${name}-${Date.now()}` : name
@@ -117,7 +130,7 @@
       let result = await invoke<ModrinthVersion[]>("get_mod_versions", {
         idOrSlug: details.id,
         loaders: projectType === "mod" ? loaders : undefined,
-        gameVersions: projectType === "mod" || projectType === "modpack" ? gameVersions : undefined,
+        gameVersions: projectType === "mod" ? gameVersions : undefined,
       })
       if (projectType === "modpack" || projectType === "resourcepack" || projectType === "shaderpack") {
         const seen = new Set<string>()
@@ -294,7 +307,84 @@
   }
 </script>
 
-<div class="h-full relative overflow-hidden">
+{#snippet versionsBody(asMenu)}
+  {#if !isModpack && !selectedInstance}
+    <p class="text-sm text-[var(--text-muted)]">Select an instance to install</p>
+  {:else if isLoadingVersions}
+    <div class="flex items-center justify-center py-8">
+      <Loader2 size={20} class="animate-spin text-[#16a34a]" />
+    </div>
+  {:else if source === "modrinth" && versions.length === 0}
+    <p class="text-sm text-[var(--text-muted)]">No compatible versions found</p>
+  {:else if source === "curseforge" && curseforgeFiles.length === 0}
+    <p class="text-sm text-[var(--text-muted)]">No files available</p>
+  {:else}
+    <div class="{asMenu ? 'flex flex-col' : 'space-y-2 pr-2'}">
+      {#if source === "modrinth"}
+        {#each versions as version (version.id)}
+          {@const installed = isInstalled(version.files.find(f => f.primary)?.filename || version.files[0]?.filename || "")}
+          {@const downloading = downloadingMap.has(version.id)}
+          {@const done = completedIds.has(version.id)}
+          <div class="{asMenu ? 'flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
+              <div class="text-xs text-[var(--text-muted)] mt-0.5">
+                {version.version_type === "release" ? "Release" : version.version_type === "beta" ? "Beta" : "Alpha"}
+                {#if version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").length > 0}
+                  &middot; {version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").join(", ")}
+                {/if}
+                &middot; {formatGameVersions(version.game_versions)}
+              </div>
+            </div>
+            <button
+              onclick={() => handleInstallVersion(version)}
+              disabled={downloading || installed || done || (!isModpack && !selectedInstance)}
+              class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
+            >
+              {#if downloading}
+                <Loader2 size={14} class="animate-spin" />
+              {:else if installed || done}
+                Installed
+              {:else}
+                <Download size={14} />Install
+              {/if}
+            </button>
+          </div>
+        {/each}
+      {:else}
+        {#each curseforgeFiles as file (file.id)}
+          {@const installed = isInstalled(file.fileName)}
+          {@const downloading = downloadingMap.has(file.id.toString())}
+          {@const done = completedIds.has(file.id.toString())}
+          <div class="{asMenu ? 'flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none hover:bg-[var(--bg-hover)]' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}">
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-[var(--text-primary)] truncate">{file.fileName}</div>
+              <div class="text-xs text-[var(--text-muted)] mt-0.5">
+                {file.releaseType === 1 ? "Release" : file.releaseType === 2 ? "Beta" : "Alpha"}
+                &middot; {(file.fileLength / 1024 / 1024).toFixed(1)} MB
+              </div>
+            </div>
+            <button
+              onclick={() => handleInstallCurseforgeFile(file)}
+              disabled={downloading || installed || done || !file.downloadUrl || (!isModpack && !selectedInstance)}
+              class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
+            >
+              {#if downloading}
+                <Loader2 size={14} class="animate-spin" />
+              {:else if installed}
+                Installed
+              {:else}
+                <Download size={14} />Install
+              {/if}
+            </button>
+          </div>
+        {/each}
+      {/if}
+    </div>
+  {/if}
+{/snippet}
+
+<div class="h-full overflow-hidden">
   {#if isLoading}
     <div class="flex items-center justify-center h-full">
       <Loader2 size={32} class="animate-spin {spinnerColor}" />
@@ -307,9 +397,9 @@
       </div>
     </div>
   {:else}
-    <div class="h-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-11 gap-2">
+    <div class="h-full max-w-7xl mx-auto grid grid-cols-1 {(showInstallSection() && !store.showFriendsPanel) ? 'lg:grid-cols-11 gap-2' : ''}">
       <!-- Left: Header + Description -->
-      <div class="{showInstallSection() ? 'lg:col-span-8' : 'lg:col-span-11'} overflow-y-auto pr-2">
+      <div class="{(showInstallSection() && !store.showFriendsPanel) ? 'lg:col-span-8' : 'lg:col-span-11'} overflow-y-auto pr-2">
       <div class="relative space-y-4 bg-[var(--bg-tertiary)] rounded-md p-4">
         <button
           onclick={onBack}
@@ -354,88 +444,40 @@
       </div>
 
       <!-- Right: Versions sidebar -->
-      {#if showInstallSection()}
+      {#if showInstallSection() && !store.showFriendsPanel}
         <div class="lg:col-span-3 overflow-y-auto">
           <div class="mb-3">
             <h2 class="text-lg font-semibold text-[var(--text-primary)] px-3">Versions</h2>
           </div>
 
-          {#if !isModpack && !selectedInstance}
-            <p class="text-sm text-[var(--text-muted)]">Select an instance to install</p>
-          {:else if isLoadingVersions}
-            <div class="flex items-center justify-center py-8">
-              <Loader2 size={20} class="animate-spin text-[#16a34a]" />
-            </div>
-          {:else if source === "modrinth" && versions.length === 0}
-            <p class="text-sm text-[var(--text-muted)]">No compatible versions found</p>
-          {:else if source === "curseforge" && curseforgeFiles.length === 0}
-            <p class="text-sm text-[var(--text-muted)]">No files available</p>
-          {:else}
-            <div class="space-y-2 pr-2">
-              {#if source === "modrinth"}
-                {#each versions as version (version.id)}
-                  {@const installed = isInstalled(version.files.find(f => f.primary)?.filename || version.files[0]?.filename || "")}
-                  {@const downloading = downloadingMap.has(version.id)}
-                  {@const done = completedIds.has(version.id)}
-                  <div class="bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2">
-                    <div class="flex-1 min-w-0">
-                      <div class="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
-                      <div class="text-xs text-[var(--text-muted)] mt-0.5">
-                        {version.version_type === "release" ? "Release" : version.version_type === "beta" ? "Beta" : "Alpha"}
-                        {#if version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").length > 0}
-                          &middot; {version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").join(", ")}
-                        {/if}
-                        &middot; {formatGameVersions(version.game_versions)}
-                      </div>
-                    </div>
-                    <button
-                      onclick={() => handleInstallVersion(version)}
-                      disabled={downloading || installed || done || (!isModpack && !selectedInstance)}
-                      class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
-                    >
-                      {#if downloading}
-                        <Loader2 size={14} class="animate-spin" />
-                      {:else if installed || done}
-                        Installed
-                      {:else}
-                        <Download size={14} />Install
-                      {/if}
-                    </button>
-                  </div>
-                {/each}
-              {:else}
-                {#each curseforgeFiles as file (file.id)}
-                  {@const installed = isInstalled(file.fileName)}
-                  {@const downloading = downloadingMap.has(file.id.toString())}
-                  {@const done = completedIds.has(file.id.toString())}
-                  <div class="bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2">
-                    <div class="flex-1 min-w-0">
-                      <div class="text-sm font-medium text-[var(--text-primary)] truncate">{file.fileName}</div>
-                      <div class="text-xs text-[var(--text-muted)] mt-0.5">
-                        {file.releaseType === 1 ? "Release" : file.releaseType === 2 ? "Beta" : "Alpha"}
-                        &middot; {(file.fileLength / 1024 / 1024).toFixed(1)} MB
-                      </div>
-                    </div>
-                    <button
-                      onclick={() => handleInstallCurseforgeFile(file)}
-                      disabled={downloading || installed || done || !file.downloadUrl || (!isModpack && !selectedInstance)}
-                      class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
-                    >
-                      {#if downloading}
-                        <Loader2 size={14} class="animate-spin" />
-                      {:else if installed}
-                        Installed
-                      {:else}
-                        <Download size={14} />Install
-                      {/if}
-                    </button>
-                  </div>
-                {/each}
-              {/if}
-            </div>
-          {/if}
+          {@render versionsBody()}
         </div>
       {/if}
     </div>
+
+    {#if store.showFriendsPanel}
+      <div class="absolute bottom-4 right-4 z-30" bind:this={versionsPickerRef}>
+        {#if showVersionsPicker}
+          <div role="menu" class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-80 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
+            {@render versionsBody(true)}
+          </div>
+        {/if}
+        <button
+          onclick={() => showVersionsPicker = !showVersionsPicker}
+          class="flex items-center gap-3 bg-[var(--bg-elevated)] rounded-lg px-3 py-1.5 hover:bg-[var(--bg-hover)] cursor-pointer"
+        >
+          <div class="w-9 h-9 flex items-center justify-center flex-shrink-0">
+            <Download size={26} class="text-[#16a34a]" />
+          </div>
+          <div class="text-left">
+            <div class="text-[15px] font-semibold text-[var(--text-primary)] leading-none">Install</div>
+            <div class="text-xs leading-tight text-[var(--text-muted)] max-w-[180px] truncate">
+              {isModpack ? getTitle() : selectedInstance ? `Installing to ${selectedInstance.name}` : "Installing to…"}
+            </div>
+          </div>
+          <ChevronUp size={18} strokeWidth={3} class="text-[var(--text-secondary)] transition-transform {showVersionsPicker ? 'rotate-180' : ''}" />
+        </button>
+      </div>
+    {/if}
   {/if}
 </div>

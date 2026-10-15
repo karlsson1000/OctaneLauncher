@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from "svelte"
-  import { Search, Check, Puzzle, Layers, Image, Sparkles, Package, X } from "lucide-svelte"
+  import { Search, Check, Puzzle, Layers, Image, Sparkles, Package, X, ChevronUp } from "lucide-svelte"
   import AddonList from "./AddonList.svelte"
   import ProjectDetail from "./ProjectDetail.svelte"
   import { ADDON_CATEGORIES, type ContentSource } from "./adapters"
@@ -77,9 +77,57 @@
     await tick()
     if (listScroller) listScroller.scrollTop = savedListScroll
   }
+
+  let showInstallPicker = $state(false)
+  let installPickerRef: HTMLDivElement | undefined = $state()
+  const modpackTab = $derived(store.addonsSubTab === "modpacks")
+
+  $effect(() => {
+    if (!showInstallPicker) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (installPickerRef && !installPickerRef.contains(e.target as Node)) showInstallPicker = false
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  })
 </script>
 
-<div class="flex flex-col h-full overflow-hidden">
+{#snippet installTargets(asMenu)}
+  {#if moddedInstances.length === 0}
+    <p class="text-xs text-[#3a3f4b] px-1">No modded instances</p>
+  {:else}
+    <div class={asMenu ? "flex flex-col" : "space-y-1.5"}>
+      {#each moddedInstances as instance}
+        {@const icon = instanceIconSrc(instance.icon_path, instance.name)}
+        {@const loader = getLoaderDisplay(instance)}
+        {@const selected = store.selectedInstance?.name === instance.name}
+        <button
+          onclick={() => { setSelectedInstance(instance); showInstallPicker = false }}
+          class="w-full flex items-center text-left text-sm cursor-pointer text-[var(--text-primary)] {asMenu ? 'gap-2.5 px-2 py-2 rounded-sm select-none hover:bg-[var(--bg-hover)]' : `gap-3 px-3 py-1.5 rounded-md ${selected ? 'bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}"
+        >
+          {#if icon}
+            <img src={icon} alt={instance.name} class="{asMenu ? 'w-8 h-8' : 'w-11 h-11'} rounded object-cover flex-shrink-0" />
+          {:else}
+            <div class="{asMenu ? 'w-8 h-8' : 'w-11 h-11'} flex items-center justify-center flex-shrink-0">
+              <Package size={asMenu ? 20 : 28} class="text-[var(--text-muted)]" strokeWidth={1.5} />
+            </div>
+          {/if}
+          <div class="flex-1 min-w-0">
+            <div class="font-medium {asMenu ? 'text-sm' : 'text-base'} text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
+            <div class="text-xs text-[var(--text-muted)] truncate mt-0.5">
+              {getMinecraftVersion(instance)} <span class="text-[#3a3f4b]">•</span> <span class={loader.color}>{loader.name}</span>
+            </div>
+          </div>
+          {#if selected}
+            <Check size={18} class="flex-shrink-0 text-[#16a34a]" strokeWidth={3} />
+          {/if}
+        </button>
+      {/each}
+    </div>
+  {/if}
+{/snippet}
+
+<div class="relative flex flex-col h-full overflow-hidden">
   <div class="flex-shrink-0 px-8 pt-8 pb-4">
     <div class="max-w-7xl mx-auto">
       <div class="flex items-center gap-4">
@@ -161,8 +209,8 @@
   {/if}
 
   <div class="flex-1 min-h-0 px-8 overflow-hidden">
-    <div class="h-full max-w-7xl mx-auto grid grid-cols-1 {viewDetail ? '' : 'lg:grid-cols-11 gap-2'}">
-      <div class="{viewDetail ? '' : 'lg:col-span-8'} overflow-y-auto" bind:this={listScroller}>
+    <div class="h-full max-w-7xl mx-auto grid grid-cols-1 {viewDetail || store.showFriendsPanel || modpackTab ? '' : 'lg:grid-cols-11 gap-2'}">
+      <div class="{viewDetail || store.showFriendsPanel || modpackTab ? '' : 'lg:col-span-8'} overflow-y-auto" bind:this={listScroller}>
         <div class={viewDetail ? "hidden" : ""}>
           {#key `${contentSource}:${store.addonsSubTab}`}
             <AddonList
@@ -194,44 +242,47 @@
       </div>
 
       <!-- Right: Instance list sidebar -->
-      {#if !viewDetail}
+      {#if !viewDetail && !store.showFriendsPanel && !modpackTab}
         <div class="lg:col-span-3 overflow-y-auto hidden lg:block">
           <div class="flex flex-col gap-3">
             <h2 class="text-lg font-semibold text-[var(--text-primary)] px-3">Install content to</h2>
-            <div class="space-y-1.5">
-              {#if moddedInstances.length === 0}
-                <p class="text-xs text-[#3a3f4b]">No modded instances</p>
-              {:else}
-                {#each moddedInstances as instance}
-                  {@const icon = instanceIconSrc(instance.icon_path, instance.name)}
-                  {@const loader = getLoaderDisplay(instance)}
-                  <button
-                    onclick={() => setSelectedInstance(instance)}
-                    class="w-full flex items-center gap-3 px-3 py-1.5 text-left text-sm rounded-md cursor-pointer {store.selectedInstance?.name === instance.name ? 'bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-tertiary)]'}"
-                  >
-                    {#if icon}
-                      <img src={icon} alt={instance.name} class="w-11 h-11 rounded object-cover flex-shrink-0" />
-                    {:else}
-                      <div class="w-11 h-11 flex items-center justify-center flex-shrink-0">
-                        <Package size={28} class="text-[var(--text-muted)]" strokeWidth={1.5} />
-                      </div>
-                    {/if}
-                    <div class="flex-1 min-w-0">
-                      <div class="font-medium text-base text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
-                      <div class="text-xs text-[var(--text-muted)] truncate mt-0.5">
-                        {getMinecraftVersion(instance)} <span class="text-[#3a3f4b]">•</span> <span class={loader.color}>{loader.name}</span>
-                      </div>
-                    </div>
-                    {#if store.selectedInstance?.name === instance.name}
-                      <Check size={18} class="flex-shrink-0 text-[#16a34a]" strokeWidth={3} />
-                    {/if}
-                  </button>
-                {/each}
-              {/if}
-            </div>
+            {@render installTargets()}
           </div>
         </div>
       {/if}
     </div>
   </div>
+
+  {#if store.showFriendsPanel && !viewDetail && !modpackTab}
+    <div class="absolute bottom-4 right-4 z-30" bind:this={installPickerRef}>
+      {#if showInstallPicker}
+        <div role="menu" class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-64 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
+          {@render installTargets(true)}
+        </div>
+      {/if}
+      <button
+        onclick={() => showInstallPicker = !showInstallPicker}
+        class="flex items-center gap-3 bg-[var(--bg-elevated)] rounded-lg px-3 py-1.5 hover:bg-[var(--bg-hover)] cursor-pointer"
+      >
+        {#if store.selectedInstance}
+          {@const selectedIcon = instanceIconSrc(store.selectedInstance.icon_path, store.selectedInstance.name)}
+          {#if selectedIcon}
+            <img src={selectedIcon} alt={store.selectedInstance.name} class="w-9 h-9 rounded object-cover flex-shrink-0" />
+          {:else}
+            <div class="w-9 h-9 flex items-center justify-center flex-shrink-0">
+              <Package size={26} class="text-[var(--text-muted)]" />
+            </div>
+          {/if}
+          <div class="text-left">
+            <div class="text-xs leading-tight text-[var(--text-muted)]">Install to</div>
+            <div class="text-[15px] font-semibold text-[var(--text-primary)] max-w-[180px] truncate leading-tight">{store.selectedInstance.name}</div>
+          </div>
+        {:else}
+          <Package size={22} class="text-[var(--text-muted)] ml-2" />
+          <span class="text-[15px] font-medium text-[var(--text-secondary)]">Select instance</span>
+        {/if}
+        <ChevronUp size={18} strokeWidth={3} class="text-[var(--text-secondary)] ml-0.5 transition-transform {showInstallPicker ? 'rotate-180' : ''}" />
+      </button>
+    </div>
+  {/if}
 </div>
