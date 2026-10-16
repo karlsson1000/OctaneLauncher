@@ -61,7 +61,10 @@
         "https://github.com/karlsson1000/OctaneLauncher/releases/latest/download/latest.json"
       ],
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE3MEQwRURDOEI2RkZGOUIKUldTYi8yK0wzQTRORjdsVUdzT1ZZaUc2WDgyelJNZGphd2EwY0xSYmJtd21YcDYrOHhFWjFZYnUK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE3MEQwRURDOEI2RkZGOUIKUldTYi8yK0wzQTRORjdsVUdzT1ZZaUc2WDgyelJNZGphd2EwY0xSYmJtd21YcDYrOHhFWjFZYnUK",
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

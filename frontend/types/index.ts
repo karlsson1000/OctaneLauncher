@@ -213,7 +213,6 @@ export interface AccountInfo {
 }
 
 export interface UpdateInfo {
-  current_version: string
   new_version: string
 }
 

@@ -113,24 +113,18 @@ function navigateForward() {
   }
 }
 
-async function checkForUpdates() {
+async function checkForUpdates(): Promise<UpdateInfo | null> {
   try {
-    const update = await invoke<string | null>("check_for_updates")
-    if (update) {
-      const parts = update.split(' -> ')
-      if (parts.length === 2) {
-        const info: UpdateInfo = {
-          current_version: parts[0].trim(),
-          new_version: parts[1].trim()
-        }
-        const dismissedVersion = await storeGet<string>("dismissed_update_version")
-        if (dismissedVersion !== info.new_version) {
-          store.updateInfo = info
-        }
-      }
+    const update = await invoke<UpdateInfo | null>("check_for_updates")
+    if (!update) return null
+    const dismissedVersion = await storeGet<string>("dismissed_update_version")
+    if (dismissedVersion !== update.new_version) {
+      store.updateInfo = update
     }
+    return update
   } catch (error) {
     console.error("Failed to check for updates:", error)
+    return null
   }
 }
 
@@ -139,7 +133,6 @@ async function handleInstallUpdate() {
   store.isInstallingUpdate = true
   try {
     await invoke("install_update")
-    store.isInstallingUpdate = false
   } catch (error) {
     console.error("Failed to install update:", error)
     store.alertModal = {
@@ -148,6 +141,7 @@ async function handleInstallUpdate() {
       message: `Failed to install update: ${error}`,
       type: "danger"
     }
+  } finally {
     store.isInstallingUpdate = false
   }
 }
@@ -495,7 +489,6 @@ async function loadAllInitialData() {
     }
     appliedDefaultTab = true
   }
-  checkForUpdates()
 }
 
 function setupEventListeners() {
@@ -561,6 +554,7 @@ export {
   navigateBack,
   navigateForward,
   pushToHistory,
+  checkForUpdates,
   handleInstallUpdate,
   handleLaunch,
   handleDeleteInstance,

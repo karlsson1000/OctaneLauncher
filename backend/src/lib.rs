@@ -4,13 +4,18 @@ mod services;
 mod utils;
 mod models;
 
-use tauri::Manager;
+use serde::Serialize;
+use std::time::Duration;
+use tauri::{Emitter, Manager};
 use tauri_plugin_updater::UpdaterExt;
 use services::accounts::AccountManager;
 use models::{AppConfig, FriendStatus};
 use std::sync::Arc;
 
 use commands::*;
+
+const UPDATE_CHECK_TIMEOUT: Duration = Duration::from_secs(5);
+const UPDATE_DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(600);
 
 async fn set_all_accounts_offline(app: &tauri::AppHandle) {
     let Ok(accounts) = AccountManager::get_all_accounts() else {
@@ -34,34 +39,69 @@ fn get_app_version() -> String {
     format!("{}-{}", env!("CARGO_PKG_VERSION"), env!("OCTANE_COMMIT_HASH"))
 }
 
+#[derive(Serialize)]
+struct UpdateMetadata {
+    new_version: String,
+}
+
 #[tauri::command]
-async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<String>, String> {
+async fn check_for_updates(app: tauri::AppHandle) -> Result<Option<UpdateMetadata>, String> {
+    if cfg!(debug_assertions) {
+        return Ok(None);
+    }
+
     let updater = app.updater().map_err(|e| format!("Failed to get updater: {}", e))?;
 
-    match updater.check().await {
-        Ok(Some(update)) => {
-            let current_version = app.package_info().version.to_string();
-            Ok(Some(format!("{} -> {}", current_version, update.version)))
-        }
-        Ok(None) => Ok(None),
-        Err(e) => Err(format!("Failed to check for updates: {}", e)),
+    let checked = tokio::time::timeout(UPDATE_CHECK_TIMEOUT, updater.check())
+        .await
+        .map_err(|_| "Timed out while checking for updates".to_string())?
+        .map_err(|e| format!("Failed to check for updates: {}", e))?;
+
+    match checked {
+        Some(update) => Ok(Some(UpdateMetadata {
+            new_version: update.version.clone(),
+        })),
+        None => Ok(None),
     }
 }
 
 #[tauri::command]
 async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    if cfg!(debug_assertions) {
+        return Err("Updates are disabled in development".to_string());
+    }
+
     let updater = app.updater().map_err(|e| format!("Failed to get updater: {}", e))?;
 
-    let update = updater
-        .check()
+    let update = tokio::time::timeout(UPDATE_CHECK_TIMEOUT, updater.check())
         .await
+        .map_err(|_| "Timed out while checking for updates".to_string())?
         .map_err(|e| format!("Failed to check for updates: {}", e))?
         .ok_or_else(|| "No update available".to_string())?;
 
-    update
-        .download_and_install(|_chunk, _total| {}, || {})
-        .await
-        .map_err(|e| format!("Failed to install update: {}", e))
+    let progress_handle = app.clone();
+    let mut downloaded: u64 = 0;
+    tokio::time::timeout(
+        UPDATE_DOWNLOAD_TIMEOUT,
+        update.download_and_install(
+            move |chunk, total| {
+                downloaded += chunk as u64;
+                let _ = progress_handle.emit(
+                    "update-download-progress",
+                    serde_json::json!({ "downloaded": downloaded, "total": total }),
+                );
+            },
+            || {},
+        ),
+    )
+    .await
+    .map_err(|_| "Timed out while downloading update".to_string())?
+    .map_err(|e| format!("Failed to install update: {}", e))?;
+
+    #[cfg(not(windows))]
+    app.restart();
+
+    Ok(())
 }
 
 pub struct CurseforgeConfig {
