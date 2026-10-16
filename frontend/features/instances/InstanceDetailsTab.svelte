@@ -246,11 +246,15 @@
   }
 
   async function handleDeleteMod(filename: string) {
+    const previousMods = installedMods
+    const previousUpdates = availableUpdates
+    installedMods = installedMods.filter(m => m.filename !== filename)
+    availableUpdates = availableUpdates.filter(u => u.filename !== filename)
     try {
       await invoke("delete_mod", { instanceName: instance.name, filename })
-      await loadInstalledMods()
-      availableUpdates = []
     } catch (error) {
+      installedMods = previousMods
+      availableUpdates = previousUpdates
       alertModal = { isOpen: true, title: "Error", message: `Failed to delete mod: ${String(error)}`, type: "danger" }
     }
   }
@@ -274,19 +278,23 @@
   }
 
   async function handleDeleteResourcePack(filename: string) {
+    const previous = resourcePacks
+    resourcePacks = resourcePacks.filter(p => p.filename !== filename)
     try {
       await invoke("delete_resourcepack", { instanceName: instance.name, filename })
-      await loadResourcePacks()
     } catch (error) {
+      resourcePacks = previous
       alertModal = { isOpen: true, title: "Error", message: `Failed to delete resource pack: ${String(error)}`, type: "danger" }
     }
   }
 
   async function handleDeleteShaderPack(filename: string) {
+    const previous = shaderPacks
+    shaderPacks = shaderPacks.filter(p => p.filename !== filename)
     try {
       await invoke("delete_shaderpack", { instanceName: instance.name, filename })
-      await loadShaderPacks()
     } catch (error) {
+      shaderPacks = previous
       alertModal = { isOpen: true, title: "Error", message: `Failed to delete shader pack: ${String(error)}`, type: "danger" }
     }
   }
