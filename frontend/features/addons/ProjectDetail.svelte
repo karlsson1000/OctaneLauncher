@@ -8,7 +8,6 @@
   } from "../../types"
   import { getMinecraftVersion } from "../../lib/version"
   import { sanitizeHtml } from "../../lib/sanitize"
-  import { store } from "../../lib/launcherStore.svelte"
 
   let {
     source,
@@ -297,10 +296,6 @@
     return ""
   }
 
-  function showInstallSection(): boolean {
-    return true
-  }
-
   function getProjectUrl(): string {
     if (source === "modrinth") {
       return `https://modrinth.com/project/${projectSlug || projectId}`
@@ -458,9 +453,9 @@
       </div>
     </div>
   {:else}
-    <div class="h-full max-w-7xl mx-auto grid grid-cols-1 {(showInstallSection() && !store.showFriendsPanel) ? 'lg:grid-cols-11 gap-2' : ''}">
+    <div class="h-full max-w-7xl mx-auto grid grid-cols-1">
       <!-- Left: Header + Description -->
-      <div class="{(showInstallSection() && !store.showFriendsPanel) ? 'lg:col-span-8' : 'lg:col-span-11'} overflow-y-auto pr-2">
+      <div class="overflow-y-auto pr-2">
       <div class="relative space-y-4 bg-[var(--bg-tertiary)] rounded-md p-4">
         <button
           onclick={onBack}
@@ -504,20 +499,9 @@
       </div>
       </div>
 
-      <!-- Right: Versions sidebar -->
-      {#if showInstallSection() && !store.showFriendsPanel}
-        <div class="lg:col-span-3 overflow-y-auto">
-          <div class="mb-3">
-            <h2 class="text-lg font-semibold text-[var(--text-primary)] px-3">Versions</h2>
-          </div>
-
-          {@render versionsBody()}
-        </div>
-      {/if}
     </div>
 
-    {#if store.showFriendsPanel}
-      <div class="absolute bottom-4 right-4 z-30" bind:this={versionsPickerRef}>
+    <div class="absolute bottom-4 right-4 z-30" bind:this={versionsPickerRef}>
         {#if showVersionsPicker}
           <div role="menu" bind:this={versionsMenuRef} class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-80 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
             {@render versionsBody(true)}
@@ -539,6 +523,5 @@
           <ChevronUp size={18} strokeWidth={3} class="text-[var(--text-secondary)] transition-transform {showVersionsPicker ? 'rotate-180' : ''}" />
         </button>
       </div>
-    {/if}
   {/if}
 </div>

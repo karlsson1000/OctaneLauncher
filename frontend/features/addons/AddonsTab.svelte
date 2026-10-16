@@ -209,8 +209,8 @@
   {/if}
 
   <div class="flex-1 min-h-0 px-8 overflow-hidden">
-    <div class="h-full max-w-7xl mx-auto grid grid-cols-1 {viewDetail || store.showFriendsPanel || modpackTab ? '' : 'lg:grid-cols-11 gap-2'}">
-      <div class="{viewDetail || store.showFriendsPanel || modpackTab ? '' : 'lg:col-span-8'} overflow-y-auto" bind:this={listScroller}>
+    <div class="h-full max-w-7xl mx-auto grid grid-cols-1">
+      <div class="overflow-y-auto" bind:this={listScroller}>
         <div class={viewDetail ? "hidden" : ""}>
           {#key `${contentSource}:${store.addonsSubTab}`}
             <AddonList
@@ -241,19 +241,10 @@
         {/if}
       </div>
 
-      <!-- Right: Instance list sidebar -->
-      {#if !viewDetail && !store.showFriendsPanel && !modpackTab}
-        <div class="lg:col-span-3 overflow-y-auto hidden lg:block">
-          <div class="flex flex-col gap-3">
-            <h2 class="text-lg font-semibold text-[var(--text-primary)] px-3">Install content to</h2>
-            {@render installTargets()}
-          </div>
-        </div>
-      {/if}
     </div>
   </div>
 
-  {#if store.showFriendsPanel && !viewDetail && !modpackTab}
+  {#if !viewDetail && !modpackTab}
     <div class="absolute bottom-4 right-4 z-30" bind:this={installPickerRef}>
       {#if showInstallPicker}
         <div role="menu" class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-64 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
