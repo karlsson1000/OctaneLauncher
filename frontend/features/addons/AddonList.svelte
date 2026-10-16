@@ -154,6 +154,13 @@
   <div class="max-w-7xl mx-auto h-full flex flex-col">
     <div class="flex-1 min-h-0">
       <div class="space-y-3 overflow-y-auto pr-2">
+        {#if isSearching && displayedHits.length === 0}
+          <div class="animate-pulse space-y-3">
+            {#each Array(8) as _}
+              <div class="rounded-md bg-[var(--bg-tertiary)] h-28"></div>
+            {/each}
+          </div>
+        {:else}
         {#each displayedHits as hit (hit.id)}
           {@const selected = selectedId === hit.id}
           <div
@@ -204,6 +211,7 @@
             <Loader2 size={20} class="animate-spin" style={`color: ${category.accentMain}`} />
           {/if}
         </div>
+        {/if}
       </div>
     </div>
   </div>

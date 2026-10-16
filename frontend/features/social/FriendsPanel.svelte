@@ -448,16 +448,22 @@
         {#if tab === "friends"}
           <div class="flex-1 overflow-y-auto pb-2">
             {#if isLoading && friends.length === 0}
-              <div class="space-y-1 pt-3 px-1.5">
-                {#each Array(5) as _}
-                  <div class="flex items-center gap-2.5 py-1 animate-pulse">
-                    <div class="w-8 h-8 rounded bg-[var(--bg-tertiary)]"></div>
-                    <div class="flex-1 space-y-1.5">
-                      <div class="h-3 w-24 rounded bg-[var(--bg-tertiary)]"></div>
-                      <div class="h-2.5 w-16 rounded bg-[var(--bg-tertiary)]"></div>
+              <div class="animate-pulse">
+                <div class="flex items-center gap-1.5 px-1 pt-4 pb-1 mb-2">
+                  <div class="w-3.5 h-3.5 rounded bg-[var(--bg-tertiary)] flex-shrink-0"></div>
+                  <div class="h-3.5 w-24 rounded bg-[var(--bg-tertiary)]"></div>
+                </div>
+                <div class="space-y-1 px-1.5">
+                  {#each [120, 88, 104, 72, 112, 96] as nameWidth, i}
+                    <div class="flex items-center gap-2.5 py-1">
+                      <div class="w-8 h-8 rounded bg-[var(--bg-tertiary)]"></div>
+                      <div class="flex-1 space-y-1.5">
+                        <div class="h-3 rounded bg-[var(--bg-tertiary)]" style="width: {nameWidth}px"></div>
+                        <div class="h-2.5 rounded bg-[var(--bg-tertiary)]" style="width: {[76, 54, 68, 48, 72, 58][i]}px"></div>
+                      </div>
                     </div>
-                  </div>
-                {/each}
+                  {/each}
+                </div>
               </div>
             {:else if friends.length === 0}
               <div class="flex flex-col items-center justify-center py-10 text-center px-3">
