@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X, Download, ArrowDownToLine, Check, Loader2, ChevronUp } from "lucide-svelte"
+  import { X, Download, ArrowBigDownDash, Check, Loader2, ChevronUp } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import { Marked } from "marked"
   import type {
@@ -56,6 +56,17 @@
 
   let showVersionsPicker = $state(false)
   let versionsPickerRef: HTMLDivElement | undefined = $state()
+  let versionsMenuRef: HTMLDivElement | undefined = $state()
+
+  let latestVersionId = $derived(versions[0]?.id)
+  let latestCurseforgeFileId = $derived(curseforgeFiles[0]?.id)
+
+  $effect(() => {
+    if (!showVersionsPicker) return
+    void versions.length
+    void curseforgeFiles.length
+    if (versionsMenuRef) versionsMenuRef.scrollTop = versionsMenuRef.scrollHeight
+  })
 
   $effect(() => {
     if (!showVersionsPicker) return
@@ -321,7 +332,7 @@
   {:else}
     <div class="{asMenu ? 'flex flex-col' : 'space-y-2 pr-2'}">
       {#if source === "modrinth"}
-        {#each versions as version (version.id)}
+        {#each (asMenu ? [...versions].reverse() : versions) as version (version.id)}
           {@const installed = isInstalled(version.files.find(f => f.primary)?.filename || version.files[0]?.filename || "")}
           {@const downloading = downloadingMap.has(version.id)}
           {@const done = completedIds.has(version.id)}
@@ -336,12 +347,17 @@
           >
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
-              <div class="text-xs text-[var(--text-muted)] mt-0.5">
-                {version.version_type === "release" ? "Release" : version.version_type === "beta" ? "Beta" : "Alpha"}
-                {#if version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").length > 0}
-                  &middot; {version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").join(", ")}
+              <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                <span class="text-xs text-[var(--text-muted)] truncate">
+                  {version.version_type === "release" ? "Release" : version.version_type === "beta" ? "Beta" : "Alpha"}
+                  {#if version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").length > 0}
+                    &middot; {version.loaders.filter(l => l !== "minecraft" && l !== "iris" && l !== "optifine").join(", ")}
+                  {/if}
+                  &middot; {formatGameVersions(version.game_versions)}
+                </span>
+                {#if version.id === latestVersionId}
+                  <span class="flex-shrink-0 px-1.5 py-px rounded-full text-[10px] font-semibold bg-[#16a34a] text-white/80 leading-none">Latest</span>
                 {/if}
-                &middot; {formatGameVersions(version.game_versions)}
               </div>
             </div>
             {#if asMenu}
@@ -351,7 +367,7 @@
                 {:else if installed || done}
                   <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
                 {:else}
-                  <ArrowDownToLine size={20} strokeWidth={2.5} class="text-[#16a34a]" />
+                  <ArrowBigDownDash size={22} strokeWidth={2.5} class="text-[#16a34a]" />
                 {/if}
               </span>
             {:else}
@@ -372,7 +388,7 @@
           </svelte:element>
         {/each}
       {:else}
-        {#each curseforgeFiles as file (file.id)}
+        {#each (asMenu ? [...curseforgeFiles].reverse() : curseforgeFiles) as file (file.id)}
           {@const installed = isInstalled(file.fileName)}
           {@const downloading = downloadingMap.has(file.id.toString())}
           {@const done = completedIds.has(file.id.toString())}
@@ -387,9 +403,14 @@
           >
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-[var(--text-primary)] truncate">{file.fileName}</div>
-              <div class="text-xs text-[var(--text-muted)] mt-0.5">
-                {file.releaseType === 1 ? "Release" : file.releaseType === 2 ? "Beta" : "Alpha"}
-                &middot; {(file.fileLength / 1024 / 1024).toFixed(1)} MB
+              <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
+                <span class="text-xs text-[var(--text-muted)] truncate">
+                  {file.releaseType === 1 ? "Release" : file.releaseType === 2 ? "Beta" : "Alpha"}
+                  &middot; {(file.fileLength / 1024 / 1024).toFixed(1)} MB
+                </span>
+                {#if file.id === latestCurseforgeFileId}
+                  <span class="flex-shrink-0 px-1.5 py-px rounded-full text-[10px] font-semibold bg-[#16a34a] text-white/80 leading-none">Latest</span>
+                {/if}
               </div>
             </div>
             {#if asMenu}
@@ -399,7 +420,7 @@
                 {:else if installed || done}
                   <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
                 {:else}
-                  <ArrowDownToLine size={20} strokeWidth={2.5} class="text-[#16a34a]" />
+                  <ArrowBigDownDash size={22} strokeWidth={2.5} class="text-[#16a34a]" />
                 {/if}
               </span>
             {:else}
@@ -498,13 +519,13 @@
     {#if store.showFriendsPanel}
       <div class="absolute bottom-4 right-4 z-30" bind:this={versionsPickerRef}>
         {#if showVersionsPicker}
-          <div role="menu" class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-80 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
+          <div role="menu" bind:this={versionsMenuRef} class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-80 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
             {@render versionsBody(true)}
           </div>
         {/if}
         <button
           onclick={() => showVersionsPicker = !showVersionsPicker}
-          class="flex items-center gap-3 bg-[var(--bg-elevated)] rounded-lg px-3 py-1.5 hover:bg-[var(--bg-hover)] cursor-pointer"
+          class="flex items-center gap-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 hover:bg-[var(--bg-hover)] cursor-pointer"
         >
           <div class="w-9 h-9 flex items-center justify-center flex-shrink-0">
             <Download size={26} class="text-[#16a34a]" />

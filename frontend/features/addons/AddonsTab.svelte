@@ -262,7 +262,7 @@
       {/if}
       <button
         onclick={() => showInstallPicker = !showInstallPicker}
-        class="flex items-center gap-3 bg-[var(--bg-elevated)] rounded-lg px-3 py-1.5 hover:bg-[var(--bg-hover)] cursor-pointer"
+        class="flex items-center gap-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 hover:bg-[var(--bg-hover)] cursor-pointer"
       >
         {#if store.selectedInstance}
           {@const selectedIcon = instanceIconSrc(store.selectedInstance.icon_path, store.selectedInstance.name)}
