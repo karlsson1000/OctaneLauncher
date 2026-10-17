@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { onMount, untrack } from "svelte"
-  import { SquareTerminal, Trash2, Upload, ExternalLink, Loader2, X, PictureInPicture, Search } from "lucide-svelte"
+  import { untrack } from "svelte"
+  import { SquareTerminal, Trash2, Upload, ExternalLink, Loader2, X, Search } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
-  import { WebviewWindow } from "@tauri-apps/api/webviewWindow"
   import { store, handleClearConsole } from "../../lib/launcherStore.svelte"
   import type { ConsoleLog } from "../../types"
 
@@ -34,7 +33,6 @@
 
   let containerEl = $state<HTMLDivElement>()
   let upload = $state<UploadState>(IDLE)
-  let isPoppedOut = $state(false)
   let activeInstance = $state<string | null>(null)
   let previousInstances: string[] = []
   let resetTimer: ReturnType<typeof setTimeout> | undefined
@@ -61,11 +59,6 @@
   let uploadLabel = $derived(
     upload.loading ? "Uploading..." : upload.url ? "Uploaded & Copied!" : (upload.error ?? "Upload to mclo.gs")
   )
-
-  onMount(async () => {
-    const win = await WebviewWindow.getByLabel("console")
-    if (win) watchPopout(win)
-  })
 
   $effect(() => () => clearTimeout(resetTimer))
 
@@ -164,35 +157,6 @@
   function onClear() {
     if (activeInstance) handleClearConsole(activeInstance)
   }
-
-  function watchPopout(win: WebviewWindow) {
-    isPoppedOut = true
-    win.once("tauri://destroyed", () => { isPoppedOut = false })
-  }
-
-  async function handlePopOut() {
-    const existing = await WebviewWindow.getByLabel("console")
-    if (existing) {
-      await existing.show()
-      await existing.setFocus()
-      watchPopout(existing)
-      return
-    }
-
-    const win = new WebviewWindow("console", {
-      url: "console.html",
-      title: "Console",
-      width: 600,
-      height: 800,
-      minWidth: 600,
-      minHeight: 400,
-      decorations: false,
-      center: true,
-    })
-
-    win.once("tauri://created", () => watchPopout(win))
-    win.once("tauri://error", () => { isPoppedOut = false })
-  }
 </script>
 
 <div class="p-8 space-y-4">
@@ -211,7 +175,7 @@
       </div>
 
       <div class="flex items-center gap-2">
-          {#if !isPoppedOut && instances.length > 0}
+          {#if instances.length > 0}
             <div class="flex items-center gap-1.5 bg-[var(--bg-secondary)] rounded-lg p-0.5">
               {#each instances as instance (instance)}
                 <button
@@ -223,29 +187,11 @@
               {/each}
             </div>
           {/if}
-
-          {#if !isPoppedOut}
-            <button
-              onclick={handlePopOut}
-              title="Open in new window"
-              class="h-8 w-8 flex items-center justify-center rounded-md cursor-pointer bg-[var(--bg-tertiary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-            >
-              <PictureInPicture size={22} strokeWidth={2} />
-            </button>
-          {/if}
       </div>
     </div>
 
     <div class="bg-[var(--bg-tertiary)] rounded-lg overflow-hidden" style="height: calc(100vh - 250px)">
-      {#if isPoppedOut}
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <PictureInPicture size={48} class="text-[var(--accent-primary)] mx-auto mb-3" strokeWidth={1.5} />
-            <p class="text-base font-medium text-[var(--text-primary)] mb-1">Console detached</p>
-            <p class="text-sm text-[var(--text-muted)]">Logs are showing in the separate window</p>
-          </div>
-        </div>
-      {:else if store.consoleLogs.length === 0}
+      {#if store.consoleLogs.length === 0}
         <div class="h-full flex items-center justify-center">
           <div class="text-center">
             <pre class="font-mono text-xs text-[var(--accent-primary)] select-none text-left">{ASCII}</pre>
@@ -281,35 +227,33 @@
       {/if}
     </div>
 
-    {#if !isPoppedOut}
-      <div class="flex items-center justify-end gap-2 mt-4">
-        <button
-          onclick={handleUploadToMcLogs}
-          disabled={!activeInstance || activeLogs.length === 0 || upload.loading}
-          class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadColor}"
-          title="Upload logs to mclo.gs"
-        >
-          {#if upload.loading}
-            <Loader2 size={16} strokeWidth={2} class="animate-spin" />
-          {:else if upload.url}
-            <ExternalLink size={16} strokeWidth={2} />
-          {:else if upload.error}
-            <X size={16} strokeWidth={2} />
-          {:else}
-            <Upload size={16} strokeWidth={2} />
-          {/if}
-          <span>{uploadLabel}</span>
-        </button>
-        <button
-          onclick={onClear}
-          disabled={!activeInstance || activeLogs.length === 0}
-          class="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Trash2 size={16} strokeWidth={2} />
-          <span>Clear {activeInstance || "Console"}</span>
-        </button>
-      </div>
-    {/if}
+    <div class="flex items-center justify-end gap-2 mt-4">
+      <button
+        onclick={handleUploadToMcLogs}
+        disabled={!activeInstance || activeLogs.length === 0 || upload.loading}
+        class="px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed {uploadColor}"
+        title="Upload logs to mclo.gs"
+      >
+        {#if upload.loading}
+          <Loader2 size={16} strokeWidth={2} class="animate-spin" />
+        {:else if upload.url}
+          <ExternalLink size={16} strokeWidth={2} />
+        {:else if upload.error}
+          <X size={16} strokeWidth={2} />
+        {:else}
+          <Upload size={16} strokeWidth={2} />
+        {/if}
+        <span>{uploadLabel}</span>
+      </button>
+      <button
+        onclick={onClear}
+        disabled={!activeInstance || activeLogs.length === 0}
+        class="px-4 py-2 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Trash2 size={16} strokeWidth={2} />
+        <span>Clear {activeInstance || "Console"}</span>
+      </button>
+    </div>
   </div>
 </div>
 

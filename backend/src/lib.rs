@@ -165,9 +165,6 @@ pub fn run() {    if let Err(e) = dotenvy::dotenv() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if window.label() != "main" {
-                return;
-            }
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 let app_handle = window.app_handle().clone();
