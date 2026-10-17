@@ -35,7 +35,6 @@ export default defineConfig(async () => ({
     rolldownOptions: {
       input: {
         main: resolve(import.meta.dirname, "index.html"),
-        console: resolve(import.meta.dirname, "console.html"),
       },
       output: {
         codeSplitting: {
