@@ -405,7 +405,6 @@ function setSelectedInstance(v: Instance | null) { store.selectedInstance = v }
 function setSettings(v: LauncherSettings | null) { store.settings = v }
 function setActiveTab(v: ActiveTab) { store.activeTab = v }
 function setShowInstanceDetails(v: boolean) { store.showInstanceDetails = v }
-function setCreatingInstanceName(v: string | null) { store.creatingInstanceName = v }
 function setConfirmModal(v: ConfirmModalState | null) { store.confirmModal = v }
 function setAlertModal(v: AlertModalState | null) { store.alertModal = v }
 function setShowSettingsModal(v: boolean) { store.showSettingsModal = v }
@@ -538,7 +537,6 @@ export {
   setSettings,
   setActiveTab,
   setShowInstanceDetails,
-  setCreatingInstanceName,
   setConfirmModal,
   setAlertModal,
   setShowSettingsModal,

@@ -96,8 +96,7 @@
   async function persistStatus(serverName: string, status: ServerInfo) {
     try {
       await invoke("update_server_status", { serverName, status })
-    } catch (e) {
-    }
+    } catch {}
   }
 
   async function refreshServerStatus(server: ServerInfo) {
@@ -144,8 +143,7 @@
     try {
       await invoke("delete_server", { serverName: name })
       servers = servers.filter(s => s.name !== name)
-    } catch (error) {
-    } finally {
+    } catch {} finally {
       serverToDelete = null
     }
   }
@@ -220,8 +218,7 @@
     servers = ordered
     try {
       await invoke("reorder_servers", { serverNames: ordered.map(s => s.name) })
-    } catch (e) {
-    }
+    } catch {}
   }
 
   function handleGripPointerDown(e: PointerEvent, index: number) {

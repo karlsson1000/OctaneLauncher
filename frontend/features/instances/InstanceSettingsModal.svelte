@@ -162,8 +162,7 @@
     try {
       const info = await invoke<SystemInfo>("get_system_info")
       systemInfo = info
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function saveRamSettings(memoryMb: number, enabled: boolean) {

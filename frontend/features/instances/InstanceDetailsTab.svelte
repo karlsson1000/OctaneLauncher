@@ -190,8 +190,7 @@
         if (!update) break
         try {
           await applyModUpdate(update)
-        } catch (error) {
-        }
+        } catch {}
       }
     })
     await Promise.all(workers)
@@ -207,8 +206,7 @@
       await applyModUpdate(update)
       availableUpdates = availableUpdates.filter(u => u.filename !== update.filename)
       await loadInstalledMods()
-    } catch (error) {
-    }
+    } catch {}
   }
 
   function getFabricLoaderVersion(instance: Instance): string | null {
@@ -241,8 +239,7 @@
   async function handleOpenFolder() {
     try {
       await invoke("open_instance_folder", { instanceName: instance.name })
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function handleDeleteMod(filename: string) {
@@ -339,15 +336,13 @@
   async function handleOpenResourcePacksFolder() {
     try {
       await invoke("open_resourcepacks_folder", { instanceName: instance.name })
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function handleOpenShaderPacksFolder() {
     try {
       await invoke("open_shaderpacks_folder", { instanceName: instance.name })
-    } catch (error) {
-    }
+    } catch {}
   }
 
   function handleInstanceUpdated() {

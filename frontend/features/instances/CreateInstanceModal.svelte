@@ -115,24 +115,21 @@
     try {
       const supported = await invoke<string[]>("get_supported_game_versions")
       fabricSupportedVersions = supported
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function loadNeoforgeSupportedVersions() {
     try {
       const supported = await invoke<string[]>("get_neoforge_supported_game_versions")
       neoforgeSupportedVersions = supported
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function loadForgeSupportedVersions() {
     try {
       const supported = await invoke<string[]>("get_forge_supported_game_versions")
       forgeSupportedVersions = supported
-    } catch (error) {
-    }
+    } catch {}
   }
 
   let filteredVersions = $derived(

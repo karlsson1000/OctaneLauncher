@@ -219,8 +219,7 @@
       const version = await invoke<string>("get_app_version")
       appVersion = version
       semanticVersion = version.split('-')[0]
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function loadStorageUsage() {
@@ -228,8 +227,7 @@
     try {
       const data = await invoke<StorageCategory[]>("get_storage_usage")
       storageCategories = data
-    } catch (error) {
-    } finally {
+    } catch {} finally {
       storageLoading = false
     }
   }
@@ -238,16 +236,14 @@
     try {
       const info = await invoke<SystemInfo>("get_system_info")
       systemInfo = info
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function loadSidebarBackground() {
     try {
       const bg = await invoke<string | null>("get_background")
       backgroundPreview = bg
-    } catch (error) {
-    }
+    } catch {}
   }
 
   async function loadJavaInstallations() {
@@ -255,8 +251,7 @@
     try {
       const installations = await invoke<string[]>("detect_java_installations")
       javaInstallations = installations
-    } catch (error) {
-    } finally {
+    } catch {} finally {
       isLoadingJava = false
     }
   }

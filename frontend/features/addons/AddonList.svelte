@@ -119,8 +119,7 @@
         const ids = new Set(hits.map(h => h.id))
         hits = [...hits, ...result.hits.filter(h => !ids.has(h.id))]
       }
-    } catch (error) {
-    } finally {
+    } catch {} finally {
       if (token === requestToken) {
         if (replace) isSearching = false
         else isLoadingMore = false

@@ -152,8 +152,7 @@
         })
       }
       versions = result
-    } catch (e) {
-    } finally {
+    } catch {} finally {
       isLoadingVersions = false
     }
   }
@@ -169,8 +168,7 @@
         pageSize: 20,
       })
       curseforgeFiles = result.data
-    } catch (e) {
-    } finally {
+    } catch {} finally {
       isLoadingVersions = false
     }
   }
@@ -188,8 +186,7 @@
         const packs = await invoke<string[]>("get_installed_shaderpacks", { instanceName: selectedInstance.name })
         installedFiles = new Set(packs)
       }
-    } catch (e) {
-    }
+    } catch {}
   }
 
   function formatGameVersions(versions: string[]): string {
@@ -229,8 +226,7 @@
           installedFiles = new Set(installedFiles).add(primaryFile!.filename)
         }
       }
-    } catch (e) {
-    } finally {
+    } catch {} finally {
       const n = new Set(downloadingMap)
       n.delete(version.id)
       downloadingMap = n
@@ -270,8 +266,7 @@
         })
         installedFiles = new Set(installedFiles).add(file.fileName)
       }
-    } catch (e) {
-    } finally {
+    } catch {} finally {
       const n = new Set(downloadingMap)
       n.delete(file.id.toString())
       downloadingMap = n
