@@ -39,6 +39,11 @@ fn get_app_version() -> String {
     format!("{}-{}", env!("CARGO_PKG_VERSION"), env!("OCTANE_COMMIT_HASH"))
 }
 
+#[tauri::command]
+fn show_window(app: tauri::AppHandle) {
+    show_main_window(&app);
+}
+
 #[derive(Serialize)]
 struct UpdateMetadata {
     new_version: String,
@@ -115,6 +120,7 @@ pub struct CurseforgeConfig {
 
 fn show_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
+        let _ = window.unminimize();
         let _ = window.show();
         let _ = window.set_focus();
     }
@@ -153,6 +159,18 @@ pub fn run() {    if let Err(e) = dotenvy::dotenv() {
 
             std::thread::spawn(|| crate::services::discord::set_in_launcher());
 
+            let fallback_window = app.get_webview_window("main");
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+                if let Some(window) = fallback_window {
+                    if !window.is_visible().unwrap_or(true) {
+                        let _ = window.unminimize();
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+            });
+
             tauri::async_runtime::spawn(async move {
                 tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
                 let _ = crate::services::trash::TrashManager::clean_old_items(30);
@@ -185,6 +203,7 @@ pub fn run() {    if let Err(e) = dotenvy::dotenv() {
         })
         .invoke_handler(tauri::generate_handler![
             get_app_version,
+            show_window,
             check_for_updates,
             install_update,
             microsoft_login_and_store,

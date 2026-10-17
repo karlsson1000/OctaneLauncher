@@ -19,7 +19,7 @@
         "backgroundColor": "#1a1c21",
         "decorations": false,
         "transparent": false,
-        "visible": true,
+        "visible": false,
         "center": true
       }
     ],

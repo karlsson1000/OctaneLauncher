@@ -156,6 +156,7 @@
   }
 
   onMount(() => {
+    invoke("show_window").catch(() => {})
     void boot()
   })
 
