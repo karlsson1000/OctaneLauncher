@@ -2,14 +2,18 @@
   import { CheckCheck, TriangleAlert, Trash2, X, Loader2 } from "lucide-svelte"
   import { fly } from "svelte/transition"
   import { toastStore, dismissToast } from "../../lib/toastStore.svelte"
+  import { store } from "../../lib/launcherStore.svelte"
 </script>
 
 {#if toastStore.progress.length > 0 || toastStore.toasts.length > 0}
-  <div class="fixed top-[46px] right-6 z-[200] flex flex-col items-end gap-2 pointer-events-none">
+  <div
+    class="fixed top-[46px] z-40 flex flex-col items-end gap-2 pointer-events-none transition-[right] duration-200 ease-in-out"
+    style="right: {store.showFriendsPanel ? '280px' : '24px'}"
+  >
     {#each toastStore.progress as p (p.id)}
       <div
         transition:fly|global={{ x: 24, duration: 160 }}
-        class="bg-[var(--bg-surface)] rounded-lg px-3.5 py-2.5 text-left pointer-events-auto max-w-[380px] w-[330px]"
+        class="bg-[var(--bg-surface)] rounded-lg shadow-md border border-[var(--border-subtle)] px-3.5 py-2.5 text-left pointer-events-auto max-w-[380px] w-[330px]"
       >
         <div class="flex items-center gap-2.5">
           {#if p.status === "creating"}
@@ -35,13 +39,13 @@
       <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
       <div
         transition:fly|global={{ x: 24, duration: 160 }}
-        class="bg-[var(--bg-surface)] rounded-lg px-3.5 py-2.5 flex items-center gap-2.5 text-left pointer-events-auto cursor-pointer max-w-[380px]"
+        class="bg-[var(--bg-surface)] rounded-lg shadow-md border border-[var(--border-subtle)] px-3.5 py-2.5 flex items-center gap-2.5 text-left pointer-events-auto cursor-pointer max-w-[380px]"
         onclick={() => dismissToast(toast.id)}
       >
         {#if toast.type === "success"}
           <CheckCheck size={19} strokeWidth={2} class="text-[#16a34a] flex-shrink-0" />
         {:else if toast.type === "info"}
-          <Trash2 size={19} strokeWidth={2} class="text-[var(--text-muted)] flex-shrink-0" />
+          <Trash2 size={19} strokeWidth={2} class="text-red-400 flex-shrink-0" />
         {:else}
           <TriangleAlert size={19} strokeWidth={2} class="text-red-400 flex-shrink-0" />
         {/if}
