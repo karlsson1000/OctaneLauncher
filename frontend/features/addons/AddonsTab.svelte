@@ -94,7 +94,7 @@
 
 {#snippet installTargets(asMenu: boolean = false)}
   {#if moddedInstances.length === 0}
-    <p class="text-xs text-[#3a3f4b] px-1">No modded instances</p>
+    <p class="text-xs text-[var(--text-muted)] px-1">No modded instances</p>
   {:else}
     <div class={asMenu ? "flex flex-col" : "space-y-1.5"}>
       {#each moddedInstances as instance}
@@ -115,7 +115,7 @@
           <div class="flex-1 min-w-0">
             <div class="font-medium {asMenu ? 'text-sm' : 'text-base'} text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
             <div class="text-xs text-[var(--text-muted)] truncate mt-0.5">
-              {getMinecraftVersion(instance)} <span class="text-[#3a3f4b]">•</span> <span class={loader.color}>{loader.name}</span>
+              {getMinecraftVersion(instance)} <span class="text-[var(--text-muted)]">•</span> <span class={loader.color}>{loader.name}</span>
             </div>
           </div>
           {#if selected}

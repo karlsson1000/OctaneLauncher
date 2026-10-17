@@ -16,7 +16,7 @@
         "title": "Octane Launcher",
         "width": 1400,
         "height": 800,
-        "backgroundColor": "#181a1f",
+        "backgroundColor": "#1a1c21",
         "decorations": false,
         "transparent": false,
         "visible": true,

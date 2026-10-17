@@ -11,10 +11,10 @@
   import { formatFileSize } from "../../lib/format"
 
   const THEMES = [
-    { id: "octane", label: "Octane", colors: ["#15171c", "#252932", "#4572e3", "#e6e6e6"] },
-    { id: "light", label: "Light", colors: ["#f5f5f5", "#ffffff", "#4361ee", "#1a1d23"] },
-    { id: "rose", label: "Rosé", colors: ["#1a1423", "#2a1a33", "#f472b6", "#e6e6ee"] },
-    { id: "forest", label: "Forest", colors: ["#1a241e", "#30423a", "#4ade80", "#e8eee9"] },
+    { id: "octane", label: "Octane", colors: ["#1a1c21", "#22252c", "#4572e3", "#e6e6e6"] },
+    { id: "light", label: "Light", colors: ["#e8e9ee", "#dedfe6", "#4572e3", "#20212b"] },
+    { id: "rose", label: "Rosé", colors: ["#28212e", "#332a3a", "#f472b6", "#e8e8ee"] },
+    { id: "forest", label: "Forest", colors: ["#222c25", "#2d3831", "#43d978", "#e8eee9"] },
   ] as const
 
   type TabId = "appearance" | "game" | "launcher" | "storage"

@@ -394,7 +394,7 @@
 
   .onboard-check path {
     fill: none;
-    stroke: #4572e3;
+    stroke: var(--accent-primary);
     stroke-width: 3.5;
     stroke-linecap: round;
     stroke-linejoin: round;
