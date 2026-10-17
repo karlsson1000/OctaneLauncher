@@ -430,30 +430,25 @@
               <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-4">Pick the color scheme for the whole launcher.</p>
               <div class="grid grid-cols-4 gap-3">
                 {#each THEMES as theme (theme.id)}
+                  {@const active = store.settings?.theme === theme.id}
                   <button
                     onclick={() => store.settings && handleSettingChange({ ...store.settings, theme: theme.id })}
-                    class="group rounded-md overflow-hidden text-left cursor-pointer transition-all relative {store.settings?.theme === theme.id
- ? 'ring-2 ring-[var(--accent-primary)]'
- : 'hover:brightness-110'}"
+                    aria-label={theme.label}
+                    class="group flex flex-col gap-1.5 cursor-pointer"
                   >
-                    <div class="flex h-16" style="background: {theme.colors[0]}">
-                      <div class="w-6 h-full flex flex-col gap-1 p-1" style="background: {theme.colors[1]}">
-                        <div class="w-full h-1.5 rounded-sm" style="background: {theme.colors[2]}"></div>
-                        <div class="w-full h-1.5 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
-                        <div class="w-full h-1.5 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
-                      </div>
-                      <div class="flex-1 p-2 space-y-1">
-                        <div class="h-1.5 w-10 rounded-sm" style="background: {theme.colors[3]}"></div>
-                        <div class="h-1.5 w-14 rounded-sm opacity-30" style="background: {theme.colors[3]}"></div>
-                        <div class="h-6 w-full rounded-sm mt-1.5 opacity-15" style="background: {theme.colors[1]}"></div>
-                      </div>
+                    <div class="relative h-16 p-2 flex flex-col gap-1.5 rounded-md overflow-hidden transition-all {active ? '' : 'group-hover:brightness-110'}" style="background: {theme.colors[0]}">
+                      <div class="flex-1 rounded-sm" style="background: {theme.colors[1]}"></div>
+                      <div class="flex-1 rounded-sm" style="background: {theme.colors[2]}"></div>
+                      <div class="flex-1 rounded-sm" style="background: {theme.colors[3]}"></div>
+                      {#if active}
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/50">
+                          <Check size={32} strokeWidth={3.5} style="color: {theme.colors[2]}" />
+                        </div>
+                      {/if}
                     </div>
-                    <div class="flex items-center justify-between px-2.5 py-2" style="background: {theme.colors[1]}">
-                      <span class="text-xs font-semibold" style="color: {theme.colors[3]}">{theme.label}</span>
-                      <div class="w-3.5 h-3.5 rounded-full flex items-center justify-center" style="background: {theme.colors[2]}">
-                        {#if store.settings?.theme === theme.id}<Check size={10} class="text-white" strokeWidth={3} />{/if}
-                      </div>
-                    </div>
+                    <span class="text-xs text-center transition-colors {active ? 'text-[var(--accent-primary)] font-medium' : 'text-[var(--text-muted)] group-hover:text-[var(--text-primary)]'}">
+                      {theme.label}
+                    </span>
                   </button>
                 {/each}
               </div>
