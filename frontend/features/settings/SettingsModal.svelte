@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core"
+  import { invoke, convertFileSrc } from "@tauri-apps/api/core"
   import { Loader2, ImagePlus, FolderOpen, X, Check, ChevronDown, ChevronUp, Paintbrush, Play, AppWindow, HardDrive } from "lucide-svelte"
   import AlertModal from "../../components/ui/AlertModal.svelte"
   import TrashSection from "./TrashSection.svelte"
@@ -241,8 +241,8 @@
 
   async function loadSidebarBackground() {
     try {
-      const bg = await invoke<string | null>("get_background")
-      backgroundPreview = bg
+      const path = await invoke<string | null>("get_background")
+      backgroundPreview = path ? `${convertFileSrc(path)}?v=${Date.now()}` : null
     } catch {}
   }
 
@@ -299,7 +299,7 @@
 
         try {
           await invoke("set_background", { imageData: base64 })
-          backgroundPreview = base64
+          await loadSidebarBackground()
           loadBackground()
         } catch (error) {
           alertModal = { isOpen: true, title: "An error occurred", message: "Failed to save background" + `: ${error}`, type: "danger" }

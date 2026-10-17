@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Play, FolderOpen, Package, Loader2, ExternalLink, Globe, Search, X, Image, Palette, Trash2, RefreshCw, Settings, Check } from "lucide-svelte"
-  import { invoke } from "@tauri-apps/api/core"
+  import { invoke, convertFileSrc } from "@tauri-apps/api/core"
   import ConfirmModal from "../../components/ui/ConfirmModal.svelte"
   import AlertModal from "../../components/ui/AlertModal.svelte"
   import InstanceSettingsModal from "./InstanceSettingsModal.svelte"
@@ -33,7 +33,7 @@
     last_played?: number
     game_mode?: string
     version?: string
-    icon?: string
+    icon_path?: string
     created?: number
   }
 
@@ -619,9 +619,9 @@
                 {#each filteredWorlds as world (world.folder_name)}
                   <div class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all">
                     <div class="flex min-h-0">
-                      {#if world.icon}
+                      {#if world.icon_path}
                         <div class="w-22 h-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
-                          <img src={world.icon} alt={world.name} class="w-full h-full object-contain" />
+                          <img src={convertFileSrc(world.icon_path)} alt={world.name} class="w-full h-full object-contain" />
                         </div>
                       {:else}
                         <div class="w-22 h-22 flex items-center justify-center flex-shrink-0 self-stretch">

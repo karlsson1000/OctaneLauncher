@@ -788,7 +788,7 @@ pub struct World {
     pub last_played: Option<i64>,
     pub game_mode: Option<String>,
     pub version: Option<String>,
-    pub icon: Option<String>,
+    pub icon_path: Option<String>,
     pub created: Option<i64>,
 }
 
@@ -822,7 +822,7 @@ pub fn get_instance_worlds(instance_name: String) -> Result<Vec<World>, String> 
                     .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
                     .map(|d| d.as_secs() as i64);
 
-                let icon = read_world_icon(&path);
+                let icon_path = read_world_icon(&path);
 
                 worlds.push(World {
                     name: folder_name.clone(),
@@ -831,7 +831,7 @@ pub fn get_instance_worlds(instance_name: String) -> Result<Vec<World>, String> 
                     last_played: None,
                     game_mode: None,
                     version: None,
-                    icon,
+                    icon_path,
                     created,
                 });
             }
@@ -852,17 +852,12 @@ pub fn get_instance_worlds(instance_name: String) -> Result<Vec<World>, String> 
 
 fn read_world_icon(world_path: &std::path::Path) -> Option<String> {
     let icon_path = world_path.join("icon.png");
-    
+
     if !icon_path.exists() {
         return None;
     }
-    
-    if let Ok(image_bytes) = std::fs::read(&icon_path) {
-        let base64_data = base64::engine::general_purpose::STANDARD.encode(&image_bytes);
-        Some(format!("data:image/png;base64,{}", base64_data))
-    } else {
-        None
-    }
+
+    Some(icon_path.to_string_lossy().into_owned())
 }
 
 fn calculate_dir_size(path: &std::path::Path) -> std::io::Result<u64> {

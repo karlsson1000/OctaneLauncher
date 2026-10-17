@@ -195,14 +195,29 @@ pub async fn detect_java_installations() -> Result<Vec<String>, String> {
 
 use base64::{engine::general_purpose, Engine as _};
 
-fn get_bg_path() -> PathBuf {
-    crate::utils::get_launcher_dir().join("bg.png")
+fn find_bg_path() -> Option<PathBuf> {
+    let dir = crate::utils::get_launcher_dir();
+    for name in ["bg.png", "bg.jpg", "bg.jpeg", "bg.gif", "bg.bmp", "bg.webp"] {
+        let path = dir.join(name);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+    None
+}
+
+fn remove_bg_files() {
+    let dir = crate::utils::get_launcher_dir();
+    for name in ["bg.png", "bg.jpg", "bg.jpeg", "bg.gif", "bg.bmp", "bg.webp"] {
+        let path = dir.join(name);
+        if path.exists() {
+            let _ = std::fs::remove_file(path);
+        }
+    }
 }
 
 #[tauri::command]
 pub async fn set_background(image_data: String) -> Result<(), String> {
-    let bg_path = get_bg_path();
-
     let base64_data = if let Some(comma_pos) = image_data.find(',') {
         &image_data[comma_pos + 1..]
     } else {
@@ -213,47 +228,29 @@ pub async fn set_background(image_data: String) -> Result<(), String> {
         .decode(base64_data)
         .map_err(|e| e.to_string())?;
 
-    std::fs::write(&bg_path, image_bytes)
-        .map_err(|e| e.to_string())
+    let ext = match image::guess_format(&image_bytes) {
+        Ok(image::ImageFormat::Png) => "png",
+        Ok(image::ImageFormat::Jpeg) => "jpg",
+        Ok(image::ImageFormat::Gif) => "gif",
+        Ok(image::ImageFormat::WebP) => "webp",
+        Ok(image::ImageFormat::Bmp) => "bmp",
+        _ => "png",
+    };
+
+    remove_bg_files();
+
+    let bg_path = crate::utils::get_launcher_dir().join(format!("bg.{}", ext));
+    std::fs::write(&bg_path, image_bytes).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn get_background() -> Result<Option<String>, String> {
-    let bg_path = get_bg_path();
-
-    if !bg_path.exists() {
-        return Ok(None);
-    }
-
-    let image_bytes = std::fs::read(&bg_path)
-        .map_err(|e| e.to_string())?;
-
-    let base64_data = general_purpose::STANDARD.encode(&image_bytes);
-
-    let mime_type = if image_bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
-        "image/png"
-    } else if image_bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
-        "image/jpeg"
-    } else if image_bytes.starts_with(&[0x47, 0x49, 0x46]) {
-        "image/gif"
-    } else if image_bytes.starts_with(&[0x42, 0x4D]) {
-        "image/bmp"
-    } else {
-        "image/png"
-    };
-
-    Ok(Some(format!("data:{};base64,{}", mime_type, base64_data)))
+    Ok(find_bg_path().map(|path| path.to_string_lossy().into_owned()))
 }
 
 #[tauri::command]
 pub async fn remove_background() -> Result<(), String> {
-    let bg_path = get_bg_path();
-
-    if bg_path.exists() {
-        std::fs::remove_file(&bg_path)
-            .map_err(|e| e.to_string())?;
-    }
-
+    remove_bg_files();
     Ok(())
 }
 

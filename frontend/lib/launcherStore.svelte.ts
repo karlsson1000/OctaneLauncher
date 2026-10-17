@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core"
+import { invoke, convertFileSrc } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { getCurrentWindow } from "@tauri-apps/api/window"
 import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } from "../types"
@@ -199,8 +199,8 @@ async function loadSettings() {
 
 async function loadBackground() {
   try {
-    const bg = await invoke<string | null>("get_background")
-    store.background = bg
+    const path = await invoke<string | null>("get_background")
+    store.background = path ? `${convertFileSrc(path)}?v=${Date.now()}` : null
   } catch (error) {
     console.error("Failed to load background:", error)
   }

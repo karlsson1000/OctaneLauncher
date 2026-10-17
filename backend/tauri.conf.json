@@ -28,8 +28,8 @@
       "assetProtocol": {
         "enable": true,
         "scope": [
-          "$HOME/AppData/Roaming/Octane Launcher/instances/**",
-          "$HOME/.octane-launcher/instances/**"
+          "$HOME/AppData/Roaming/Octane Launcher/**",
+          "$HOME/.octane-launcher/**"
         ]
       }
     }
