@@ -17,7 +17,7 @@
   import { storeGet, storeSet } from "../../lib/store"
   import { showToast } from "../../lib/toastStore.svelte"
 
-  type SortOption = "recently-played" | "name-asc" | "name-desc"
+  type SortOption = "recently-played" | "version" | "name-asc" | "name-desc"
   type Groups = Record<string, string[]>
   type LoaderMeta = { label: string; accent: string; text: string }
   type MenuItem = {
@@ -30,6 +30,7 @@
 
   const SORT_LABELS: Record<SortOption, string> = {
     "recently-played": "Recently played",
+    "version": "Minecraft version",
     "name-asc": "Name (A–Z)",
     "name-desc": "Name (Z–A)",
   }
@@ -235,6 +236,10 @@
       switch (sortBy) {
         case "name-asc": return a.name.localeCompare(b.name)
         case "name-desc": return b.name.localeCompare(a.name)
+        case "version": {
+          const byVersion = getMinecraftVersion(b).localeCompare(getMinecraftVersion(a), undefined, { numeric: true })
+          return byVersion !== 0 ? byVersion : a.name.localeCompare(b.name)
+        }
         case "recently-played":
         default: {
           const aTime = a.last_played ? new Date(a.last_played).getTime() : 0
