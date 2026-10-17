@@ -40,26 +40,6 @@ export interface LauncherSettings {
   background_blur?: number
 }
 
-export interface MinecraftOptions {
-  fov: number | null
-  render_distance: number | null
-  max_fps: number | null
-  fullscreen: boolean | null
-  vsync: boolean | null
-  gui_scale: number | null
-  brightness: number | null
-  entity_shadows: boolean | null
-  particles: string | null
-  graphics: string | null
-  smooth_lighting: boolean | null
-  biome_blend: number | null
-  master_volume: number | null
-  music_volume: number | null
-  mouse_sensitivity: number | null
-  auto_jump: boolean | null
-  keybinds: Record<string, string> | null
-}
-
 export interface ModrinthSearchResult {
   hits: ModrinthProject[]
   offset: number
@@ -182,13 +162,6 @@ export interface ModrinthDependency {
 export interface ModFile {
   filename: string
   size: number
-}
-
-export interface ModHash {
-  filename: string
-  size: number
-  disabled: boolean
-  sha1_hash: string
 }
 
 export interface ModFileWithMetadata {
@@ -414,8 +387,6 @@ export interface CurseforgeFileDependency {
   modId: number
   relationType: number
 }
-
-
 
 export interface CurseforgeFileHash {
   value: string
