@@ -31,6 +31,7 @@
     snapshotStart = Math.min(Math.max(i, 0), maxSnapshotStart)
   }
   const DOT_COUNT = 5
+  const snapshotNavBtnClass = "w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
   let dotWindow = $derived.by<number[]>(() => {
     const total = maxSnapshotStart + 1
     if (total <= DOT_COUNT) return Array.from({ length: total }, (_, i) => i)
@@ -38,15 +39,8 @@
     return [start, start + 1, start + 2, start + 3, start + 4]
   })
 
-
   let tooltipInstance = $state<Instance | null>(null)
   let tooltipTimer: ReturnType<typeof setTimeout> | undefined
-
-  let lastPlayedInstance = $derived<Instance | null>(
-    store.instances
-      .filter(i => i.last_played)
-      .sort((a, b) => new Date(b.last_played!).getTime() - new Date(a.last_played!).getTime())[0] ?? null
-  )
 
   let recentInstances = $derived<Instance[]>(
     [...store.instances]
@@ -54,6 +48,8 @@
       .sort((a, b) => new Date(b.last_played!).getTime() - new Date(a.last_played!).getTime())
       .slice(0, store.showFriendsPanel ? 4 : 5)
   )
+
+  let lastPlayedInstance = $derived<Instance | null>(recentInstances[0] ?? null)
 
   let isLastPlayedRunning = $derived(lastPlayedInstance ? store.runningInstances.has(lastPlayedInstance.name) : false)
   let isLastPlayedLaunching = $derived(lastPlayedInstance ? store.launchingInstanceName === lastPlayedInstance.name : false)
@@ -72,8 +68,7 @@
         const response = await fetch('https://launchercontent.mojang.com/v2/javaPatchNotes.json')
         const data: SnapshotsResponse = await response.json()
         snapshots = data.entries.slice(0, 12)
-        if (snapshotStart > maxSnapshotStart) snapshotStart = 0
-      } catch (error) {
+      } catch {
       } finally {
         loadingSnapshots = false
       }
@@ -100,7 +95,10 @@
     if (diffDays === 0) return "Today"
     if (diffDays === 1) return "Yesterday"
     if (diffDays < 7) return `${diffDays} days ago`
-    if (diffDays < 30) return Math.floor(diffDays / 7) === 1 ? "1 week ago" : `${Math.floor(diffDays / 7)} weeks ago`
+    if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7)
+      return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`
+    }
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
 
@@ -153,7 +151,7 @@
         {#if store.isAuthenticated && lastPlayedInstance && !store.showFriendsPanel}
           <div class="flex items-center gap-px">
             <button
-              onclick={() => isLastPlayedRunning && handleKillInstance
+              onclick={() => isLastPlayedRunning
                 ? handleKillInstance(lastPlayedInstance)
                 : handleLaunch(lastPlayedInstance)
               }
@@ -183,17 +181,13 @@
 
   {#if recentInstances.length > 0}
     <div class="max-w-7xl mx-auto">
-      <div class="mb-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <button onclick={handleNavigateToInstances} class="flex items-center gap-2 cursor-pointer group">
-              <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--text-primary)]">
-                Recently Played
-              </h2>
-              <ChevronRight size={18} strokeWidth={3} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
-            </button>
-          </div>
-        </div>
+      <div class="mb-4 flex items-center justify-between">
+        <button onclick={handleNavigateToInstances} class="flex items-center gap-2 cursor-pointer group">
+          <h2 class="text-xl font-semibold text-[var(--text-primary)] tracking-tight">
+            Recently Played
+          </h2>
+          <ChevronRight size={18} strokeWidth={3} class="text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
+        </button>
       </div>
       <div class="grid gap-3 {store.showFriendsPanel ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}">
         {#each recentInstances as instance (instance.name)}
@@ -288,29 +282,25 @@
           <button
             onclick={() => goToSnapshot(snapshotStart - 1)}
             disabled={snapshotStart === 0}
-            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+            class={snapshotNavBtnClass}
           >
             <ChevronLeft size={18} strokeWidth={3} />
           </button>
           <button
             onclick={() => goToSnapshot(snapshotStart + 1)}
             disabled={snapshotStart >= maxSnapshotStart}
-            class="w-7 h-7 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] cursor-pointer disabled:opacity-30 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+            class={snapshotNavBtnClass}
           >
             <ChevronRight size={18} strokeWidth={3} />
           </button>
         </div>
       {/if}
     </div>
-    {#if loadingSnapshots}
-      <div class="flex items-center justify-center py-12">
-        <div class="w-8 h-8 rounded-full animate-spin"></div>
-      </div>
-    {:else if snapshots.length === 0}
+    {#if !loadingSnapshots && snapshots.length === 0}
       <div class="bg-[var(--bg-tertiary)] rounded-md p-8 text-center">
         <p class="text-[var(--text-muted)]">Unable to load snapshots</p>
       </div>
-    {:else}
+    {:else if !loadingSnapshots}
       <div class="overflow-hidden">
         <div
           class="-mx-2 flex transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
