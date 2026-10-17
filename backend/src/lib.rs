@@ -99,9 +99,14 @@ async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
     .map_err(|e| format!("Failed to install update: {}", e))?;
 
     #[cfg(not(windows))]
-    app.restart();
+    {
+        app.restart();
+    }
 
-    Ok(())
+    #[cfg(windows)]
+    {
+        Ok(())
+    }
 }
 
 pub struct CurseforgeConfig {
