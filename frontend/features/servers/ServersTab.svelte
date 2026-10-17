@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { Server, Plus, Search, Trash2, Play, GripVertical } from "lucide-svelte"
+  import { Server, Plus, Search, Trash2, Play, ArrowUp, ArrowDown } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import CreateServerModal from "./CreateServerModal.svelte"
   import ConfirmModal from "../../components/ui/ConfirmModal.svelte"
@@ -11,6 +11,7 @@
   const DEFAULT_PORT = 25565
   const REFRESH_MS = 5 * 60 * 1000
   const FETCH_TIMEOUT_MS = 10_000
+  const LAUNCH_COOLDOWN_MS = 1000
   const ROW_HEIGHT = 100
 
   const formatAddress = (address: string, port: number) =>
@@ -45,7 +46,6 @@
 
   onMount(() => {
     loadServers()
-    return cleanupDrag
   })
 
   $effect(() => {
@@ -57,14 +57,14 @@
   async function pingServer(address: string, port: number): Promise<number | undefined> {
     try {
       return await invoke<number>("ping_server", { address, port })
-    } catch (e) {
+    } catch {
       return undefined
     }
   }
 
   async function fetchServerStatus(address: string, port: number): Promise<ServerInfo | null> {
+    const fullAddress = formatAddress(address, port)
     try {
-      const fullAddress = formatAddress(address, port)
       const response = await fetch(`https://api.mcsrvstat.us/3/${fullAddress}`, {
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       })
@@ -88,15 +88,9 @@
         last_checked: Date.now(),
         ping,
       }
-    } catch (error) {
+    } catch {
       return null
     }
-  }
-
-  async function persistStatus(serverName: string, status: ServerInfo) {
-    try {
-      await invoke("update_server_status", { serverName, status })
-    } catch {}
   }
 
   async function refreshServerStatus(server: ServerInfo) {
@@ -104,19 +98,23 @@
     if (!status) return
     if (!servers.some(s => s.name === server.name)) return
 
-    servers = servers.map(s => (s.name === server.name ? { ...status, name: server.name } : s))
-    await persistStatus(server.name, status)
+    const updated: ServerInfo = { ...status, name: server.name }
+    servers = servers.map(s => (s.name === server.name ? updated : s))
+
+    try {
+      await invoke("update_server_status", { serverName: server.name, status: updated })
+    } catch {}
   }
 
   function refreshAll() {
-    servers.forEach(s => refreshServerStatus(s))
+    servers.forEach(refreshServerStatus)
   }
 
   async function loadServers() {
     try {
       servers = await invoke<ServerInfo[]>("get_servers")
       refreshAll()
-    } catch (error) {
+    } catch {
       servers = []
     }
   }
@@ -157,114 +155,36 @@
         serverPort: server.port,
         serverName: server.name,
       })
-      setTimeout(() => { launchingServer = null }, 1000)
+      setTimeout(() => { launchingServer = null }, LAUNCH_COOLDOWN_MS)
     } catch (error) {
       alert(`Failed to launch server: ${error}`)
       launchingServer = null
     }
   }
 
-  interface DragState {
-    fromIndex: number
-    ghostEl: HTMLElement
-    origCardEl: HTMLElement
-    offsetY: number
-    minY: number
-    maxY: number
-  }
-
-  let dragState: DragState | null = null
-  let draggedOverIndex = $state<number | null>(null)
-
-  function cleanupDrag() {
-    document.removeEventListener("pointermove", onPointerMove)
-    document.removeEventListener("pointerup", onPointerUp)
-    document.removeEventListener("pointercancel", cleanupDrag)
-    if (dragState) {
-      dragState.ghostEl.remove()
-      dragState.origCardEl.style.opacity = ""
-    }
-    dragState = null
-    draggedOverIndex = null
-  }
-
-  function onPointerMove(e: PointerEvent) {
-    if (!dragState) return
-    const { ghostEl, offsetY, minY, maxY } = dragState
-
-    ghostEl.style.top = `${Math.max(minY, Math.min(e.clientY - offsetY, maxY))}px`
-
-    const card = document
-      .elementFromPoint(e.clientX, e.clientY)
-      ?.closest<HTMLElement>("[data-server-card]")
-    const idx = card ? Number(card.dataset.serverIndex) : NaN
-    draggedOverIndex = Number.isNaN(idx) ? null : idx
-  }
-
-  function onPointerUp() {
-    if (!dragState) return
-    const from = dragState.fromIndex
-    const to = draggedOverIndex
-    cleanupDrag()
-    if (to === null || to === from) return
+  async function moveServer(index: number, direction: -1 | 1) {
+    const target = index + direction
+    if (isFiltering || target < 0 || target >= servers.length) return
 
     const reordered = servers.slice()
-    const [moved] = reordered.splice(from, 1)
-    reordered.splice(to, 0, moved)
-    persistReorder(reordered)
-  }
+    ;[reordered[index], reordered[target]] = [reordered[target], reordered[index]]
+    servers = reordered
 
-  async function persistReorder(ordered: ServerInfo[]) {
-    servers = ordered
     try {
-      await invoke("reorder_servers", { serverNames: ordered.map(s => s.name) })
+      await invoke("reorder_servers", { serverNames: reordered.map(s => s.name) })
     } catch {}
   }
-
-  function handleGripPointerDown(e: PointerEvent, index: number) {
-    if (isFiltering) return
-    e.preventDefault()
-    e.stopPropagation()
-
-    const cardEl = (e.currentTarget as HTMLElement).closest<HTMLElement>("[data-server-card]")
-    if (!cardEl) return
-
-    const rect = cardEl.getBoundingClientRect()
-    const listRect = cardEl.parentElement?.getBoundingClientRect()
-
-    const ghost = cardEl.cloneNode(true) as HTMLElement
-    ghost.removeAttribute("data-server-card")
-    Object.assign(ghost.style, {
-      position: "fixed",
-      left: `${rect.left}px`,
-      top: `${rect.top}px`,
-      width: `${rect.width}px`,
-      pointerEvents: "none",
-      zIndex: "9999",
-      transform: "scale(1.03)",
-      opacity: "0.95",
-      transition: "none",
-      outline: "none",
-      willChange: "transform, top",
-    })
-    document.body.appendChild(ghost)
-    cardEl.style.opacity = "0.3"
-
-    dragState = {
-      fromIndex: index,
-      ghostEl: ghost,
-      origCardEl: cardEl,
-      offsetY: e.clientY - rect.top,
-      minY: listRect?.top ?? -Infinity,
-      maxY: listRect ? listRect.bottom - rect.height : Infinity,
-    }
-    draggedOverIndex = index
-
-    document.addEventListener("pointermove", onPointerMove)
-    document.addEventListener("pointerup", onPointerUp)
-    document.addEventListener("pointercancel", cleanupDrag)
-  }
 </script>
+
+{#snippet addServerButton(extraClass: string)}
+  <button
+    onclick={() => showAddModal = true}
+    class="bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white font-medium flex items-center gap-2 cursor-pointer {extraClass}"
+  >
+    <Plus size={16} strokeWidth={2} />
+    Add Server
+  </button>
+{/snippet}
 
 <div class="p-8 space-y-4">
   <div class="max-w-7xl mx-auto">
@@ -282,15 +202,7 @@
           </div>
         {/if}
       </div>
-      <div class="flex items-center gap-2">
-        <button
-          onclick={() => showAddModal = true}
-          class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer"
-        >
-          <Plus size={16} />
-          Add Server
-        </button>
-      </div>
+      {@render addServerButton("px-4 h-8 rounded-md text-sm")}
     </div>
 
     {#if !hasServers}
@@ -298,13 +210,7 @@
         <Server size={48} class="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
         <h3 class="text-base font-semibold text-[var(--text-primary)] mb-1">No servers added</h3>
         <p class="text-sm text-[var(--text-muted)] mb-4">Add your first server to get started</p>
-        <button
-          onclick={() => showAddModal = true}
-          class="px-4 py-2 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded font-medium text-sm flex items-center gap-2 cursor-pointer"
-        >
-          <Plus size={16} strokeWidth={2} />
-          <span>Add Server</span>
-        </button>
+        {@render addServerButton("px-4 py-2 rounded text-sm")}
       </div>
     {:else if filteredServers.length === 0}
       <div class="rounded-md p-8 flex flex-col items-center justify-center">
@@ -315,23 +221,32 @@
     {:else}
       <div class="space-y-4">
         {#each filteredServers as server, index (server.name)}
-          {@const isLaunching = launchingServer === server.name}
           {@const isOnline = server.status === "online"}
-          {@const isBusy = isLaunching || isAnyInstanceRunning}
-          {@const isOver = draggedOverIndex === index}
+          {@const isBusy = launchingServer === server.name || isAnyInstanceRunning}
+          {@const showPlayers = isOnline && server.players_online !== undefined}
           <div
-            data-server-card
-            data-server-index={index}
-            class="group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] {isOver ? 'outline outline-1 outline-[var(--accent-primary)]' : ''}"
+            class="group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)]"
             style="height: {ROW_HEIGHT}px"
           >
-            <div
-              role="presentation"
-              aria-label="Drag to reorder"
-              onpointerdown={e => handleGripPointerDown(e, index)}
-              class="flex-shrink-0 cursor-grab active:cursor-grabbing touch-none text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-            >
-              <GripVertical size={18} strokeWidth={2} />
+            <div class="flex-shrink-0 flex flex-col gap-1">
+              <button
+                onclick={() => moveServer(index, -1)}
+                disabled={isFiltering || index === 0}
+                aria-label="Move up"
+                title="Move up"
+                class="w-8 h-8 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover-strong)] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+              >
+                <ArrowUp size={20} strokeWidth={3} />
+              </button>
+              <button
+                onclick={() => moveServer(index, 1)}
+                disabled={isFiltering || index === servers.length - 1}
+                aria-label="Move down"
+                title="Move down"
+                class="w-8 h-8 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover-strong)] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]"
+              >
+                <ArrowDown size={20} strokeWidth={3} />
+              </button>
             </div>
 
             <div class="flex-shrink-0">
@@ -372,14 +287,14 @@
                   <span class="text-base font-medium" style="color: {pingColor(server.ping)}">{server.ping}ms</span>
                 {/if}
               {/if}
-              {#if isOnline && server.players_online !== undefined}
+              {#if showPlayers}
                 <span class="text-base text-[var(--text-muted)]">
                   {server.players_online}/{server.players_max}
                 </span>
+              {:else if server.status === "offline"}
+                <span class="text-base font-medium text-[#ef4444]">Offline</span>
               {:else}
-                <span class="text-base font-medium {server.status === 'offline' ? 'text-[#ef4444]' : 'text-[var(--text-muted)]'}">
-                  {server.status === "offline" ? "Offline" : "-"}
-                </span>
+                <span class="text-base font-medium text-[var(--text-muted)]">-</span>
               {/if}
             </div>
 
@@ -387,9 +302,9 @@
               <button
                 onclick={e => { e.stopPropagation(); serverToDelete = server.name }}
                 aria-label="Remove server"
-                class="w-10 h-10 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[#ef4444] hover:bg-[#ef4444]/10 cursor-pointer"
+                class="w-10 h-10 flex items-center justify-center rounded-md cursor-pointer shrink-0 text-[var(--text-secondary)] hover:bg-[var(--bg-hover-strong)] hover:text-red-400"
               >
-                <Trash2 size={18} strokeWidth={2} />
+                <Trash2 size={20} strokeWidth={2.5} />
               </button>
 
               <button
