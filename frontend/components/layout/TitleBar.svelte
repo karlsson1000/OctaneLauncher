@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Minus, Square, X, ChevronLeft, ChevronRight, PanelRight } from "lucide-svelte"
+  import { Minus, Square, Copy, X, ChevronLeft, ChevronRight, PanelRight } from "lucide-svelte"
   import {
     store, navigateBack, navigateForward,
     appWindow,
@@ -16,6 +16,15 @@
   }
 
   let historyLen = $derived(store.navigationHistory.length)
+
+  let isMaximized = $state(false)
+
+  $effect(() => {
+    const sync = () => { appWindow.isMaximized().then(v => { isMaximized = v }) }
+    sync()
+    const unlisten = appWindow.onResized(sync)
+    return () => { unlisten.then(fn => fn()) }
+  })
 </script>
 
 <div data-tauri-drag-region class="h-9 flex-shrink-0 flex items-center pl-5 pr-3 gap-2 select-none" style={dragRegion}>
@@ -67,7 +76,11 @@
       <Minus size={18} strokeWidth={3} />
     </button>
     <button onclick={() => appWindow.toggleMaximize()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer">
-      <Square size={14} strokeWidth={3} />
+      {#if isMaximized}
+        <Copy size={14} strokeWidth={3} />
+      {:else}
+        <Square size={14} strokeWidth={3} />
+      {/if}
     </button>
     <button onclick={() => appWindow.close()} class="h-9 w-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-red-500 cursor-pointer">
       <X size={18} strokeWidth={3} />
