@@ -4,7 +4,7 @@
   import Tooltip from "../ui/Tooltip.svelte"
   import {
     store, setActiveTab, setShowInstanceDetails,
-    setSidebarContextMenu, setSelectedInstance,
+    setSidebarContextMenu,
     handleInstallUpdate, handleOpenSettings, handleCreateNew,
     handleOpenInstanceFolderByInstance, handleDuplicateInstance, handleDeleteInstance,
     handleShowDetails,
@@ -33,7 +33,6 @@
   )
 
   function openRecentInstance(instance: Instance) {
-    setActiveTab("instances")
     handleShowDetails(instance)
   }
 
@@ -233,11 +232,7 @@
       {
         label: "Open",
         icon: Package,
-        onClick: () => {
-          setSelectedInstance(scm.instance)
-          setActiveTab("instances")
-          setShowInstanceDetails(true)
-        },
+        onClick: () => handleShowDetails(scm.instance),
       },
       {
         label: "Open Folder",

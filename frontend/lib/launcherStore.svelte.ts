@@ -81,8 +81,17 @@ const appWindow = getCurrentWindow()
 const dragRegion = "webkit-app-region: drag"
 const noDragRegion = "webkit-app-region: no-drag"
 
+let isBooting = true
+
 function pushToHistory() {
-  if (store.isNavigating) return
+  if (store.isNavigating || isBooting) return
+  const current = store.navigationHistory[store.historyIndex]
+  if (
+    current &&
+    current.tab === store.activeTab &&
+    current.showDetails === store.showInstanceDetails &&
+    (current.instance?.name ?? null) === (store.selectedInstance?.name ?? null)
+  ) return
   store.navigationHistory = [...store.navigationHistory.slice(0, store.historyIndex + 1), { tab: store.activeTab, showDetails: store.showInstanceDetails, instance: store.selectedInstance }]
   store.historyIndex = store.navigationHistory.length - 1
 }
@@ -330,6 +339,7 @@ async function handleOpenInstanceFolderByInstance(instance: Instance) {
 }
 
 function handleShowDetails(instance: Instance) {
+  store.activeTab = "instances"
   store.selectedInstance = instance
   store.showInstanceDetails = true
 }
@@ -470,23 +480,29 @@ function stopHeartbeat() {
 let appliedDefaultTab = false
 
 async function loadAllInitialData() {
-  await Promise.all([
-    loadVersions(),
-    loadInstances(),
-    loadLauncherDirectory(),
-    loadSettings(),
-    loadAccounts(),
-    loadBackground(),
-    storeGet<boolean>("friends_panel_open").then(v => { store.showFriendsPanel = v ?? true }),
-    storeGet<boolean>("onboarding_complete").then(v => { if (!v) store.showOnboarding = true }),
-  ])
-  if (!appliedDefaultTab && store.settings?.default_tab) {
-    const defaultTab = store.settings.default_tab === "browse" ? "addons" : store.settings.default_tab
-    const validTabs = ["home", "instances", "addons", "console", "servers", "skins", "screenshots"]
-    if (validTabs.includes(defaultTab)) {
-      store.activeTab = defaultTab as ActiveTab
+  try {
+    await Promise.all([
+      loadVersions(),
+      loadInstances(),
+      loadLauncherDirectory(),
+      loadSettings(),
+      loadAccounts(),
+      loadBackground(),
+      storeGet<boolean>("friends_panel_open").then(v => { store.showFriendsPanel = v ?? true }),
+      storeGet<boolean>("onboarding_complete").then(v => { if (!v) store.showOnboarding = true }),
+    ])
+    if (!appliedDefaultTab && store.settings?.default_tab) {
+      const defaultTab = store.settings.default_tab === "browse" ? "addons" : store.settings.default_tab
+      const validTabs = ["home", "instances", "addons", "console", "servers", "skins", "screenshots"]
+      if (validTabs.includes(defaultTab)) {
+        store.activeTab = defaultTab as ActiveTab
+      }
+      appliedDefaultTab = true
     }
-    appliedDefaultTab = true
+  } finally {
+    store.navigationHistory = [{ tab: store.activeTab, showDetails: store.showInstanceDetails, instance: store.selectedInstance }]
+    store.historyIndex = 0
+    isBooting = false
   }
 }
 
