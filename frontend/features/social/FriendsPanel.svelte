@@ -26,6 +26,7 @@
   let friendMenu = $state<{ x: number; y: number; friend: Friend } | null>(null)
   let collapsed = $state<Record<string, boolean>>({})
   let tab = $state<"friends" | "requests">("friends")
+  let dataAccountUuid: string | undefined | null = null
 
   const storeKey = (prefix: string) => `${prefix}_${activeAccountUuid ?? "default"}`
 
@@ -51,18 +52,24 @@
   const dropdownBtn = "w-full flex items-center gap-2.5 px-2 py-1.5 rounded-sm text-sm cursor-pointer"
 
   const loadNicknames = async () => {
+    const uuid = activeAccountUuid
+    const key = storeKey("nicknames")
     try {
-      nicknames = (await storeGet<Record<string, string>>(storeKey("nicknames"))) ?? {}
+      const result = (await storeGet<Record<string, string>>(key)) ?? {}
+      if (uuid === activeAccountUuid) nicknames = result
     } catch {
-      nicknames = {}
+      if (uuid === activeAccountUuid) nicknames = {}
     }
   }
 
   const loadFavorites = async () => {
+    const uuid = activeAccountUuid
+    const key = storeKey("favorites")
     try {
-      favorites = (await storeGet<string[]>(storeKey("favorites"))) ?? []
+      const result = (await storeGet<string[]>(key)) ?? []
+      if (uuid === activeAccountUuid) favorites = result
     } catch {
-      favorites = []
+      if (uuid === activeAccountUuid) favorites = []
     }
   }
 
@@ -97,18 +104,22 @@
   }
 
   const loadFriends = async (silent = false) => {
+    const uuid = activeAccountUuid
     if (!silent) isLoading = true
     try {
-      friends = await invoke<Friend[]>("get_friends")
+      const result = await invoke<Friend[]>("get_friends")
+      if (uuid === activeAccountUuid) friends = result
     } catch {
     } finally {
-      isLoading = false
+      if (uuid === activeAccountUuid) isLoading = false
     }
   }
 
   const loadRequests = async () => {
+    const uuid = activeAccountUuid
     try {
-      requests = await invoke<FriendRequest[]>("get_friend_requests")
+      const result = await invoke<FriendRequest[]>("get_friend_requests")
+      if (uuid === activeAccountUuid) requests = result
     } catch {
     }
   }
@@ -194,7 +205,19 @@
   })
 
   $effect(() => {
-    void activeAccountUuid
+    const uuid = activeAccountUuid
+
+    if (uuid !== dataAccountUuid) {
+      dataAccountUuid = uuid
+      friends = []
+      requests = []
+      nicknames = {}
+      favorites = []
+      isLoading = false
+      editingNicknameUuid = null
+      friendMenu = null
+    }
+
     if (isOpen && isAuthenticated) {
       loadFriends()
       loadRequests()
