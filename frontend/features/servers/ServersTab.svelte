@@ -20,8 +20,8 @@
   const pingColor = (ping: number) =>
     ping < 80 ? "#16a34a" : ping < 200 ? "#eab308" : "#e93636"
 
-  function joinButtonClass(busy: boolean, online: boolean) {
-    if (busy) return "bg-red-500/10 text-red-400 cursor-not-allowed"
+  function joinButtonClass(launching: boolean, online: boolean) {
+    if (launching) return "bg-red-500/10 text-red-400 cursor-not-allowed"
     if (online) return "bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]"
     return "bg-[var(--bg-hover-strong)] text-[var(--text-muted)] cursor-not-allowed"
   }
@@ -214,7 +214,7 @@
       </div>
     {:else if filteredServers.length === 0}
       <div class="rounded-md p-8 flex flex-col items-center justify-center">
-        <Search size={48} class="text-[var(--text-primary)] mb-3" strokeWidth={1.5} />
+        <Search size={48} class="text-[var(--text-muted)] mb-3" strokeWidth={1.5} />
         <h3 class="text-base font-semibold text-[var(--text-primary)] mb-1">No servers found</h3>
         <p class="text-sm text-[var(--text-muted)]">Try adjusting your search query</p>
       </div>
@@ -222,7 +222,8 @@
       <div class="space-y-4">
         {#each filteredServers as server, index (server.name)}
           {@const isOnline = server.status === "online"}
-          {@const isBusy = launchingServer === server.name || isAnyInstanceRunning}
+          {@const isLaunching = launchingServer === server.name}
+          {@const isDisabled = !isOnline || isLaunching || isAnyInstanceRunning}
           {@const showPlayers = isOnline && server.players_online !== undefined}
           <div
             class="group flex items-center gap-3 px-4 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)]"
@@ -309,11 +310,11 @@
 
               <button
                 onclick={e => handleLaunchServer(server, e)}
-                disabled={!isOnline || isBusy}
-                title={!isOnline ? "Server offline" : isAnyInstanceRunning ? "Instance already running" : undefined}
-                class="flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded cursor-pointer disabled:opacity-50 {joinButtonClass(isBusy, isOnline)}"
+                disabled={isDisabled}
+                title={!isOnline ? "Server offline" : isLaunching ? "Launching..." : isAnyInstanceRunning ? "Instance already running" : undefined}
+                class="flex-shrink-0 h-10 px-8 flex items-center justify-center gap-3 rounded cursor-pointer disabled:opacity-50 {joinButtonClass(isLaunching, isOnline)}"
               >
-                {#if isBusy}
+                {#if isLaunching}
                   <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
                 {:else}
                   <Play size={18} fill="currentColor" strokeWidth={0} />

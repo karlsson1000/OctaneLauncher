@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 use std::io::Write;
 use std::net::{TcpStream, ToSocketAddrs};
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -23,21 +24,35 @@ pub struct ServerInfo {
     pub last_checked: Option<i64>,
 }
 
-#[tauri::command]
-pub async fn get_servers() -> Result<Vec<ServerInfo>, String> {
-    let servers_file = get_launcher_dir().join("servers.json");
-    
+fn servers_file_path() -> PathBuf {
+    get_launcher_dir().join("servers.json")
+}
+
+fn read_servers() -> Result<Vec<ServerInfo>, String> {
+    let servers_file = servers_file_path();
+
     if !servers_file.exists() {
         return Ok(Vec::new());
     }
-    
+
     let content = std::fs::read_to_string(&servers_file)
         .map_err(|e| e.to_string())?;
-    
-    let servers: Vec<ServerInfo> = serde_json::from_str(&content)
+
+    serde_json::from_str(&content)
+        .map_err(|e| e.to_string())
+}
+
+fn write_servers(servers: &[ServerInfo]) -> Result<(), String> {
+    let json = serde_json::to_string_pretty(servers)
         .map_err(|e| e.to_string())?;
-    
-    Ok(servers)
+
+    std::fs::write(servers_file_path(), json)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn get_servers() -> Result<Vec<ServerInfo>, String> {
+    read_servers()
 }
 
 #[tauri::command]
@@ -53,12 +68,12 @@ pub async fn add_server(
         return Err("Port cannot be 0".to_string());
     }
     
-    let mut servers = get_servers().await?;
-    
+    let mut servers = read_servers()?;
+
     if servers.iter().any(|s| s.name.to_lowercase() == safe_name.to_lowercase()) {
         return Err(format!("Server '{}' already exists", safe_name));
     }
-    
+
     let new_server = ServerInfo {
         name: safe_name.clone(),
         address,
@@ -71,36 +86,26 @@ pub async fn add_server(
         favicon: None,
         last_checked: None,
     };
-    
+
     servers.push(new_server);
-    
-    let servers_file = get_launcher_dir().join("servers.json");
-    let json = serde_json::to_string_pretty(&servers)
-        .map_err(|e| e.to_string())?;
-    
-    std::fs::write(&servers_file, json)
-        .map_err(|e| e.to_string())
+
+    write_servers(&servers)
 }
 
 #[tauri::command]
 pub async fn delete_server(server_name: String) -> Result<(), String> {
     let safe_name = sanitize_server_name(&server_name)?;
-    
-    let mut servers = get_servers().await?;
-    
+
+    let mut servers = read_servers()?;
+
     let initial_len = servers.len();
     servers.retain(|s| s.name != safe_name);
-    
+
     if servers.len() == initial_len {
         return Err(format!("Server '{}' not found", safe_name));
     }
-    
-    let servers_file = get_launcher_dir().join("servers.json");
-    let json = serde_json::to_string_pretty(&servers)
-        .map_err(|e| e.to_string())?;
-    
-    std::fs::write(&servers_file, json)
-        .map_err(|e| e.to_string())
+
+    write_servers(&servers)
 }
 
 #[tauri::command]
@@ -109,32 +114,27 @@ pub async fn update_server_status(
     status: ServerInfo,
 ) -> Result<(), String> {
     let safe_name = sanitize_server_name(&server_name)?;
-    
-    let mut servers = get_servers().await?;
-    
+
+    let mut servers = read_servers()?;
+
     let server = servers.iter_mut()
         .find(|s| s.name == safe_name)
         .ok_or(format!("Server '{}' not found", safe_name))?;
-    
+
     server.status = status.status;
     server.players_online = status.players_online;
     server.players_max = status.players_max;
     server.version = status.version;
     server.motd = status.motd;
     server.favicon = status.favicon;
-    server.last_checked = Some(chrono::Utc::now().timestamp());
-    
-    let servers_file = get_launcher_dir().join("servers.json");
-    let json = serde_json::to_string_pretty(&servers)
-        .map_err(|e| e.to_string())?;
-    
-    std::fs::write(&servers_file, json)
-        .map_err(|e| e.to_string())
+    server.last_checked = Some(chrono::Utc::now().timestamp_millis());
+
+    write_servers(&servers)
 }
 
 #[tauri::command]
 pub async fn reorder_servers(server_names: Vec<String>) -> Result<(), String> {
-    let mut servers = get_servers().await?;
+    let mut servers = read_servers()?;
 
     let mut reordered: Vec<ServerInfo> = Vec::with_capacity(server_names.len());
     for name in &server_names {
@@ -145,12 +145,7 @@ pub async fn reorder_servers(server_names: Vec<String>) -> Result<(), String> {
 
     reordered.extend(servers);
 
-    let servers_file = get_launcher_dir().join("servers.json");
-    let json = serde_json::to_string_pretty(&reordered)
-        .map_err(|e| e.to_string())?;
-
-    std::fs::write(&servers_file, json)
-        .map_err(|e| e.to_string())
+    write_servers(&reordered)
 }
 
 #[tauri::command]

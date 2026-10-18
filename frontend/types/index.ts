@@ -191,7 +191,7 @@ export interface UpdateInfo {
 
 export interface PlayerInfo {
   name: string
-  uuid: string
+  uuid: string | null
 }
 
 export interface ServerInfo {
