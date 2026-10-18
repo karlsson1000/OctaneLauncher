@@ -12,22 +12,17 @@ const MINECRAFT_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft
 const MINECRAFT_SESSION_URL: &str = "https://sessionserver.mojang.com/session/minecraft/profile";
 
 #[derive(Deserialize, Debug)]
-#[allow(dead_code)]
 struct ProfileResponse {
     id: String,
-    name: String,
     skins: Vec<SkinInfo>,
     capes: Option<Vec<CapeInfo>>,
 }
 
 #[derive(Deserialize, Debug)]
-#[allow(dead_code)]
 struct SkinInfo {
-    id: String,
     state: String,
     url: String,
     variant: String,
-    alias: Option<String>,
 }
 
 #[derive(Deserialize, Debug, Clone, Serialize)]
@@ -51,10 +46,7 @@ pub struct UserCapesResponse {
 }
 
 #[derive(Deserialize, Debug)]
-#[allow(dead_code)]
 struct SessionProfileResponse {
-    id: String,
-    name: String,
     properties: Vec<ProfileProperty>,
 }
 
@@ -65,13 +57,7 @@ struct ProfileProperty {
 }
 
 #[derive(Deserialize, Debug)]
-#[allow(dead_code)]
 struct TexturesData {
-    timestamp: u64,
-    #[serde(rename = "profileId")]
-    profile_id: String,
-    #[serde(rename = "profileName")]
-    profile_name: String,
     textures: Textures,
 }
 

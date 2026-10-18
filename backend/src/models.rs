@@ -227,9 +227,7 @@ pub struct MinecraftLoginRequest<'a> {
 
 #[derive(Deserialize)]
 #[serde(rename_all = "snake_case")]
-#[allow(dead_code)]
 pub struct MinecraftLoginResponse {
-    pub username: Arc<str>,
     pub access_token: Arc<str>,
     pub expires_in: usize,
 }
