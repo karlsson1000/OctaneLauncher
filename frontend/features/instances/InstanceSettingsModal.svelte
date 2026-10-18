@@ -217,7 +217,6 @@
       isVersionDropdownOpen = false
       return
     }
-    selectedMinecraftVersion = newVersion
     isVersionDropdownOpen = false
 
     confirmModal = {
@@ -227,6 +226,7 @@
       type: "warning",
       onConfirm: async () => {
         confirmModal = null
+        selectedMinecraftVersion = newVersion
         isUpdatingVersion = true
         try {
           await invoke("update_instance_minecraft_version", { instanceName: instance.name, newMinecraftVersion: newVersion })
@@ -485,7 +485,7 @@
                   </div>
                 </button>
               {:else}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-muted)] hover:border-[var(--accent-primary)]/50 rounded-sm flex items-center justify-center bg-[var(--bg-tertiary)] cursor-pointer">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-disabled)] hover:border-[var(--accent-primary)]/50 rounded-sm flex items-center justify-center bg-[var(--bg-tertiary)] cursor-pointer">
                   {#if isUploadingIcon}
                     <Loader2 size={18} class="text-[var(--accent-primary)] animate-spin" />
                   {:else}
@@ -495,11 +495,11 @@
               {/if}
 
               {#if localIcon}
-                <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
+                <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-4 h-12 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
                   Remove Icon
                 </button>
               {:else}
-                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 h-11 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
+                <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 h-12 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
                   Upload Icon
                 </button>
               {/if}
