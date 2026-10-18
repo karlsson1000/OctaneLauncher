@@ -531,7 +531,7 @@ function setupEventListeners() {
 
 export {
   appWindow, dragRegion, noDragRegion,
-  loadAllInitialData, setupEventListeners, startHeartbeat, stopHeartbeat,
+  loadAllInitialData, setupEventListeners,
   setShowCreateModal,
   setSelectedInstance,
   setSettings,

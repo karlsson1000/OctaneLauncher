@@ -94,7 +94,6 @@
       case "modpack": return "text-[#3b82f6]"
       case "resourcepack": return "text-[#8b5cf6]"
       case "shaderpack": return "text-[#f59e0b]"
-      default: return "text-[var(--text-muted)]"
     }
   })
 
@@ -308,7 +307,7 @@
   }
 </script>
 
-{#snippet versionsBody(asMenu: boolean = false)}
+{#snippet versionsBody()}
   {#if !isModpack && !selectedInstance}
     <p class="text-sm text-[var(--text-muted)]">Select an instance to install</p>
   {:else if isLoadingVersions}
@@ -320,20 +319,19 @@
   {:else if source === "curseforge" && curseforgeFiles.length === 0}
     <p class="text-sm text-[var(--text-muted)]">No files available</p>
   {:else}
-    <div class="{asMenu ? 'flex flex-col' : 'space-y-2 pr-2'}">
+    <div class="flex flex-col">
       {#if source === "modrinth"}
-        {#each (asMenu ? [...versions].reverse() : versions) as version (version.id)}
+        {#each [...versions].reverse() as version (version.id)}
           {@const installed = isInstalled(version.files.find(f => f.primary)?.filename || version.files[0]?.filename || "")}
           {@const downloading = downloadingMap.has(version.id)}
           {@const done = completedIds.has(version.id)}
-          {@const rowDisabled = downloading || installed || done || (!isModpack && !selectedInstance)}
-          <svelte:element
-            this={asMenu ? "button" : "div"}
-            type={asMenu ? "button" : undefined}
-            role={asMenu ? "menuitem" : undefined}
-            disabled={asMenu ? rowDisabled : undefined}
-            onclick={asMenu ? () => handleInstallVersion(version) : undefined}
-            class="{asMenu ? 'w-full text-left flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none cursor-pointer hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}"
+          {@const rowDisabled = downloading || installed || done}
+          <button
+            type="button"
+            role="menuitem"
+            disabled={rowDisabled}
+            onclick={() => handleInstallVersion(version)}
+            class="w-full text-left flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none cursor-pointer hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-[var(--text-primary)] truncate">{version.name}</div>
@@ -350,46 +348,29 @@
                 {/if}
               </div>
             </div>
-            {#if asMenu}
-              <span class="flex items-center justify-center flex-shrink-0 w-7 h-7">
-                {#if downloading}
-                  <Loader2 size={20} strokeWidth={2.5} class="animate-spin text-[#16a34a]" />
-                {:else if installed || done}
-                  <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
-                {:else}
-                  <ArrowBigDownDash size={22} strokeWidth={2.5} class="text-[#16a34a]" />
-                {/if}
-              </span>
-            {:else}
-              <button
-                onclick={() => handleInstallVersion(version)}
-                disabled={rowDisabled}
-                class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
-              >
-                {#if downloading}
-                  <Loader2 size={14} class="animate-spin" />
-                {:else if installed || done}
-                  Installed
-                {:else}
-                  <Download size={14} />Install
-                {/if}
-              </button>
-            {/if}
-          </svelte:element>
+            <span class="flex items-center justify-center flex-shrink-0 w-7 h-7">
+              {#if downloading}
+                <Loader2 size={20} strokeWidth={2.5} class="animate-spin text-[#16a34a]" />
+              {:else if installed || done}
+                <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
+              {:else}
+                <ArrowBigDownDash size={22} strokeWidth={2.5} class="text-[#16a34a]" />
+              {/if}
+            </span>
+          </button>
         {/each}
       {:else}
-        {#each (asMenu ? [...curseforgeFiles].reverse() : curseforgeFiles) as file (file.id)}
+        {#each [...curseforgeFiles].reverse() as file (file.id)}
           {@const installed = isInstalled(file.fileName)}
           {@const downloading = downloadingMap.has(file.id.toString())}
           {@const done = completedIds.has(file.id.toString())}
-          {@const rowDisabled = downloading || installed || done || !file.downloadUrl || (!isModpack && !selectedInstance)}
-          <svelte:element
-            this={asMenu ? "button" : "div"}
-            type={asMenu ? "button" : undefined}
-            role={asMenu ? "menuitem" : undefined}
-            disabled={asMenu ? rowDisabled : undefined}
-            onclick={asMenu ? () => handleInstallCurseforgeFile(file) : undefined}
-            class="{asMenu ? 'w-full text-left flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none cursor-pointer hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent' : 'bg-[var(--bg-tertiary)] rounded-md p-3 flex items-center justify-between gap-2'}"
+          {@const rowDisabled = downloading || installed || done || !file.downloadUrl}
+          <button
+            type="button"
+            role="menuitem"
+            disabled={rowDisabled}
+            onclick={() => handleInstallCurseforgeFile(file)}
+            class="w-full text-left flex items-center justify-between gap-2.5 px-2 py-2 rounded-sm select-none cursor-pointer hover:bg-[var(--bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             <div class="flex-1 min-w-0">
               <div class="text-sm font-medium text-[var(--text-primary)] truncate">{file.fileName}</div>
@@ -403,32 +384,16 @@
                 {/if}
               </div>
             </div>
-            {#if asMenu}
-              <span class="flex items-center justify-center flex-shrink-0 w-7 h-7">
-                {#if downloading}
-                  <Loader2 size={20} strokeWidth={2.5} class="animate-spin text-[#16a34a]" />
-                {:else if installed || done}
-                  <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
-                {:else}
-                  <ArrowBigDownDash size={22} strokeWidth={2.5} class="text-[#16a34a]" />
-                {/if}
-              </span>
-            {:else}
-              <button
-                onclick={() => handleInstallCurseforgeFile(file)}
-                disabled={rowDisabled}
-                class="px-3 py-2 bg-[#16a34a] hover:bg-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-medium whitespace-nowrap cursor-pointer flex items-center gap-1 flex-shrink-0"
-              >
-                {#if downloading}
-                  <Loader2 size={14} class="animate-spin" />
-                {:else if installed}
-                  Installed
-                {:else}
-                  <Download size={14} />Install
-                {/if}
-              </button>
-            {/if}
-          </svelte:element>
+            <span class="flex items-center justify-center flex-shrink-0 w-7 h-7">
+              {#if downloading}
+                <Loader2 size={20} strokeWidth={2.5} class="animate-spin text-[#16a34a]" />
+              {:else if installed || done}
+                <Check size={20} strokeWidth={3} class="text-[#16a34a]" />
+              {:else}
+                <ArrowBigDownDash size={22} strokeWidth={2.5} class="text-[#16a34a]" />
+              {/if}
+            </span>
+          </button>
         {/each}
       {/if}
     </div>
@@ -499,7 +464,7 @@
     <div class="absolute bottom-4 right-4 z-30" bind:this={versionsPickerRef}>
         {#if showVersionsPicker}
           <div role="menu" bind:this={versionsMenuRef} class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-80 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
-            {@render versionsBody(true)}
+            {@render versionsBody()}
           </div>
         {/if}
         <button

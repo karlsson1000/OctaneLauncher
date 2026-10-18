@@ -64,7 +64,7 @@
   }
 
   function getSelectedItems(): ImportableInstance[] {
-    return detected.filter(d => selected[d.path] && d.mc_version)
+    return detected.filter(d => selected[d.path])
   }
 
   async function handleSignIn() {
@@ -325,7 +325,7 @@
               Back
             </button>
             <div class="flex items-center gap-4">
-              {#if detected.length > 0 && !detectFailed}
+              {#if detected.length > 0}
                 <button
                   onclick={handleImport}
                   disabled={selectedCount === 0 || isImporting}

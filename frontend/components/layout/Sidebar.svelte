@@ -141,7 +141,6 @@
     {#each sidebarOrder as block, bi (block)}
       <div animate:flip={{ duration: flipDuration }} class={block === "recents" && recentInstances.length === 0 ? "hidden" : ""}>
       {#if block === "recents"}
-        {#if recentInstances.length > 0}
           <!-- svelte-ignore a11y_no_static_element_interactions: drag handled via pointer events -->
           <div
             onpointerdown={(e) => handleBlockPointerDown(e, "recents")}
@@ -165,7 +164,6 @@
               </Tooltip>
             {/each}
           </div>
-        {/if}
       {:else}
         {@const tab = tabs.find(t => t.id === block)}
         {#if tab}

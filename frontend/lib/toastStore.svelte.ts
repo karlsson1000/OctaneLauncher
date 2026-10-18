@@ -1,16 +1,16 @@
 import { untrack } from "svelte"
 
-export type ToastType = "success" | "error" | "info"
+type ToastType = "success" | "error" | "info"
 
-export interface Toast {
+interface Toast {
   id: number
   type: ToastType
   message: string
 }
 
-export type ProgressStatus = "creating" | "success" | "error"
+type ProgressStatus = "creating" | "success" | "error"
 
-export interface ProgressToast {
+interface ProgressToast {
   id: string
   title: string
   stage: string

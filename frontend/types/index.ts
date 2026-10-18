@@ -140,7 +140,7 @@ export interface ModrinthVersion {
   loaders: string[]
 }
 
-export interface ModrinthFile {
+interface ModrinthFile {
   hashes: {
     sha512: string
     sha1: string
@@ -152,7 +152,7 @@ export interface ModrinthFile {
   file_type: string | null
 }
 
-export interface ModrinthDependency {
+interface ModrinthDependency {
   version_id: string | null
   project_id: string | null
   file_name: string | null
@@ -189,7 +189,7 @@ export interface UpdateInfo {
   new_version: string
 }
 
-export interface PlayerInfo {
+interface PlayerInfo {
   name: string
   uuid: string | null
 }
@@ -293,7 +293,7 @@ export interface StorageCategory {
   size_bytes: number
 }
 
-export type FriendStatus = "online" | "offline" | "ingame"
+type FriendStatus = "online" | "offline" | "ingame"
 
 export interface Friend {
   uuid: string
@@ -303,7 +303,7 @@ export interface Friend {
   current_instance: string | null
 }
 
-export type RequestStatus = "pending" | "accepted" | "rejected"
+type RequestStatus = "pending" | "accepted" | "rejected"
 
 export interface FriendRequest {
   id: string
@@ -319,7 +319,7 @@ export interface CurseforgeSearchResult {
   pagination: CurseforgePagination
 }
 
-export interface CurseforgePagination {
+interface CurseforgePagination {
   index: number
   pageSize: number
   resultCount: number
@@ -339,23 +339,23 @@ export interface CurseforgeHit {
   latestFilesIndexes: CurseforgeFileIndex[]
 }
 
-export interface CurseforgeFileIndex {
+interface CurseforgeFileIndex {
   gameVersion: string
   fileId: number
   modLoader: number | null
 }
 
-export interface CurseforgeModAsset {
+interface CurseforgeModAsset {
   thumbnailUrl: string
 }
 
-export interface CurseforgeModAuthor {
+interface CurseforgeModAuthor {
   id: number
   name: string
   url: string
 }
 
-export interface CurseforgeCategory {
+interface CurseforgeCategory {
   name: string
   isClass: boolean
 }
@@ -383,12 +383,12 @@ export interface CurseforgeFile {
   dependencies: CurseforgeFileDependency[]
 }
 
-export interface CurseforgeFileDependency {
+interface CurseforgeFileDependency {
   modId: number
   relationType: number
 }
 
-export interface CurseforgeFileHash {
+interface CurseforgeFileHash {
   value: string
   algo: number
 }

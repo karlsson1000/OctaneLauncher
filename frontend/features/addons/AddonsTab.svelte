@@ -54,8 +54,7 @@
   const getLoaderDisplay = (instance: Instance): { name: string; color: string } => {
     if (instance.loader === "fabric") return { name: "Fabric", color: "text-[#3b82f6]" }
     if (instance.loader === "neoforge") return { name: "NeoForge", color: "text-[#f97316]" }
-    if (instance.loader === "forge") return { name: "Forge", color: "text-[#e05d2e]" }
-    return { name: "Vanilla", color: "text-[#16a34a]" }
+    return { name: "Forge", color: "text-[#e05d2e]" }
   }
 
   let listScroller: HTMLDivElement | undefined
@@ -92,28 +91,28 @@
   })
 </script>
 
-{#snippet installTargets(asMenu: boolean = false)}
+{#snippet installTargets()}
   {#if moddedInstances.length === 0}
     <p class="text-xs text-[var(--text-muted)] px-1">No modded instances</p>
   {:else}
-    <div class={asMenu ? "flex flex-col" : "space-y-1.5"}>
+    <div class="flex flex-col">
       {#each moddedInstances as instance}
         {@const icon = instanceIconSrc(instance.icon_path, instance.name)}
         {@const loader = getLoaderDisplay(instance)}
         {@const selected = store.selectedInstance?.name === instance.name}
         <button
           onclick={() => { setSelectedInstance(instance); showInstallPicker = false }}
-          class="w-full flex items-center text-left text-sm cursor-pointer text-[var(--text-primary)] {asMenu ? 'gap-2.5 px-2 py-2 rounded-sm select-none hover:bg-[var(--bg-hover)]' : `gap-3 px-3 py-1.5 rounded-md ${selected ? 'bg-[var(--bg-tertiary)]' : 'hover:bg-[var(--bg-tertiary)]'}`}"
+          class="w-full flex items-center text-left text-sm cursor-pointer text-[var(--text-primary)] gap-2.5 px-2 py-2 rounded-sm select-none hover:bg-[var(--bg-hover)]"
         >
           {#if icon}
-            <img src={icon} alt={instance.name} class="{asMenu ? 'w-8 h-8' : 'w-11 h-11'} rounded object-cover flex-shrink-0" />
+            <img src={icon} alt={instance.name} class="w-8 h-8 rounded object-cover flex-shrink-0" />
           {:else}
-            <div class="{asMenu ? 'w-8 h-8' : 'w-11 h-11'} flex items-center justify-center flex-shrink-0">
-              <Package size={asMenu ? 20 : 28} class="text-[var(--text-muted)]" strokeWidth={1.5} />
+            <div class="w-8 h-8 flex items-center justify-center flex-shrink-0">
+              <Package size={20} class="text-[var(--text-muted)]" strokeWidth={1.5} />
             </div>
           {/if}
           <div class="flex-1 min-w-0">
-            <div class="font-medium {asMenu ? 'text-sm' : 'text-base'} text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
+            <div class="font-medium text-sm text-[var(--text-primary)] truncate leading-tight">{instance.name}</div>
             <div class="text-xs text-[var(--text-muted)] truncate mt-0.5">
               {getMinecraftVersion(instance)} <span class="text-[var(--text-muted)]">•</span> <span class={loader.color}>{loader.name}</span>
             </div>
@@ -221,7 +220,6 @@
               selectedInstance={store.selectedInstance}
               instances={store.instances}
               onSetSelectedInstance={setSelectedInstance}
-              isDetailOpen={viewDetail !== null}
             />
           {/key}
         </div>
@@ -248,7 +246,7 @@
     <div class="absolute bottom-4 right-4 z-30" bind:this={installPickerRef}>
       {#if showInstallPicker}
         <div role="menu" class="dropdown-menu absolute bottom-full right-0 mb-1.5 z-[60] w-64 min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col max-h-60 overflow-y-auto custom-scrollbar">
-          {@render installTargets(true)}
+          {@render installTargets()}
         </div>
       {/if}
       <button

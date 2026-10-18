@@ -6,7 +6,6 @@
   import { untrack } from "svelte"
   import { fade } from "svelte/transition"
   import { store, setSettings, loadBackground, setShowOnboarding } from "../../lib/launcherStore.svelte"
-  import { storeSet } from "../../lib/store"
   import type { LauncherSettings, StorageCategory, SystemInfo } from "../../types"
   import { formatFileSize } from "../../lib/format"
 
@@ -259,7 +258,6 @@
   async function handleSettingChange(newSettings: LauncherSettings) {
     try {
       await invoke("save_settings", { settings: newSettings })
-      await storeSet('octane_theme', newSettings.theme ?? 'octane')
       setSettings(newSettings)
     } catch (error) {
       alertModal = { isOpen: true, title: "An error occurred", message: "Failed to save settings" + `: ${error}`, type: "danger" }

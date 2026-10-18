@@ -31,7 +31,7 @@
 
   type PreviewEntry = { text: string; enabled: boolean }
 
-  let previewTitle = $derived(`${instanceName}.${exportFormat === "mrpack" ? "mrpack" : "zip"}`)
+  let previewTitle = $derived(`${instanceName}.${exportFormat}`)
   let previewEntries = $derived.by<PreviewEntry[]>(() => {
     const file = (text: string): PreviewEntry => ({ text, enabled: true })
     const flag = (text: string, enabled: boolean): PreviewEntry => ({ text, enabled })
@@ -67,7 +67,7 @@
 
   async function handleExport() {
     try {
-      const defaultExtension = exportFormat === "mrpack" ? "mrpack" : "zip"
+      const defaultExtension = exportFormat
       const defaultFileName = `${instanceName}.${defaultExtension}`
 
       const savePath = await save({

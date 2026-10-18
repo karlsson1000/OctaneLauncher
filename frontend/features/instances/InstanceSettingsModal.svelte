@@ -7,14 +7,13 @@
   import { instanceIconSrc, bumpInstanceIcon, clearInstanceIcon } from "../../lib/icons"
   import { store, handleInstanceRenamed, deleteInstanceOptimistically } from "../../lib/launcherStore.svelte"
 
-  let { isOpen, instance, instanceIcon, onClose, onInstanceUpdated, onInstanceDeleted, onInstanceRenamed }: {
+  let { isOpen, instance, instanceIcon, onClose, onInstanceUpdated, onInstanceDeleted }: {
     isOpen: boolean
     instance: Instance
     instanceIcon: string | null
     onClose: () => void
     onInstanceUpdated: () => void
     onInstanceDeleted: () => void
-    onInstanceRenamed?: (oldName: string, newName: string) => void
   } = $props()
 
   let newName = $state("")
@@ -411,8 +410,7 @@
     try {
       await invoke("rename_instance", { oldName: instance.name, newName: trimmedName })
       renameError = null
-      if (onInstanceRenamed) onInstanceRenamed(instance.name, trimmedName)
-      else handleInstanceRenamed(instance.name, trimmedName)
+      handleInstanceRenamed(instance.name, trimmedName)
       onClose()
     } catch (error) {
       renameError = error as string

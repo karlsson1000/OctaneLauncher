@@ -17,9 +17,7 @@
 
   interface ModUpdate {
     filename: string
-    projectId: string
     latestVersion: {
-      id: string
       downloadUrl: string
       filename: string
       sha1: string
@@ -30,16 +28,12 @@
     name: string
     folder_name: string
     size: number
-    last_played?: number
-    game_mode?: string
-    version?: string
     icon_path?: string
     created?: number
   }
 
-  let { instance, onInstanceUpdated }: {
+  let { instance }: {
     instance: Instance
-    onInstanceUpdated?: () => void
   } = $props()
 
   let installedMods = $state<InstalledMod[]>([])
@@ -346,7 +340,6 @@
   }
 
   function handleInstanceUpdated() {
-    onInstanceUpdated?.()
     loadInstances()
   }
 
@@ -632,7 +625,7 @@
                         <div class="flex-1 min-w-0">
                           <h3 class="font-semibold text-base text-[var(--text-primary)] truncate">{world.name}</h3>
                           <p class="text-sm text-[var(--text-muted)] truncate">Created {world.created ? formatDate(world.created) : "Unknown"}</p>
-                          <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(world.size)}{world.game_mode ? ` • ${world.game_mode.charAt(0).toUpperCase() + world.game_mode.slice(1)}` : ""}</p>
+                          <p class="text-sm text-[var(--text-muted)] mt-0.5">{formatFileSize(world.size)}</p>
                         </div>
                         <div class="flex items-center gap-3">
                           <button onclick={() => handleLaunchWorld(world.folder_name)} disabled={!store.isAuthenticated || store.launchingInstanceName !== null || store.runningInstances.has(instance.name) || launchingWorld !== null} class="px-5 py-1.5 mr-2 rounded-sm cursor-pointer {(store.launchingInstanceName === instance.name || launchingWorld === world.folder_name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-40 disabled:cursor-not-allowed" title="Play this world">

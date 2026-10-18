@@ -6,7 +6,6 @@
     instance: string
     progress: number
     stage?: string
-    current_file?: string
   }
 
   type ProgressKind = "creation" | "duplication" | "modpack"

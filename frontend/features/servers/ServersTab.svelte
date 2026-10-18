@@ -62,7 +62,7 @@
     }
   }
 
-  async function fetchServerStatus(address: string, port: number): Promise<ServerInfo | null> {
+  async function fetchServerStatus(address: string, port: number): Promise<Omit<ServerInfo, "name"> | null> {
     const fullAddress = formatAddress(address, port)
     try {
       const response = await fetch(`https://api.mcsrvstat.us/3/${fullAddress}`, {
@@ -74,7 +74,6 @@
       const ping = data.online ? await pingServer(address, port) : undefined
 
       return {
-        name: address,
         address,
         port,
         status: data.online ? "online" : "offline",
@@ -131,7 +130,7 @@
       return
     }
 
-    servers = [...servers, { ...newServer, status: "unknown" }]
+    servers = [...servers, newServer]
     refreshServerStatus(newServer)
   }
 

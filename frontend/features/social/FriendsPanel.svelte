@@ -42,7 +42,7 @@
     offline: { color: "bg-[var(--bg-hover-strong)]", label: "Offline" },
   }
 
-  const statusOf = (friend: Friend) => statuses[friend.status] ?? statuses.offline
+  const statusOf = (friend: Friend) => statuses[friend.status]
 
   const avatarMask = "-webkit-mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px); mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px);"
 
@@ -236,7 +236,7 @@
   let sortedFriends = $derived(
     [...friends].sort((a, b) => {
       const order: Record<string, number> = { ingame: 0, online: 1, offline: 2 }
-      const byStatus = (order[a.status] ?? 2) - (order[b.status] ?? 2)
+      const byStatus = order[a.status] - order[b.status]
       if (byStatus !== 0) return byStatus
       return displayName(a).localeCompare(displayName(b))
     })

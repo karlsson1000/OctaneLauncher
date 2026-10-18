@@ -21,7 +21,6 @@
     selectedInstance = null,
     instances = [],
     onSetSelectedInstance = (_: Instance) => {},
-    isDetailOpen = false,
   }: {
     source: ContentSource
     category: AddonCategoryConfig
@@ -30,7 +29,6 @@
     selectedInstance?: Instance | null
     instances?: Instance[]
     onSetSelectedInstance?: (instance: Instance) => void
-    isDetailOpen?: boolean
   } = $props()
 
   const adapter: AddonSourceAdapter = $derived(category.sources[source])
@@ -43,12 +41,7 @@
   let offset = 0
   let hasMore = true
 
-  let selectedId: string | null = $state(null)
   let pinnedHit: AddonHit | null = $state(null)
-
-  $effect(() => {
-    if (!isDetailOpen) selectedId = null
-  })
 
   $effect(() => {
     if (!category.requiresModdedLoader) return
@@ -114,7 +107,6 @@
       hasMore = offsetVal + result.hits.length < result.total
       if (replace) {
         hits = result.hits
-        selectedId = null
       } else {
         const ids = new Set(hits.map(h => h.id))
         hits = [...hits, ...result.hits.filter(h => !ids.has(h.id))]
@@ -133,7 +125,6 @@
   }
 
   function openDetail(hit: AddonHit) {
-    selectedId = hit.id
     onViewProjectDetail(source, hit.id, hit.slug, category.projectType, hit.author)
   }
 </script>
@@ -161,9 +152,8 @@
           </div>
         {:else}
         {#each displayedHits as hit (hit.id)}
-          {@const selected = selectedId === hit.id}
           <div
-            class="rounded-md overflow-hidden cursor-pointer transition-all {selected ? 'bg-[var(--bg-elevated)]' : 'bg-[var(--bg-tertiary)]'}"
+            class="rounded-md overflow-hidden cursor-pointer transition-all bg-[var(--bg-tertiary)]"
             role="button"
             tabindex="0"
             onkeydown={(e) => { if (e.key === 'Enter') openDetail(hit); }}

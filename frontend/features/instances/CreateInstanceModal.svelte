@@ -10,9 +10,6 @@
   interface MinecraftVersion {
     id: string
     type: "release" | "snapshot"
-    url: string
-    time: string
-    releaseTime: string
   }
 
   type LoaderType = "vanilla" | "fabric" | "neoforge" | "forge"

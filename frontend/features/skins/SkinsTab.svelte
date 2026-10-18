@@ -49,7 +49,7 @@
   let lastProfileFetch: Record<string, number> = {}
   let lastCapeFetch: Record<string, number> = {}
   let originalState = { skinUrl: null as string | null, variant: 'classic' as 'classic' | 'slim', activeCape: null as string | null }
-  let pendingSkinOp: { type: 'upload'; base64: string; variant: 'classic' | 'slim' } | { type: 'recent'; url: string; variant: 'classic' | 'slim' } | { type: 'reset' } | null = null
+  let pendingSkinOp: { type: 'upload'; base64: string } | { type: 'recent'; url: string } | { type: 'reset' } | null = null
   let pendingCapeOp: { type: 'select'; capeId: string } | { type: 'remove' } | null = null
   let loadUserSkinFn: (forceRefresh?: boolean) => Promise<void> = async () => {}
 
@@ -210,7 +210,7 @@
     const reader = new FileReader()
     reader.onload = (e) => {
       const base64 = ((e.target?.result) as string).split(",")[1]
-      pendingSkinOp = { type: 'upload', base64, variant: skinVariant }
+      pendingSkinOp = { type: 'upload', base64 }
       hasPendingChanges = true
       uploading = false
     }
@@ -225,7 +225,7 @@
   function handleRecentSkinSelect(skin: RecentSkin) {
     currentSkinUrl = skin.url
     skinVariant = skin.variant
-    pendingSkinOp = { type: 'recent', url: skin.url, variant: skin.variant }
+    pendingSkinOp = { type: 'recent', url: skin.url }
     hasPendingChanges = true
   }
 

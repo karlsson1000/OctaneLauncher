@@ -19,7 +19,6 @@
     hint?: string
     icon: typeof House
     keywords?: string
-    disabled?: boolean
     section: string
     action: () => void
   }
@@ -194,7 +193,7 @@
     } else if (e.key === "Enter") {
       e.preventDefault()
       const entry = entries[selected]
-      if (entry && !entry.disabled) run(entry)
+      if (entry) run(entry)
     }
   }
 </script>
@@ -243,7 +242,7 @@
             <button
               onclick={() => run(entry)}
               onmousemove={() => (selected = i)}
-              class="w-full flex items-center gap-3 px-2 py-1.5 rounded-sm text-left text-base {selected === i ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'} {entry.disabled ? 'opacity-40 pointer-events-none' : 'cursor-pointer'}"
+              class="w-full flex items-center gap-3 px-2 py-1.5 rounded-sm text-left text-base cursor-pointer {selected === i ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}"
             >
               <Icon size={16} class="text-[var(--text-muted)] flex-shrink-0" />
               <span class="text-sm truncate flex-1">{entry.label}</span>
