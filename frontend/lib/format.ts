@@ -17,6 +17,11 @@ export function formatDate(timestamp: number): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })
 }
 
+export function formatIsoDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+}
+
 export function formatRelativeDate(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()

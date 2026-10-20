@@ -2,7 +2,7 @@
   import { invoke } from "@tauri-apps/api/core"
   import { Loader2, Trash2, Package, Image } from "lucide-svelte"
   import type { TrashItem } from "../../../types"
-  import { formatFileSize } from "../../../lib/format"
+  import { formatFileSize, formatIsoDate } from "../../../lib/format"
 
   let { onAlert }: {
     onAlert: (alert: { isOpen: boolean; title: string; message: string; type: "warning" | "danger" | "success" | "info" }) => void
@@ -43,11 +43,6 @@
       onAlert({ isOpen: true, title: "Error", message: `Failed to empty trash: ${e}`, type: "danger" })
     }
     emptying = false
-  }
-
-  function formatDate(rfc3339: string) {
-    const d = new Date(rfc3339)
-    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
   }
 </script>
 
@@ -96,7 +91,7 @@
               <Package size={14} class="text-[var(--text-muted)] shrink-0" />
             {/if}
             <span class="text-[var(--text-primary)] truncate flex-1" title={item.original_name}>{item.original_name}</span>
-            <span class="text-[var(--text-muted)] shrink-0">{formatDate(item.moved_at)}</span>
+            <span class="text-[var(--text-muted)] shrink-0">{formatIsoDate(item.moved_at)}</span>
             <span class="text-[var(--text-muted)] shrink-0 w-14 text-right">{formatFileSize(item.size)}</span>
           </div>
         {/each}

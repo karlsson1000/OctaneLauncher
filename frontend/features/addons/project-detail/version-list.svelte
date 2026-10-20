@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ArrowBigDownDash, Check, Loader2 } from "lucide-svelte"
   import type { ModrinthVersion, CurseforgeFile } from "../../../types"
+  import { formatFileSize } from "../../../lib/format"
 
   let {
     needsInstance, isLoadingVersions, source, versions, curseforgeFiles,
@@ -96,7 +97,7 @@
             <div class="flex items-center gap-1.5 mt-0.5 min-w-0">
               <span class="text-xs text-[var(--text-muted)] truncate">
                 {file.releaseType === 1 ? "Release" : file.releaseType === 2 ? "Beta" : "Alpha"}
-                &middot; {(file.fileLength / 1024 / 1024).toFixed(1)} MB
+                &middot; {formatFileSize(file.fileLength)}
               </span>
               {#if file.id === latestCurseforgeFileId}
                 <span class="flex-shrink-0 px-1.5 py-px rounded-full text-[10px] font-semibold bg-[#16a34a] text-white/80 leading-none">Latest</span>

@@ -9,6 +9,7 @@
   import type { ServerInfo, McSrvStatResponse } from "../../types"
   import { store } from "../../lib/launcherStore.svelte"
   import { sanitizeHtml } from "../../lib/sanitize"
+  import { showToast } from "../../lib/toastStore.svelte"
 
   const REFRESH_MS = 5 * 60 * 1000
   const FETCH_TIMEOUT_MS = 10_000
@@ -114,7 +115,7 @@
         port: newServer.port,
       })
     } catch (error) {
-      alert(`Failed to add server: ${error}`)
+      showToast("error", `Failed to add server: ${error}`)
       return
     }
 
@@ -144,7 +145,7 @@
       })
       setTimeout(() => { launchingServer = null }, LAUNCH_COOLDOWN_MS)
     } catch (error) {
-      alert(`Failed to launch server: ${error}`)
+      showToast("error", `Failed to launch server: ${error}`)
       launchingServer = null
     }
   }
