@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke, convertFileSrc } from "@tauri-apps/api/core"
-  import { Check, ImagePlus } from "lucide-svelte"
+  import { Check, ImagePlus, Trash2 } from "lucide-svelte"
   import { store, loadBackground } from "../../../lib/launcherStore.svelte"
   import type { LauncherSettings } from "../../../types"
 
@@ -111,9 +111,21 @@
       <div class="h-36 rounded-md overflow-hidden bg-[var(--content-bg)]">
         <img src={backgroundPreview} alt="Background" class="w-full h-full object-cover" />
       </div>
-      <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
-        <button onclick={() => fileInputEl?.click()} class="h-8 px-3 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-xs font-medium cursor-pointer">Change</button>
-        <button onclick={handleRemoveBackground} class="h-8 px-3 bg-red-500 hover:bg-red-600 text-white rounded-md text-xs font-medium cursor-pointer">Remove</button>
+      <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
+        <button
+          onclick={() => fileInputEl?.click()}
+          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded text-xs font-medium text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
+        >
+          <ImagePlus size={14} />
+          Change
+        </button>
+        <button
+          onclick={handleRemoveBackground}
+          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded text-xs font-medium text-red-400 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+        >
+          <Trash2 size={14} />
+          Remove
+        </button>
       </div>
     </div>
   {:else}
