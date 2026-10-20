@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Play, MoreHorizontal } from "lucide-svelte"
+  import { Play, MoreVertical } from "lucide-svelte"
   import type { Instance } from "../../../types"
   import { store, handleLaunch, handleKillInstance } from "../../../lib/launcherStore.svelte"
 
@@ -60,14 +60,14 @@
 
     <div class="{store.isAuthenticated && lastPlayedInstance ? 'w-auto' : (store.activeAccount ? 'w-44' : 'w-0')} flex-shrink-0 flex items-center justify-end">
       {#if store.isAuthenticated && lastPlayedInstance && !store.showFriendsPanel}
-        <div class="flex items-center gap-px">
+        <div class="flex items-center gap-1">
           <button
             onclick={() => isLastPlayedRunning
               ? handleKillInstance(lastPlayedInstance)
               : handleLaunch(lastPlayedInstance)
             }
             disabled={heroDisabled}
-            class="h-10 px-5 rounded-l-md rounded-r-none flex items-center justify-center gap-3 text-lg font-semibold cursor-pointer disabled:opacity-40 {heroBtnClass}"
+            class="h-10 px-5 rounded-md flex items-center justify-center gap-3 text-lg font-semibold cursor-pointer disabled:opacity-40 {heroBtnClass}"
             title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
           >
             {#if isLastPlayedLaunching || isLastPlayedRunning}
@@ -79,10 +79,10 @@
           </button>
           <button
             onclick={(e) => onDotsMenu(e, lastPlayedInstance)}
-            class="h-10 w-11 rounded-r-md rounded-l-none flex items-center justify-center cursor-pointer {heroBtnClass}"
+            class="h-10 w-10 rounded-md flex items-center justify-center cursor-pointer bg-transparent text-[var(--text-secondary)] hover:bg-white/10 hover:text-[var(--text-primary)]"
             aria-label="Instance options"
           >
-            <MoreHorizontal size={22} strokeWidth={2} />
+            <MoreVertical size={22} strokeWidth={2} />
           </button>
         </div>
       {/if}
