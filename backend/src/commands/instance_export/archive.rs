@@ -1,4 +1,4 @@
-use super::*;
+use zip::{write::SimpleFileOptions, ZipWriter};
 
 pub(super) fn export_as_zip(
     zip: &mut ZipWriter<std::fs::File>,

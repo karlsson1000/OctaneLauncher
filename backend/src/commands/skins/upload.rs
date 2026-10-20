@@ -1,5 +1,12 @@
+use super::types::{SessionProfileResponse, TexturesData};
 use super::*;
+use super::endpoints::{
+    MINECRAFT_SESSION_URL, MINECRAFT_SKIN_RESET_URL, MINECRAFT_SKIN_URL,
+};
+use crate::models::AppConfig;
+use crate::services::accounts::AccountManager;
 use base64::{engine::general_purpose, Engine as _};
+use tauri::Manager;
 
 #[tauri::command]
 pub async fn upload_skin(

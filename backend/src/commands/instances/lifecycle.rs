@@ -417,13 +417,27 @@ pub async fn duplicate_instance(
         .map_err(|e| e.to_string())?;
     
     let copied_files = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
-    copy_dir_recursive_with_progress(
+    crate::utils::copy::copy_dir_with(
         &source_path,
         &dest_path,
-        total_files,
-        copied_files.clone(),
-        &safe_new_name,
-        &app_handle,
+        |entry| {
+            entry.file_type().map(|t| t.is_dir()).unwrap_or(false)
+                && entry.file_name() == "natives"
+        },
+        |entry| {
+            let current =
+                copied_files.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+            let progress = ((current as f64 / total_files as f64) * 85.0) as u32;
+
+            if current % 10 == 0 || progress >= 85 {
+                let _ = app_handle.emit("duplication-progress", serde_json::json!({
+                    "instance": &safe_new_name,
+                    "progress": progress,
+                    "stage": format!("Copying files... ({}/{})", current, total_files),
+                    "current_file": entry.file_name().to_string_lossy()
+                }));
+            }
+        },
     )
     .map_err(|e| e.to_string())?;
     
@@ -486,61 +500,4 @@ fn count_files(path: &std::path::Path) -> std::io::Result<usize> {
     }
     
     Ok(count)
-}
-
-fn copy_dir_recursive_with_progress(
-    src: &std::path::Path,
-    dst: &std::path::Path,
-    total_files: usize,
-    copied_files: std::sync::Arc<std::sync::atomic::AtomicUsize>,
-    instance_name: &str,
-    app_handle: &tauri::AppHandle,
-) -> std::io::Result<()> {
-    use std::fs;
-    use std::sync::atomic::Ordering;
-    
-    if !dst.exists() {
-        fs::create_dir_all(dst)?;
-    }
-    
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let file_type = entry.file_type()?;
-        let src_path = entry.path();
-        let dst_path = dst.join(entry.file_name());
-        
-        if file_type.is_dir() {
-            if entry.file_name() == "natives" {
-                continue;
-            }
-            copy_dir_recursive_with_progress(
-                &src_path,
-                &dst_path,
-                total_files,
-                copied_files.clone(),
-                instance_name,
-                app_handle,
-            )?;
-        } else if file_type.is_file() {
-            fs::copy(&src_path, &dst_path)?;
-            
-            let current = copied_files.fetch_add(1, Ordering::Relaxed) + 1;
-            let progress = ((current as f64 / total_files as f64) * 85.0) as u32;
-            
-            if current % 10 == 0 || progress >= 85 {
-                let file_name = src_path.file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("file");
-                
-                let _ = app_handle.emit("duplication-progress", serde_json::json!({
-                    "instance": instance_name,
-                    "progress": progress,
-                    "stage": format!("Copying files... ({}/{})", current, total_files),
-                    "current_file": file_name
-                }));
-            }
-        }
-    }
-    
-    Ok(())
 }

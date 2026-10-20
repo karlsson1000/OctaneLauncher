@@ -1,4 +1,6 @@
 use super::*;
+use std::fs;
+use std::path::PathBuf;
 
 fn get_recent_skins_path(account_uuid: &str) -> Result<PathBuf, String> {
     crate::commands::validation::validate_uuid(account_uuid)?;

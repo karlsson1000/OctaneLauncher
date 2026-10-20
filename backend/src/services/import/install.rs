@@ -140,15 +140,32 @@ impl InstanceImporter {
         let copied_bytes = std::sync::atomic::AtomicU64::new(0);
         let last_pct = std::sync::atomic::AtomicU32::new(60);
 
-        Self::copy_dir_filtered(
+        crate::utils::copy::copy_dir_with(
             &content_root,
             &instance_dir,
-            SKIPPED_ENTRIES,
-            total_bytes,
-            &copied_bytes,
-            &last_pct,
-            app_handle,
-            target_name,
+            |entry| {
+                SKIPPED_ENTRIES
+                    .iter()
+                    .any(|s| s.eq_ignore_ascii_case(&entry.file_name().to_string_lossy()))
+            },
+            |entry| {
+                let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
+                let copied = copied_bytes.fetch_add(size, std::sync::atomic::Ordering::Relaxed) + size;
+
+                if total_bytes > 0 {
+                    let pct = 60 + (copied.min(total_bytes) * 15 / total_bytes) as u32;
+                    if last_pct.swap(pct, std::sync::atomic::Ordering::Relaxed) != pct {
+                        let _ = app_handle.emit(
+                            "creation-progress",
+                            serde_json::json!({
+                                "instance": target_name,
+                                "progress": pct,
+                                "stage": format!("Copying files... {:.1} MB", copied as f64 / 1024.0 / 1024.0)
+                            }),
+                        );
+                    }
+                }
+            },
         )
         .map_err(|e| e.to_string())?;
 
@@ -203,70 +220,5 @@ impl InstanceImporter {
         }
 
         size
-    }
-
-    #[allow(clippy::too_many_arguments)]
-    fn copy_dir_filtered(
-        src: &Path,
-        dst: &Path,
-        skipped: &[&str],
-        total_bytes: u64,
-        copied_bytes: &std::sync::atomic::AtomicU64,
-        last_pct: &std::sync::atomic::AtomicU32,
-        app_handle: &tauri::AppHandle,
-        target_name: &str,
-    ) -> std::io::Result<()> {
-        use std::sync::atomic::Ordering;
-
-        fs::create_dir_all(dst)?;
-
-        for entry in fs::read_dir(src)? {
-            let entry = entry?;
-            let file_type = entry.file_type()?;
-            let entry_name = entry.file_name();
-
-            if skipped
-                .iter()
-                .any(|s| s.eq_ignore_ascii_case(&entry_name.to_string_lossy()))
-            {
-                continue;
-            }
-
-            let src_path = entry.path();
-            let dst_path = dst.join(entry_name);
-
-            if file_type.is_dir() {
-                Self::copy_dir_filtered(
-                    &src_path,
-                    &dst_path,
-                    skipped,
-                    total_bytes,
-                    copied_bytes,
-                    last_pct,
-                    app_handle,
-                    target_name,
-                )?;
-            } else if file_type.is_file() {
-                let size = entry.metadata().map(|m| m.len()).unwrap_or(0);
-                fs::copy(&src_path, &dst_path)?;
-                let copied = copied_bytes.fetch_add(size, Ordering::Relaxed) + size;
-
-                if total_bytes > 0 {
-                    let pct = 60 + (copied.min(total_bytes) * 15 / total_bytes) as u32;
-                    if last_pct.swap(pct, Ordering::Relaxed) != pct {
-                        let _ = app_handle.emit(
-                            "creation-progress",
-                            serde_json::json!({
-                                "instance": target_name,
-                                "progress": pct,
-                                "stage": format!("Copying files... {:.1} MB", copied as f64 / 1024.0 / 1024.0)
-                            }),
-                        );
-                    }
-                }
-            }
-        }
-
-        Ok(())
     }
 }

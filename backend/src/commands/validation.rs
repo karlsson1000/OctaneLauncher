@@ -9,44 +9,50 @@ pub fn validate_uuid(uuid: &str) -> Result<(), String> {
     Ok(())
 }
 
+/// Shared path-traversal / character checks for names and filenames.
+fn validate_basic_name(value: &str, label: &str) -> Result<(), String> {
+    if value.is_empty() {
+        return Err(format!("{} cannot be empty", label));
+    }
+
+    if value.contains("..") || value.contains('/') || value.contains('\\') {
+        return Err(format!("{} contains invalid characters", label));
+    }
+
+    if value.starts_with('.') {
+        return Err(format!("{} cannot start with a dot", label));
+    }
+
+    if value.contains('\0') {
+        return Err(format!("{} contains null bytes", label));
+    }
+
+    Ok(())
+}
+
+fn validate_pack_filename(filename: &str, kind: &str) -> Result<String, String> {
+    validate_basic_name(filename, "Filename")?;
+
+    let lower = filename.to_lowercase();
+    if !lower.ends_with(".zip") && !lower.ends_with(".jar") {
+        return Err(format!(
+            "Only .zip or .jar files are allowed for {} packs",
+            kind
+        ));
+    }
+
+    Ok(filename.to_string())
+}
+
 /// Sanitize instance names to prevent path traversal
 pub fn sanitize_instance_name(name: &str) -> Result<String, String> {
-    if name.is_empty() {
-        return Err("Instance name cannot be empty".to_string());
-    }
-
-    if name.contains("..") || name.contains('/') || name.contains('\\') {
-        return Err("Instance name contains invalid characters".to_string());
-    }
-
-    if name.starts_with('.') {
-        return Err("Instance name cannot start with a dot".to_string());
-    }
-
-    if name.contains('\0') {
-        return Err("Instance name contains null bytes".to_string());
-    }
-
+    validate_basic_name(name, "Instance name")?;
     Ok(name.to_string())
 }
 
 /// Sanitize mod filenames (only .jar files)
 pub fn sanitize_mod_filename(filename: &str) -> Result<String, String> {
-    if filename.is_empty() {
-        return Err("Filename cannot be empty".to_string());
-    }
-
-    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
-        return Err("Filename contains invalid characters".to_string());
-    }
-
-    if filename.starts_with('.') {
-        return Err("Filename cannot start with a dot".to_string());
-    }
-
-    if filename.contains('\0') {
-        return Err("Filename contains null bytes".to_string());
-    }
+    validate_basic_name(filename, "Filename")?;
 
     if !filename.ends_with(".jar") {
         return Err("Only .jar files are allowed for mods".to_string());
@@ -57,75 +63,18 @@ pub fn sanitize_mod_filename(filename: &str) -> Result<String, String> {
 
 /// Sanitize filenames without extension restriction (for temp downloads)
 pub fn sanitize_filename(filename: &str) -> Result<String, String> {
-    if filename.is_empty() {
-        return Err("Filename cannot be empty".to_string());
-    }
-
-    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
-        return Err("Filename contains invalid characters".to_string());
-    }
-
-    if filename.starts_with('.') {
-        return Err("Filename cannot start with a dot".to_string());
-    }
-
-    if filename.contains('\0') {
-        return Err("Filename contains null bytes".to_string());
-    }
-
+    validate_basic_name(filename, "Filename")?;
     Ok(filename.to_string())
 }
 
 /// Sanitize resource pack filenames (allow .zip and .jar files)
 pub fn sanitize_resourcepack_filename(filename: &str) -> Result<String, String> {
-    if filename.is_empty() {
-        return Err("Filename cannot be empty".to_string());
-    }
-
-    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
-        return Err("Filename contains invalid characters".to_string());
-    }
-
-    if filename.starts_with('.') {
-        return Err("Filename cannot start with a dot".to_string());
-    }
-
-    if filename.contains('\0') {
-        return Err("Filename contains null bytes".to_string());
-    }
-
-    let lower = filename.to_lowercase();
-    if !lower.ends_with(".zip") && !lower.ends_with(".jar") {
-        return Err("Only .zip or .jar files are allowed for resource packs".to_string());
-    }
-
-    Ok(filename.to_string())
+    validate_pack_filename(filename, "resource")
 }
 
 /// Sanitize shader pack filenames (allow .zip and .jar files)
 pub fn sanitize_shaderpack_filename(filename: &str) -> Result<String, String> {
-    if filename.is_empty() {
-        return Err("Filename cannot be empty".to_string());
-    }
-
-    if filename.contains("..") || filename.contains('/') || filename.contains('\\') {
-        return Err("Filename contains invalid characters".to_string());
-    }
-
-    if filename.starts_with('.') {
-        return Err("Filename cannot start with a dot".to_string());
-    }
-
-    if filename.contains('\0') {
-        return Err("Filename contains null bytes".to_string());
-    }
-
-    let lower = filename.to_lowercase();
-    if !lower.ends_with(".zip") && !lower.ends_with(".jar") {
-        return Err("Only .zip or .jar files are allowed for shader packs".to_string());
-    }
-
-    Ok(filename.to_string())
+    validate_pack_filename(filename, "shader")
 }
 
 /// Sanitize server names

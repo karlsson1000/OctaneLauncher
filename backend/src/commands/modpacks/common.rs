@@ -53,32 +53,6 @@ pub(super) async fn set_icon_from_file(safe_name: &str, icon_path: &std::path::P
     }
 }
 
-pub(super) fn copy_dir_recursive(
-    src: &std::path::Path,
-    dst: &std::path::Path,
-) -> std::io::Result<()> {
-    use std::fs;
-
-    if !dst.exists() {
-        fs::create_dir_all(dst)?;
-    }
-
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let file_type = entry.file_type()?;
-        let src_path = entry.path();
-        let dst_path = dst.join(entry.file_name());
-
-        if file_type.is_dir() {
-            copy_dir_recursive(&src_path, &dst_path)?;
-        } else if file_type.is_file() {
-            fs::copy(&src_path, &dst_path)?;
-        }
-    }
-
-    Ok(())
-}
-
 pub(super) fn extract_modpack(
     archive_path: &std::path::Path,
     dest_dir: &std::path::Path,

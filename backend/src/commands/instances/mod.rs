@@ -9,16 +9,16 @@ use crate::commands::validation::sanitize_instance_name;
 use tauri::{Emitter, Manager};
 use std::path::PathBuf;
 
+mod folders;
 mod icons;
 mod lifecycle;
 mod loaders;
-mod system;
 mod worlds;
 
+pub use folders::*;
 pub use icons::*;
 pub use lifecycle::*;
 pub use loaders::*;
-pub use system::*;
 pub use worlds::*;
 
 lazy_static::lazy_static! {

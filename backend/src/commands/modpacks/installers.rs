@@ -1,8 +1,9 @@
 use super::*;
 use super::common::{
-    copy_dir_recursive, extract_minecraft_version, fetch_and_set_cf_pack_icon,
-    install_minecraft_and_loader, set_icon_from_file,
+    extract_minecraft_version, fetch_and_set_cf_pack_icon, install_minecraft_and_loader,
+    set_icon_from_file,
 };
+use crate::utils::copy::copy_dir_recursive;
 
 pub(super) async fn install_from_mrpack(
     extract_dir: std::path::PathBuf,

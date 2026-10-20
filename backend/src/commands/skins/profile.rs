@@ -1,5 +1,10 @@
+use super::types::{ProfileResponse, SessionProfileResponse, TexturesData};
 use super::*;
+use super::endpoints::{MINECRAFT_PROFILE_URL, MINECRAFT_SESSION_URL};
+use crate::models::AppConfig;
+use crate::services::accounts::AccountManager;
 use base64::{engine::general_purpose, Engine as _};
+use tauri::Manager;
 
 #[tauri::command]
 pub async fn get_current_skin(app_handle: tauri::AppHandle) -> Result<Option<CurrentSkin>, String> {

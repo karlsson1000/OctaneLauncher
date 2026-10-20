@@ -1,5 +1,5 @@
 use crate::models::{TrashItem, TrashIndex};
-use crate::utils::{get_trash_dir, get_trash_index_path};
+use crate::utils::{dir_size, get_trash_dir, get_trash_index_path};
 use chrono::{Utc, DateTime, Duration};
 use std::fs;
 
@@ -143,19 +143,4 @@ impl TrashManager {
         Ok(removed)
     }
 
-}
-
-fn dir_size(path: &std::path::Path) -> u64 {
-    let mut total = 0u64;
-    if let Ok(entries) = fs::read_dir(path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                total += dir_size(&path);
-            } else if path.is_file() {
-                total += path.metadata().map(|m| m.len()).unwrap_or(0);
-            }
-        }
-    }
-    total
 }

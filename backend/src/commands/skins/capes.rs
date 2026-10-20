@@ -1,4 +1,6 @@
-use super::*;
+use crate::models::AppConfig;
+use crate::services::accounts::AccountManager;
+use tauri::Manager;
 
 #[tauri::command]
 pub async fn equip_cape(cape_id: String, app_handle: tauri::AppHandle) -> Result<(), String> {
