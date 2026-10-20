@@ -122,4 +122,6 @@ pub struct AssetIndexData {
 #[derive(Debug, Deserialize)]
 pub struct AssetObject {
     pub hash: String,
+    #[serde(default)]
+    pub size: u64,
 }

@@ -4,6 +4,50 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 
 const INSTALLER_TIMEOUT_SECS: u64 = 600;
+const INSTALL_COMPLETE_MARKER: &str = ".octane-install-complete";
+
+pub fn is_version_install_complete(version_dir: &Path) -> bool {
+    version_dir.join(INSTALL_COMPLETE_MARKER).is_file()
+}
+
+pub fn mark_version_install_complete(version_dir: &Path) -> Result<(), String> {
+    let marker_path = version_dir.join(INSTALL_COMPLETE_MARKER);
+    crate::utils::download::write_bytes_atomic(&marker_path, b"ok")
+        .map_err(|e| format!("Failed to write install marker: {}", e))
+}
+
+pub fn clear_version_dir(version_dir: &Path) {
+    if version_dir.exists() {
+        let _ = std::fs::remove_dir_all(version_dir);
+    }
+}
+
+pub fn validate_version_json(json_path: &Path) -> Result<(), String> {
+    let contents = std::fs::read(json_path)
+        .map_err(|e| format!("Failed to read version JSON {}: {}", json_path.display(), e))?;
+    let parsed: serde_json::Value = serde_json::from_slice(&contents)
+        .map_err(|e| format!("Invalid version JSON {}: {}", json_path.display(), e))?;
+
+    let has_libraries = parsed
+        .get("libraries")
+        .and_then(|libraries| libraries.as_array())
+        .map(|libraries| !libraries.is_empty())
+        .unwrap_or(false);
+    let has_main_class = parsed
+        .get("mainClass")
+        .and_then(|main_class| main_class.as_str())
+        .map(|main_class| !main_class.is_empty())
+        .unwrap_or(false);
+
+    if !has_libraries || !has_main_class {
+        return Err(format!(
+            "Version JSON at {} is incomplete (missing libraries or mainClass)",
+            json_path.display()
+        ));
+    }
+
+    Ok(())
+}
 
 pub fn ensure_launcher_profile(meta_dir: &Path) -> Result<(), String> {
     let launcher_profiles_path = meta_dir.join("launcher_profiles.json");

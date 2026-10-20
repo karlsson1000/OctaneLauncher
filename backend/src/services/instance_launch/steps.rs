@@ -285,6 +285,7 @@ impl InstanceManager {
     ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
         let libraries_dir = meta_dir.join("libraries");
         let mut classpath = Vec::new();
+        let mut missing = Vec::new();
 
         for (lib_name, _lib_url, artifact_path) in all_libraries {
             let parts: Vec<&str> = lib_name.split(':').collect();
@@ -317,11 +318,32 @@ impl InstanceManager {
                     .join(&jar_name)
             };
 
-            if lib_path.exists() {
+            if crate::utils::download::is_file_valid(&lib_path, None, None) {
                 classpath.push(lib_path.to_string_lossy().to_string());
             } else {
-                Self::emit_error_log(app_handle, instance_name, &format!("WARNING: Library not found: {}", lib_path.display()));
+                missing.push(lib_path.display().to_string());
             }
+        }
+
+        if !missing.is_empty() {
+            let shown: Vec<String> = missing.iter().take(10).cloned().collect();
+            let noun = if missing.len() == 1 {
+                "library is"
+            } else {
+                "libraries are"
+            };
+            let mut err_msg = format!(
+                "{} required {} missing or corrupt (installation incomplete):\n  {}",
+                missing.len(),
+                noun,
+                shown.join("\n  ")
+            );
+            if missing.len() > shown.len() {
+                err_msg.push_str(&format!("\n  ... and {} more", missing.len() - shown.len()));
+            }
+            err_msg.push_str("\n\nReinstall this Minecraft version to repair the instance.");
+            Self::emit_error_log(app_handle, instance_name, &err_msg);
+            return Err(err_msg.into());
         }
 
         Ok(classpath)
@@ -349,9 +371,9 @@ impl InstanceManager {
             .join(&resolved.base_version_id)
             .join(format!("{}.jar", resolved.base_version_id));
 
-        if !client_jar.exists() {
+        if !crate::utils::download::is_file_valid(&client_jar, None, None) {
             let err_msg = format!(
-                "Minecraft {} JAR not found at: {}",
+                "Minecraft {} JAR not found or corrupt at: {}\n\nReinstall this Minecraft version to repair the instance.",
                 resolved.base_version_id,
                 client_jar.display()
             );

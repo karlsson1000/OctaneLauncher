@@ -1,7 +1,6 @@
 use crate::models::*;
 use crate::utils::{get_current_os, library_maven_path, library_maven_url};
-use std::{fs, path::PathBuf, sync::Arc};
-use tokio::sync::Semaphore;
+use std::{fs, path::PathBuf};
 
 const VERSION_MANIFEST_URL: &str = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
 const MAX_CONCURRENT_DOWNLOADS: usize = 32;
@@ -22,7 +21,6 @@ impl MinecraftInstaller {
     }
 }
 
-mod download;
 mod install;
 mod rules;
 mod versions;

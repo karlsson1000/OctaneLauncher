@@ -1,8 +1,11 @@
 use super::*;
+use crate::utils::download::{
+    download_if_needed, download_many, is_file_valid, write_bytes_atomic, DownloadTask,
+};
 
 impl MinecraftInstaller {
     pub async fn install_version(&self, version_id: &str) -> Result<(), DownloadError> {
-            self.ensure_launcher_profile()?;
+        crate::services::loader_common::ensure_launcher_profile(&self.launcher_dir)?;
 
         let manifest_response = self.http_client.get(VERSION_MANIFEST_URL).send().await?;
         let manifest: VersionManifest = manifest_response.json().await?;
@@ -31,21 +34,22 @@ impl MinecraftInstaller {
         fs::create_dir_all(&objects_dir)?;
 
         let jar_path = versions_dir.join(format!("{}.jar", version_id));
-        self.download_file_with_sha1(
+        download_if_needed(
             &version_details.downloads.client.url,
             &jar_path,
-            &version_details.downloads.client.sha1,
+            Some(&version_details.downloads.client.sha1),
+            Some(version_details.downloads.client.size),
         )
         .await?;
 
         let json_path = versions_dir.join(format!("{}.json", version_id));
         let json_content = serde_json::to_string_pretty(&version_details)?;
-        fs::write(json_path, json_content)?;
+        write_bytes_atomic(&json_path, json_content.as_bytes())?;
 
         let current_os = get_current_os();
         let mut library_tasks = Vec::new();
         let mut native_count = 0;
-        
+
         for library in &version_details.libraries {
             let is_native_name = library.name.contains(":natives-");
             let should_include = if let Some(rules) = &library.rules {
@@ -53,7 +57,7 @@ impl MinecraftInstaller {
             } else {
                 true
             };
-            
+
             if !should_include {
                 continue;
             }
@@ -66,34 +70,37 @@ impl MinecraftInstaller {
                 } else {
                     ""
                 };
-                
+
                 if platform_suffix == current_os {
                     let mut queued_from_artifact = false;
                     if let Some(downloads) = &library.downloads {
                         if let Some(artifact) = &downloads.artifact {
                             queued_from_artifact = true;
                             native_count += 1;
-                            library_tasks.push((
-                                artifact.url.clone(),
-                                libraries_dir.join(&artifact.path),
-                                artifact.sha1.clone(),
-                            ));
+                            library_tasks.push(
+                                DownloadTask::new(
+                                    &artifact.url,
+                                    libraries_dir.join(&artifact.path),
+                                )
+                                .with_sha1(&artifact.sha1)
+                                .with_size(artifact.size),
+                            );
                         }
                     }
                     if !queued_from_artifact {
                         let path = library_maven_path(&libraries_dir, &library.name);
-                        if Self::file_needs_download(&path, None) {
+                        if !is_file_valid(&path, None, None) {
                             let url = library_maven_url(&library.name);
                             if !url.is_empty() {
                                 native_count += 1;
-                                library_tasks.push((url, path, String::new()));
+                                library_tasks.push(DownloadTask::new(&url, path));
                             }
                         }
                     }
                 }
                 continue;
             }
-            
+
             if let Some(downloads) = &library.downloads {
                 if let Some(classifiers) = &downloads.classifiers {
                     for (key, artifact) in classifiers {
@@ -110,35 +117,35 @@ impl MinecraftInstaller {
                         }
 
                         native_count += 1;
-                        library_tasks.push((
-                            artifact.url.clone(),
-                            libraries_dir.join(&artifact.path),
-                            artifact.sha1.clone(),
-                        ));
+                        library_tasks.push(
+                            DownloadTask::new(&artifact.url, libraries_dir.join(&artifact.path))
+                                .with_sha1(&artifact.sha1)
+                                .with_size(artifact.size),
+                        );
                     }
                 }
 
                 if let Some(artifact) = &downloads.artifact {
-                    library_tasks.push((
-                        artifact.url.clone(),
-                        libraries_dir.join(&artifact.path),
-                        artifact.sha1.clone(),
-                    ));
+                    library_tasks.push(
+                        DownloadTask::new(&artifact.url, libraries_dir.join(&artifact.path))
+                            .with_sha1(&artifact.sha1)
+                            .with_size(artifact.size),
+                    );
                 } else {
                     let path = library_maven_path(&libraries_dir, &library.name);
-                    if Self::file_needs_download(&path, None) {
+                    if !is_file_valid(&path, None, None) {
                         let url = library_maven_url(&library.name);
                         if !url.is_empty() {
-                            library_tasks.push((url, path, String::new()));
+                            library_tasks.push(DownloadTask::new(&url, path));
                         }
                     }
                 }
             } else {
                 let path = library_maven_path(&libraries_dir, &library.name);
-                if Self::file_needs_download(&path, None) {
+                if !is_file_valid(&path, None, None) {
                     let url = library_maven_url(&library.name);
                     if !url.is_empty() {
-                        library_tasks.push((url, path, String::new()));
+                        library_tasks.push(DownloadTask::new(&url, path));
                     }
                 }
             }
@@ -148,20 +155,22 @@ impl MinecraftInstaller {
             return Err(format!("No native libraries found for {}", current_os).into());
         }
 
-        self.download_parallel(library_tasks).await?;
+        download_many(library_tasks, MAX_CONCURRENT_DOWNLOADS).await?;
 
         let asset_index_path = assets_dir
             .join("indexes")
             .join(format!("{}.json", version_details.asset_index.id));
         fs::create_dir_all(
-            asset_index_path.parent()
-                .ok_or_else(|| format!("Invalid asset index path: {}", asset_index_path.display()))?
+            asset_index_path.parent().ok_or_else(|| {
+                format!("Invalid asset index path: {}", asset_index_path.display())
+            })?,
         )?;
 
-        self.download_file_with_sha1(
+        download_if_needed(
             &version_details.asset_index.url,
             &asset_index_path,
-            &version_details.asset_index.sha1,
+            Some(&version_details.asset_index.sha1),
+            Some(version_details.asset_index.size),
         )
         .await?;
 
@@ -181,10 +190,14 @@ impl MinecraftInstaller {
                 hash_prefix, asset.hash
             );
 
-            asset_tasks.push((asset_url, asset_path, asset.hash));
+            asset_tasks.push(
+                DownloadTask::new(&asset_url, asset_path)
+                    .with_sha1(&asset.hash)
+                    .with_size(asset.size),
+            );
         }
 
-        self.download_parallel(asset_tasks).await?;
+        download_many(asset_tasks, MAX_CONCURRENT_DOWNLOADS).await?;
 
         Ok(())
     }
