@@ -29,7 +29,7 @@ fn default_discord_rpc() -> bool { true }
 fn default_background_darkness() -> u8 { 80 }
 fn default_background_blur() -> u8 { 0 }
 fn default_theme() -> String { "octane".to_string() }
-fn default_tab() -> String { "home".to_string() }
+fn default_tab() -> String { "instances".to_string() }
 
 impl Default for LauncherSettings {
     fn default() -> Self {

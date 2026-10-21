@@ -1,7 +1,7 @@
 <script lang="ts">
   import { fade, fly } from "svelte/transition"
   import {
-    House, LibraryBig, Package, Blocks, Shirt, Images, SquareTerminal,
+    LibraryBig, Package, Blocks, Shirt, Images, SquareTerminal,
     Settings, Plus, Paintbrush, Play, AppWindow, HardDrive, User,
     Search,
   } from "lucide-svelte"
@@ -17,7 +17,7 @@
     id: string
     label: string
     hint?: string
-    icon: typeof House
+    icon: typeof LibraryBig
     keywords?: string
     section: string
     action: () => void
@@ -40,7 +40,7 @@
 
   let backdropArmed = false
 
-  function goTab(tab: Parameters<typeof setActiveTab>[0], label: string, icon: typeof House, extraKeywords?: string) {
+  function goTab(tab: Parameters<typeof setActiveTab>[0], label: string, icon: typeof LibraryBig, extraKeywords?: string) {
     return {
       id: `tab-${tab}`,
       label,
@@ -56,7 +56,6 @@
 
   const entries = $derived.by<Entry[]>(() => {
     const list: Entry[] = [
-      goTab("home", "Home", House),
       goTab("instances", "Instances", LibraryBig),
       goTab("addons", "Addons", Blocks, "mods modpacks browse modrinth curseforge search"),
       goTab("skins", "Skins", Shirt),

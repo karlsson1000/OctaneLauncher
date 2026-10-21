@@ -7,7 +7,7 @@
   } from "../../lib/launcherStore.svelte"
 
   const tabLabels: Record<string, string> = {
-    home: "Home", instances: "Instances", addons: "Addons",
+    instances: "Instances", addons: "Addons",
     servers: "Servers", skins: "Skins", screenshots: "Screenshots", console: "Console",
   }
 

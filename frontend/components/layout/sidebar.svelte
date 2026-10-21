@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { House, LibraryBig, Package, Blocks, Shirt, Images, SquareTerminal, HardDrive, Settings, Download, Plus, FolderOpen, Copy, Trash2 } from "lucide-svelte"
+  import { LibraryBig, Package, Blocks, Shirt, Images, SquareTerminal, HardDrive, Settings, Download, Plus, FolderOpen, Copy, Trash2 } from "lucide-svelte"
   import ContextMenu from "../ui/context-menu.svelte"
   import Tooltip from "../ui/tooltip.svelte"
   import {
@@ -16,7 +16,6 @@
   import type { Instance } from "../../types"
 
   const tabs = [
-    { id: "home" as const, icon: House, label: "Home" },
     { id: "instances" as const, icon: LibraryBig, label: "Instances" },
     { id: "addons" as const, icon: Blocks, label: "Addons" },
     { id: "skins" as const, icon: Shirt, label: "Skins" },
@@ -136,7 +135,7 @@
 />
 
 <div class="w-10 flex-shrink-0 flex flex-col items-center gap-1 relative z-10">
-  <div bind:this={listEl} class="flex flex-col items-center gap-2.5 flex-1 {dragBlock ? '[&_*]:cursor-grabbing!' : ''}">
+  <div bind:this={listEl} class="flex flex-col items-center gap-2.5 flex-1 mt-2 {dragBlock ? '[&_*]:cursor-grabbing!' : ''}">
     {#each sidebarOrder as block, bi (block)}
       <div animate:flip={{ duration: flipDuration }} class={block === "recents" && recentInstances.length === 0 ? "hidden" : ""}>
       {#if block === "recents"}
@@ -189,7 +188,7 @@
     {/each}
   </div>
 
-  <div class="flex flex-col items-center gap-2">
+  <div class="flex flex-col items-center gap-2 mb-2">
     {#if store.updateInfo}
       <Tooltip text={store.isInstallingUpdate ? "Installing update..." : `Update available: ${store.updateInfo.new_version}`}>
         <button

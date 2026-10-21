@@ -12,6 +12,13 @@
   let isTabDropdownOpen = $state(false)
   let tabDropdownEl: HTMLDivElement | undefined = $state()
 
+  const DEFAULT_TAB_OPTIONS = ["instances", "addons", "skins", "screenshots", "servers"]
+
+  let selectedTab = $derived.by(() => {
+    const tab = store.settings?.default_tab
+    return tab && DEFAULT_TAB_OPTIONS.includes(tab) ? tab : "instances"
+  })
+
   $effect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (tabDropdownEl && !tabDropdownEl.contains(event.target as Node)) {
@@ -54,7 +61,7 @@
         onclick={() => isTabDropdownOpen = !isTabDropdownOpen}
         class="relative h-8 pl-3 pr-8 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center gap-2 cursor-pointer capitalize min-w-[130px]"
       >
-        {store.settings?.default_tab || "home"}
+        {selectedTab}
         <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
           {#if isTabDropdownOpen}
             <ChevronUp size={14} strokeWidth={3} />
@@ -65,8 +72,8 @@
       </button>
       {#if isTabDropdownOpen}
         <div role="menu" class="dropdown-menu drop-right absolute right-0 z-[60] w-full min-w-[160px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5">
-          {#each ["home", "instances", "addons", "skins", "screenshots", "servers"] as tab (tab)}
-            <MenuOption label={tab.charAt(0).toUpperCase() + tab.slice(1)} checked={(store.settings?.default_tab || "home") === tab} onclick={() => { onChange({ ...store.settings!, default_tab: tab } as LauncherSettings); isTabDropdownOpen = false }} />
+          {#each DEFAULT_TAB_OPTIONS as tab (tab)}
+            <MenuOption label={tab.charAt(0).toUpperCase() + tab.slice(1)} checked={selectedTab === tab} onclick={() => { onChange({ ...store.settings!, default_tab: tab } as LauncherSettings); isTabDropdownOpen = false }} />
           {/each}
         </div>
       {/if}

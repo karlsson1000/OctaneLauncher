@@ -254,21 +254,6 @@ export interface Cape {
   icon?: string
 }
 
-export interface Snapshot {
-  id: string
-  title: string
-  version: string
-  type: string
-  date?: string
-  image?: {
-    title: string
-    url: string
-  }
-  body?: string
-  contentPath?: string
-  shortText?: string
-}
-
 export interface TrashItem {
   id: string
   original_name: string
@@ -276,11 +261,6 @@ export interface TrashItem {
   folder_name: string
   moved_at: string
   size: number
-}
-
-export interface SnapshotsResponse {
-  version: number
-  entries: Snapshot[]
 }
 
 export interface SystemInfo {

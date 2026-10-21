@@ -37,7 +37,7 @@
   </div>
 {/snippet}
 
-<div class="flex-1 rounded-xl overflow-hidden flex flex-col relative" style={backgroundStyle}>
+<div class="flex-1 min-w-0 rounded-xl overflow-hidden flex flex-col relative" style={backgroundStyle}>
   {#if store.background}
     <div class="absolute inset-0" style={overlayStyle}></div>
   {/if}

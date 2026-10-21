@@ -36,7 +36,7 @@
   onclick={openInstance}
   oncontextmenu={(e) => onContextMenu(e, instance)}
   onkeydown={(e) => { if (e.key === 'Enter') openInstance() }}
-  class="bg-[var(--bg-tertiary)] rounded-r-md cursor-pointer transition-all hover:brightness-120 group relative"
+  class="bg-[var(--bg-tertiary)] rounded-r-md cursor-pointer hover:brightness-120 group relative"
 >
   <div class="flex min-h-0 relative z-0 items-center">
     <div class="absolute -left-[3px] top-0 bottom-0 w-[3px] {loader.accent}"></div>

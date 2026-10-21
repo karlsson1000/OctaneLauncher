@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Search, Plus, FolderPlus, ChevronDown, Save, ClipboardCheck, LayoutGrid, List, Check } from "lucide-svelte"
+  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Search, Plus, FolderPlus, ChevronDown, Save, ClipboardCheck, LayoutGrid, List, Check, Play, MoreVertical } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import type { Instance } from "../../types"
   import { getMinecraftVersion } from "../../lib/version"
+  import { instanceIconSrc } from "../../lib/icons"
   import ContextMenu from "../../components/ui/context-menu.svelte"
   import GroupHeader from "./components/group-header.svelte"
   import InstanceLayout from "./components/instance-layout.svelte"
@@ -13,6 +14,7 @@
     handleOpenInstanceFolderByInstance,
     handleDuplicateInstance, handleDeleteInstance,
     setExportModal, setSelectedInstance, handleShowDetails,
+    handleLaunch, handleKillInstance,
   } from "../../lib/launcherStore.svelte"
   import { storeGet, storeSet } from "../../lib/store"
   import { showToast } from "../../lib/toastStore.svelte"
@@ -182,6 +184,11 @@
     groupContextMenu = { x: e.clientX, y: e.clientY, group }
   }
 
+  function handleHeroDotsMenu(e: MouseEvent, instance: Instance) {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    contextMenu = { x: rect.right - 220, y: rect.bottom + 6, instance }
+  }
+
   let isSortDropdownOpen = $state(false)
   let sortDropdownRef = $state<HTMLDivElement | undefined>(undefined)
 
@@ -215,6 +222,33 @@
   let filteredInstances = $derived(
     store.instances.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
   )
+
+  let lastPlayedInstance = $derived<Instance | null>(
+    [...store.instances]
+      .filter(i => i.last_played)
+      .sort((a, b) => new Date(b.last_played!).getTime() - new Date(a.last_played!).getTime())[0] ?? null
+  )
+
+  let isLastPlayedRunning = $derived(lastPlayedInstance ? store.runningInstances.has(lastPlayedInstance.name) : false)
+  let isLastPlayedLaunching = $derived(lastPlayedInstance ? store.launchingInstanceName === lastPlayedInstance.name : false)
+  let lastPlayedDisabled = $derived(store.launchingInstanceName !== null && !isLastPlayedRunning && !isLastPlayedLaunching)
+
+  const CONTINUE_MESSAGES = [
+    "Continue where you left off..",
+    "Pick up where you left off..",
+    "Jump back in..",
+  ]
+
+  let continueMessage = $state(CONTINUE_MESSAGES[0])
+  let continueTarget = $state<string | null>(null)
+
+  $effect(() => {
+    const target = lastPlayedInstance?.name ?? null
+    if (target && target !== continueTarget) {
+      continueTarget = target
+      continueMessage = CONTINUE_MESSAGES[Math.floor(Math.random() * CONTINUE_MESSAGES.length)]
+    }
+  })
 
   let instanceToGroup = $derived.by(() => {
     const map = new Map<string, string>()
@@ -280,6 +314,46 @@
 
 <div class="p-8 space-y-4">
   <div class="max-w-7xl mx-auto">
+    {#if lastPlayedInstance}
+      {@const heroIcon = instanceIconSrc(lastPlayedInstance.icon_path, lastPlayedInstance.name)}
+      <div class="w-full rounded-md bg-[var(--bg-tertiary)] flex items-center gap-4 px-4 py-3 mb-8">
+        <div class="w-12 h-12 rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
+          {#if heroIcon}
+            <img src={heroIcon} alt={lastPlayedInstance.name} class="w-12 h-12 object-cover rounded-md" />
+          {:else}
+            <Package size={24} class="text-[var(--text-muted)]" strokeWidth={1.5} />
+          {/if}
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <div class="text-lg font-semibold text-[var(--text-primary)] truncate leading-tight">{continueMessage}</div>
+          <div class="text-sm text-[var(--text-secondary)] truncate mt-0.5">{lastPlayedInstance.name}</div>
+        </div>
+
+        <button
+          onclick={() => isLastPlayedRunning ? handleKillInstance(lastPlayedInstance) : handleLaunch(lastPlayedInstance)}
+          disabled={lastPlayedDisabled}
+          class="h-10 px-5 rounded-md flex items-center justify-center gap-2.5 text-base font-semibold cursor-pointer disabled:opacity-40 shrink-0 {isLastPlayedRunning || isLastPlayedLaunching ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25' : 'bg-[#16a34a] text-[#181a1f] hover:bg-[#15803d]'}"
+          title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
+        >
+          {#if isLastPlayedLaunching || isLastPlayedRunning}
+            <div class="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
+          {:else}
+            <Play size={20} fill="currentColor" strokeWidth={0} />
+          {/if}
+          <span>{isLastPlayedRunning ? "Stop" : isLastPlayedLaunching ? "Launching..." : "Play"}</span>
+        </button>
+
+        <button
+          onclick={(e) => handleHeroDotsMenu(e, lastPlayedInstance)}
+          class="w-9 h-9 rounded-md flex items-center justify-center cursor-pointer text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] shrink-0"
+          aria-label="Instance options"
+        >
+          <MoreVertical size={20} strokeWidth={2} />
+        </button>
+      </div>
+    {/if}
+
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-2">
         {#if store.instances.length > 0}

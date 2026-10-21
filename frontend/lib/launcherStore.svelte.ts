@@ -5,7 +5,7 @@ import type { Instance, LauncherSettings, ConsoleLog, AccountInfo, UpdateInfo } 
 import { storeGet, storeSet } from "./store"
 import { showToast } from "./toastStore.svelte"
 
-type ActiveTab = "home" | "instances" | "addons" | "console" | "servers" | "skins" | "screenshots"
+type ActiveTab = "instances" | "addons" | "console" | "servers" | "skins" | "screenshots"
 type AddonsSubTab = "mods" | "modpacks" | "resourcepacks" | "shaderpacks"
 type ModalType = "warning" | "danger" | "success" | "info"
 
@@ -53,7 +53,7 @@ export const store = $state({
   selectedInstance: null as Instance | null,
   launcherDirectory: "",
   settings: null as LauncherSettings | null,
-  activeTab: "home" as ActiveTab,
+  activeTab: "instances" as ActiveTab,
   consoleLogs: [] as ConsoleLog[],
   showInstanceDetails: false,
   creatingInstanceName: null as string | null,
@@ -387,7 +387,6 @@ function handleCreateNew() { store.showCreateModal = true }
 function handleClearConsole(instanceName: string) {
   store.consoleLogs = store.consoleLogs.filter(log => log.instance !== instanceName)
 }
-function handleNavigateToInstances() { store.activeTab = "instances" }
 
 async function handleWorldLaunch(worldName: string) {
   if (!store.selectedInstance || !store.activeAccount) return
@@ -493,7 +492,7 @@ async function loadAllInitialData() {
     ])
     if (!appliedDefaultTab && store.settings?.default_tab) {
       const defaultTab = store.settings.default_tab === "browse" ? "addons" : store.settings.default_tab
-      const validTabs = ["home", "instances", "addons", "console", "servers", "skins", "screenshots"]
+      const validTabs = ["instances", "addons", "console", "servers", "skins", "screenshots"]
       if (validTabs.includes(defaultTab)) {
         store.activeTab = defaultTab as ActiveTab
       }
@@ -584,7 +583,6 @@ export {
   handleOpenSettings,
   handleCreateNew,
   handleClearConsole,
-  handleNavigateToInstances,
   handleWorldLaunch,
   loadInstances,
   handleInstanceRenamed,

@@ -32,7 +32,7 @@
   })
 </script>
 
-<div class="relative px-1 pb-1">
+<div class="relative px-1 mt-2 pb-1">
   {#if store.isAuthenticated && store.activeAccount}
     {@const activeAccount = store.activeAccount}
     <button

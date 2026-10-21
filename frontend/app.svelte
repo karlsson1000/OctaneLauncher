@@ -11,7 +11,6 @@
   import OnboardingModal from "./features/onboarding/onboarding-modal.svelte"
   import GlobalSearch from "./components/ui/global-search.svelte"
   import Toaster from "./components/ui/toaster.svelte"
-  import Home from "./features/home/home.svelte"
   import Instances from "./features/instances/instances.svelte"
   import Addons from "./features/addons/addons.svelte"
   import Console from "./features/console/console.svelte"
@@ -32,7 +31,6 @@
   import { ArrowLeft, ArrowRight, RefreshCw, Search } from "lucide-svelte"
 
   const tabs = {
-    home: Home,
     instances: Instances,
     addons: Addons,
     servers: Servers,

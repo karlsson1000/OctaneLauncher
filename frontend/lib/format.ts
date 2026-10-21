@@ -22,28 +22,8 @@ export function formatIsoDate(dateString: string): string {
   return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
 }
 
-export function formatRelativeDate(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const todayOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const diffDays = Math.floor((todayOnly.getTime() - dateOnly.getTime()) / (1000 * 60 * 60 * 24))
-  if (diffDays === 0) return "Today"
-  if (diffDays === 1) return "Yesterday"
-  if (diffDays < 7) return `${diffDays} days ago`
-  if (diffDays < 30) {
-    const weeks = Math.floor(diffDays / 7)
-    return weeks === 1 ? "1 week ago" : `${weeks} weeks ago`
-  }
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-}
-
 export function formatDownloads(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
   if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`
   return count.toString()
-}
-
-export function cleanVersionName(version: string): string {
-  return version.replace("Minecraft Snapshot ", "").trim()
 }
