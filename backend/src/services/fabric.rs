@@ -147,40 +147,16 @@ impl FabricInstaller {
             };
             let url = format!("{}/{}/{}/{}/{}", base_url, group_path, artifact, version, jar_name);
 
-            if !lib_path.exists() {
-                if let Some(parent) = lib_path.parent() {
-                    fs::create_dir_all(parent)?;
-                }
-
-                let response = self
-                    .http_client
-                    .get(&url)
-                    .send()
-                    .await
-                    .map_err(|e| format!("Failed to download library {}: {}", lib.name, e))?;
-
-                if !response.status().is_success() {
-                    return Err(format!(
-                        "Failed to download library {}: HTTP {}",
-                        lib.name,
-                        response.status()
-                    )
-                    .into());
-                }
-
-                let bytes = response
-                    .bytes()
-                    .await
-                    .map_err(|e| format!("Failed to read library {}: {}", lib.name, e))?;
-
-                fs::write(&lib_path, bytes)
-                    .map_err(|e| format!("Failed to write library {}: {}", lib.name, e))?;
+            if let Err(error) =
+                crate::utils::download::download_if_needed(&url, &lib_path, None, None).await
+            {
+                return Err(format!("Failed to download library {}: {}", lib.name, error).into());
             }
         }
 
         let profile_path = versions_dir.join(format!("{}.json", fabric_id));
         let profile_json = serde_json::to_string_pretty(&profile)?;
-        fs::write(&profile_path, profile_json)?;
+        crate::utils::download::write_bytes_atomic(&profile_path, profile_json.as_bytes())?;
 
         Ok(fabric_id)
     }

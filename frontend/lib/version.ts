@@ -22,3 +22,30 @@ export function getMinecraftVersion(instance: Instance): string {
   }
   return instance.version
 }
+
+export function getFabricLoaderVersion(instance: Instance): string | null {
+  if (instance.loader === "fabric") {
+    const parts = instance.version.split("-")
+    if (parts.length >= 2) return parts[parts.length - 2]
+  }
+  return null
+}
+
+export function getNeoForgeVersion(instance: Instance): string | null {
+  if (instance.loader === "neoforge") {
+    const versionPart = instance.version.replace("neoforge-", "")
+    const parts = versionPart.split("-")
+    const mcVersion = getMinecraftVersion(instance)
+    const neoforgeVersionParts = parts.filter(part => part !== mcVersion)
+    if (neoforgeVersionParts.length > 0) return neoforgeVersionParts.join("-")
+  }
+  return null
+}
+
+export function getForgeVersion(instance: Instance): string | null {
+  if (instance.loader === "forge") {
+    const parts = instance.version.split("-forge-")
+    if (parts.length > 1) return parts[1]
+  }
+  return null
+}

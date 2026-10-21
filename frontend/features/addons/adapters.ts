@@ -9,7 +9,7 @@ import type {
 } from "../../types"
 
 export type ContentSource = "modrinth" | "curseforge"
-type AddonKind = "mods" | "modpacks" | "resourcepacks" | "shaderpacks"
+export type AddonKind = "mods" | "modpacks" | "resourcepacks" | "shaderpacks"
 
 export interface AddonHit {
   id: string

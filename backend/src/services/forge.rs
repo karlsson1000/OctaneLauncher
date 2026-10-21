@@ -103,8 +103,12 @@ impl ForgeInstaller {
         let version_dir = self.meta_dir.join("versions").join(&version_id);
         let json_path = version_dir.join(format!("{}.json", version_id));
 
-        if json_path.exists() {
+        if loader_common::is_version_install_complete(&version_dir) {
             return Ok(version_id);
+        }
+
+        if version_dir.exists() {
+            loader_common::clear_version_dir(&version_dir);
         }
 
         let installer_url = format!(
@@ -119,18 +123,30 @@ impl ForgeInstaller {
         }
 
         let installer_bytes = installer_response.bytes().await?;
+
+        if !crate::utils::download::has_zip_magic_bytes(&installer_bytes) {
+            return Err("Downloaded Forge installer is not a valid jar (the download may have been intercepted)".into());
+        }
+
         let installer_path = loader_common::unique_installer_jar("forge", &full_version);
-        std::fs::write(&installer_path, &installer_bytes)?;
+        crate::utils::download::write_bytes_atomic(&installer_path, &installer_bytes)?;
 
         let meta_dir = self.meta_dir.clone();
         let install_result =
             loader_common::run_installer_jvm(installer_path.clone(), meta_dir).await;
 
         let _ = std::fs::remove_file(&installer_path);
-        loader_common::cleanup_install_logs(&self.meta_dir, "forge", &full_version);
-        let (success, stdout, stderr) = install_result?;
+
+        let (success, stdout, stderr) = match install_result {
+            Ok(output) => output,
+            Err(error) => {
+                loader_common::clear_version_dir(&version_dir);
+                return Err(error.into());
+            }
+        };
 
         if !success {
+            loader_common::clear_version_dir(&version_dir);
             return Err(format!(
                 "Forge installer failed!\nStdout: {}\nStderr: {}",
                 stdout, stderr
@@ -138,11 +154,20 @@ impl ForgeInstaller {
         }
 
         if !json_path.exists() {
+            loader_common::clear_version_dir(&version_dir);
             return Err(format!(
                 "Forge installer did not create the expected version JSON at: {:?}",
                 json_path
             ).into());
         }
+
+        if let Err(error) = loader_common::validate_version_json(&json_path) {
+            loader_common::clear_version_dir(&version_dir);
+            return Err(error.into());
+        }
+
+        loader_common::mark_version_install_complete(&version_dir)?;
+        loader_common::cleanup_install_logs(&self.meta_dir, "forge", &full_version);
 
         Ok(version_id)
     }
