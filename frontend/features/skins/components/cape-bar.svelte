@@ -2,10 +2,6 @@
   import { Loader2, Plane, RectangleVertical } from "lucide-svelte"
   import type { Cape } from "../../../types"
 
-  const CAPE_TEX_W = 64
-  const CAPE_FRONT = { x: 1, y: 1, w: 10, h: 16 }
-  const CAPE_THUMB_SCALE = 2
-
   let { capes, activeCape, loadingCapes, activeCapeUrl, showElytra, onSelect, onRemove, onToggleElytra }: {
     capes: Cape[]
     activeCape: string | null
@@ -20,14 +16,14 @@
 
 {#if loadingCapes || capes.length > 0}
   {#if loadingCapes}
-    <div style="display: flex; align-items: center; gap: 4px;">
-      <Loader2 size={14} style="animation: spin 1s linear infinite; color: var(--text-muted);" />
-      <span style="font-size: 11px; color: var(--text-muted);">Capes…</span>
+    <div class="flex items-center gap-1">
+      <Loader2 size={14} class="animate-spin text-[var(--text-muted)]" />
+      <span class="text-[11px] text-[var(--text-muted)]">Capes…</span>
     </div>
   {:else if capes.length === 0}
-    <span style="font-size: 11px; color: var(--text-muted);">No capes</span>
+    <span class="text-[11px] text-[var(--text-muted)]">No capes</span>
   {:else}
-    <div style="display: flex; align-items: center; gap: 3px;">
+    <div class="flex items-center gap-[3px]">
       {#each capes as cape (cape.id)}
         {@const isActive = activeCape === cape.id}
         <div
@@ -39,12 +35,12 @@
           class="group cursor-pointer shrink-0 leading-none"
         >
           <div class="w-[26px] h-[38px] rounded border-2 border-transparent group-hover:border-[var(--text-muted)] overflow-hidden bg-[var(--bg-secondary)] relative flex items-center justify-center">
-            <div style="width: {CAPE_FRONT.w * CAPE_THUMB_SCALE}px; height: {CAPE_FRONT.h * CAPE_THUMB_SCALE}px; overflow: hidden; flex-shrink: 0;">
+            <div class="w-[20px] h-[32px] overflow-hidden shrink-0">
               <img
                 src={cape.url}
                 alt={cape.alias}
                 draggable={false}
-                style="width: {CAPE_TEX_W * CAPE_THUMB_SCALE}px; max-width: none; height: auto; margin-left: {-CAPE_FRONT.x * CAPE_THUMB_SCALE}px; margin-top: {-CAPE_FRONT.y * CAPE_THUMB_SCALE}px; image-rendering: pixelated; display: block;"
+                class="block w-[128px] max-w-none h-auto ml-[-2px] mt-[-2px] [image-rendering:pixelated]"
                 onerror={(e) => { const img = e.currentTarget as HTMLImageElement; img.onerror = null; img.src = '/logo.png' }}
               />
             </div>

@@ -107,27 +107,31 @@
 <div
   role="presentation"
   bind:this={containerEl}
-  style="position: relative; overflow: hidden; height: 100%; box-sizing: border-box; user-select: none; -webkit-user-select: none;"
+  class="relative h-full overflow-hidden box-border select-none"
   onpointerdown={handlePointerDown}
   onpointermove={handlePointerMove}
   onpointerup={handlePointerUp}
   onpointercancel={handlePointerCancel}
 >
-  <div style="position: absolute; inset: 0; z-index: 0; pointer-events: none;">
-    <div style="width: 100%; height: 100%; position: relative; overflow: hidden; background-image: url(/skinstab/background.webp); background-size: cover; background-position: center; background-repeat: no-repeat;">
-      <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35); z-index: 1;"></div>
-      <div style="position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; opacity: {loading ? 1 : 0}; transition: opacity 0.15s;">
-        <Loader2 size={32} style="animation: spin 1s linear infinite; color: #3b82f6; margin-bottom: 12px;" />
-        <p style="font-size: 14px; color: var(--text-muted); margin: 0;">Loading skin…</p>
+  <div class="absolute inset-0 z-0 pointer-events-none">
+    <div class="relative w-full h-full overflow-hidden bg-[url('/skinstab/background.webp')] bg-cover bg-center bg-no-repeat bg-fixed">
+      <div class="absolute inset-0 z-[1] bg-black/35"></div>
+
+      <div
+        class="absolute inset-0 z-[3] flex flex-col items-center justify-center pointer-events-none transition-opacity duration-150 {loading ? 'opacity-100' : 'opacity-0'}"
+      >
+        <Loader2 size={32} class="animate-spin text-blue-500 mb-3" />
+        <p class="m-0 text-sm text-[var(--text-muted)]">Loading skin…</p>
       </div>
+
       <canvas
         bind:this={canvasEl}
-        style="display: block; position: relative; z-index: 2; opacity: {loading ? 0 : 1}; transition: opacity 0.2s; width: 100%; height: 100%;"
+        class="relative z-[2] block w-full h-full transition-opacity duration-200 {loading ? 'opacity-0' : 'opacity-100'}"
       ></canvas>
     </div>
   </div>
 
-  <div style="position: relative; z-index: 1; height: 100%; box-sizing: border-box; padding: 32px 32px 88px;">
+  <div class="relative z-[1] h-full box-border px-8 pt-8 pb-[88px]">
     <div class="max-w-7xl mx-auto w-full">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-semibold text-[var(--text-primary)] tracking-tight">
@@ -137,7 +141,7 @@
     </div>
 
     {#if error}
-      <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: auto;">
+      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
         <div class="bg-[var(--bg-tertiary)] rounded-md p-4 max-w-sm w-full">
           <p class="text-xs text-red-400 leading-relaxed text-center">{error}</p>
         </div>

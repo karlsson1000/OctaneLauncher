@@ -29,14 +29,13 @@
 </script>
 
 <div class="max-w-7xl mx-auto">
-  <div class="w-full h-36 bg-[var(--bg-tertiary)] rounded-md relative flex items-center px-8">
+  <div class="w-full h-34 bg-[var(--bg-tertiary)] rounded-md relative flex items-center px-8">
     {#if store.activeAccount}
-      <div class="absolute left-12 bottom-0" style="z-index: 10">
+      <div class="absolute left-12 bottom-0 z-10">
         <img
           src="https://renders.stellarmc.gg/bust/{store.activeAccount.username}"
           alt={store.activeAccount.username}
-          class="h-48 w-auto object-contain"
-          style="image-rendering: pixelated; display: block"
+          class="h-48 w-auto object-contain block [image-rendering:pixelated]"
         />
       </div>
     {/if}

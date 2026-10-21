@@ -34,7 +34,7 @@
   }
 </script>
 
-<div class="px-8 pb-8 pt-[75px] space-y-10">
+<div class="px-8 pb-8 pt-20 space-y-10">
   <HomeHero {lastPlayedInstance} onDotsMenu={handleDotsMenu} />
 
   {#if recentInstances.length > 0}
