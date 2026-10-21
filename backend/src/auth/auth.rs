@@ -2,8 +2,8 @@ use crate::models::*;
 use chrono::Utc;
 use oauth2::{
     basic::{BasicClient, BasicTokenResponse},
-    AuthUrl, AuthorizationCode, ClientId, CsrfToken, PkceCodeChallenge, RedirectUrl, 
-    RefreshToken, Scope, TokenResponse, TokenUrl,
+    AuthUrl, AuthorizationCode, ClientId, CsrfToken, EndpointNotSet, EndpointSet,
+    PkceCodeChallenge, RedirectUrl, RefreshToken, Scope, TokenResponse, TokenUrl,
 };
 use url::Url;
 
@@ -17,20 +17,19 @@ const MINECRAFT_LOGIN_URL: &str = "https://api.minecraftservices.com/launcher/lo
 const MINECRAFT_PROFILE_URL: &str = "https://api.minecraftservices.com/minecraft/profile";
 const AUTH_SUCCESS_HTML: &str = include_str!("../../../auth.html");
 
+type OAuthClient = BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>;
+
 pub struct Authenticator {
-    oauth_client: BasicClient,
+    oauth_client: OAuthClient,
     http_client: reqwest::Client,
 }
 
 impl Authenticator {
     pub fn new(client_id: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let oauth_client = BasicClient::new(
-            ClientId::new(client_id.to_string()),
-            None,
-            AuthUrl::new(AUTH_URL.to_string()).unwrap(),
-            Some(TokenUrl::new(TOKEN_URL.to_string()).unwrap()),
-        )
-        .set_redirect_uri(RedirectUrl::new(REDIRECT_URL.to_string()).unwrap());
+        let oauth_client = BasicClient::new(ClientId::new(client_id.to_string()))
+            .set_auth_uri(AuthUrl::new(AUTH_URL.to_string()).unwrap())
+            .set_token_uri(TokenUrl::new(TOKEN_URL.to_string()).unwrap())
+            .set_redirect_uri(RedirectUrl::new(REDIRECT_URL.to_string()).unwrap());
 
         Ok(Self {
             oauth_client,
@@ -109,7 +108,7 @@ impl Authenticator {
             .oauth_client
             .exchange_code(AuthorizationCode::new(code))
             .set_pkce_verifier(pkce_verifier)
-            .request_async(oauth2::reqwest::async_http_client)
+            .request_async(&self.http_client)
             .await?;
 
         Ok(token_response)
@@ -283,10 +282,11 @@ impl Authenticator {
         &self,
         refresh_token: &str,
     ) -> Result<AuthResponse, Box<dyn std::error::Error>> {
+        let refresh = RefreshToken::new(refresh_token.to_string());
         let token_response = self
             .oauth_client
-            .exchange_refresh_token(&RefreshToken::new(refresh_token.to_string()))
-            .request_async(oauth2::reqwest::async_http_client)
+            .exchange_refresh_token(&refresh)
+            .request_async(&self.http_client)
             .await?;
 
         let msa_token = token_response.access_token().secret();

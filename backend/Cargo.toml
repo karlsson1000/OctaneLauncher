@@ -25,7 +25,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "sync", "time", "fs", "io-util", "process"] }
 webbrowser = "1.0"
 dirs = "5.0"
-oauth2 = { version = "4.4", default-features = false, features = ["native-tls"] }
+oauth2 = { version = "5.0", default-features = false, features = ["native-tls"] }
 chrono = { version = "0.4", features = ["serde"] }
 url = "2.5"
 uuid = { version = "1.0", features = ["serde", "v4"] }
