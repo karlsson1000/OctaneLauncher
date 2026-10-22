@@ -54,26 +54,27 @@
 </script>
 
 <div class="relative flex flex-col h-full overflow-hidden">
-  <AddonSubtabs
-    active={store.addonsSubTab}
-    onSelect={(id) => { setAddonsSubTab(id); viewDetail = null }}
-  />
-
   {#if !viewDetail}
-    <div class="flex-shrink-0 px-8 pb-4">
+    <div class="flex-shrink-0 px-8 pt-8 pb-4">
       <div class="max-w-7xl mx-auto">
         <div class="flex gap-2 items-stretch">
           <SourceDropdown source={contentSource} onSelect={(s) => contentSource = s} />
-          <AddonSearch
-            bind:value={searchQuery}
-            placeholder={ADDON_CATEGORIES[store.addonsSubTab].placeholder}
+          <div class="w-90 flex-shrink-0 flex">
+            <AddonSearch
+              bind:value={searchQuery}
+              placeholder={ADDON_CATEGORIES[store.addonsSubTab].placeholder}
+            />
+          </div>
+          <AddonSubtabs
+            active={store.addonsSubTab}
+            onSelect={(id) => setAddonsSubTab(id)}
           />
         </div>
       </div>
     </div>
   {/if}
 
-  <div class="flex-1 min-h-0 px-8 overflow-hidden">
+  <div class="flex-1 min-h-0 px-8 overflow-hidden {viewDetail ? 'pt-8' : ''}">
     <div class="h-full max-w-7xl mx-auto grid grid-cols-1">
       <div class="overflow-y-auto" bind:this={listScroller}>
         <div class={viewDetail ? "hidden" : ""}>

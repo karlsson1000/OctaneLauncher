@@ -15,23 +15,19 @@
   ]
 </script>
 
-<div class="flex-shrink-0 px-8 pt-8 pb-4">
-  <div class="max-w-7xl mx-auto">
-    <div class="flex items-center gap-4">
-      {#each tabs as tab, index}
-        {@const Icon = tab.icon}
-        {@const isActive = active === tab.id}
-        <button
-          onclick={() => onSelect(tab.id)}
-          class="flex items-center gap-2 text-2xl font-semibold tracking-tight cursor-pointer {isActive ? tab.color : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
-        >
-          <Icon size={24} strokeWidth={2} />
-          <span>{tab.label}</span>
-        </button>
-        {#if index < tabs.length - 1}
-          <div class="h-8 w-px bg-[var(--bg-hover-strong)]"></div>
-        {/if}
-      {/each}
-    </div>
-  </div>
+<div class="flex-1 min-w-0 flex items-center gap-0.5 p-1 rounded-md bg-[var(--bg-tertiary)]">
+  {#each tabs as tab (tab.id)}
+    {@const Icon = tab.icon}
+    {@const isActive = active === tab.id}
+    <button
+      onclick={() => onSelect(tab.id)}
+      aria-pressed={isActive}
+      class="flex-1 h-8 px-2.5 rounded-sm text-sm font-medium flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap {isActive
+        ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm'
+        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+    >
+      <Icon size={14} strokeWidth={2} class={isActive ? tab.color : ''} />
+      <span>{tab.label}</span>
+    </button>
+  {/each}
 </div>
