@@ -87,31 +87,31 @@
 
 <div>
   <label for="instance-icon-input" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Instance Icon</label>
-  <div class="flex items-center gap-4">
+  <div class="flex items-center gap-2">
     <input id="instance-icon-input" bind:this={fileInputEl} type="file" accept="image/*" onchange={handleIconChange} class="hidden" />
     {#if localIcon}
-      <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden relative cursor-pointer group bg-[var(--bg-tertiary)]">
+      <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-[38px] h-[38px] flex-shrink-0 rounded-md overflow-hidden relative cursor-pointer group bg-[var(--bg-tertiary)]">
         <img src={localIcon} alt={instance.name} class="w-full h-full object-cover" />
         <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <Camera size={16} class="text-[var(--text-muted)]" />
+          <Camera size={14} class="text-[var(--text-muted)]" />
         </div>
       </button>
     {:else}
-      <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-12 h-12 flex-shrink-0 border-2 border-dashed border-[var(--text-disabled)] hover:border-[var(--accent-primary)]/50 rounded-sm flex items-center justify-center bg-[var(--bg-tertiary)] cursor-pointer">
+      <button onclick={handleIconClick} disabled={isUploadingIcon} class="w-[38px] h-[38px] flex-shrink-0 border-2 border-dashed border-[var(--border-default)] hover:border-[var(--accent-primary)]/50 rounded-md flex items-center justify-center bg-[var(--bg-tertiary)] cursor-pointer">
         {#if isUploadingIcon}
-          <Loader2 size={18} class="text-[var(--accent-primary)] animate-spin" />
+          <Loader2 size={16} class="text-[var(--accent-primary)] animate-spin" />
         {:else}
-          <ImagePlus size={18} class="text-[var(--text-muted)]" />
+          <ImagePlus size={16} class="text-[var(--text-muted)]" />
         {/if}
       </button>
     {/if}
 
     {#if localIcon}
-      <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-4 h-12 bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-primary)] hover:text-red-400 rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
+      <button onclick={handleRemoveIcon} disabled={isUploadingIcon} class="px-3 h-[38px] bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-[var(--text-secondary)] hover:text-red-400 rounded-md text-sm font-medium disabled:opacity-50 cursor-pointer">
         Remove Icon
       </button>
     {:else}
-      <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-4 h-12 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-sm text-sm font-medium disabled:opacity-50 cursor-pointer">
+      <button onclick={handleIconClick} disabled={isUploadingIcon} class="px-3 h-[38px] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-secondary)] rounded-md text-sm font-medium disabled:opacity-50 cursor-pointer">
         Upload Icon
       </button>
     {/if}

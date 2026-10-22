@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Check, ChevronDown, ChevronUp } from "lucide-svelte"
+  import { Check, ChevronDown } from "lucide-svelte"
 
   let { id, options, selected, display, onPick, listHeight = "max-h-48", disabled = false }: {
     id: string
@@ -28,30 +28,34 @@
     id="create-{id}-btn"
     type="button"
     onclick={() => isOpen = !isOpen}
-    class="w-full bg-[var(--bg-tertiary)] px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] focus:outline-none text-left cursor-pointer {isOpen ? 'rounded-t-sm' : 'rounded-sm'}"
+    aria-haspopup="menu"
+    aria-expanded={isOpen}
+    class="w-full h-9 pl-3 pr-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center justify-between gap-2 cursor-pointer text-left"
     {disabled}
   >
-    {display}
+    <span class="truncate">{display}</span>
+    <ChevronDown
+      size={16}
+      strokeWidth={3}
+      class="shrink-0 text-[var(--text-secondary)] transition-transform {isOpen ? 'rotate-180' : ''}"
+    />
   </button>
-  <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-    {#if isOpen}
-      <ChevronUp size={18} strokeWidth={3} />
-    {:else}
-      <ChevronDown size={18} strokeWidth={3} />
-    {/if}
-  </div>
 
   {#if isOpen}
-    <div class="absolute z-10 w-full bg-[var(--bg-tertiary)] rounded-b-sm shadow-md {listHeight} overflow-y-auto custom-scrollbar border-t border-[var(--bg-elevated)]">
+    <div
+      role="menu"
+      class="dropdown-menu absolute z-[60] w-full min-w-[190px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5 {listHeight} overflow-y-auto custom-scrollbar"
+    >
       {#each options as option (option.value)}
         <button
           type="button"
+          role="menuitem"
           onclick={() => { onPick(option.value); isOpen = false }}
-          class="w-full px-4 py-3 text-sm text-left hover:bg-[var(--bg-hover)] flex items-center justify-between cursor-pointer text-[var(--text-primary)]"
+          class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
         >
-          <span>{option.label}</span>
+          <span class="truncate min-w-0">{option.label}</span>
           {#if selected === option.value}
-            <Check size={17} class="text-[var(--accent-primary)]" strokeWidth={3} />
+            <Check size={17} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />
           {/if}
         </button>
       {/each}

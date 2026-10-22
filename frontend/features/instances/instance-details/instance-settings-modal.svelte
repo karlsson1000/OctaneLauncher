@@ -118,7 +118,7 @@
           <div class="col-span-2 pt-3">
             <button
               onclick={handleDelete}
-              class="w-full px-4 h-11 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-sm font-medium text-sm flex items-center justify-center gap-2 cursor-pointer"
+              class="w-full px-3 h-[38px] bg-[var(--bg-tertiary)] hover:bg-red-500/10 text-red-400 rounded-md font-medium text-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Trash2 size={16} />
               <span>Delete Instance</span>

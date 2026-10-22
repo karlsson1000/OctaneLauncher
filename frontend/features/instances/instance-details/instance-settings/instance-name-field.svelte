@@ -45,7 +45,7 @@
       oninput={() => renameError = null}
       onblur={(e) => { const trimmed = (e.target as HTMLInputElement).value.trim(); if (trimmed && trimmed !== instance.name) handleRename(trimmed) }}
       onkeydown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
-      class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 pr-10 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none transition-all"
+      class="w-full bg-[var(--bg-tertiary)] rounded-md px-3 py-[9px] pr-10 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all"
       placeholder="Enter instance name"
       disabled={isRenamingInstance}
     />

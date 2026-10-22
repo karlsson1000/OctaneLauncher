@@ -29,7 +29,7 @@
       use:autofocus
       onkeydown={(e) => { if (e.key === "Enter") { e.preventDefault(); onEnter() } }}
       placeholder="My Minecraft Instance"
-      class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none border transition-colors {instanceExists && value.trim() ? 'border-red-500/60' : 'border-transparent'}"
+      class="w-full bg-[var(--bg-tertiary)] rounded-md px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none border transition-colors {instanceExists && value.trim() ? 'border-red-500/60' : 'border-transparent'}"
       disabled={isCreating}
     />
     {#if instanceExists && value.trim()}

@@ -75,7 +75,7 @@
 </script>
 
 <div class="col-span-2">
-  <div class="flex items-center justify-between mb-2.5">
+  <div class="flex items-center justify-between mb-2">
     <div class="flex items-center gap-2 text-[var(--text-primary)]">
       <span class="text-sm font-medium">RAM Allocation</span>
     </div>
@@ -88,15 +88,15 @@
       </button>
   </div>
   <div class="transition-opacity {useCustomRam ? 'opacity-100' : 'opacity-40 pointer-events-none'}">
-    <div class="bg-[var(--bg-tertiary)] rounded p-4 space-y-3">
+    <div class="bg-[var(--bg-tertiary)] rounded-md px-3 py-2.5 space-y-1.5">
       <div class="flex items-baseline justify-between">
-        <span class="text-2xl font-bold text-[var(--text-primary)]">{(instanceMemoryMb / 1024).toFixed(1)} GB</span>
+        <span class="text-lg font-bold text-[var(--text-primary)]">{(instanceMemoryMb / 1024).toFixed(1)} GB</span>
         <span class="text-xs text-[var(--text-muted)]">{systemInfo ? `of ${(systemInfo.total_memory_mb / 1024).toFixed(0)} GB total` : ""}</span>
       </div>
-      <div class="relative h-6 flex items-center">
+      <div class="relative h-5 flex items-center">
         <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
         <div class="absolute h-2 rounded-full" style="width: calc(3px + (100% - 6px) * {ramPercent / 100}); background: var(--accent-primary)"></div>
-        <div class="absolute w-1.5 h-5 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 top-1/2 -mt-2.5" style="left: calc(3px + (100% - 6px) * {ramPercent / 100})"></div>
+        <div class="absolute w-1.5 h-4 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 top-1/2 -mt-2" style="left: calc(3px + (100% - 6px) * {ramPercent / 100})"></div>
         <input
           type="range" min={minMem} max={maxMem} step="512"
           bind:value={instanceMemoryMb}
