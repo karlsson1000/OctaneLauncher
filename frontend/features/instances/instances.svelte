@@ -184,11 +184,6 @@
     groupContextMenu = { x: e.clientX, y: e.clientY, group }
   }
 
-  function handleHeroDotsMenu(e: MouseEvent, instance: Instance) {
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    contextMenu = { x: rect.right - 220, y: rect.bottom + 6, instance }
-  }
-
   let isSortDropdownOpen = $state(false)
   let sortDropdownRef = $state<HTMLDivElement | undefined>(undefined)
 
@@ -345,7 +340,7 @@
         </button>
 
         <button
-          onclick={(e) => handleHeroDotsMenu(e, lastPlayedInstance)}
+          onclick={(e) => handleContextMenu(e, lastPlayedInstance)}
           class="w-9 h-9 rounded-md flex items-center justify-center cursor-pointer text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] shrink-0"
           aria-label="Instance options"
         >
