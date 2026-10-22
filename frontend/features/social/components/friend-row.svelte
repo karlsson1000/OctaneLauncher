@@ -19,6 +19,7 @@
   } = $props()
 
   const avatarMask = "-webkit-mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px); mask-image: radial-gradient(circle 8px at 29px 28px, transparent 7.5px, #000 8px);"
+  const dotMask = "-webkit-mask-image: radial-gradient(circle closest-side at center, transparent 2.25px, #000 2.7px); mask-image: radial-gradient(circle closest-side at center, transparent 2.25px, #000 2.7px);"
 
   let nicknameInput = $state<HTMLInputElement | undefined>()
 
@@ -40,6 +41,7 @@
     <span
       title={status.label}
       class="absolute -bottom-px -right-0.5 w-2.5 h-2.5 rounded-full {status.color}"
+      style={dotMask}
     ></span>
   </div>
 
