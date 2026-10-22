@@ -123,23 +123,22 @@
       <div class="space-y-5">
         <div>
           <label for="server-name" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Server Name</label>
-          <input
-            type="text"
-            id="server-name"
-            autocomplete="off"
-            autocapitalize="off"
-            spellcheck="false"
-            bind:value={serverName}
-            use:autofocus
-            placeholder="My Server"
-            class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none border transition-colors {serverExists && serverName.trim() ? 'border-red-500/60' : 'border-transparent'}"
-            disabled={isClosing}
-          />
+          <div class="relative">
+            <input
+              type="text"
+              id="server-name"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              bind:value={serverName}
+              use:autofocus
+              placeholder="My Server"
+              class="w-full bg-[var(--bg-tertiary)] rounded-md px-3 py-[9px] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all"
+              disabled={isClosing}
+            />
+          </div>
           {#if serverExists && serverName.trim()}
-            <div class="flex items-center gap-1.5 mt-2 text-xs text-red-400">
-              <AlertCircle size={12} strokeWidth={2} />
-              <span>A server with this name already exists</span>
-            </div>
+            <p class="text-xs text-red-400 mt-2">A server with this name already exists</p>
           {/if}
         </div>
 
@@ -155,16 +154,16 @@
               bind:value={serverAddress}
               oninput={() => testResult = null}
               placeholder="mc.hypixel.net"
-              class="w-full bg-[var(--bg-tertiary)] rounded-sm pl-4 pr-10 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none border border-transparent transition-colors"
+              class="w-full bg-[var(--bg-tertiary)] rounded-md px-3 py-[9px] pr-10 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all"
               disabled={isClosing}
             />
             <button
               onclick={testConnection}
               disabled={!serverAddress.trim() || !isValidPort || isTesting}
-              class="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 h-6 w-6 flex items-center justify-center rounded cursor-pointer disabled:cursor-not-allowed {testResult && !isTesting ? (testResult.success ? 'text-green-400 hover:text-green-300' : 'text-red-400 hover:text-red-300') : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-40'}"
+              class="absolute right-3 top-1/2 -translate-y-1/2 z-20 h-5 w-5 flex items-center justify-center rounded cursor-pointer disabled:cursor-not-allowed {testResult && !isTesting ? (testResult.success ? 'text-green-400 hover:text-green-300' : 'text-red-400 hover:text-red-300') : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-40'}"
             >
               {#if isTesting}
-                <Loader2 size={16} class="animate-spin" />
+                <Loader2 size={16} class="animate-spin text-[var(--accent-primary)]" />
               {:else if testResult}
                 <RotateCw size={16} strokeWidth={2.5} />
               {:else}
@@ -178,32 +177,31 @@
       <div class="space-y-5">
         <div>
           <label for="server-port" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Server Port (Optional)</label>
-          <input
-            type="text"
-            id="server-port"
-            autocomplete="off"
-            autocapitalize="off"
-            spellcheck="false"
-            bind:value={serverPort}
-            oninput={() => testResult = null}
-            placeholder="25565"
-            class="w-full bg-[var(--bg-tertiary)] rounded-sm px-4 py-3.5 text-sm text-[var(--text-primary)] placeholder-gray-500 focus:outline-none border transition-colors {serverPort && !isValidPort ? 'border-red-500/60' : 'border-transparent'}"
-            disabled={isClosing}
-          />
+          <div class="relative">
+            <input
+              type="text"
+              id="server-port"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              bind:value={serverPort}
+              oninput={() => testResult = null}
+              placeholder="25565"
+              class="w-full bg-[var(--bg-tertiary)] rounded-md px-3 py-[9px] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all"
+              disabled={isClosing}
+            />
+          </div>
           {#if serverPort && !isValidPort}
-            <div class="flex items-center gap-1.5 mt-2 text-xs text-red-400">
-              <AlertCircle size={12} strokeWidth={2} />
-              <span>Port must be between 1 and 65535</span>
-            </div>
+            <p class="text-xs text-red-400 mt-2">Port must be between 1 and 65535</p>
           {/if}
         </div>
 
         {#if testResult}
           <div>
             <p class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Status</p>
-            <div class="flex items-center gap-2 px-4 h-12 rounded-sm {testResult.success ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">
-              <AlertCircle size={14} class="flex-shrink-0" strokeWidth={2} />
-              <span class="text-[13px] truncate">{testResult.message}</span>
+            <div class="flex items-center gap-2 px-3 py-[9px] rounded-md {testResult.success ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}">
+              <AlertCircle size={16} class="flex-shrink-0" strokeWidth={2} />
+              <span class="text-sm truncate">{testResult.message}</span>
             </div>
           </div>
         {/if}
