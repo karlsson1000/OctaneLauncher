@@ -107,15 +107,17 @@
 <div
   role="presentation"
   bind:this={containerEl}
-  class="relative h-full overflow-hidden box-border select-none"
+  class="relative h-full overflow-hidden box-border select-none rounded-[inherit] isolate transform-gpu"
   onpointerdown={handlePointerDown}
   onpointermove={handlePointerMove}
   onpointerup={handlePointerUp}
   onpointercancel={handlePointerCancel}
 >
-  <div class="absolute inset-0 z-0 pointer-events-none">
-    <div class="relative w-full h-full overflow-hidden bg-[url('/skinstab/background.webp')] bg-cover bg-center bg-no-repeat bg-fixed">
-      <div class="absolute inset-0 z-[1] bg-black/35"></div>
+  <div class="absolute inset-0 z-0 pointer-events-none rounded-[inherit] overflow-hidden">
+    <div class="relative w-full h-full overflow-hidden rounded-[inherit] bg-[url('/skinstab/background.webp')] bg-cover bg-center bg-no-repeat">
+      <div
+        class="absolute inset-0 z-[1] bg-linear-to-b from-(--bg-primary)/90 to-(--bg-primary)/98"
+      ></div>
 
       <div
         class="absolute inset-0 z-[3] flex flex-col items-center justify-center pointer-events-none transition-opacity duration-150 {loading ? 'opacity-100' : 'opacity-0'}"
