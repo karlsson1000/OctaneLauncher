@@ -316,7 +316,7 @@
           {#if heroIcon}
             <img src={heroIcon} alt={lastPlayedInstance.name} class="w-12 h-12 object-cover rounded-md" />
           {:else}
-            <Package size={24} class="text-[var(--text-muted)]" strokeWidth={1.5} />
+            <Package size={32} class="text-[var(--text-muted)]" strokeWidth={1.5} />
           {/if}
         </div>
 

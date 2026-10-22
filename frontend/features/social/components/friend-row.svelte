@@ -32,7 +32,7 @@
     <img
       src="https://avatar.mcindex.net/avatar/{friend.username}/32"
       alt={friend.username}
-      class="w-8 h-8 rounded object-cover transition-opacity {online ? '' : 'opacity-50 group-hover:opacity-100'}"
+      class="w-8 h-8 rounded object-cover {online ? '' : 'opacity-50 group-hover:opacity-100'}"
       style={avatarMask}
       loading="lazy"
       decoding="async"
@@ -43,7 +43,7 @@
     ></span>
   </div>
 
-  <div class="flex-1 min-w-0 {online ? '' : 'opacity-60 group-hover:opacity-100'} transition-opacity">
+  <div class="flex-1 min-w-0 {online ? '' : 'opacity-60 group-hover:opacity-100'}">
     {#if editing}
       <input
         type="text"
@@ -66,7 +66,7 @@
         {nickname || friend.username}
       </div>
     {/if}
-    <div class="text-[13px] leading-tight text-[var(--text-muted)] truncate">
+    <div class="text-[13px] leading-tight text-[var(--text-muted)] truncate -mr-8 group-hover:mr-0">
       {#if friend.status === "ingame" && friend.current_instance}
         Playing <span class="text-[#3b82f6] font-semibold">{friend.current_instance}</span>
       {:else if friend.status === "ingame"}
