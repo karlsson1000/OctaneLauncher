@@ -179,6 +179,12 @@
   }
 
   function handleCapeRemove() {
+    if (pendingCapeOp?.type === 'select') {
+      activeCape = originalState.activeCape
+      pendingCapeOp = null
+      hasPendingChanges = pendingSkinOp !== null
+      return
+    }
     activeCape = null
     pendingCapeOp = { type: 'remove' }
     hasPendingChanges = true
