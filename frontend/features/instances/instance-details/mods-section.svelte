@@ -55,6 +55,14 @@
     }
   }
 
+  async function runUpdateCheck(): Promise<ModUpdate[]> {
+    return await invoke<ModUpdate[]>("check_mod_updates", {
+      instanceName: instance.name,
+      loader: instance.loader,
+      gameVersion: getMinecraftVersion(instance),
+    })
+  }
+
   async function checkForUpdates() {
     if (!instance || (instance.loader !== "fabric" && instance.loader !== "neoforge" && instance.loader !== "forge")) return
 
@@ -63,11 +71,7 @@
     if (upToDateTimer) clearTimeout(upToDateTimer)
 
     try {
-      availableUpdates = await invoke<ModUpdate[]>("check_mod_updates", {
-        instanceName: instance.name,
-        loader: instance.loader,
-        gameVersion: getMinecraftVersion(instance),
-      })
+      availableUpdates = await runUpdateCheck()
       if (availableUpdates.length === 0) {
         allModsUpToDate = true
         upToDateTimer = setTimeout(() => (allModsUpToDate = false), 3000)
@@ -115,11 +119,25 @@
   }
 
   async function updateSingleMod(update: ModUpdate) {
+    if (isUpdatingMods) return
+    const previousUpdates = availableUpdates
+    isUpdatingMods = true
+    availableUpdates = availableUpdates.filter(u => u.filename !== update.filename)
     try {
       await applyModUpdate(update)
-      availableUpdates = availableUpdates.filter(u => u.filename !== update.filename)
       await loadInstalledMods()
-    } catch {}
+      availableUpdates = await runUpdateCheck().catch(() => availableUpdates)
+    } catch (error) {
+      availableUpdates = previousUpdates
+      alertModal = {
+        isOpen: true,
+        title: "Update failed",
+        message: `Failed to update ${update.filename}: ${String(error)}`,
+        type: "danger",
+      }
+    } finally {
+      isUpdatingMods = false
+    }
   }
 
   async function handleDeleteMod(filename: string) {
