@@ -233,7 +233,7 @@
 </script>
 
 <div
-  class="flex-shrink-0 bg-[var(--bg-primary)] h-full overflow-hidden transition-all duration-200 ease-in-out {isOpen ? 'w-60' : 'w-0 -mr-4'}"
+  class="flex-shrink-0 bg-[var(--bg-primary)] h-full overflow-hidden transition-all duration-200 ease-in-out {isOpen ? 'w-60' : 'w-0 -mr-3'}"
 >
   <div class="w-60 h-full flex flex-col">
     <AccountSwitcher {isOpen} />
