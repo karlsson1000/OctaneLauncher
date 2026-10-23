@@ -109,7 +109,7 @@
 <div class="flex flex-col h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] overflow-hidden font-sans">
   <TitleBar />
 
-  <div class="flex flex-1 overflow-hidden px-4 pb-4 gap-4">
+  <div class="flex flex-1 overflow-hidden px-3 pb-3 gap-3">
     <Sidebar />
 
     <ContentArea activeTab={ActiveTab} />

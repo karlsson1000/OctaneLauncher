@@ -37,7 +37,7 @@
   </div>
 {/snippet}
 
-<div class="flex-1 min-w-0 rounded-xl overflow-hidden flex flex-col relative" style={backgroundStyle}>
+<div class="flex-1 min-w-0 rounded-lg overflow-hidden flex flex-col relative" style={backgroundStyle}>
   {#if store.background}
     <div class="absolute inset-0" style={overlayStyle}></div>
   {/if}
@@ -60,7 +60,7 @@
   {/if}
 
   {#if toastStore.progress.length > 0}
-    <div class="absolute inset-x-4 bottom-4 z-20 flex flex-col items-end gap-2 pointer-events-none">
+    <div class="absolute inset-x-4 bottom-4 z-40 flex flex-col items-end gap-2 pointer-events-none">
       {#each toastStore.progress as p (p.id)}
         <div
           transition:fly|global={{ y: 16, duration: 160 }}

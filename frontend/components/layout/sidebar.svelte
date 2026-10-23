@@ -134,7 +134,7 @@
   onpointercancel={handleBlockPointerUp}
 />
 
-<div class="w-10 flex-shrink-0 flex flex-col items-center gap-1 relative z-10">
+<div class="w-11 flex-shrink-0 flex flex-col items-center gap-1 relative z-10">
   <div bind:this={listEl} class="flex flex-col items-center gap-2.5 flex-1 mt-2 {dragBlock ? '[&_*]:cursor-grabbing!' : ''}">
     {#each sidebarOrder as block, bi (block)}
       <div animate:flip={{ duration: flipDuration }} class={block === "recents" && recentInstances.length === 0 ? "hidden" : ""}>
