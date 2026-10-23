@@ -64,11 +64,11 @@
     <p class="font-semibold text-xl text-[var(--text-primary)] truncate leading-none mb-2">{server.name}</p>
     {#if server.motd_html}
       {#each server.motd_html.slice(0, 2) as line}
-        <p class="text-base truncate leading-snug">{@html line}</p>
+        <p class="text-base text-center truncate leading-snug">{@html line}</p>
       {/each}
     {:else if server.motd}
       {#each server.motd.split("\n").slice(0, 2) as line}
-        <p class="text-base text-[var(--text-muted)] truncate leading-snug">{line}</p>
+        <p class="text-base text-center text-[var(--text-muted)] truncate leading-snug">{line}</p>
       {/each}
     {:else}
       <p class="text-base text-[var(--text-muted)] truncate">{formatAddress(server.address, server.port)}</p>
