@@ -38,6 +38,7 @@ export interface LauncherSettings {
   discord_rpc?: boolean
   background_darkness?: number
   background_blur?: number
+  status_privacy?: boolean
 }
 
 export interface ModrinthSearchResult {

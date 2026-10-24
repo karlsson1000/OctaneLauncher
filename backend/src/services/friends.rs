@@ -303,6 +303,12 @@ pub fn has_live_session(account_uuid: &str) -> bool {
         .is_some_and(|(_, expiry)| *expiry > Utc::now() + ChronoDuration::seconds(SESSION_REFRESH_MARGIN_SECS))
 }
 
+fn status_is_private() -> bool {
+    crate::services::settings::SettingsManager::load()
+        .map(|settings| settings.status_privacy)
+        .unwrap_or(true)
+}
+
 pub async fn set_status_for_account(
     app: &tauri::AppHandle,
     account_uuid: &str,
@@ -312,6 +318,8 @@ pub async fn set_status_for_account(
     let config = app.state::<crate::models::AppConfig>();
     let service = DatabaseService::new(&config.convex_url);
     drop(config);
+
+    let current_instance = current_instance.filter(|_| !status_is_private());
 
     let bearer = get_session_token(app, account_uuid).await?;
     service

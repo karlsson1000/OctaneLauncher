@@ -96,6 +96,14 @@
   )}
 
   {@render toggleRow(
+    "Status privacy",
+    "Hide your instance name in your friend status.",
+    store.settings?.status_privacy ?? false,
+    () => onChange({ ...store.settings!, status_privacy: !(store.settings?.status_privacy ?? false) } as LauncherSettings),
+    "settings-status-privacy"
+  )}
+
+  {@render toggleRow(
     "Cat mode",
     "A cat lays down at the top of the launcher.",
     store.settings?.cat_mode ?? false,

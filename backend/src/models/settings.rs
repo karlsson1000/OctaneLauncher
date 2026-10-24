@@ -21,6 +21,8 @@ pub struct LauncherSettings {
     pub background_darkness: u8,
     #[serde(default = "default_background_blur")]
     pub background_blur: u8,
+    #[serde(default, alias = "hide_instance_name")]
+    pub status_privacy: bool,
 }
 
 fn default_memory() -> u32 { 4096 }
@@ -44,6 +46,7 @@ impl Default for LauncherSettings {
             discord_rpc: true,
             background_darkness: 80,
             background_blur: 0,
+            status_privacy: false,
         }
     }
 }
