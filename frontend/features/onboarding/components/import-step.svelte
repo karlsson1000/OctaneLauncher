@@ -11,10 +11,10 @@
     curseforge: "CurseForge",
   }
 
-  const sourceColors: Record<string, string> = {
-    prism: "#f472b6",
-    modrinth: "#16a34a",
-    curseforge: "#f97316",
+  const sourceIcons: Record<string, string> = {
+    prism: "/prism.svg",
+    modrinth: "/modrinth.svg",
+    curseforge: "/curseforge.svg",
   }
 
   let {
@@ -119,10 +119,13 @@
             <div class="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</div>
             <div class="text-xs text-[var(--text-muted)] truncate mt-0.5">{instanceMeta(item)}</div>
           </div>
-          <span class="flex items-center gap-1.5 text-xs text-[var(--text-muted)] flex-shrink-0">
-            <span class="w-1.5 h-1.5 rounded-full" style="background: {sourceColors[item.source]}"></span>
-            {sourceLabels[item.source]}
-          </span>
+          <img
+            src={sourceIcons[item.source]}
+            alt={sourceLabels[item.source]}
+            title={sourceLabels[item.source]}
+            class="w-5 h-5 flex-shrink-0"
+            draggable="false"
+          />
           {#if itemStatus[item.path] === "importing"}
             <Loader2 size={14} class="animate-spin text-[var(--accent-primary)] flex-shrink-0" />
           {:else if itemStatus[item.path] === "done"}
