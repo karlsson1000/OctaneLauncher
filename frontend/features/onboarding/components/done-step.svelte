@@ -18,7 +18,7 @@
     {#if importedCount > 0}
       Imported {importedCount} {importedCount === 1 ? "instance" : "instances"} from your other launchers.
     {:else}
-      Create your first instance from the Instances tab, or browse mods in the Addons tab.
+      Create an instance to get started, or browse mods in the Addons tab.
     {/if}
   </p>
   <button
