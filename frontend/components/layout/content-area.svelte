@@ -11,17 +11,14 @@
 
   let compact = $state(false)
 
+  const darkness = $derived(((store.settings?.background_darkness ?? 80) / 100).toFixed(2))
+  const blur = $derived(store.settings?.background_blur ?? 0)
+
   const backgroundStyle = $derived(
     store.background
-      ? `background-image: url("${store.background}"); background-size: cover; background-position: center`
+      ? `background-image: linear-gradient(rgba(0,0,0,${darkness}), rgba(0,0,0,${darkness})), url("${store.background}"); background-size: cover; background-position: center`
       : "background-color: var(--content-bg)"
   )
-
-  const overlayStyle = $derived.by(() => {
-    const darkness = ((store.settings?.background_darkness ?? 80) / 100).toFixed(2)
-    const blur = store.settings?.background_blur ?? 0
-    return `background: rgba(0,0,0,${darkness});${blur > 0 ? ` backdrop-filter: blur(${blur}px);` : ""}`
-  })
 
   function dismissCreationToast() {
     store.creatingInstanceName = null
@@ -38,8 +35,8 @@
 {/snippet}
 
 <div class="flex-1 min-w-0 rounded-lg overflow-hidden flex flex-col relative" style={backgroundStyle}>
-  {#if store.background}
-    <div class="absolute inset-0" style={overlayStyle}></div>
+  {#if store.background && blur > 0}
+    <div class="absolute inset-0 rounded-[inherit] pointer-events-none" style="backdrop-filter: blur({blur}px)"></div>
   {/if}
 
   <main class="flex-1 min-h-0 overflow-y-auto relative">
