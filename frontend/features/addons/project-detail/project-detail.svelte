@@ -276,7 +276,7 @@
   }
 </script>
 
-<div class="h-full overflow-hidden">
+<div class="h-full">
   {#if isLoading}
     <div class="flex items-center justify-center h-full">
       <Loader2 size={32} class="animate-spin {spinnerColor}" />
@@ -289,20 +289,15 @@
       </div>
     </div>
   {:else}
-    <div class="h-full max-w-7xl mx-auto grid grid-cols-1">
-      <!-- Left: Header + Description -->
-      <div class="min-h-0 rounded-md overflow-hidden bg-[var(--bg-tertiary)]">
-        <div class="h-full overflow-y-auto">
-          <ProjectHeader
-            {onBack}
-            iconUrl={getIconUrl()}
-            title={getTitle()}
-            author={getAuthor()}
-            projectUrl={getProjectUrl()}
-            {bodyHtml}
-          />
-        </div>
-      </div>
+    <div class="max-w-7xl mx-auto">
+      <ProjectHeader
+        {onBack}
+        iconUrl={getIconUrl()}
+        title={getTitle()}
+        author={getAuthor()}
+        projectUrl={getProjectUrl()}
+        {bodyHtml}
+      />
     </div>
 
     <InstallMenu

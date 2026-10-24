@@ -42,6 +42,7 @@
   ) {
     savedListScroll = listScroller?.scrollTop ?? 0
     viewDetail = { source, projectId, projectSlug, projectType, author }
+    if (listScroller) listScroller.scrollTop = 0
   }
 
   async function goBackToList() {
