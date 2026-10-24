@@ -81,10 +81,10 @@
     </div>
       <button
         onclick={() => { const next = !useCustomRam; useCustomRam = next; saveRamSettings(instanceMemoryMb, next) }}
-        class="relative w-9 h-[22px] rounded-full shrink-0 cursor-pointer {useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
+        class="relative w-9 h-[22px] rounded-md shrink-0 cursor-pointer {useCustomRam ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
         aria-label="Toggle custom RAM"
       >
-        <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform {useCustomRam ? 'translate-x-[14px]' : ''}"></span>
+        <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-[3px] bg-white transition-transform {useCustomRam ? 'translate-x-[14px]' : ''}"></span>
       </button>
   </div>
   <div class="transition-opacity {useCustomRam ? 'opacity-100' : 'opacity-40 pointer-events-none'}">
