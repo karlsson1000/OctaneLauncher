@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Download, Loader2 } from "lucide-svelte"
+  import { ArrowBigDownDash, Loader2, Pin } from "lucide-svelte"
   import { untrack } from "svelte"
   import type { Instance } from "../../../types"
   import { formatDownloads } from "../../../lib/format"
@@ -143,63 +143,87 @@
 {:else}
   <div class="max-w-7xl mx-auto h-full flex flex-col">
     <div class="flex-1 min-h-0">
-      <div class="space-y-3 overflow-y-auto pr-2">
+      <div class="space-y-2 overflow-y-auto pr-2">
         {#if isSearching && displayedHits.length === 0}
-          <div class="animate-pulse space-y-3">
+          <div class="space-y-2 animate-pulse motion-reduce:animate-none" aria-hidden="true">
             {#each Array(8) as _}
-              <div class="rounded-md bg-[var(--bg-tertiary)] h-28"></div>
+              <div class="flex items-center gap-4 rounded-lg bg-[var(--bg-tertiary)] p-3 pr-4">
+                <div class="w-[86px] h-[86px] rounded-lg bg-[var(--bg-secondary)] shrink-0"></div>
+                <div class="flex-1 space-y-2">
+                  <div class="h-4 w-1/3 rounded bg-[var(--bg-secondary)]"></div>
+                  <div class="h-3 w-3/4 rounded bg-[var(--bg-secondary)]"></div>
+                  <div class="h-3 w-1/2 rounded bg-[var(--bg-secondary)]"></div>
+                </div>
+              </div>
             {/each}
           </div>
         {:else}
-        {#each displayedHits as hit (hit.id)}
-          <div
-            class="rounded-md overflow-hidden cursor-pointer transition-all bg-[var(--bg-tertiary)]"
-            role="button"
-            tabindex="0"
-            onkeydown={(e) => { if (e.key === 'Enter') openDetail(hit); }}
-            onclick={() => openDetail(hit)}
-          >
-            <div class="flex min-h-0 relative z-0">
+          {#each displayedHits as hit (hit.id)}
+            {@const isPinned = pinnedHit?.id === hit.id}
+            {@const tags = (hit.categories ?? []).slice(0, 2)}
+            <div
+              class="flex items-center gap-4 rounded-lg bg-[var(--bg-tertiary)] p-3 pr-4 cursor-pointer outline-none focus-visible:ring-2"
+              style={`--tw-ring-color: ${category.accentMain}`}
+              role="button"
+              tabindex="0"
+              onkeydown={(e) => { if (e.key === 'Enter') openDetail(hit); }}
+              onclick={() => openDetail(hit)}
+            >
               {#if hit.imageUrl}
-                <div class="w-24 h-24 flex items-center justify-center flex-shrink-0 rounded m-2">
-                  <img src={hit.imageUrl} alt={hit.title} class="w-full h-full object-contain rounded" />
+                <div class="w-[86px] h-[86px] shrink-0 rounded-lg overflow-hidden">
+                  <img
+                    src={hit.imageUrl}
+                    alt=""
+                    loading="lazy"
+                    class="w-full h-full object-cover rounded-lg"
+                  />
                 </div>
               {:else}
                 {@const FallbackIcon = category.fallbackIcon}
-                <div
-                  class="w-24 h-24 bg-gradient-to-br flex items-center justify-center flex-shrink-0 rounded m-2"
-                  style={`background-image: linear-gradient(to bottom right, ${category.accentMain}1a, ${category.accentHover}1a)`}
-                >
-                  <FallbackIcon size={48} style={`color: ${category.accentMain}`} />
+                <div class="w-[86px] h-[86px] shrink-0 flex items-center justify-center">
+                  <FallbackIcon size={51} style={`color: ${category.accentMain}`} />
                 </div>
               {/if}
-              <div class="flex-1 min-w-0 py-2 px-3 flex items-center gap-3">
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-start justify-between gap-2 mb-0">
-                    <h3 class="font-semibold text-base text-[var(--text-primary)] truncate">{hit.title}</h3>
-                    <span class="text-xs text-[var(--text-muted)] whitespace-nowrap">by {hit.author}</span>
-                  </div>
-                  <p class="text-sm text-[var(--text-muted)] line-clamp-2 mb-2">{hit.summary}</p>
-                  <div class="flex items-center gap-2 text-xs flex-wrap">
-                    <span class="flex items-center gap-1 bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">
-                      <Download size={12} />
-                      {formatDownloads(hit.downloads)}
-                    </span>
-                    {#each hit.categories.slice(0, 2) as cat}
-                      <span class="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-muted)]">{cat}</span>
+
+              <div class="flex-1 min-w-0 self-stretch min-h-[86px] flex flex-col">
+                <div class="flex items-baseline gap-2 min-w-0">
+                  <h3 class="font-semibold text-base text-[var(--text-primary)] truncate">{hit.title}</h3>
+                  <span class="text-xs text-[var(--text-muted)] truncate shrink-[2]">by {hit.author}</span>
+                </div>
+                <p class="text-sm leading-snug text-[var(--text-muted)] line-clamp-2">{hit.summary}</p>
+                {#if isPinned || tags.length > 0}
+                  <div class="flex items-center gap-1.5 flex-wrap mt-auto pt-1">
+                    {#if isPinned}
+                      <span
+                        class="inline-flex items-center gap-1 rounded px-1.5 py-px text-xs font-medium"
+                        style={`color: ${category.accentMain}; background-color: ${category.accentMain}1f`}
+                      >
+                        <Pin size={13} />
+                        Featured
+                      </span>
+                    {/if}
+                    {#each tags as cat}
+                      <span class="rounded px-1.5 py-px text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)]">{cat}</span>
                     {/each}
                   </div>
+                {/if}
+              </div>
+
+              <div class="shrink-0 text-right pl-2" title={`${hit.downloads.toLocaleString()} downloads`}>
+                <div class="flex items-center justify-end gap-1.5 text-[var(--text-primary)]">
+                  <ArrowBigDownDash size={21} style={`color: ${category.accentMain}`} />
+                  <span class="text-lg font-semibold tabular-nums leading-none">{formatDownloads(hit.downloads)}</span>
                 </div>
+                <div class="text-xs text-[var(--text-muted)] mt-1">downloads</div>
               </div>
             </div>
-          </div>
-        {/each}
+          {/each}
 
-        <div bind:this={sentinelEl} class="flex items-center justify-center py-4">
-          {#if isLoadingMore}
-            <Loader2 size={20} class="animate-spin" style={`color: ${category.accentMain}`} />
-          {/if}
-        </div>
+          <div bind:this={sentinelEl} class="flex items-center justify-center py-4">
+            {#if isLoadingMore}
+              <Loader2 size={20} class="animate-spin" style={`color: ${category.accentMain}`} />
+            {/if}
+          </div>
         {/if}
       </div>
     </div>
