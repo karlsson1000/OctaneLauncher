@@ -187,9 +187,9 @@
                 aria-label={label}
                 onclick={toggle}
                 disabled={isExporting}
-                class="relative w-9 h-[22px] rounded-full shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
+                class="relative w-9 h-[22px] rounded-md shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 {checked ? 'bg-[var(--accent-primary)]' : 'bg-[var(--bg-hover-strong)]'}"
               >
-                <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-full bg-white transition-transform {checked ? 'translate-x-[14px]' : ''}"></span>
+                <span class="absolute top-[3px] left-[3px] w-4 h-4 rounded-[3px] bg-white transition-transform {checked ? 'translate-x-[14px]' : ''}"></span>
               </button>
             </div>
           {/snippet}
