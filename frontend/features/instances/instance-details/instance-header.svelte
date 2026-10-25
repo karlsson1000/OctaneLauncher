@@ -21,11 +21,11 @@
     <div class="flex items-center gap-4">
       <div class="flex-shrink-0">
         {#if icon}
-          <div class="w-16 h-16 rounded-md overflow-hidden bg-[var(--bg-secondary)]">
+          <div class="w-16 h-16 rounded-md overflow-hidden">
             <img src={icon} alt={instance.name} class="w-full h-full object-cover" />
           </div>
         {:else}
-          <div class="w-16 h-16 rounded-md flex items-center justify-center bg-[var(--bg-secondary)]">
+          <div class="w-16 h-16 rounded-md flex items-center justify-center">
             <Package size={48} class="text-[var(--text-muted)]" strokeWidth={1.5} />
           </div>
         {/if}

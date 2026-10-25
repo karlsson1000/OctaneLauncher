@@ -240,7 +240,7 @@
           <div class="bg-[var(--bg-tertiary)] rounded-md overflow-hidden transition-all {mod.disabled ? 'opacity-60' : ''}">
             <div class="flex min-h-0">
               {#if mod.icon_url}
-                <div class="w-22 h-22 bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 self-stretch">
+                <div class="w-22 h-22 flex items-center justify-center flex-shrink-0 self-stretch">
                   <img src={mod.icon_url} alt={mod.name || mod.filename} class="w-full h-full object-contain {mod.disabled ? 'grayscale' : ''}" />
                 </div>
               {:else}
