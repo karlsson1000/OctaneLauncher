@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { tick } from "svelte"
   import { ADDON_CATEGORIES, type ContentSource } from "./adapters"
   import AddonSubtabs from "./components/addon-subtabs.svelte"
   import SourceDropdown from "./components/source-dropdown.svelte"
@@ -12,13 +11,17 @@
     handleStartCreating, setAddonsSubTab
   } from "../../lib/launcherStore.svelte"
 
-  let viewDetail = $state<{
+  type DetailSelection = {
     source: "modrinth" | "curseforge"
     projectId: string
     projectSlug?: string
     projectType: string
     author?: string
-  } | null>(null)
+    previewTitle: string
+    previewIconUrl: string | null
+  }
+
+  let viewDetail = $state<DetailSelection | null>(null)
 
   let contentSource = $state<ContentSource>("modrinth")
   let searchQuery = $state("")
@@ -30,81 +33,46 @@
     }
   })
 
-  let listScroller: HTMLDivElement | undefined
-  let savedListScroll = 0
-
-  function handleViewProjectDetail(
-    source: "modrinth" | "curseforge",
-    projectId: string,
-    projectSlug: string | undefined,
-    projectType: string,
-    author?: string,
-  ) {
-    savedListScroll = listScroller?.scrollTop ?? 0
-    viewDetail = { source, projectId, projectSlug, projectType, author }
-    if (listScroller) listScroller.scrollTop = 0
-  }
-
-  async function goBackToList() {
-    viewDetail = null
-    await tick()
-    if (listScroller) listScroller.scrollTop = savedListScroll
+  function handleViewProjectDetail(selection: DetailSelection) {
+    viewDetail = selection
   }
 
   const modpackTab = $derived(store.addonsSubTab === "modpacks")
 </script>
 
 <div class="relative flex flex-col h-full overflow-hidden">
-  {#if !viewDetail}
-    <div class="flex-shrink-0 px-8 pt-8 pb-4">
-      <div class="max-w-7xl mx-auto">
-        <div class="flex gap-2 items-stretch">
-          <SourceDropdown source={contentSource} onSelect={(s) => contentSource = s} />
-          <div class="w-90 flex-shrink-0 flex">
-            <AddonSearch
-              bind:value={searchQuery}
-              placeholder={ADDON_CATEGORIES[store.addonsSubTab].placeholder}
-            />
-          </div>
-          <AddonSubtabs
-            active={store.addonsSubTab}
-            onSelect={(id) => setAddonsSubTab(id)}
+  <div class="flex-shrink-0 px-8 pt-8 pb-4">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex gap-2 items-stretch">
+        <SourceDropdown source={contentSource} onSelect={(s) => contentSource = s} />
+        <div class="w-90 flex-shrink-0 flex">
+          <AddonSearch
+            bind:value={searchQuery}
+            placeholder={ADDON_CATEGORIES[store.addonsSubTab].placeholder}
           />
         </div>
+        <AddonSubtabs
+          active={store.addonsSubTab}
+          onSelect={(id) => setAddonsSubTab(id)}
+        />
       </div>
     </div>
-  {/if}
+  </div>
 
-  <div class="flex-1 min-h-0 px-8 overflow-hidden {viewDetail ? 'pt-8' : ''}">
+  <div class="flex-1 min-h-0 px-8 overflow-hidden">
     <div class="h-full max-w-7xl mx-auto grid grid-cols-1">
-      <div class="overflow-y-auto" bind:this={listScroller}>
-        <div class={viewDetail ? "hidden" : ""}>
-          {#key `${contentSource}:${store.addonsSubTab}`}
-            <AddonList
-              source={contentSource}
-              category={ADDON_CATEGORIES[store.addonsSubTab]}
-              searchQuery={searchQuery}
-              onViewProjectDetail={handleViewProjectDetail}
-              selectedInstance={store.selectedInstance}
-              instances={store.instances}
-              onSetSelectedInstance={setSelectedInstance}
-            />
-          {/key}
-        </div>
-        {#if viewDetail}
-          <ProjectDetail
-            source={viewDetail.source}
-            projectId={viewDetail.projectId}
-            projectSlug={viewDetail.projectSlug}
-            projectType={viewDetail.projectType}
-            author={viewDetail.author}
+      <div class="overflow-y-auto">
+        {#key `${contentSource}:${store.addonsSubTab}`}
+          <AddonList
+            source={contentSource}
+            category={ADDON_CATEGORIES[store.addonsSubTab]}
+            searchQuery={searchQuery}
+            onViewProjectDetail={handleViewProjectDetail}
             selectedInstance={store.selectedInstance}
             instances={store.instances}
-            onShowCreationToast={handleStartCreating}
-            onRefreshInstances={loadInstances}
-            onBack={goBackToList}
+            onSetSelectedInstance={setSelectedInstance}
           />
-        {/if}
+        {/key}
       </div>
     </div>
   </div>
@@ -114,6 +82,23 @@
       selectedInstance={store.selectedInstance}
       instances={store.instances}
       onSelect={setSelectedInstance}
+    />
+  {/if}
+
+  {#if viewDetail}
+    <ProjectDetail
+      source={viewDetail.source}
+      projectId={viewDetail.projectId}
+      projectSlug={viewDetail.projectSlug}
+      projectType={viewDetail.projectType}
+      author={viewDetail.author}
+      previewTitle={viewDetail.previewTitle}
+      previewIconUrl={viewDetail.previewIconUrl}
+      selectedInstance={store.selectedInstance}
+      instances={store.instances}
+      onShowCreationToast={handleStartCreating}
+      onRefreshInstances={loadInstances}
+      onBack={() => viewDetail = null}
     />
   {/if}
 </div>

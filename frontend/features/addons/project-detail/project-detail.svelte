@@ -1,15 +1,18 @@
 <script lang="ts">
-  import { Loader2 } from "lucide-svelte"
-  import { invoke } from "@tauri-apps/api/core"
-  import { Marked } from "marked"
+  import { untrack } from "svelte"
   import type {
     Instance, ModrinthProjectDetails, ModrinthVersion, ModFile,
-    CurseforgeModDetail, CurseforgeFile, CurseforgeGetModFilesResult
+    CurseforgeModDetail, CurseforgeFile
   } from "../../../types"
   import { getMinecraftVersion } from "../../../lib/version"
-  import { sanitizeHtml } from "../../../lib/sanitize"
   import ProjectHeader from "./project-header.svelte"
   import InstallMenu from "./install-menu.svelte"
+  import {
+    getCachedProjectDetails,
+    loadProjectDetails,
+    loadModrinthVersions,
+    loadCurseforgeFiles,
+  } from "../project-cache"
 
   let {
     source,
@@ -20,6 +23,8 @@
     selectedInstance,
     instances = [],
     onBack,
+    previewTitle = "",
+    previewIconUrl = null as string | null,
     onShowCreationToast = undefined as ((instanceName: string) => void) | undefined,
     onRefreshInstances = undefined as (() => void) | undefined,
   }: {
@@ -31,21 +36,45 @@
     selectedInstance: Instance | null
     instances?: Instance[]
     onBack: () => void
+    previewTitle?: string
+    previewIconUrl?: string | null
     onShowCreationToast?: (instanceName: string) => void
     onRefreshInstances?: () => void
   } = $props()
 
   const isModpack = $derived(projectType === "modpack")
 
-  const marked = new Marked({
-    breaks: true,
-    gfm: true,
-  })
+  const cachedDetails = untrack(() => getCachedProjectDetails(source, projectId, projectSlug))
 
-  let details = $state<ModrinthProjectDetails | null>(null)
-  let curseforgeDetails = $state<CurseforgeModDetail | null>(null)
-  let isLoading = $state(true)
+  let details = $state<ModrinthProjectDetails | null>(cachedDetails?.modrinth ?? null)
+  let curseforgeDetails = $state<CurseforgeModDetail | null>(cachedDetails?.curseforge ?? null)
+  let bodyHtml = $state(cachedDetails?.bodyHtml ?? "")
+  let isLoadingDetails = $state(!cachedDetails)
   let error = $state<string | null>(null)
+
+  let isClosing = $state(false)
+  let closeTimer: ReturnType<typeof setTimeout> | undefined
+  let backdropArmed = false
+
+  function requestClose() {
+    if (isClosing) return
+    isClosing = true
+    closeTimer = setTimeout(() => {
+      isClosing = false
+      onBack()
+    }, 150)
+  }
+
+  $effect(() => {
+    function handleKeydown(e: KeyboardEvent) {
+      if (e.key === "Escape") requestClose()
+    }
+    window.addEventListener("keydown", handleKeydown)
+    return () => {
+      window.removeEventListener("keydown", handleKeydown)
+      clearTimeout(closeTimer)
+    }
+  })
 
   let versions = $state<ModrinthVersion[]>([])
   let curseforgeFiles = $state<CurseforgeFile[]>([])
@@ -62,49 +91,29 @@
     return instances.some(i => i.name === name) ? `${name}-${Date.now()}` : name
   }
 
-  let renderedBody = $state("")
-
-  let bodyHtml = $derived.by(() => {
-    if (renderedBody) return sanitizeHtml(renderedBody)
-    if (curseforgeDetails?.description) return sanitizeHtml(curseforgeDetails.description)
-    return ""
-  })
-
-  let spinnerColor = $derived.by(() => {
-    switch (projectType) {
-      case "mod": return "text-[#16a34a]"
-      case "modpack": return "text-[#3b82f6]"
-      case "resourcepack": return "text-[#8b5cf6]"
-      case "shaderpack": return "text-[#f59e0b]"
-    }
-  })
-
   $effect(() => {
     fetchDetails()
     loadInstalledFiles()
   })
 
   async function fetchDetails() {
-    isLoading = true
     error = null
     try {
-      if (source === "modrinth") {
-        const idOrSlug = projectSlug || projectId
-        const result = await invoke<ModrinthProjectDetails>("get_project_details", { idOrSlug })
-        details = result
-        if (result.body) {
-          renderedBody = await marked.parse(result.body)
-        }
-        await fetchVersions()
-      } else {
-        const result = await invoke<CurseforgeModDetail>("get_curseforge_mod_details", { modId: parseInt(projectId) })
-        curseforgeDetails = result
-        await fetchCurseforgeFiles()
-      }
+      const payload = await loadProjectDetails(source, projectId, projectSlug)
+      details = payload.modrinth
+      curseforgeDetails = payload.curseforge
+      bodyHtml = payload.bodyHtml
     } catch (e) {
       error = String(e)
+      return
     } finally {
-      isLoading = false
+      isLoadingDetails = false
+    }
+
+    if (source === "modrinth") {
+      if (details) void fetchVersions()
+    } else if (curseforgeDetails) {
+      void fetchCurseforgeFiles()
     }
   }
 
@@ -112,17 +121,14 @@
     if (!details) return
     isLoadingVersions = true
     try {
-      const loaders = selectedInstance && (selectedInstance.loader === "fabric" || selectedInstance.loader === "neoforge" || selectedInstance.loader === "forge")
-        ? [selectedInstance.loader]
+      const loader = selectedInstance?.loader ?? null
+      const loaders = projectType === "mod" && (loader === "fabric" || loader === "neoforge" || loader === "forge")
+        ? [loader]
         : undefined
-      const gameVersions = selectedInstance
+      const gameVersions = projectType === "mod" && selectedInstance
         ? [getMinecraftVersion(selectedInstance)]
         : undefined
-      let result = await invoke<ModrinthVersion[]>("get_mod_versions", {
-        idOrSlug: details.id,
-        loaders: projectType === "mod" ? loaders : undefined,
-        gameVersions: projectType === "mod" ? gameVersions : undefined,
-      })
+      let result = await loadModrinthVersions(details.id, loaders, gameVersions)
       if (projectType === "modpack" || projectType === "resourcepack" || projectType === "shaderpack") {
         const seen = new Set<string>()
         result = result.filter(v => {
@@ -142,13 +148,7 @@
     if (!curseforgeDetails) return
     isLoadingVersions = true
     try {
-      const result = await invoke<CurseforgeGetModFilesResult>("get_curseforge_mod_files", {
-        modId: curseforgeDetails.id,
-        gameVersion: null,
-        modLoaderType: null,
-        pageSize: 20,
-      })
-      curseforgeFiles = result.data
+      curseforgeFiles = await loadCurseforgeFiles(curseforgeDetails.id, 20)
     } catch {} finally {
       isLoadingVersions = false
     }
@@ -249,13 +249,13 @@
   function getIconUrl(): string | null {
     if (details?.icon_url) return details.icon_url
     if (curseforgeDetails?.logo?.thumbnailUrl) return curseforgeDetails.logo.thumbnailUrl
-    return null
+    return previewIconUrl
   }
 
   function getTitle(): string {
     if (details?.title) return details.title
     if (curseforgeDetails?.name) return curseforgeDetails.name
-    return ""
+    return previewTitle
   }
 
   function getAuthor(): string {
@@ -276,44 +276,64 @@
   }
 </script>
 
-<div class="h-full">
-  {#if isLoading}
-    <div class="flex items-center justify-center h-full">
-      <Loader2 size={32} class="animate-spin {spinnerColor}" />
-    </div>
-  {:else if error}
-    <div class="flex items-center justify-center h-full">
-      <div class="text-center">
-        <p class="text-red-400 mb-2">Failed to load project details</p>
-        <p class="text-sm text-[var(--text-muted)]">{error}</p>
+<div
+  role="presentation"
+  class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 modal-backdrop"
+  class:closing={isClosing}
+  onmousedown={(e) => { backdropArmed = e.target === e.currentTarget }}
+  onmouseup={(e) => { backdropArmed = backdropArmed && e.target === e.currentTarget }}
+  onclick={() => { if (backdropArmed) requestClose() }}
+>
+  <div
+    role="dialog"
+    aria-modal="true"
+    aria-label={getTitle() || "Project details"}
+    class="relative w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden border border-[var(--border-subtle)] bg-[var(--bg-tertiary)] rounded-md shadow-md modal-content"
+    class:closing={isClosing}
+  >
+    {#if error}
+      <div class="flex flex-col items-center justify-center gap-4 py-16 px-6 text-center">
+        <div>
+          <p class="text-red-400 mb-2">Failed to load project details</p>
+          <p class="text-sm text-[var(--text-muted)]">{error}</p>
+        </div>
+        <button
+          onclick={requestClose}
+          class="px-3 h-9 rounded-md bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] text-sm font-medium text-[var(--text-secondary)] cursor-pointer"
+        >
+          Close
+        </button>
       </div>
-    </div>
-  {:else}
-    <div class="max-w-7xl mx-auto">
-      <ProjectHeader
-        {onBack}
-        iconUrl={getIconUrl()}
-        title={getTitle()}
-        author={getAuthor()}
-        projectUrl={getProjectUrl()}
-        {bodyHtml}
-      />
-    </div>
+    {:else}
+      <div class="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-5">
+        <ProjectHeader
+          onBack={requestClose}
+          iconUrl={getIconUrl()}
+          title={getTitle()}
+          author={getAuthor()}
+          projectUrl={getProjectUrl()}
+          {bodyHtml}
+          loading={isLoadingDetails}
+        />
+      </div>
 
-    <InstallMenu
-      label={isModpack ? getTitle() : selectedInstance ? `Installing to ${selectedInstance.name}` : "Installing to…"}
-      needsInstance={!isModpack && !selectedInstance}
-      {isLoadingVersions}
-      {source}
-      {versions}
-      {curseforgeFiles}
-      {latestVersionId}
-      {latestCurseforgeFileId}
-      {installedFiles}
-      {downloadingMap}
-      {completedIds}
-      onInstall={handleInstallVersion}
-      onInstallFile={handleInstallCurseforgeFile}
-    />
-  {/if}
+      {#if !isLoadingDetails}
+        <InstallMenu
+          label={isModpack ? getTitle() : selectedInstance ? `Installing to ${selectedInstance.name}` : "Installing to…"}
+          needsInstance={!isModpack && !selectedInstance}
+          {isLoadingVersions}
+          {source}
+          {versions}
+          {curseforgeFiles}
+          {latestVersionId}
+          {latestCurseforgeFileId}
+          {installedFiles}
+          {downloadingMap}
+          {completedIds}
+          onInstall={handleInstallVersion}
+          onInstallFile={handleInstallCurseforgeFile}
+        />
+      {/if}
+    {/if}
+  </div>
 </div>
