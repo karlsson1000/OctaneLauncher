@@ -10,6 +10,7 @@
     ContentSource,
   } from "../adapters"
   import { isModdedLoader } from "../adapters"
+  import { prefetchProjectDetails } from "../project-cache"
 
   const ITEMS_PER_PAGE = 20
 
@@ -25,7 +26,15 @@
     source: ContentSource
     category: AddonCategoryConfig
     searchQuery?: string
-    onViewProjectDetail: (source: ContentSource, projectId: string, slug: string, projectType: string, author?: string) => void
+    onViewProjectDetail: (selection: {
+      source: ContentSource
+      projectId: string
+      projectSlug: string
+      projectType: string
+      author?: string
+      previewTitle: string
+      previewIconUrl: string | null
+    }) => void
     selectedInstance?: Instance | null
     instances?: Instance[]
     onSetSelectedInstance?: (instance: Instance) => void
@@ -42,6 +51,7 @@
   let hasMore = true
 
   let pinnedHit: AddonHit | null = $state(null)
+  let prefetchTimer: ReturnType<typeof setTimeout> | undefined
 
   $effect(() => {
     if (!category.requiresModdedLoader) return
@@ -125,8 +135,30 @@
   }
 
   function openDetail(hit: AddonHit) {
-    onViewProjectDetail(source, hit.id, hit.slug, category.projectType, hit.author)
+    cancelPrefetch()
+    onViewProjectDetail({
+      source,
+      projectId: hit.id,
+      projectSlug: hit.slug,
+      projectType: category.projectType,
+      author: hit.author,
+      previewTitle: hit.title,
+      previewIconUrl: hit.imageUrl,
+    })
   }
+
+  function schedulePrefetch(hit: AddonHit) {
+    clearTimeout(prefetchTimer)
+    prefetchTimer = setTimeout(() => {
+      prefetchProjectDetails(source, hit.id, hit.slug)
+    }, 150)
+  }
+
+  function cancelPrefetch() {
+    clearTimeout(prefetchTimer)
+  }
+
+  $effect(() => () => clearTimeout(prefetchTimer))
 </script>
 
 {#if category.requiresInstance && !selectedInstance}
@@ -166,6 +198,10 @@
               style={`--tw-ring-color: ${category.accentMain}`}
               role="button"
               tabindex="0"
+              onmouseenter={() => schedulePrefetch(hit)}
+              onmouseleave={cancelPrefetch}
+              onfocus={() => schedulePrefetch(hit)}
+              onblur={cancelPrefetch}
               onkeydown={(e) => { if (e.key === 'Enter') openDetail(hit); }}
               onclick={() => openDetail(hit)}
             >
