@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte"
+  import { invoke } from "@tauri-apps/api/core"
   import type {
     Instance, ModrinthProjectDetails, ModrinthVersion, ModFile,
     CurseforgeModDetail, CurseforgeFile
