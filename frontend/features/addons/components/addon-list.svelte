@@ -194,8 +194,7 @@
             {@const isPinned = pinnedHit?.id === hit.id}
             {@const tags = (hit.categories ?? []).slice(0, 2)}
             <div
-              class="flex items-center gap-4 rounded-lg bg-[var(--bg-tertiary)] p-3 pr-4 cursor-pointer outline-none focus-visible:ring-2"
-              style={`--tw-ring-color: ${category.accentMain}`}
+              class="flex items-center gap-4 rounded-lg bg-[var(--bg-tertiary)] p-3 pr-4 cursor-pointer outline-none"
               role="button"
               tabindex="0"
               onmouseenter={() => schedulePrefetch(hit)}
