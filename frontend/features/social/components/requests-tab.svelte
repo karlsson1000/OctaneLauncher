@@ -93,7 +93,7 @@
   {:else}
     <div class="flex flex-col items-center justify-center py-10 text-center px-3">
       <Inbox size={32} class="text-[var(--text-muted)] mb-3" />
-      <p class="text-sm text-[var(--text-secondary)] font-medium">No pending requests</p>
+      <p class="text-sm text-[var(--text-muted)] font-medium">No pending requests</p>
     </div>
   {/if}
 </div>
