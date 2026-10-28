@@ -43,7 +43,7 @@
   $effect(() => { loadStorageUsage() })
 </script>
 
-<section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+<section>
   <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight mb-3">Disk usage</h4>
   {#if storageLoading}
     <div class="flex items-center gap-2 text-xs text-[var(--text-muted)]">
@@ -53,7 +53,7 @@
   {:else if storageCategories.length === 0}
     <div class="text-xs text-[var(--text-muted)]">No data</div>
   {:else}
-    <div class="h-2 rounded-full overflow-hidden flex bg-[var(--content-bg)]">
+    <div class="h-2 rounded-full overflow-hidden flex bg-[var(--bg-tertiary)]">
       {#each storageCategories as cat (cat.name)}
         <div
           style="width: {(cat.size_bytes / totalBytes) * 100}%; background-color: {storageColors[cat.name] || '#6b7280'}"
@@ -73,8 +73,8 @@
   {/if}
 </section>
 
-<section class="rounded-md bg-[var(--bg-tertiary)] px-4 py-1.5">
-  <div class="flex items-center gap-3 py-2.5">
+<section>
+  <div class="flex items-center gap-3">
     <div class="flex-1 min-w-0">
       <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">Game directory</p>
       <p class="text-xs text-[var(--text-muted)] font-mono break-all mt-0.5">{store.launcherDirectory || "Loading..."}</p>
@@ -82,7 +82,7 @@
     <button
       onclick={() => handleOpenDirectory(store.launcherDirectory)}
       disabled={!store.launcherDirectory}
-      class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
+      class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] disabled:opacity-50 text-[var(--text-primary)] cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
     >
       <FolderOpen size={14} />
       Open folder
@@ -90,6 +90,6 @@
   </div>
 </section>
 
-<section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+<section>
   <TrashSection onAlert={onAlert} />
 </section>

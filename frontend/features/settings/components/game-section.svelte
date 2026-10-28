@@ -138,7 +138,7 @@
   })
 </script>
 
-<section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+<section>
   <div class="flex items-center justify-between gap-3 mb-3">
     <div class="min-w-0">
       <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Memory allocation</h4>
@@ -155,13 +155,13 @@
         onfocus={() => ramTextFocused = true}
         onblur={commitRamText}
         onkeydown={(e) => { if (e.key === 'Enter') (e.currentTarget as HTMLInputElement).blur() }}
-        class="w-[4ch] rounded-sm px-1 -mx-1 text-2xl font-bold text-[var(--text-primary)] font-mono text-right cursor-text bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] focus:outline-none"
+        class="w-[4ch] rounded-sm px-1 -mx-1 text-2xl font-bold text-[var(--text-primary)] font-mono text-right cursor-text bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] focus:outline-none"
       />
       <span class="text-sm text-[var(--text-muted)] font-sans font-normal ml-1">GB</span>
     </div>
   </div>
   <div class="relative h-6 flex items-center">
-    <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
+    <div class="absolute inset-x-0 h-2 bg-[var(--bg-tertiary)] rounded-full"></div>
     <div class="absolute h-2 rounded-full" style="width: calc(3px + (100% - 6px) * {ramPercent / 100}); background: var(--accent-primary)"></div>
     <div class="absolute w-1.5 h-5 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 top-1/2 -mt-2.5" style="left: calc(3px + (100% - 6px) * {ramPercent / 100})"></div>
     <input
@@ -173,7 +173,7 @@
   </div>
 </section>
 
-<section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+<section>
   <div class="flex items-center justify-between gap-3 mb-3">
     <div class="min-w-0">
       <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Java runtime</h4>
@@ -182,7 +182,7 @@
     <button
       onclick={loadJavaInstallations}
       disabled={isLoadingJava}
-      class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+      class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
     >
       {#if isLoadingJava}<Loader2 size={14} class="animate-spin" />{/if}
       Rescan
@@ -192,12 +192,12 @@
   <div class="relative" bind:this={javaDropdownEl}>
     <button
       onclick={toggleJavaDropdown}
-      class="w-full h-9 bg-[var(--content-bg)] px-3 text-sm text-[var(--text-primary)] text-left flex items-center justify-between cursor-pointer min-w-0 rounded-md hover:bg-[var(--bg-hover)]"
+      class="w-full h-8 bg-[var(--bg-tertiary)] px-3 text-sm text-[var(--text-primary)] text-left flex items-center justify-between cursor-pointer min-w-0 rounded-md hover:bg-[var(--bg-hover)]"
     >
       <span class="truncate">
         {showCustomPath ? "Custom Path..." : (store.settings?.java_path || "Auto-detect (Recommended)")}
       </span>
-      <ChevronDown size={14} class="shrink-0 ml-2 transition-transform {isJavaDropdownOpen ? 'rotate-180' : ''}" />
+      <ChevronDown size={14} strokeWidth={3} class="shrink-0 ml-2 transition-transform {isJavaDropdownOpen ? 'rotate-180' : ''}" />
     </button>
 
     {#if isJavaDropdownOpen}
@@ -214,7 +214,7 @@
   {#if showCustomPath}
     <input
       type="text"
-      class="w-full h-9 bg-[var(--content-bg)] rounded-md px-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono min-w-0 mt-2"
+      class="w-full h-8 bg-[var(--bg-tertiary)] rounded-md px-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] font-mono min-w-0 mt-2"
       placeholder="C:\\Program Files\\Java\\jdk-21\\bin\\javaw.exe"
       bind:value={customPathValue}
       onblur={() => { if (customPathValue.trim()) onChange({ ...store.settings!, java_path: customPathValue.trim() } as LauncherSettings) }}
@@ -222,9 +222,9 @@
     />
   {/if}
 
-  <div class="mt-4 pt-3 border-t border-[var(--border-subtle)]">
+  <div class="mt-5">
     <h5 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Custom Java arguments</h5>
-    <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-2.5">
+    <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-3">
       Extra JVM flags appended at launch for every instance.
     </p>
     <textarea
@@ -235,7 +235,7 @@
       rows={2}
       spellcheck="false"
       placeholder="-Xmx4G -XX:+UseG1GC"
-      class="w-full bg-[var(--content-bg)] rounded-md px-3 py-2 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-y min-h-[56px] max-h-40 custom-scrollbar"
+      class="w-full bg-[var(--bg-tertiary)] rounded-md px-3 py-2 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)] resize-y min-h-[56px] max-h-40 custom-scrollbar"
     ></textarea>
   </div>
 </section>

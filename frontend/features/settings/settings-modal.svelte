@@ -3,7 +3,6 @@
   import { Loader2, X, Paintbrush, Play, AppWindow, HardDrive } from "lucide-svelte"
   import AlertModal from "../../components/ui/alert-modal.svelte"
   import { untrack } from "svelte"
-  import { fade } from "svelte/transition"
   import { store, setSettings } from "../../lib/launcherStore.svelte"
   import type { LauncherSettings } from "../../types"
   import AppearanceSection from "./components/appearance-section.svelte"
@@ -32,47 +31,10 @@
     type: "warning" | "danger" | "success" | "info"
   } | null = $state(null)
   let isClosing = $state(false)
-  let contentH = $state(0)
-  let heightReady = $state(false)
-  let isResizing = $state(false)
-  let resizeMs = $state(0)
   let contentScrollerEl: HTMLDivElement | undefined = $state()
-  let resizeTimeout: ReturnType<typeof setTimeout> | undefined
   let saveTimeout: ReturnType<typeof setTimeout> | undefined
 
-  function holdOverflow(ms: number) {
-    isResizing = true
-    if (resizeTimeout) clearTimeout(resizeTimeout)
-    resizeTimeout = setTimeout(() => { isResizing = false }, ms)
-  }
-
-  function applyHeight(h: number) {
-    if (h <= 0) return
-    if (contentH === 0) {
-      contentH = h
-      requestAnimationFrame(() => { heightReady = true })
-      return
-    }
-    const delta = Math.abs(h - contentH)
-    if (delta < 1) return
-    resizeMs = delta < 4 ? 0 : Math.round(Math.min(240, Math.max(120, 100 + delta * 0.9)))
-    contentH = h
-    holdOverflow(resizeMs + 60)
-  }
-
-  function observeHeight(node: HTMLElement) {
-    const ro = new ResizeObserver(() => applyHeight(node.offsetHeight))
-    ro.observe(node)
-    return {
-      destroy() {
-        ro.disconnect()
-        contentH = 0
-        heightReady = false
-        isResizing = false
-        if (resizeTimeout) clearTimeout(resizeTimeout)
-      },
-    }
-  }
+  let activeTabData = $derived(TABS.find((t) => t.id === activeTab))
 
   $effect(() => {
     if (isOpen) {
@@ -143,66 +105,74 @@
       onkeydown={(e) => { if (e.key === 'Escape') handleClose() }}
     >
       <div
-        class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-full max-w-3xl modal-content p-5 space-y-5"
+        class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-full max-w-4xl h-[540px] max-h-full flex overflow-hidden modal-content"
         role="presentation"
         class:closing={isClosing}
-          onclick={(e) => e.stopPropagation()}
-          style="pointer-events: auto"
-        >
-        <div class="flex items-center justify-between gap-3">
-          <div class="min-w-0">
+        onclick={(e) => e.stopPropagation()}
+        style="pointer-events: auto"
+      >
+        <aside class="w-52 shrink-0 bg-[var(--bg-tertiary)] p-3 pt-5 flex flex-col gap-4">
+          <div class="px-2 pt-1 min-w-0">
             <h2 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight leading-tight">Settings</h2>
-            <p class="text-[13px] text-[var(--text-muted)] truncate">Octane Launcher {semanticVersion || "…"}</p>
+            <p class="text-xs text-[var(--text-muted)] truncate">Octane Launcher {semanticVersion || "…"}</p>
           </div>
-          <div class="flex items-center gap-2 shrink-0 self-start">
-            {#if appVersion}
-              <span class="h-[30px] -mt-0.5 px-2.5 inline-flex items-center rounded-sm text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-tertiary)]">{appVersion.split('-')[1] || appVersion}</span>
-            {/if}
-            <button
-              onclick={handleClose}
-              class="p-1.5 -mt-0.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
-            >
-              <X size={18} strokeWidth={2} />
-            </button>
-          </div>
-        </div>
 
-        <div class="grid grid-cols-4 gap-1 p-1 rounded-md bg-[var(--bg-tertiary)] -mt-2">
-          {#each TABS as tab (tab.id)}
-            <button
-              onclick={() => { if (activeTab === tab.id) return; holdOverflow(300); activeTab = tab.id; contentScrollerEl?.scrollTo({ top: 0 }) }}
-              class="h-9 rounded-sm text-sm font-medium cursor-pointer flex items-center justify-center gap-2 {activeTab === tab.id
- ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm'
- : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
-            >
-              <tab.icon size={16} strokeWidth={2} class={"shrink-0 " + (activeTab === tab.id ? "text-[var(--accent-primary)]" : "")} />
-              <span>{tab.label}</span>
-            </button>
-          {/each}
-        </div>
+          <nav class="flex flex-col gap-1">
+            {#each TABS as tab (tab.id)}
+              <button
+                onclick={() => { if (activeTab === tab.id) return; activeTab = tab.id; contentScrollerEl?.scrollTo({ top: 0, behavior: "instant" }) }}
+                class="h-9 px-2 rounded-sm text-sm font-medium cursor-pointer flex items-center gap-2.5 text-left {activeTab === tab.id
+                  ? 'bg-[var(--bg-hover)] text-[var(--text-primary)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]/50'}"
+              >
+                <tab.icon size={16} strokeWidth={2} class={"shrink-0 " + (activeTab === tab.id ? "text-[var(--accent-primary)]" : "")} />
+                <span class="truncate">{tab.label}</span>
+              </button>
+            {/each}
+          </nav>
 
-        <div
-          bind:this={contentScrollerEl}
-          class="max-h-[56vh] custom-scrollbar {isResizing ? 'overflow-y-hidden' : 'overflow-y-auto'} {heightReady ? 'transition-[height] motion-reduce:transition-none' : ''}"
-          style:height={contentH > 0 ? `${contentH}px` : "auto"}
-          style:transition-duration="{resizeMs}ms"
-          style:transition-timing-function="cubic-bezier(0.4, 0, 0.2, 1)"
-        >
-        <div use:observeHeight>
-        {#key activeTab}
-        <div class="space-y-3" in:fade={{ duration: 120 }}>
-          {#if activeTab === "appearance"}
-            <AppearanceSection onChange={handleSettingChange} onChangeDebounced={handleSettingChangeDebounced} onAlert={(alert) => alertModal = alert} />
-          {:else if activeTab === "game"}
-            <GameSection onChange={handleSettingChange} onChangeDebounced={handleSettingChangeDebounced} />
-          {:else if activeTab === "launcher"}
-            <LauncherSection onChange={handleSettingChange} onClose={onClose} />
-          {:else if activeTab === "storage"}
-            <StorageSection onAlert={(alert) => alertModal = alert} />
+          {#if appVersion}
+            <div class="mt-auto">
+              <span class="h-[26px] px-2.5 inline-flex items-center rounded-sm text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-hover)]">{appVersion.split('-')[1] || appVersion}</span>
+            </div>
           {/if}
-        </div>
-        {/key}
-        </div>
+        </aside>
+
+        <div class="flex-1 min-w-0 flex flex-col">
+          <div class="px-8 pt-6 pb-8 shrink-0">
+            <div class="flex items-center justify-between gap-3 h-[22.5px]">
+              <h3 class="flex items-center gap-2.5 min-w-0 text-lg font-semibold text-[var(--text-primary)] tracking-tight leading-tight">
+                {#if activeTabData}
+                  <activeTabData.icon size={20} strokeWidth={2} class="shrink-0 text-[var(--accent-primary)]" />
+                  <span class="truncate">{activeTabData.label}</span>
+                {/if}
+              </h3>
+              <button
+                onclick={handleClose}
+                aria-label="Close settings"
+                class="p-1.5 hover:bg-[var(--bg-hover)] rounded-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer shrink-0"
+              >
+                <X size={18} strokeWidth={2} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            bind:this={contentScrollerEl}
+            class="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-8 pb-6"
+          >
+            <div class="space-y-8">
+              {#if activeTab === "appearance"}
+                <AppearanceSection onChange={handleSettingChange} onChangeDebounced={handleSettingChangeDebounced} onAlert={(alert) => alertModal = alert} />
+              {:else if activeTab === "game"}
+                <GameSection onChange={handleSettingChange} onChangeDebounced={handleSettingChangeDebounced} />
+              {:else if activeTab === "launcher"}
+                <LauncherSection onChange={handleSettingChange} onClose={onClose} />
+              {:else if activeTab === "storage"}
+                <StorageSection onAlert={(alert) => alertModal = alert} />
+              {/if}
+            </div>
+          </div>
         </div>
       </div>
     </div>

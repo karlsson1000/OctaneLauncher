@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ChevronDown, ChevronUp } from "lucide-svelte"
+  import { ChevronDown } from "lucide-svelte"
   import { store, setShowOnboarding } from "../../../lib/launcherStore.svelte"
   import type { LauncherSettings } from "../../../types"
   import MenuOption from "./menu-option.svelte"
@@ -32,7 +32,7 @@
 </script>
 
 {#snippet toggleRow(label: string, desc: string, checked: boolean, toggle: () => void, id?: string)}
-  <div {id} class="flex items-center gap-3 py-2.5">
+  <div {id} class="flex items-center gap-3 py-3">
     <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
     <div class="flex-1 min-w-0" onclick={toggle}>
       <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">{label}</p>
@@ -50,8 +50,8 @@
   </div>
 {/snippet}
 
-<section class="rounded-md bg-[var(--bg-tertiary)] px-4 py-1.5 divide-y divide-[var(--border-subtle)]">
-  <div class="flex items-center gap-3 py-2.5">
+<section>
+  <div class="flex items-center gap-3 pb-3">
     <div class="flex-1 min-w-0">
       <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">Default tab</p>
       <p class="text-xs text-[var(--text-muted)] mt-0.5">The tab shown when the launcher opens.</p>
@@ -59,15 +59,11 @@
     <div class="relative shrink-0" bind:this={tabDropdownEl}>
       <button
         onclick={() => isTabDropdownOpen = !isTabDropdownOpen}
-        class="relative h-8 pl-3 pr-8 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center gap-2 cursor-pointer capitalize min-w-[130px]"
+        class="relative h-8 pl-3 pr-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] rounded-md flex items-center gap-2 cursor-pointer capitalize min-w-[130px]"
       >
         {selectedTab}
         <div class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none">
-          {#if isTabDropdownOpen}
-            <ChevronUp size={14} strokeWidth={3} />
-          {:else}
-            <ChevronDown size={14} strokeWidth={3} />
-          {/if}
+          <ChevronDown size={14} strokeWidth={3} class="transition-transform {isTabDropdownOpen ? 'rotate-180' : ''}" />
         </div>
       </button>
       {#if isTabDropdownOpen}
@@ -110,14 +106,14 @@
     () => onChange({ ...store.settings!, cat_mode: !(store.settings?.cat_mode ?? false) } as LauncherSettings)
   )}
 
-  <div class="flex items-center gap-3 py-2.5">
+  <div class="flex items-center gap-3 pt-3">
     <div class="flex-1 min-w-0">
       <p class="text-sm font-medium text-[var(--text-primary)] leading-tight">Run onboarding again</p>
       <p class="text-xs text-[var(--text-muted)] mt-0.5">Revisit first-time setup or import instances from other launchers.</p>
     </div>
     <button
       onclick={() => { onClose(); setShowOnboarding(true) }}
-      class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer"
+      class="h-8 px-3 shrink-0 text-sm font-medium rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] cursor-pointer"
     >
       Show onboarding
     </button>

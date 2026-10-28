@@ -61,14 +61,14 @@
       <button
         onclick={handleEmptyTrash}
         disabled={emptying}
-        class="px-2.5 py-1 rounded text-xs font-medium cursor-pointer disabled:opacity-50 {confirmClear ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10'}"
+        class="h-5 px-2 inline-flex items-center justify-center rounded text-xs font-medium cursor-pointer disabled:opacity-50 {confirmClear ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25' : 'bg-[var(--bg-hover)] text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10'}"
       >
         {#if emptying}
           <Loader2 size={12} class="animate-spin" />
         {:else if confirmClear}
           Click again to confirm
         {:else}
-          Empty Trash
+          Empty trash
         {/if}
       </button>
     {/if}
@@ -84,7 +84,7 @@
     {:else}
       <div class="space-y-1 max-h-48 overflow-y-auto">
         {#each items as item (item.id)}
-          <div class="flex items-center gap-2 px-1.5 py-1 rounded bg-[var(--bg-hover)] text-xs">
+          <div class="flex items-center gap-2 px-1.5 py-1 rounded bg-[var(--bg-tertiary)] text-xs">
             {#if item.original_type === "screenshot"}
               <Image size={14} class="text-[var(--text-muted)] shrink-0" />
             {:else}

@@ -75,9 +75,9 @@
   }
 </script>
 
-<section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+<section>
   <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Theme</h4>
-  <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-4">Pick the color scheme for the whole launcher.</p>
+  <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-3">Pick the color scheme for the whole launcher.</p>
   <div class="grid grid-cols-4 gap-3">
     {#each THEMES as theme (theme.id)}
       {@const active = store.settings?.theme === theme.id}
@@ -104,24 +104,24 @@
   </div>
 </section>
 
-<section class="rounded-md bg-[var(--bg-tertiary)] p-4">
+<section>
   <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight mb-3">Custom background</h4>
   {#if backgroundPreview}
     <div class="relative group">
-      <div class="h-36 rounded-md overflow-hidden bg-[var(--content-bg)]">
+      <div class="h-36 rounded-md overflow-hidden bg-[var(--bg-tertiary)]">
         <img src={backgroundPreview} alt="Background" class="w-full h-full object-cover" />
       </div>
       <div class="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity rounded-md flex items-center justify-center gap-2">
         <button
           onclick={() => fileInputEl?.click()}
-          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded text-xs font-medium text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
+          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-white bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] transition-colors cursor-pointer"
         >
           <ImagePlus size={14} />
           Change
         </button>
         <button
           onclick={handleRemoveBackground}
-          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded text-xs font-medium text-red-400 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-red-400 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
         >
           <Trash2 size={14} />
           Remove
@@ -129,7 +129,7 @@
       </div>
     </div>
   {:else}
-    <button onclick={() => fileInputEl?.click()} class="w-full h-24 bg-[var(--content-bg)] hover:bg-[var(--bg-hover)] rounded-md flex flex-col items-center justify-center gap-1.5 cursor-pointer">
+    <button onclick={() => fileInputEl?.click()} class="w-full h-24 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md flex flex-col items-center justify-center gap-1.5 cursor-pointer">
       <ImagePlus size={20} class="text-[var(--text-muted)]" />
       <span class="text-xs text-[var(--text-muted)]">Click to upload an image · PNG, JPG up to 10MB</span>
     </button>
@@ -144,7 +144,7 @@
           <span class="text-sm font-mono text-[var(--text-muted)]">{display}</span>
         </div>
         <div class="relative h-6 flex items-center">
-          <div class="absolute inset-x-0 h-2 bg-[var(--content-bg)] rounded-full"></div>
+          <div class="absolute inset-x-0 h-2 bg-[var(--bg-tertiary)] rounded-full"></div>
           <div class="absolute h-2 rounded-full" style="width: calc(3px + (100% - 6px) * {pct}); background: var(--accent-primary)"></div>
           <div class="absolute w-1.5 h-5 rounded-full bg-[var(--accent-primary)] -translate-x-1/2 top-1/2 -mt-2.5" style="left: calc(3px + (100% - 6px) * {pct})"></div>
           <input
