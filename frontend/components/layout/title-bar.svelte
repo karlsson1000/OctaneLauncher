@@ -5,6 +5,7 @@
     appWindow,
     setShowFriendsPanel, dragRegion, noDragRegion,
   } from "../../lib/launcherStore.svelte"
+  import { instanceIconSrc } from "../../lib/icons"
 
   const tabLabels: Record<string, string> = {
     instances: "Instances", addons: "Addons",
@@ -18,6 +19,14 @@
   let historyLen = $derived(store.navigationHistory.length)
 
   let isMaximized = $state(false)
+
+  const detailInstance = $derived(
+    store.showInstanceDetails && store.selectedInstance ? store.selectedInstance : null
+  )
+
+  const detailIcon = $derived(
+    detailInstance ? instanceIconSrc(detailInstance.icon_path, detailInstance.name) : null
+  )
 
   $effect(() => {
     const sync = () => { appWindow.isMaximized().then(v => { isMaximized = v }) }
@@ -50,12 +59,23 @@
     </button>
   </div>
 
-  <span class="text-sm font-medium text-[var(--text-secondary)] ml-1 select-none" style={dragRegion}>
-    {store.showInstanceDetails && store.selectedInstance
-      ? `Instances / ${store.selectedInstance.name}`
-      : store.activeTab === "addons"
-      ? `Addons / ${addonsSubTabLabels[store.addonsSubTab]}`
-      : tabLabels[store.activeTab]}
+  <span class="flex items-center gap-1.5 text-sm font-medium text-[var(--text-secondary)] ml-1 select-none min-w-0" style={dragRegion}>
+    {#if detailInstance}
+      <span class="flex-shrink-0">Instances /</span>
+      {#if detailIcon}
+        <img
+          src={detailIcon}
+          alt=""
+          draggable="false"
+          class="h-4 w-4 rounded-sm object-cover flex-shrink-0"
+        />
+      {/if}
+      <span class="truncate text-[var(--text-primary)]">{detailInstance.name}</span>
+    {:else if store.activeTab === "addons"}
+      Addons / {addonsSubTabLabels[store.addonsSubTab]}
+    {:else}
+      {tabLabels[store.activeTab]}
+    {/if}
   </span>
 
   <div class="flex-1" style={dragRegion}></div>
