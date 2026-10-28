@@ -16,6 +16,11 @@
   let sortBy = $state<"date" | "instance">("date")
   let viewerPath = $state<string | null>(null)
 
+  const sortOptions: { value: "date" | "instance"; label: string; icon: typeof Calendar }[] = [
+    { value: "date", label: "Date", icon: Calendar },
+    { value: "instance", label: "Instance", icon: Package },
+  ]
+
   let gridCols = $derived(store.showFriendsPanel ? "grid-cols-2" : "grid-cols-3")
 
   let instanceCounts = $derived(
@@ -131,7 +136,7 @@
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-md bg-[var(--bg-tertiary)]"></div>
             <div class="w-28 h-8 rounded-md bg-[var(--bg-tertiary)]"></div>
-            <div class="w-16 h-8 rounded-md bg-[var(--bg-tertiary)]"></div>
+            <div class="w-40 h-8 rounded-md bg-[var(--bg-tertiary)]"></div>
           </div>
         </div>
         <div class="grid {gridCols} gap-3">
@@ -156,11 +161,10 @@
           <button
             type="button"
             onclick={openScreenshotsFolder}
-            class="w-8 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md flex items-center justify-center cursor-pointer"
-            title="Open screenshots folder"
+            class="w-8 h-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)] focus-visible:text-[var(--text-primary)] rounded-md flex items-center justify-center cursor-pointer focus-visible:outline-none"
             aria-label="Open screenshots folder"
           >
-            <FolderOpen size={16} />
+            <FolderOpen size={20} strokeWidth={2.5} />
           </button>
 
           <InstanceFilterDropdown
@@ -171,20 +175,26 @@
             onSelect={(name) => (selectedInstance = name)}
           />
 
-          <button
-            type="button"
-            onclick={() => (sortBy = sortBy === "date" ? "instance" : "date")}
-            class="px-3 h-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md text-sm flex items-center gap-2 cursor-pointer"
-            title="Change sort order"
+          <div
+            role="group"
+            aria-label="Sort screenshots"
+            class="h-8 p-0.5 flex items-center gap-0.5 bg-[var(--bg-tertiary)] rounded-md"
           >
-            {#if sortBy === "date"}
-              <Calendar size={14} />
-              Date
-            {:else}
-              <Package size={14} />
-              Instance
-            {/if}
-          </button>
+            {#each sortOptions as opt (opt.value)}
+              {@const Icon = opt.icon}
+              {@const selected = sortBy === opt.value}
+              <button
+                type="button"
+                onclick={() => (sortBy = opt.value)}
+                aria-pressed={selected}
+                class="h-full px-2.5 rounded-[5px] text-sm text-[var(--text-primary)] flex items-center gap-1.5 cursor-pointer select-none focus-visible:outline-none focus-visible:bg-[var(--bg-hover)]
+                  {selected ? 'bg-[var(--bg-hover)] shadow-sm' : 'hover:bg-[var(--bg-hover)]/50'}"
+              >
+                <Icon size={15} />
+                {opt.label}
+              </button>
+            {/each}
+          </div>
         </div>
       </div>
 
