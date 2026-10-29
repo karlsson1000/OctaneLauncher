@@ -3,7 +3,7 @@
   import type { Instance } from "../../../types"
   import { getMinecraftVersion, getFabricLoaderVersion, getNeoForgeVersion, getForgeVersion } from "../../../lib/version"
   import { formatPlaytime } from "../../../lib/format"
-  import { store, handleLaunch } from "../../../lib/launcherStore.svelte"
+  import { store, handleLaunch, handleKillInstance } from "../../../lib/launcherStore.svelte"
 
   let { instance, icon, onOpenFolder, onOpenSettings }: {
     instance: Instance
@@ -14,6 +14,12 @@
 
   const fabricLoaderVersion = $derived(getFabricLoaderVersion(instance))
   const neoforgeVersion = $derived(getNeoForgeVersion(instance))
+
+  const isRunning = $derived(store.runningInstances.has(instance.name))
+  const isLaunching = $derived(store.launchingInstanceName === instance.name)
+  const playDisabled = $derived(
+    !isRunning && (!store.isAuthenticated || (store.launchingInstanceName !== null && !isLaunching))
+  )
 </script>
 
 <div class="flex-shrink-0 px-8 pt-8 pb-6">
@@ -61,17 +67,16 @@
           </div>
           <div class="flex gap-2">
             <button
-              onclick={() => handleLaunch(instance)}
-              disabled={!store.isAuthenticated || store.launchingInstanceName !== null || store.runningInstances.has(instance.name)}
-              class="px-6 py-2 rounded-md font-semibold text-base flex items-center gap-2 cursor-pointer {store.launchingInstanceName === instance.name || store.runningInstances.has(instance.name) ? 'bg-red-500/10 text-red-400' : 'bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50 disabled:cursor-not-allowed"
+              onclick={() => isRunning ? handleKillInstance(instance) : handleLaunch(instance)}
+              disabled={playDisabled}
+              class="h-10 px-5 rounded-md flex items-center justify-center gap-2.5 text-lg cursor-pointer disabled:opacity-40 shrink-0 {isRunning || isLaunching ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25 font-medium' : 'bg-[#16a34a] text-[#181a1f] hover:bg-[#15803d] font-semibold'}"
             >
-              {#if store.launchingInstanceName === instance.name || store.runningInstances.has(instance.name)}
-                  <div class="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
-                  <span>Running...</span>
+              {#if isLaunching || isRunning}
+                <div class="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
               {:else}
                 <Play size={20} fill="currentColor" strokeWidth={0} />
-                <span>Play</span>
               {/if}
+              <span>{isRunning ? "Stop" : isLaunching ? "Launching..." : "Play"}</span>
             </button>
             <button onclick={onOpenFolder} class="px-4 py-2.5 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] rounded-md font-medium text-sm flex items-center gap-2 cursor-pointer">
               <FolderOpen size={18} strokeWidth={2.5} /><span>Open Folder</span>

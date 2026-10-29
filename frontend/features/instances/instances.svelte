@@ -226,7 +226,9 @@
 
   let isLastPlayedRunning = $derived(lastPlayedInstance ? store.runningInstances.has(lastPlayedInstance.name) : false)
   let isLastPlayedLaunching = $derived(lastPlayedInstance ? store.launchingInstanceName === lastPlayedInstance.name : false)
-  let lastPlayedDisabled = $derived(store.launchingInstanceName !== null && !isLastPlayedRunning && !isLastPlayedLaunching)
+  let lastPlayedDisabled = $derived(
+    !isLastPlayedRunning && (!store.isAuthenticated || (store.launchingInstanceName !== null && !isLastPlayedLaunching))
+  )
 
   const CONTINUE_MESSAGES = [
     "Continue where you left off..",
@@ -328,7 +330,7 @@
         <button
           onclick={() => isLastPlayedRunning ? handleKillInstance(lastPlayedInstance) : handleLaunch(lastPlayedInstance)}
           disabled={lastPlayedDisabled}
-          class="h-10 px-5 rounded-md flex items-center justify-center gap-2.5 text-base font-semibold cursor-pointer disabled:opacity-40 shrink-0 {isLastPlayedRunning || isLastPlayedLaunching ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25' : 'bg-[#16a34a] text-[#181a1f] hover:bg-[#15803d]'}"
+          class="h-10 px-5 rounded-md flex items-center justify-center gap-2.5 text-lg cursor-pointer disabled:opacity-40 shrink-0 {isLastPlayedRunning || isLastPlayedLaunching ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25 font-medium' : 'bg-[#16a34a] text-[#181a1f] hover:bg-[#15803d] font-semibold'}"
           title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
         >
           {#if isLastPlayedLaunching || isLastPlayedRunning}
