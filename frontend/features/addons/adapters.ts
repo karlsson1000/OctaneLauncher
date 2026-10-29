@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core"
-import { Image, Package } from "lucide-svelte"
+import { Image, Layers, Puzzle, Sparkles } from "lucide-svelte"
 import type {
   CurseforgeHit,
   CurseforgeSearchResult,
@@ -33,7 +33,7 @@ export interface AddonCategoryConfig {
   placeholder: string
   accentMain: string
   accentHover: string
-  fallbackIcon: typeof Package
+  fallbackIcon: typeof Image
   requiresInstance: boolean
   requiresModdedLoader: boolean
   noInstanceHint: string
@@ -126,7 +126,7 @@ export const ADDON_CATEGORIES: Record<AddonKind, AddonCategoryConfig> = {
     placeholder: "Search mods...",
     accentMain: "#16a34a",
     accentHover: "#22c55e",
-    fallbackIcon: Package,
+    fallbackIcon: Puzzle,
     requiresInstance: true,
     requiresModdedLoader: true,
     noInstanceHint: "Select an instance to manage mods",
@@ -141,7 +141,7 @@ export const ADDON_CATEGORIES: Record<AddonKind, AddonCategoryConfig> = {
     placeholder: "Search modpacks...",
     accentMain: "#3b82f6",
     accentHover: "#60a5fa",
-    fallbackIcon: Package,
+    fallbackIcon: Layers,
     requiresInstance: false,
     requiresModdedLoader: false,
     noInstanceHint: "",
@@ -171,7 +171,7 @@ export const ADDON_CATEGORIES: Record<AddonKind, AddonCategoryConfig> = {
     placeholder: "Search shader packs...",
     accentMain: "#f59e0b",
     accentHover: "#fbbf24",
-    fallbackIcon: Package,
+    fallbackIcon: Sparkles,
     requiresInstance: true,
     requiresModdedLoader: false,
     noInstanceHint: "Select an instance to manage shader packs",
