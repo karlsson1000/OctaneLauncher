@@ -116,7 +116,7 @@ impl AccountManager {
             .lock()
             .unwrap()
             .insert(uuid.clone(), CachedAccess {
-                access_token,
+                access_token: access_token.clone(),
                 token_expiry,
             });
 
@@ -125,7 +125,7 @@ impl AccountManager {
         let account = StoredAccount {
             uuid: uuid.clone(),
             username,
-            access_token: String::new(),
+            access_token,
             refresh_token: String::new(),
             token_expiry,
             added_at: Utc::now().to_rfc3339(),
@@ -222,7 +222,7 @@ impl AccountManager {
             .lock()
             .unwrap()
             .insert(uuid.to_string(), CachedAccess {
-                access_token,
+                access_token: access_token.clone(),
                 token_expiry,
             });
 
@@ -233,6 +233,7 @@ impl AccountManager {
             .get_mut(uuid)
             .ok_or("Account not found")?;
 
+        account.access_token = access_token;
         account.token_expiry = token_expiry;
         account.last_used = Some(Utc::now().to_rfc3339());
 
@@ -241,11 +242,6 @@ impl AccountManager {
     }
 
     pub async fn get_valid_token(uuid: &str, client_id: &str) -> Result<String, Box<dyn std::error::Error>> {
-        let data = Self::load_accounts()?;
-        data.accounts
-            .get(uuid)
-            .ok_or("Account not found")?;
-
         let now = Utc::now();
         let buffer = chrono::Duration::minutes(5);
 
@@ -255,34 +251,34 @@ impl AccountManager {
             }
         }
 
+        let data = Self::load_accounts()?;
+        let account = data.accounts.get(uuid).ok_or("Account not found")?;
+        let stored_token = account.access_token.clone();
+        let stored_expiry = account.token_expiry;
+
+        if !stored_token.is_empty() && stored_expiry > now + buffer {
+            ACCESS_CACHE.lock().unwrap().insert(
+                uuid.to_string(),
+                CachedAccess {
+                    access_token: stored_token.clone(),
+                    token_expiry: stored_expiry,
+                },
+            );
+            return Ok(stored_token);
+        }
+
         let refresh_token = load_tokens(uuid)?.ok_or("Account credentials not found")?;
 
         let authenticator = crate::auth::Authenticator::new(client_id)?;
         let refreshed = authenticator.refresh_tokens(&refresh_token).await?;
 
-        store_tokens(uuid, &refreshed.refresh_token)?;
-        ACCESS_CACHE.lock().unwrap().insert(
-            uuid.to_string(),
-            CachedAccess {
-                access_token: refreshed.access_token.clone(),
-                token_expiry: refreshed.token_expiry,
-            },
-        );
-        Self::update_account_expiry(uuid, refreshed.token_expiry)?;
+        Self::update_account_tokens(
+            uuid,
+            refreshed.access_token.clone(),
+            refreshed.refresh_token,
+            refreshed.token_expiry,
+        )?;
 
         Ok(refreshed.access_token)
-    }
-
-    fn update_account_expiry(
-        uuid: &str,
-        token_expiry: DateTime<Utc>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let mut data = Self::load_accounts()?;
-        if let Some(account) = data.accounts.get_mut(uuid) {
-            account.token_expiry = token_expiry;
-            account.last_used = Some(Utc::now().to_rfc3339());
-            Self::save_accounts(&data)?;
-        }
-        Ok(())
     }
 }
