@@ -28,7 +28,30 @@
   let tab = $state<"friends" | "requests">("friends")
   let dataAccountUuid: string | undefined | null = null
 
+  type FriendsCache = { friends: Friend[]; requests: FriendRequest[]; at: number }
+
   const storeKey = (prefix: string) => `${prefix}_${activeAccountUuid ?? "default"}`
+
+  let cacheHydrated = $state(false)
+
+  const restoreCache = async (uuid: string) => {
+    try {
+      const cached = await storeGet<FriendsCache>(`friends_cache_${uuid}`)
+      if (uuid !== activeAccountUuid) return
+      if (cached?.friends?.length) {
+        friends = cached.friends
+        requests = cached.requests ?? []
+        isLoading = false
+      }
+    } catch {
+    } finally {
+      if (uuid === activeAccountUuid) cacheHydrated = true
+    }
+  }
+
+  const persistCache = (uuid: string) => {
+    storeSet(`friends_cache_${uuid}`, $state.snapshot({ friends, requests, at: Date.now() })).catch(() => {})
+  }
 
   const displayName = (friend: Friend) => nicknames[friend.uuid] || friend.username
   const isFavorite = (friendUuid: string) => favorites.includes(friendUuid)
@@ -99,10 +122,13 @@
 
   const loadFriends = async (silent = false) => {
     const uuid = activeAccountUuid
-    if (!silent) isLoading = true
+    if (!silent && !cacheHydrated) isLoading = true
     try {
       const result = await invoke<Friend[]>("get_friends")
-      if (uuid === activeAccountUuid) friends = result
+      if (uuid === activeAccountUuid) {
+        friends = result
+        if (uuid) persistCache(uuid)
+      }
     } catch {
     } finally {
       if (uuid === activeAccountUuid) isLoading = false
@@ -113,7 +139,10 @@
     const uuid = activeAccountUuid
     try {
       const result = await invoke<FriendRequest[]>("get_friend_requests")
-      if (uuid === activeAccountUuid) requests = result
+      if (uuid === activeAccountUuid) {
+        requests = result
+        if (uuid) persistCache(uuid)
+      }
     } catch {
     }
   }
@@ -195,8 +224,10 @@
       nicknames = {}
       favorites = []
       isLoading = false
+      cacheHydrated = false
       editingNicknameUuid = null
       friendMenu = null
+      if (uuid) restoreCache(uuid)
     }
 
     if (isOpen && isAuthenticated) {

@@ -212,18 +212,21 @@ export const getFriends = internalQuery({
       .query("friendships")
       .withIndex("by_user", (q: any) => q.eq("userUuid", uuid))
       .collect();
+    const users = await Promise.all(
+      rows.map((row: any) => getUserByUuid(ctx, row.friendUuid)),
+    );
     const out: any[] = [];
-    for (const row of rows) {
-      const user = await getUserByUuid(ctx, (row as any).friendUuid);
-      if (!user) continue;
+    rows.forEach((row: any, i: number) => {
+      const user: any = users[i];
+      if (!user) return;
       out.push({
-        uuid: (user as any).uuid,
-        username: (user as any).username,
-        status: (user as any).status,
-        last_seen: new Date((user as any).lastSeen).toISOString(),
-        current_instance: (user as any).currentInstance ?? null,
+        uuid: user.uuid,
+        username: user.username,
+        status: user.status,
+        last_seen: new Date(user.lastSeen).toISOString(),
+        current_instance: user.currentInstance ?? null,
       });
-    }
+    });
     return out;
   },
 });
@@ -238,18 +241,16 @@ export const getRequests = internalQuery({
         q.eq("toUuid", uuid).eq("status", "pending"),
       )
       .collect();
-    const out: any[] = [];
-    for (const row of rows) {
-      const from = await getUserByUuid(ctx, (row as any).fromUuid);
-      out.push({
-        id: (row as any)._id,
-        from_uuid: (row as any).fromUuid,
-        from_username: (from as any)?.username ?? (row as any).fromUuid,
-        to_uuid: (row as any).toUuid,
-        status: "pending",
-        created_at: new Date((row as any).createdAt).toISOString(),
-      });
-    }
-    return out;
+    const senders = await Promise.all(
+      rows.map((row: any) => getUserByUuid(ctx, row.fromUuid)),
+    );
+    return rows.map((row: any, i: number) => ({
+      id: row._id,
+      from_uuid: row.fromUuid,
+      from_username: (senders[i] as any)?.username ?? row.fromUuid,
+      to_uuid: row.toUuid,
+      status: "pending",
+      created_at: new Date(row.createdAt).toISOString(),
+    }));
   },
 });
