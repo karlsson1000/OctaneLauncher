@@ -57,7 +57,7 @@
   {/if}
 
   {#if toastStore.progress.length > 0}
-    <div class="absolute inset-x-4 bottom-4 z-40 flex flex-col items-end gap-2 pointer-events-none">
+    <div class="absolute inset-x-8 bottom-4 z-40 flex flex-col items-end gap-2 pointer-events-none">
       {#each toastStore.progress as p (p.id)}
         <div
           transition:fly|global={{ y: 16, duration: 160 }}
