@@ -64,24 +64,49 @@
     v.render()
   })
 
+  function loadImage(url: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image()
+      image.crossOrigin = "anonymous"
+      image.onload = () => resolve(image)
+      image.onerror = reject
+      image.src = url
+    })
+  }
+
   $effect(() => {
     const v = viewer
     if (!v) return
-    if (skinUrl) {
-      v.loadSkin(skinUrl, { model: variant === "slim" ? "slim" : "default" })
-    } else {
+    const url = skinUrl
+    const model = variant === "slim" ? "slim" : "default"
+    if (!url) {
       v.loadSkin(null)
+      return
     }
+    let cancelled = false
+    loadImage(url)
+      .then(image => { if (!cancelled) v.loadSkin(image, { model }) })
+      .catch(() => {})
+    return () => { cancelled = true }
   })
 
   $effect(() => {
     const v = viewer
     if (!v) return
-    if (capeUrl) {
-      v.loadCape(capeUrl, showElytra ? { backEquipment: "elytra" } : undefined)
-    } else {
+    const url = capeUrl
+    const elytra = showElytra
+    if (!url) {
       v.loadCape(null)
+      return
     }
+    let cancelled = false
+    loadImage(url)
+      .then(image => {
+        if (cancelled) return
+        v.loadCape(image, elytra ? { backEquipment: "elytra" } : undefined)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
   })
 
   function handlePointerDown(e: PointerEvent) {

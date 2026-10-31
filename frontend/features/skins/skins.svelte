@@ -2,11 +2,9 @@
   import { invoke } from "@tauri-apps/api/core"
   import { untrack } from "svelte"
   import type { RecentSkin, Cape } from "../../types"
-  import { storeRemove } from "../../lib/store"
   import { store } from "../../lib/launcherStore.svelte"
   import {
-    SKIN_CACHE_KEY, CAPE_CACHE_KEY, CACHE_DURATION, canFetch, loadCache, saveCache, normalizeCapeUrl,
-    type PersistedSkinCache, type PersistedCapeCache,
+    isFresh, loadSkinCache, saveSkinCache, removeSkinCache, loadCapeCache, saveCapeCache, normalizeCapeUrl,
   } from "./components/skin-cache"
   import SkinViewer from "./components/skin-viewer.svelte"
   import SkinsToolbar from "./components/skins-toolbar.svelte"
@@ -28,8 +26,6 @@
   let fileInputEl: HTMLInputElement | undefined = $state()
 
   let skinResetTimeout: ReturnType<typeof setTimeout> | undefined
-  let lastProfileFetch: Record<string, number> = {}
-  let lastCapeFetch: Record<string, number> = {}
   let originalState = { skinUrl: null as string | null, variant: 'classic' as 'classic' | 'slim', activeCape: null as string | null }
   let pendingSkinOp: { type: 'upload'; base64: string } | { type: 'recent'; url: string } | { type: 'reset' } | null = null
   let pendingCapeOp: { type: 'select'; capeId: string } | { type: 'remove' } | null = null
@@ -38,12 +34,15 @@
   let activeCapeObj = $derived(capes.find(c => c.id === activeCape) ?? null)
   let activeCapeUrl = $derived<string | null>(activeCapeObj?.url ?? null)
 
-  let prevSkinUrl: string | undefined
   $effect(() => {
     store.activeAccount
     untrack(() => {
-      if (prevSkinUrl?.startsWith('blob:')) URL.revokeObjectURL(prevSkinUrl)
-      prevSkinUrl = currentSkinUrl ?? undefined
+      if (currentSkinUrl?.startsWith('blob:')) URL.revokeObjectURL(currentSkinUrl)
+      currentSkinUrl = null
+      skinVariant = 'classic'
+      capes = []
+      activeCape = null
+      originalState = { skinUrl: null, variant: 'classic', activeCape: null }
       pendingSkinOp = null
       pendingCapeOp = null
       hasPendingChanges = false
@@ -77,99 +76,94 @@
   catch { }
   }
 
-  function applyUploadedSkin(result: { url: string; variant: string }): "classic" | "slim" | null {
+  function applyUploadedSkin(result: { url: string; variant: string }, uuid: string): "classic" | "slim" | null {
     if (!result?.url) return null
     const variant: "classic" | "slim" = result.variant === "slim" ? "slim" : "classic"
     skinVariant = variant
     currentSkinUrl = result.url
-    if (store.activeAccount) {
-      saveCache<PersistedSkinCache>(SKIN_CACHE_KEY, {
-        uuid: store.activeAccount.uuid, url: result.url, variant, timestamp: Date.now(),
-      })
-    }
+    void saveSkinCache(uuid, { url: result.url, variant, timestamp: Date.now() })
     return variant
   }
 
   async function loadUserSkin(forceRefresh = false) {
-    if (!store.isAuthenticated || !store.activeAccount) {
+    const account = store.activeAccount
+    if (!store.isAuthenticated || !account) {
       loading = false; error = "Please sign in to view your skin"; return
     }
+    const uuid = account.uuid
+    const isActive = () => store.activeAccount?.uuid === uuid
+
+    const apply = (url: string, variant: string) => {
+      skinVariant = variant === "slim" ? "slim" : "classic"
+      currentSkinUrl = url
+      originalState = { ...originalState, skinUrl: url, variant: skinVariant }
+    }
+
     try {
       loading = true; error = null
-      const now = Date.now()
-      const persisted = await loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
-      const cacheValid =
-        persisted && persisted.uuid === store.activeAccount.uuid && (now - persisted.timestamp) < CACHE_DURATION
+      const cached = await loadSkinCache(uuid)
+      if (!isActive()) return
 
-      const applyCached = () => {
-        if (!cacheValid) return
-        currentSkinUrl = persisted!.url
-        skinVariant = persisted!.variant as "classic" | "slim"
-        originalState = { ...originalState, skinUrl: persisted!.url, variant: persisted!.variant as "classic" | "slim" }
+      if (!forceRefresh && cached && isFresh(cached.timestamp)) {
+        apply(cached.url, cached.variant)
+        loading = false; void loadCapes(uuid); return
       }
 
-      if (!forceRefresh && cacheValid) { applyCached(); loading = false; loadCapes(); return }
-      if (!canFetch(lastProfileFetch[store.activeAccount.uuid] ?? 0)) { applyCached(); loading = false; loadCapes(); return }
-
-      lastProfileFetch[store.activeAccount.uuid] = now
       const skinData = await invoke<{ url: string; variant: string }>("get_current_skin")
+      if (!isActive()) return
+
       if (skinData?.url) {
         const variant = skinData.variant === "slim" ? "slim" : "classic"
-        currentSkinUrl = skinData.url
-        skinVariant = variant
-        originalState = { ...originalState, skinUrl: skinData.url, variant }
-        await saveCache<PersistedSkinCache>(SKIN_CACHE_KEY, {
-          uuid: store.activeAccount.uuid, url: skinData.url, variant, timestamp: now,
-        })
+        apply(skinData.url, variant)
+        await saveSkinCache(uuid, { url: skinData.url, variant, timestamp: Date.now() })
       } else {
         currentSkinUrl = null
       }
-      loading = false; loadCapes()
+      loading = false; void loadCapes(uuid)
     } catch (err: unknown) {
+      if (!isActive()) return
       if (typeof err === "string" && err.includes("429")) {
         error = "Rate limited — please wait before refreshing."
-        const persisted = await loadCache<PersistedSkinCache>(SKIN_CACHE_KEY)
-        if (persisted && persisted.uuid === store.activeAccount?.uuid) {
-          currentSkinUrl = persisted.url
-          skinVariant = persisted.variant as "classic" | "slim"
-          originalState = { ...originalState, skinUrl: persisted.url, variant: persisted.variant as "classic" | "slim" }
-        }
+        const cached = await loadSkinCache(uuid)
+        if (cached && isActive()) apply(cached.url, cached.variant)
       } else {
-        error = `Failed to load skin: ${String(err)}`; currentSkinUrl = null
+        error = `Failed to load skin: ${String(err)}`
+        const cached = await loadSkinCache(uuid)
+        if (cached && isActive()) apply(cached.url, cached.variant)
+        else if (isActive()) currentSkinUrl = null
       }
       loading = false
     }
   }
   loadUserSkinFn = loadUserSkin
 
-  async function loadCapes() {
-    if (!store.isAuthenticated || !store.activeAccount) return
-    const now = Date.now()
-    const persisted = await loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
-    const cacheValid =
-      persisted && persisted.uuid === store.activeAccount.uuid && (now - persisted.timestamp) < CACHE_DURATION
-    if (cacheValid) {
-      capes = persisted!.capes.map(c => ({ ...c, url: normalizeCapeUrl(c.url) })); activeCape = persisted!.activeCapeId
-      originalState = { ...originalState, activeCape: persisted!.activeCapeId }
+  async function loadCapes(uuid: string) {
+    if (!store.isAuthenticated || store.activeAccount?.uuid !== uuid) return
+    const isActive = () => store.activeAccount?.uuid === uuid
+
+    const persisted = await loadCapeCache(uuid)
+    if (!isActive()) return
+    if (persisted && isFresh(persisted.timestamp)) {
+      capes = persisted.capes.map(c => ({ ...c, url: normalizeCapeUrl(c.url) })); activeCape = persisted.activeCapeId
+      originalState = { ...originalState, activeCape: persisted.activeCapeId }
       return
     }
 
     capes = []; activeCape = null
-    if (!canFetch(lastCapeFetch[store.activeAccount.uuid] ?? 0)) return
     try {
       loadingCapes = true
-      lastCapeFetch[store.activeAccount.uuid] = now
       const capeData = await invoke<{ capes: Cape[] }>("get_user_capes")
+      if (!isActive()) return
       if (capeData?.capes) {
         capes = capeData.capes.map(c => ({ ...c, url: normalizeCapeUrl(c.url) }))
         const activeId = capeData.capes.find((c: Cape) => c.state === "ACTIVE")?.id ?? null
         activeCape = activeId
         originalState = { ...originalState, activeCape: activeId }
-        await saveCache<PersistedCapeCache>(CAPE_CACHE_KEY, {
-          uuid: store.activeAccount.uuid, capes: capeData.capes, activeCapeId: activeId, timestamp: now,
+        await saveCapeCache(uuid, {
+          capes: capeData.capes, activeCapeId: activeId, timestamp: Date.now(),
         })
       }
- } catch { } finally { loadingCapes = false }
+    } catch { } finally { if (isActive()) loadingCapes = false }
   }
 
   function handleCapeSelect(capeId: string) {
@@ -221,15 +215,16 @@
 
   async function handleSave() {
     saving = true; error = null
+    const uuid = store.activeAccount?.uuid
     let finalSkinUrl = currentSkinUrl
     let finalVariant = skinVariant
     let finalCape = activeCape
     try {
       const skinOp = pendingSkinOp
-      if (skinOp) {
+      if (skinOp && uuid) {
         if (skinOp.type === 'upload') {
           const result = await invoke<{ url: string; variant: string }>('upload_skin', { skinData: skinOp.base64, variant: skinVariant })
-          const variant = applyUploadedSkin(result)
+          const variant = applyUploadedSkin(result, uuid)
           finalSkinUrl = result.url
           finalVariant = variant ?? finalVariant
           if (variant) await addToRecentSkins(result.url, variant)
@@ -243,13 +238,13 @@
             reader.readAsDataURL(blob)
           })
           const result = await invoke<{ url: string; variant: string }>('upload_skin', { skinData: base64, variant: skinVariant })
-          const variant = applyUploadedSkin(result)
+          const variant = applyUploadedSkin(result, uuid)
           finalSkinUrl = result.url
           finalVariant = variant ?? finalVariant
           if (variant) await addToRecentSkins(result.url, variant)
         } else if (skinOp.type === 'reset') {
           await invoke<void>('reset_skin')
-          await storeRemove(SKIN_CACHE_KEY)
+          await removeSkinCache(uuid)
           skinResetTimeout = setTimeout(() => loadUserSkinFn(false), 2000)
         }
       }
@@ -263,10 +258,10 @@
           await invoke<void>('remove_cape')
           finalCape = null
         }
-        if (store.activeAccount) {
-          const cached = await loadCache<PersistedCapeCache>(CAPE_CACHE_KEY)
-          if (cached?.uuid === store.activeAccount.uuid) {
-            await saveCache(CAPE_CACHE_KEY, { ...cached, activeCapeId: finalCape, timestamp: Date.now() })
+        if (uuid) {
+          const cached = await loadCapeCache(uuid)
+          if (cached) {
+            await saveCapeCache(uuid, { ...cached, activeCapeId: finalCape, timestamp: Date.now() })
           }
         }
       }
