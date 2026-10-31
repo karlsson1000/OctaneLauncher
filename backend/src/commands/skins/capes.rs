@@ -35,7 +35,9 @@ pub async fn equip_cape(cape_id: String, app_handle: tauri::AppHandle) -> Result
         let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
         return Err(format!("Cape equip failed ({}): {}", status, error_text));
     }
-    
+
+    super::profile::clear_profile_cache(&active_account.uuid);
+
     Ok(())
 }
 
@@ -67,6 +69,8 @@ pub async fn remove_cape(app_handle: tauri::AppHandle) -> Result<(), String> {
         let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
         return Err(format!("Cape removal failed ({}): {}", status, error_text));
     }
-    
+
+    super::profile::clear_profile_cache(&active_account.uuid);
+
     Ok(())
 }

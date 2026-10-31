@@ -1,13 +1,12 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(super) struct ProfileResponse {
-    pub(super) id: String,
     pub(super) skins: Vec<SkinInfo>,
     pub(super) capes: Option<Vec<CapeInfo>>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(super) struct SkinInfo {
     pub(super) state: String,
     pub(super) url: String,

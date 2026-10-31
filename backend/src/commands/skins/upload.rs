@@ -75,7 +75,9 @@ pub async fn upload_skin(
         let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
         return Err(format!("Skin upload failed ({}): {}", status, error_text));
     }
-    
+
+    super::profile::clear_profile_cache(&active_account.uuid);
+
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     let uuid_no_dashes = active_account.uuid.replace("-", "");
@@ -153,6 +155,8 @@ pub async fn reset_skin(app_handle: tauri::AppHandle) -> Result<(), String> {
         let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
         return Err(format!("Skin reset failed ({}): {}", status, error_text));
     }
-    
+
+    super::profile::clear_profile_cache(&active_account.uuid);
+
     Ok(())
 }
