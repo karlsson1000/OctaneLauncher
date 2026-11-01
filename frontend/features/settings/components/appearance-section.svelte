@@ -23,11 +23,8 @@
 
   let backgroundPreview = $state<string | null>(null)
   let fileInputEl: HTMLInputElement | undefined = $state()
-  let themeReloaded = $state(false)
-  let themeReloadTimeout: ReturnType<typeof setTimeout> | undefined
 
   $effect(() => { loadSidebarBackground() })
-  $effect(() => () => clearTimeout(themeReloadTimeout))
 
   async function openThemeFile() {
     try {
@@ -38,10 +35,8 @@
   }
 
   async function reloadTheme() {
-    themeReloaded = await applyCustomTheme()
-    if (!themeReloaded) return
-    clearTimeout(themeReloadTimeout)
-    themeReloadTimeout = setTimeout(() => themeReloaded = false, 1500)
+    if (!(await applyCustomTheme()))
+      onAlert({ isOpen: true, title: "An error occurred", message: "Failed to reload theme.css", type: "danger" })
   }
 
   async function loadSidebarBackground() {
@@ -107,7 +102,6 @@
       {@const dots = isCustom ? CUSTOM_DOTS : theme.colors}
       <button
         onclick={() => store.settings && onChange({ ...store.settings, theme: theme.id })}
-        aria-label={theme.label}
         class="group flex flex-col gap-1.5 cursor-pointer"
       >
         <div class="relative h-16 rounded-md overflow-hidden transition-all {active ? '' : 'group-hover:brightness-110'}" style="background: {theme.colors[0]}">
@@ -155,7 +149,7 @@
           class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
         >
           <RefreshCw size={14} />
-          {themeReloaded ? "Reloaded" : "Reload"}
+          Reload
         </button>
       </div>
     </div>
