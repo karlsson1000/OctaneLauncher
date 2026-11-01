@@ -26,6 +26,7 @@
     setExportModal, setShowSearchPalette, navigateBack, navigateForward,
   } from "./lib/launcherStore.svelte"
   import { bootLauncher } from "./lib/bootstrap"
+  import { applyCustomTheme, clearCustomTheme } from "./lib/custom-theme"
   import { onMount, untrack } from "svelte"
   import { invoke } from "@tauri-apps/api/core"
   import { ArrowLeft, ArrowRight, RefreshCw, Search } from "lucide-svelte"
@@ -69,6 +70,8 @@
       if (cls.startsWith("theme-")) root.classList.remove(cls)
     }
     root.classList.add(`theme-${theme}`)
+    if (theme === "custom") void applyCustomTheme()
+    else clearCustomTheme()
   })
 
   onMount(() => {

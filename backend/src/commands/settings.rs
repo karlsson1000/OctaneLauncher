@@ -305,6 +305,22 @@ pub async fn get_storage_usage() -> Result<Vec<StorageCategory>, String> {
     .map_err(|e| e.to_string())?
 }
 
+fn open_path(path: &std::path::Path) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("explorer")
+        .arg(path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "linux")]
+    std::process::Command::new("xdg-open")
+        .arg(path)
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn open_directory(path: String) -> Result<(), String> {
     let path = std::path::PathBuf::from(&path);
@@ -312,17 +328,64 @@ pub async fn open_directory(path: String) -> Result<(), String> {
         return Err(format!("Directory does not exist: {}", path.display()));
     }
 
-    #[cfg(target_os = "windows")]
-    std::process::Command::new("explorer")
-        .arg(&path)
-        .spawn()
-        .map_err(|e| e.to_string())?;
+    open_path(&path)
+}
 
-    #[cfg(target_os = "linux")]
-    std::process::Command::new("xdg-open")
-        .arg(&path)
-        .spawn()
-        .map_err(|e| e.to_string())?;
+const CUSTOM_THEME_TEMPLATE: &str = r#"/* Octane Launcher */
 
-    Ok(())
+:root {
+  /* Backgrounds */
+  --bg-primary: #1a1c21;
+  --bg-secondary: #1c1e24;
+  --bg-elevated: #20232a;
+  --bg-active: #252832;
+  --bg-tertiary: #22252c;
+  --bg-hover: #30343e;
+  --bg-hover-strong: #3b414e;
+  --content-bg: #1c1e24;
+
+  /* Text */
+  --text-primary: #e6e6e6;
+  --text-secondary: #8a94a6;
+  --text-muted: #7d8590;
+  --text-disabled: #484e5b;
+
+  /* Borders */
+  --border-default: #30343e;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+
+  /* Accent */
+  --accent-primary: #4572e3;
+  --accent-hover: #3461d9;
+
+  /* Scrollbars */
+  --scrollbar-thumb: #414653;
+  --scrollbar-hover: #4b515e;
+  --scrollbar-thumb-custom: #3b414e;
+  --scrollbar-hover-custom: #454b59;
+}
+"#;
+
+fn ensure_custom_theme() -> Result<PathBuf, String> {
+    let path = crate::utils::get_launcher_dir().join("theme.css");
+    if !path.exists() {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        std::fs::write(&path, CUSTOM_THEME_TEMPLATE).map_err(|e| e.to_string())?;
+    }
+    Ok(path)
+}
+
+#[tauri::command]
+pub async fn get_custom_theme() -> Result<String, String> {
+    let path = ensure_custom_theme()?;
+    std::fs::read_to_string(&path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn open_custom_theme() -> Result<(), String> {
+    let path = ensure_custom_theme()?;
+
+    open_path(&path)
 }

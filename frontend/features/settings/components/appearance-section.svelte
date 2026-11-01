@@ -1,15 +1,19 @@
 <script lang="ts">
   import { invoke, convertFileSrc } from "@tauri-apps/api/core"
-  import { Check, ImagePlus, Trash2 } from "lucide-svelte"
+  import { Check, FileText, ImagePlus, Palette, RefreshCw, Trash2 } from "lucide-svelte"
   import { store, loadBackground } from "../../../lib/launcherStore.svelte"
+  import { applyCustomTheme } from "../../../lib/custom-theme"
   import type { LauncherSettings } from "../../../types"
 
   const THEMES = [
-    { id: "octane", label: "Octane", colors: ["#1a1c21", "#22252c", "#4572e3", "#e6e6e6"] },
+    { id: "octane", label: "Octane", colors: ["#20232a", "#22252c", "#4572e3", "#e6e6e6"] },
     { id: "light", label: "Light", colors: ["#e8e9ee", "#dedfe6", "#4572e3", "#20212b"] },
     { id: "rose", label: "Rosé", colors: ["#28212e", "#332a3a", "#f472b6", "#e8e8ee"] },
     { id: "forest", label: "Forest", colors: ["#222c25", "#2d3831", "#43d978", "#e8eee9"] },
+    { id: "custom", label: "Custom", colors: ["#20232a", "#22252c", "#4572e3", "#e6e6e6"] },
   ] as const
+
+  const CUSTOM_DOTS = ["#ff6b6b", "#ffa94d", "#51cf66", "#4dabf7"]
 
   let { onChange, onChangeDebounced, onAlert }: {
     onChange: (settings: LauncherSettings) => void
@@ -19,8 +23,26 @@
 
   let backgroundPreview = $state<string | null>(null)
   let fileInputEl: HTMLInputElement | undefined = $state()
+  let themeReloaded = $state(false)
+  let themeReloadTimeout: ReturnType<typeof setTimeout> | undefined
 
   $effect(() => { loadSidebarBackground() })
+  $effect(() => () => clearTimeout(themeReloadTimeout))
+
+  async function openThemeFile() {
+    try {
+      await invoke("open_custom_theme")
+    } catch (error) {
+      onAlert({ isOpen: true, title: "An error occurred", message: "Failed to open theme.css" + `: ${error}`, type: "danger" })
+    }
+  }
+
+  async function reloadTheme() {
+    themeReloaded = await applyCustomTheme()
+    if (!themeReloaded) return
+    clearTimeout(themeReloadTimeout)
+    themeReloadTimeout = setTimeout(() => themeReloaded = false, 1500)
+  }
 
   async function loadSidebarBackground() {
     try {
@@ -78,30 +100,66 @@
 <section>
   <h4 class="text-sm font-medium text-[var(--text-primary)] leading-tight">Theme</h4>
   <p class="text-xs text-[var(--text-muted)] mt-0.5 mb-3">Pick the color scheme for the whole launcher.</p>
-  <div class="grid grid-cols-4 gap-3">
+  <div class="grid grid-cols-5 gap-3">
     {#each THEMES as theme (theme.id)}
       {@const active = store.settings?.theme === theme.id}
+      {@const isCustom = theme.id === "custom"}
+      {@const dots = isCustom ? CUSTOM_DOTS : theme.colors}
       <button
         onclick={() => store.settings && onChange({ ...store.settings, theme: theme.id })}
         aria-label={theme.label}
         class="group flex flex-col gap-1.5 cursor-pointer"
       >
-        <div class="relative h-16 p-2 flex flex-col gap-1.5 rounded-md overflow-hidden transition-all {active ? '' : 'group-hover:brightness-110'}" style="background: {theme.colors[0]}">
-          <div class="flex-1 rounded-sm" style="background: {theme.colors[1]}"></div>
-          <div class="flex-1 rounded-sm" style="background: {theme.colors[2]}"></div>
-          <div class="flex-1 rounded-sm" style="background: {theme.colors[3]}"></div>
+        <div class="relative h-16 rounded-md overflow-hidden transition-all {active ? '' : 'group-hover:brightness-110'}" style="background: {theme.colors[0]}">
+          <div class="h-full flex flex-col items-center justify-center gap-1.5">
+            <Palette
+              size={24}
+              strokeWidth={2}
+              class={isCustom ? "text-[var(--text-secondary)]" : ""}
+              style={isCustom ? undefined : `color: ${theme.colors[3]}; opacity: 0.7`}
+            />
+            <div class="flex items-center gap-1">
+              {#each dots as dot}
+                <span class="w-2.5 h-2.5 rounded-full" style="background: {dot}; box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.35)"></span>
+              {/each}
+            </div>
+          </div>
           {#if active}
             <div class="absolute inset-0 flex items-center justify-center bg-black/50">
-              <Check size={32} strokeWidth={3.5} style="color: {theme.colors[2]}" />
+              <Check size={32} strokeWidth={3.5} style="color: {isCustom ? CUSTOM_DOTS[0] : theme.colors[2]}" />
             </div>
           {/if}
         </div>
-        <span class="text-xs text-center transition-colors {active ? 'text-[var(--accent-primary)] font-medium' : 'text-[var(--text-muted)] group-hover:text-[var(--text-primary)]'}">
+        <span
+          class="text-xs text-center transition-colors {active ? (isCustom ? 'font-medium' : 'text-[var(--accent-primary)] font-medium') : 'text-[var(--text-muted)] group-hover:text-[var(--text-primary)]'}"
+          style={active && isCustom ? `color: ${CUSTOM_DOTS[0]}` : undefined}
+        >
           {theme.label}
         </span>
       </button>
     {/each}
   </div>
+
+  {#if store.settings?.theme === "custom"}
+    <div class="mt-3 rounded-md bg-[var(--bg-tertiary)] px-3 py-2.5">
+      <div class="flex items-center gap-2">
+        <button
+          onclick={openThemeFile}
+          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+        >
+          <FileText size={14} />
+          Open file
+        </button>
+        <button
+          onclick={reloadTheme}
+          class="px-3 py-1.5 inline-flex items-center gap-1.5 rounded-md text-xs font-medium text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+        >
+          <RefreshCw size={14} />
+          {themeReloaded ? "Reloaded" : "Reload"}
+        </button>
+      </div>
+    </div>
+  {/if}
 </section>
 
 <section>

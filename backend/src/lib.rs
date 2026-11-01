@@ -276,6 +276,8 @@ pub fn run() {    if let Err(e) = dotenvy::dotenv() {
             get_background,
             remove_background,
             open_directory,
+            get_custom_theme,
+            open_custom_theme,
             get_installed_mods,
             get_installed_mods_with_metadata,
             delete_mod,
