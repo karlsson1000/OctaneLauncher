@@ -220,6 +220,12 @@
         if (theme !== 'octane') {
           document.documentElement.classList.add('theme-' + theme)
         }
+        if (theme === 'custom') {
+          const splash = JSON.parse(localStorage.getItem('octane_custom_splash') || '{}')
+          for (const name of Object.keys(splash)) {
+            document.documentElement.style.setProperty(name, splash[name])
+          }
+        }
       } catch (e) {}
     </script>
   </head>
