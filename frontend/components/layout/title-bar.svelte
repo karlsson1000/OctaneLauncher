@@ -6,6 +6,7 @@
     setShowFriendsPanel, dragRegion, noDragRegion,
   } from "../../lib/launcherStore.svelte"
   import { instanceIconSrc } from "../../lib/icons"
+  import Toaster from "../ui/toaster.svelte"
 
   const tabLabels: Record<string, string> = {
     instances: "Instances", addons: "Addons",
@@ -80,7 +81,8 @@
 
   <div class="flex-1" style={dragRegion}></div>
 
-  <div class="flex items-center" style={noDragRegion}>
+  <div class="flex items-center gap-3 min-w-0" style={noDragRegion}>
+    <Toaster />
     <button
       data-friends-toggle
       onclick={() => setShowFriendsPanel(!store.showFriendsPanel)}

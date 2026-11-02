@@ -10,7 +10,6 @@
   import ExportModal from "./features/instances/components/export-modal.svelte"
   import OnboardingModal from "./features/onboarding/onboarding-modal.svelte"
   import GlobalSearch from "./components/ui/global-search.svelte"
-  import Toaster from "./components/ui/toaster.svelte"
   import Instances from "./features/instances/instances.svelte"
   import Addons from "./features/addons/addons.svelte"
   import Console from "./features/console/console.svelte"
@@ -191,6 +190,4 @@
       ]}
     />
   {/if}
-
-  <Toaster />
 </div>
