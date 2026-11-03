@@ -129,6 +129,8 @@ impl FabricInstaller {
         fs::create_dir_all(&versions_dir)?;
         fs::create_dir_all(&libraries_dir)?;
 
+        let mut tasks = Vec::with_capacity(profile.libraries.len());
+
         for lib in &profile.libraries {
             let parts: Vec<&str> = lib.name.split(':').collect();
             if parts.len() != 3 {
@@ -147,12 +149,10 @@ impl FabricInstaller {
             };
             let url = format!("{}/{}/{}/{}/{}", base_url, group_path, artifact, version, jar_name);
 
-            if let Err(error) =
-                crate::utils::download::download_if_needed(&url, &lib_path, None, None).await
-            {
-                return Err(format!("Failed to download library {}: {}", lib.name, error).into());
-            }
+            tasks.push(crate::utils::download::DownloadTask::new(&url, lib_path));
         }
+
+        crate::utils::download::download_many(tasks, 8).await?;
 
         let profile_path = versions_dir.join(format!("{}.json", fabric_id));
         let profile_json = serde_json::to_string_pretty(&profile)?;

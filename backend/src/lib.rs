@@ -21,16 +21,25 @@ async fn set_all_accounts_offline(app: &tauri::AppHandle) {
     let Ok(accounts) = AccountManager::get_all_accounts() else {
         return;
     };
+    let mut handles = Vec::new();
     for account in accounts {
-        if services::friends::has_live_session(&account.uuid) {
+        if !services::friends::has_live_session(&account.uuid) {
+            continue;
+        }
+        let app_handle = app.clone();
+        let uuid = account.uuid.clone();
+        handles.push(tauri::async_runtime::spawn(async move {
             let _ = services::friends::set_status_for_account(
-                app,
-                &account.uuid,
+                &app_handle,
+                &uuid,
                 FriendStatus::Offline,
                 None,
             )
             .await;
-        }
+        }));
+    }
+    for handle in handles {
+        let _ = handle.await;
     }
 }
 

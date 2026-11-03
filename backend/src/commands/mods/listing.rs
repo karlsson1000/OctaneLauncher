@@ -41,7 +41,7 @@ pub async fn get_installed_mods(instance_name: String) -> Result<Vec<ModFile>, S
         }
     }
     
-    mods.sort_by(|a, b| a.filename.to_lowercase().cmp(&b.filename.to_lowercase()));
+    mods.sort_by_cached_key(|m| m.filename.to_lowercase());
     
     Ok(mods)
 }
@@ -67,8 +67,41 @@ pub async fn get_installed_content_with_metadata(
     }
 
     let cache_file = instance_dir.join(format!(".{}_cache.json", cache_kind));
+    let extensions: Vec<String> = allowed_extensions.iter().map(|e| e.to_string()).collect();
+    let scan_cache = cache_file.clone();
+
+    let (mut items, mut disk_cache, hashes_needing_metadata) =
+        tauri::async_runtime::spawn_blocking(move || {
+            scan_content(&content_dir, &scan_cache, &extensions, supports_disabled)
+        })
+        .await
+        .map_err(|e| e.to_string())??;
+
+    if !hashes_needing_metadata.is_empty() {
+        match enrich_with_modrinth_metadata(&mut disk_cache, &mut items, &hashes_needing_metadata).await {
+            Ok(()) => {
+                if let Ok(json) = serde_json::to_string(&disk_cache) {
+                    let _ = std::fs::write(&cache_file, json);
+                }
+            }
+            Err(e) => eprintln!("Failed to fetch Modrinth metadata for {} items: {}", hashes_needing_metadata.len(), e),
+        }
+    }
+
+    items.sort_by_cached_key(|i| i.filename.to_lowercase());
+    Ok(items)
+}
+
+type ScannedContent = (Vec<ModFileWithMetadata>, HashMap<String, CacheEntry>, Vec<String>);
+
+fn scan_content(
+    content_dir: &std::path::Path,
+    cache_file: &std::path::Path,
+    allowed_extensions: &[String],
+    supports_disabled: bool,
+) -> Result<ScannedContent, String> {
     let mut disk_cache: HashMap<String, CacheEntry> = if cache_file.exists() {
-        std::fs::read_to_string(&cache_file)
+        std::fs::read_to_string(cache_file)
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok())
             .unwrap_or_default()
@@ -79,7 +112,7 @@ pub async fn get_installed_content_with_metadata(
     let mut items = Vec::new();
     let mut hashes_needing_metadata: Vec<String> = Vec::new();
 
-    for entry in std::fs::read_dir(&content_dir).map_err(|e| e.to_string())? {
+    for entry in std::fs::read_dir(content_dir).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path();
         if !path.is_file() { continue; }
@@ -139,25 +172,13 @@ pub async fn get_installed_content_with_metadata(
         });
     }
 
-    if !hashes_needing_metadata.is_empty() {
-        match enrich_with_modrinth_metadata(&mut disk_cache, &mut items, &mut hashes_needing_metadata).await {
-            Ok(()) => {
-                if let Ok(json) = serde_json::to_string(&disk_cache) {
-                    let _ = std::fs::write(&cache_file, json);
-                }
-            }
-            Err(e) => eprintln!("Failed to fetch Modrinth metadata for {} items: {}", hashes_needing_metadata.len(), e),
-        }
-    }
-
-    items.sort_by(|a, b| a.filename.to_lowercase().cmp(&b.filename.to_lowercase()));
-    Ok(items)
+    Ok((items, disk_cache, hashes_needing_metadata))
 }
 
 async fn enrich_with_modrinth_metadata(
     disk_cache: &mut HashMap<String, CacheEntry>,
     items: &mut [ModFileWithMetadata],
-    hashes_needing_metadata: &mut [String],
+    hashes_needing_metadata: &[String],
 ) -> Result<(), String> {
     let client = ModrinthClient::new().map_err(|e| e.to_string())?;
     let mut project_ids: Vec<String> = Vec::new();
