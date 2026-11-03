@@ -77,9 +77,8 @@
 <div class="flex-1 overflow-y-auto pb-2">
   {#if isLoading && friends.length === 0}
     <div class="animate-pulse">
-      <div class="flex items-center gap-1.5 px-1 pt-4 pb-1 mb-2">
-        <div class="w-3.5 h-3.5 rounded bg-[var(--bg-tertiary)] flex-shrink-0"></div>
-        <div class="h-3.5 w-24 rounded bg-[var(--bg-tertiary)]"></div>
+      <div class="flex items-center px-1 pt-4 pb-1 mb-2">
+        <div class="h-3.5 w-28 rounded bg-[var(--bg-tertiary)]"></div>
       </div>
       <div class="space-y-1 px-1.5">
         {#each [120, 88, 104, 72, 112, 96] as nameWidth, i}
