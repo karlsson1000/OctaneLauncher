@@ -13,13 +13,16 @@
   let renameError = $state<string | null>(null)
   let isRenamingInstance = $state(false)
 
+  let trimmedName = $derived(newName.trim())
+  let isDirty = $derived(trimmedName !== instance.name)
+  let canSave = $derived(isDirty && !!trimmedName && !isRenamingInstance)
+
   $effect(() => {
     newName = instance.name
   })
 
-  async function handleRename(trimmedName: string) {
-    if (!trimmedName) { renameError = "Instance name cannot be empty"; return }
-    if (trimmedName === instance.name) { renameError = null; return }
+  async function handleRename() {
+    if (!canSave) return
     isRenamingInstance = true
     try {
       await invoke("rename_instance", { oldName: instance.name, newName: trimmedName })
@@ -27,8 +30,7 @@
       handleInstanceRenamed(instance.name, trimmedName)
       onClose()
     } catch (error) {
-      renameError = error as string
-      newName = instance.name
+      renameError = String(error)
     } finally {
       isRenamingInstance = false
     }
@@ -37,25 +39,36 @@
 
 <div>
   <label for="instance-name-input" class="block text-sm font-medium text-[var(--text-primary)] mb-2.5">Instance Name</label>
-  <div class="relative">
+  <div class="flex items-center gap-2">
     <input
       id="instance-name-input"
       type="text"
+      autocomplete="off"
       bind:value={newName}
       oninput={() => renameError = null}
-      onblur={(e) => { const trimmed = (e.target as HTMLInputElement).value.trim(); if (trimmed && trimmed !== instance.name) handleRename(trimmed) }}
-      onkeydown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur() }}
-      class="w-full bg-[var(--bg-tertiary)] rounded-md px-3 py-[9px] pr-10 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all"
+      onkeydown={(e) => { if (e.key === "Enter") handleRename() }}
+      class="min-w-0 flex-1 bg-[var(--bg-tertiary)] rounded-md px-3 py-[9px] text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all"
       placeholder="Enter instance name"
       disabled={isRenamingInstance}
     />
-    {#if isRenamingInstance}
-      <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-        <Loader2 size={14} class="animate-spin text-[var(--accent-primary)]" />
-      </div>
+    {#if isDirty}
+      <button
+        onclick={handleRename}
+        disabled={!canSave}
+        class="relative shrink-0 px-3 h-[38px] bg-[var(--accent-primary)] text-white rounded-md font-medium text-sm flex items-center justify-center cursor-pointer transition-all hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <span class:invisible={isRenamingInstance}>Save</span>
+        {#if isRenamingInstance}
+          <span class="absolute inset-0 flex items-center justify-center">
+            <Loader2 size={14} class="animate-spin" />
+          </span>
+        {/if}
+      </button>
     {/if}
   </div>
   {#if renameError}
     <p class="text-xs text-red-400 mt-2">{renameError}</p>
+  {:else if !trimmedName}
+    <p class="text-xs text-red-400 mt-2">Instance name cannot be empty</p>
   {/if}
 </div>
