@@ -44,13 +44,11 @@
           strokeWidth={3}
           class="text-[var(--text-muted)] flex-shrink-0 transition-transform duration-150 {collapsed[key] ? '-rotate-90' : ''}"
         />
-        <span
-          role="button"
-          tabindex="0"
-          class="text-sm font-semibold text-[var(--text-muted)] truncate cursor-pointer"
+        <button
+          type="button"
+          class="text-sm font-semibold text-[var(--text-muted)] truncate cursor-pointer text-left"
           onclick={() => onToggleCollapsed(key)}
-          onkeydown={(e) => { if (e.key === 'Enter') onToggleCollapsed(key) }}
-        >{label} ({list.length})</span>
+        >{label} ({list.length})</button>
       </div>
       {#if !collapsed[key]}
         <div class="space-y-0.5">
@@ -78,7 +76,8 @@
   {#if isLoading && friends.length === 0}
     <div class="animate-pulse">
       <div class="flex items-center px-1 pt-4 pb-1 mb-2">
-        <div class="h-3.5 w-28 rounded bg-[var(--bg-tertiary)]"></div>
+        <div class="h-3.5 w-4 rounded-l bg-[var(--bg-tertiary)]"></div>
+        <div class="h-3.5 w-28 rounded-r bg-[var(--bg-tertiary)]"></div>
       </div>
       <div class="space-y-1 px-1.5">
         {#each [120, 88, 104, 72, 112, 96] as nameWidth, i}
