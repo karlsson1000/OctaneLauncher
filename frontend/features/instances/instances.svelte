@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Search, Plus, FolderPlus, ChevronDown, Save, ClipboardCheck, LayoutGrid, List, Check, Play, MoreVertical } from "lucide-svelte"
+  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Search, Plus, FolderPlus, ChevronDown, Save, ClipboardCheck, LayoutGrid, List, Check, Play, MoreVertical, X, ListChecks } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import type { Instance } from "../../types"
   import { getMinecraftVersion } from "../../lib/version"
@@ -12,7 +12,7 @@
   import {
     store, handleCreateNew,
     handleOpenInstanceFolderByInstance,
-    handleDuplicateInstance, handleDeleteInstance,
+    handleDuplicateInstance, handleDeleteInstance, handleDeleteInstances,
     setExportModal, setSelectedInstance, handleShowDetails,
     handleLaunch, handleKillInstance,
   } from "../../lib/launcherStore.svelte"
@@ -48,6 +48,9 @@
   let searchQuery = $state("")
   let sortBy = $state<SortOption>("recently-played")
   let layout = $state<"list" | "grid">("list")
+  let selectMode = $state(false)
+  let selected = $state<Set<string>>(new Set())
+  let lastSelectedName = $state<string | null>(null)
 
   let groupModalInstance = $state<Instance | null>(null)
   let groupModalValue = $state("")
@@ -269,6 +272,57 @@
     sortInstances(filteredInstances.filter(i => !instanceToGroup.has(i.name)))
   )
 
+  let visibleNames = $derived([
+    ...visibleNamedGroups.flatMap(group => group.instances.map(i => i.name)),
+    ...ungrouped.map(i => i.name),
+  ])
+
+  let allVisibleSelected = $derived(
+    visibleNames.length > 0 && visibleNames.every(name => selected.has(name))
+  )
+
+  function exitSelectMode() {
+    selectMode = false
+    selected = new Set()
+    lastSelectedName = null
+  }
+
+  function handleSelect(e: MouseEvent | KeyboardEvent, instance: Instance) {
+    selectMode = true
+    const name = instance.name
+    if (e.shiftKey && lastSelectedName) {
+      const from = visibleNames.indexOf(lastSelectedName)
+      const to = visibleNames.indexOf(name)
+      if (from !== -1 && to !== -1) {
+        const next = new Set(selected)
+        for (let i = Math.min(from, to); i <= Math.max(from, to); i++) next.add(visibleNames[i])
+        selected = next
+        return
+      }
+    }
+    const next = new Set(selected)
+    if (next.has(name)) next.delete(name)
+    else next.add(name)
+    selected = next
+    lastSelectedName = name
+  }
+
+  function toggleSelectAll() {
+    selected = allVisibleSelected ? new Set() : new Set(visibleNames)
+    lastSelectedName = null
+  }
+
+  const deleteSelected = () => handleDeleteInstances([...selected])
+
+  $effect(() => {
+    if (!selectMode) return
+    const existing = new Set(store.instances.map(i => i.name))
+    const kept = [...selected].filter(name => existing.has(name))
+    if (kept.length === selected.size) return
+    if (kept.length === 0) exitSelectMode()
+    else selected = new Set(kept)
+  })
+
   let contextMenuItems = $derived.by((): MenuItem[] => {
     const cm = contextMenu
     if (!cm) return []
@@ -276,6 +330,17 @@
     const { instance } = cm
     const closeMenu = () => { contextMenu = null }
     const currentGroup = instanceToGroup.get(instance.name)
+
+    if (selected.size > 1 && selected.has(instance.name)) {
+      return [
+        {
+          label: `Delete ${selected.size} instances`,
+          icon: Trash2,
+          onClick: () => { deleteSelected(); closeMenu() },
+          danger: true,
+        },
+      ]
+    }
 
     const items: MenuItem[] = [
       { label: "Open", icon: Package, onClick: () => { setSelectedInstance(instance); handleShowDetails(instance) } },
@@ -308,6 +373,8 @@
     return items
   })
 </script>
+
+<svelte:window onkeydown={(e) => { if (e.key === "Escape" && selectMode) exitSelectMode() }} />
 
 <div class="p-8 space-y-4">
   <div class="max-w-7xl mx-auto">
@@ -366,60 +433,92 @@
         {/if}
       </div>
       <div class="flex items-center gap-2">
-        {#if store.instances.length > 0}
-          <div class="relative" bind:this={sortDropdownRef}>
+        {#if selectMode}
+          <span class="text-sm text-[var(--text-muted)] font-medium whitespace-nowrap">{selected.size} selected</span>
+          <button
+            onclick={toggleSelectAll}
+            class="h-8 px-3 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] cursor-pointer"
+          >
+            {allVisibleSelected ? "Clear" : "Select all"}
+          </button>
+          <button
+            onclick={deleteSelected}
+            disabled={selected.size === 0}
+            class="h-8 px-3 rounded-md bg-red-500/15 text-red-400 hover:bg-red-500/25 text-sm font-medium flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Trash2 size={16} strokeWidth={2.5} />
+            Delete
+          </button>
+          <button
+            onclick={exitSelectMode}
+            title="Cancel selection"
+            class="h-8 w-8 rounded-md flex items-center justify-center cursor-pointer text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+          >
+            <X size={18} strokeWidth={2.5} />
+          </button>
+        {:else}
+          {#if store.instances.length > 0}
+            <div class="relative" bind:this={sortDropdownRef}>
+              <button
+                onclick={() => isSortDropdownOpen = !isSortDropdownOpen}
+                class="relative h-8 pl-3 pr-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md flex items-center gap-1.5 cursor-pointer"
+              >
+                <span class="text-sm text-[var(--text-muted)] font-medium whitespace-nowrap">Sort by:</span>
+                <span class="text-sm text-[var(--text-primary)] font-semibold whitespace-nowrap">{SORT_LABELS[sortBy]}</span>
+                <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]">
+                  <ChevronDown size={16} strokeWidth={3} class="transition-transform {isSortDropdownOpen ? 'rotate-180' : ''}" />
+                </span>
+              </button>
+              {#if isSortDropdownOpen}
+                <div role="menu" class="dropdown-menu drop-right absolute right-0 z-[60] w-full min-w-[180px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5">
+                  {#each SORT_OPTIONS as option (option)}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onclick={() => { sortBy = option; isSortDropdownOpen = false }}
+                      class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+                    >
+                      <span class="truncate min-w-0">{SORT_LABELS[option]}</span>
+                      {#if sortBy === option}
+                        <Check size={15} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />
+                      {/if}
+                    </button>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+            <div class="grid grid-cols-2 gap-1 p-0.5 rounded-md bg-[var(--bg-tertiary)]">
+              <button
+                onclick={() => persistLayout("list")}
+                title="List view"
+                class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'list' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+              >
+                <List size={18} strokeWidth={2.5} />
+              </button>
+              <button
+                onclick={() => persistLayout("grid")}
+                title="Grid view"
+                class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'grid' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
+              >
+                <LayoutGrid size={18} strokeWidth={2.5} />
+              </button>
+            </div>
             <button
-              onclick={() => isSortDropdownOpen = !isSortDropdownOpen}
-              class="relative h-8 pl-3 pr-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md flex items-center gap-1.5 cursor-pointer"
+              onclick={() => selectMode = true}
+              title="Select instances"
+              class="h-8 w-8 rounded-md flex items-center justify-center cursor-pointer text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
             >
-              <span class="text-sm text-[var(--text-muted)] font-medium whitespace-nowrap">Sort by:</span>
-              <span class="text-sm text-[var(--text-primary)] font-semibold whitespace-nowrap">{SORT_LABELS[sortBy]}</span>
-              <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]">
-                <ChevronDown size={16} strokeWidth={3} class="transition-transform {isSortDropdownOpen ? 'rotate-180' : ''}" />
-              </span>
+              <ListChecks size={18} strokeWidth={2.5} />
             </button>
-            {#if isSortDropdownOpen}
-              <div role="menu" class="dropdown-menu drop-right absolute right-0 z-[60] w-full min-w-[180px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5">
-                {#each SORT_OPTIONS as option (option)}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onclick={() => { sortBy = option; isSortDropdownOpen = false }}
-                    class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-                  >
-                    <span class="truncate min-w-0">{SORT_LABELS[option]}</span>
-                    {#if sortBy === option}
-                      <Check size={15} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />
-                    {/if}
-                  </button>
-                {/each}
-              </div>
-            {/if}
-          </div>
-          <div class="grid grid-cols-2 gap-1 p-0.5 rounded-md bg-[var(--bg-tertiary)]">
-            <button
-              onclick={() => persistLayout("list")}
-              title="List view"
-              class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'list' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
-            >
-              <List size={18} strokeWidth={2.5} />
-            </button>
-            <button
-              onclick={() => persistLayout("grid")}
-              title="Grid view"
-              class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'grid' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
-            >
-              <LayoutGrid size={18} strokeWidth={2.5} />
-            </button>
-          </div>
+          {/if}
+          <button
+            onclick={handleCreateNew}
+            class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer"
+          >
+            <Plus size={16} />
+            New
+          </button>
         {/if}
-        <button
-          onclick={handleCreateNew}
-          class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer"
-        >
-          <Plus size={16} />
-          New
-        </button>
       </div>
     </div>
 
@@ -448,7 +547,7 @@
           <div>
             <GroupHeader groupKey={group.name} label={group.name} named={true} collapsed={collapsed[group.name]} onToggle={toggleCollapsed} onHeaderContextMenu={handleGroupHeaderContextMenu} />
             {#if !collapsed[group.name]}
-              <InstanceLayout instances={group.instances} {layout} onContextMenu={handleContextMenu} />
+              <InstanceLayout instances={group.instances} {layout} onContextMenu={handleContextMenu} selecting={selectMode} {selected} onSelect={handleSelect} />
             {/if}
           </div>
         {/each}
@@ -459,7 +558,7 @@
               <GroupHeader groupKey={DEFAULT_GROUP} label="Ungrouped" named={false} collapsed={collapsed[DEFAULT_GROUP]} onToggle={toggleCollapsed} onHeaderContextMenu={handleGroupHeaderContextMenu} />
             {/if}
             {#if !collapsed[DEFAULT_GROUP]}
-              <InstanceLayout instances={ungrouped} {layout} onContextMenu={handleContextMenu} />
+              <InstanceLayout instances={ungrouped} {layout} onContextMenu={handleContextMenu} selecting={selectMode} {selected} onSelect={handleSelect} />
             {/if}
           </div>
         {/if}

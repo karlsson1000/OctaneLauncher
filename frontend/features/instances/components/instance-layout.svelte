@@ -3,23 +3,26 @@
   import InstanceList from "./instance-list.svelte"
   import InstanceGrid from "./instance-grid.svelte"
 
-  let { instances, layout, onContextMenu }: {
+  let { instances, layout, onContextMenu, selecting, selected, onSelect }: {
     instances: Instance[]
     layout: "list" | "grid"
     onContextMenu: (e: MouseEvent, instance: Instance) => void
+    selecting: boolean
+    selected: Set<string>
+    onSelect: (e: MouseEvent | KeyboardEvent, instance: Instance) => void
   } = $props()
 </script>
 
 {#if layout === "grid"}
   <div class="grid gap-x-3 gap-y-4 grid-cols-[repeat(auto-fill,minmax(160px,1fr))]">
     {#each instances as instance (instance.name)}
-      <InstanceGrid {instance} {onContextMenu} />
+      <InstanceGrid {instance} {onContextMenu} {selecting} selected={selected.has(instance.name)} {onSelect} />
     {/each}
   </div>
 {:else}
   <div class="grid grid-cols-2 gap-4 pl-1">
     {#each instances as instance (instance.name)}
-      <InstanceList {instance} {onContextMenu} />
+      <InstanceList {instance} {onContextMenu} {selecting} selected={selected.has(instance.name)} {onSelect} />
     {/each}
   </div>
 {/if}

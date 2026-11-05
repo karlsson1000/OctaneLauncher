@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Package, Play } from "lucide-svelte"
+  import { Package, Play, Check } from "lucide-svelte"
   import { store, setSelectedInstance, handleShowDetails, handleLaunch, handleKillInstance } from "../../../lib/launcherStore.svelte"
   import { instanceIconSrc } from "../../../lib/icons"
   import { getMinecraftVersion } from "../../../lib/version"
@@ -7,9 +7,12 @@
   import type { Instance } from "../../../types"
   import { getLoaderMeta, getLoaderVersion } from "./loader-meta"
 
-  let { instance, onContextMenu }: {
+  let { instance, onContextMenu, selecting, selected, onSelect }: {
     instance: Instance
     onContextMenu: (e: MouseEvent, instance: Instance) => void
+    selecting: boolean
+    selected: boolean
+    onSelect: (e: MouseEvent | KeyboardEvent, instance: Instance) => void
   } = $props()
 
   let isRunning = $derived(store.runningInstances.has(instance.name))
@@ -28,18 +31,26 @@
     setSelectedInstance(instance)
     handleLaunch(instance)
   }
+
+  function activate(e: MouseEvent | KeyboardEvent) {
+    if (selecting || e.shiftKey || e.ctrlKey || e.metaKey) {
+      onSelect(e, instance)
+      return
+    }
+    openInstance()
+  }
 </script>
 
 <div
   role="button"
   tabindex="0"
-  onclick={openInstance}
+  onclick={activate}
   oncontextmenu={(e) => onContextMenu(e, instance)}
-  onkeydown={(e) => { if (e.key === 'Enter') openInstance() }}
-  class="bg-[var(--bg-tertiary)] rounded-r-md cursor-pointer hover:brightness-120 group relative"
+  onkeydown={(e) => { if (e.key === 'Enter') activate(e) }}
+  class="rounded-r-md cursor-pointer hover:brightness-120 group relative {selected ? 'bg-[var(--accent-primary)]/20' : 'bg-[var(--bg-tertiary)]'}"
 >
   <div class="flex min-h-0 relative z-0 items-center">
-    <div class="absolute -left-[3px] top-0 bottom-0 w-[3px] {loader.accent}"></div>
+    <div class="absolute left-0 top-0 bottom-0 w-[3px] {loader.accent}"></div>
 
     <div class="relative flex-shrink-0">
       {#if iconSrc}
@@ -68,7 +79,7 @@
       </p>
     </div>
 
-    {#if store.isAuthenticated}
+    {#if store.isAuthenticated && !selecting}
       <button
         title={isRunning ? "Stop instance" : "Launch instance"}
         onclick={(e) => {
@@ -87,4 +98,10 @@
       </button>
     {/if}
   </div>
+
+  {#if selected}
+    <div class="check-pop absolute top-2 right-2 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#16a34a] border-[#16a34a]">
+      <Check size={16} strokeWidth={4} color="#0f1115" />
+    </div>
+  {/if}
 </div>

@@ -261,46 +261,77 @@ async function handleLaunch(instance: Instance) {
 let skipTrash = false
 
 function handleDeleteInstance(instanceName: string) {
-  if (store.runningInstances.has(instanceName)) {
-    showToast("error", `Stop "${instanceName}" before deleting it`, 5000)
+  handleDeleteInstances([instanceName])
+}
+
+function handleDeleteInstances(instanceNames: string[]) {
+  if (instanceNames.length === 0) return
+  const running = instanceNames.filter(name => store.runningInstances.has(name))
+  if (running.length > 0) {
+    const names = running.map(name => `"${name}"`).join(", ")
+    showToast("error", `Stop ${names} before deleting`, 5000)
     return
   }
+  const multiple = instanceNames.length > 1
   skipTrash = false
   store.confirmModal = {
     isOpen: true,
-    title: "Delete Instance",
-    message: `Are you sure you want to delete "${instanceName}"?\n\nThis action cannot be undone.`,
+    title: multiple ? `Delete ${instanceNames.length} Instances` : "Delete Instance",
+    message: multiple
+      ? "This action cannot be undone."
+      : `Are you sure you want to delete "${instanceNames[0]}"?\n\nThis action cannot be undone.`,
     type: "danger",
     checkboxLabel: "Delete permanently",
     onCheckboxChange: (checked: boolean) => { skipTrash = checked },
     onConfirm: () => {
       store.confirmModal = null
-      deleteInstanceOptimistically(instanceName, skipTrash)
+      deleteInstancesOptimistically(instanceNames, skipTrash)
     }
   }
 }
 
 function deleteInstanceOptimistically(instanceName: string, permanent: boolean) {
-  const index = store.instances.findIndex(i => i.name === instanceName)
-  if (index === -1) return
-  const removed = store.instances[index]
+  deleteInstancesOptimistically([instanceName], permanent)
+}
 
-  store.instances = store.instances.filter(i => i.name !== instanceName)
-  if (store.selectedInstance?.name === instanceName) {
+function deleteInstancesOptimistically(instanceNames: string[], permanent: boolean) {
+  const targets = new Set(instanceNames)
+  const previous = store.instances
+  const removed = previous.filter(i => targets.has(i.name))
+  if (removed.length === 0) return
+  const firstIndex = previous.findIndex(i => targets.has(i.name))
+
+  store.instances = previous.filter(i => !targets.has(i.name))
+  if (store.selectedInstance && targets.has(store.selectedInstance.name)) {
     store.selectedInstance = store.instances.length > 0
-      ? store.instances[Math.min(index, store.instances.length - 1)]
+      ? store.instances[Math.min(firstIndex, store.instances.length - 1)]
       : null
   }
 
-  invoke<string>("delete_instance", { instanceName, permanent })
-    .then(() => showToast("info", `Deleted "${instanceName}"`, 5000))
-    .catch((error) => {
-      console.error("Delete error:", error)
-      const restored = [...store.instances]
-      restored.splice(Math.min(index, restored.length), 0, removed)
-      store.instances = restored
-      showToast("error", `Failed to delete ${instanceName}: ${String(error)}`)
-    })
+  ;(async () => {
+    const failed: Instance[] = []
+    for (const instance of removed) {
+      try {
+        await invoke("delete_instance", { instanceName: instance.name, permanent })
+      } catch (error) {
+        failed.push(instance)
+        console.error("Delete error:", instance.name, error)
+      }
+    }
+    if (failed.length === 0) {
+      showToast("info", removed.length === 1 ? `Deleted "${removed[0].name}"` : `Deleted ${removed.length} instances`, 5000)
+      return
+    }
+    const restored = [...store.instances]
+    for (const instance of failed) {
+      const index = previous.findIndex(i => i.name === instance.name)
+      restored.splice(Math.min(index, restored.length), 0, instance)
+    }
+    store.instances = restored
+    showToast("error", failed.length === 1
+      ? `Failed to delete "${failed[0].name}"`
+      : `Failed to delete ${failed.length} instances`, 5000)
+  })()
 }
 
 async function handleDuplicateInstance(instance: Instance) {
@@ -571,6 +602,7 @@ export {
   handleInstallUpdate,
   handleLaunch,
   handleDeleteInstance,
+  handleDeleteInstances,
   deleteInstanceOptimistically,
   handleDuplicateInstance,
   handleOpenInstanceFolderByInstance,
