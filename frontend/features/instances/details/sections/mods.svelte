@@ -1,10 +1,10 @@
 <script lang="ts">
   import { Loader2, Search, X, Package, RefreshCw, Check, Trash2 } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
-  import AlertModal from "../../../components/ui/alert-modal.svelte"
-  import type { Instance, ModFileWithMetadata } from "../../../types"
-  import { getMinecraftVersion } from "../../../lib/version"
-  import { formatFileSize } from "../../../lib/format"
+  import AlertModal from "../../../../components/ui/alert-modal.svelte"
+  import type { Instance, ModFileWithMetadata } from "../../../../types"
+  import { getMinecraftVersion } from "../../../../lib/version"
+  import { formatFileSize } from "../../../../lib/format"
 
   type InstalledMod = ModFileWithMetadata
 

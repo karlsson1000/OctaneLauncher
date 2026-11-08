@@ -1,10 +1,10 @@
 <script lang="ts">
   import { fly, slide } from "svelte/transition"
   import { cubicIn, cubicOut } from "svelte/easing"
-  import type { FabricVersion, NeoForgeVersion, ForgeVersion } from "../../../types"
-  import { LOADERS, type LoaderType } from "./constants"
-  import CreateDropdown from "./create-dropdown.svelte"
-  import StatusBox from "./status-box.svelte"
+  import type { FabricVersion, NeoForgeVersion, ForgeVersion } from "../../../../types"
+  import { LOADERS, type LoaderType } from "../constants"
+  import CreateDropdown from "../create-dropdown.svelte"
+  import StatusBox from "../status-box.svelte"
 
   let { loaderType, selectedVersion, isCreating, loaderDir, hasUnavailableLoaders, isLoaderSupported, isLoadingFabric, isLoadingNeoforge, isLoadingForge, fabricVersions, selectedFabricVersion, neoforgeVersions, selectedNeoforgeVersion, forgeVersions, selectedForgeVersion, onLoaderChange, onFabricSelect, onNeoforgeSelect, onForgeSelect }: {
     loaderType: LoaderType

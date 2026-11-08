@@ -1,11 +1,12 @@
 <script lang="ts">
-  import { Package, Play, Check } from "lucide-svelte"
-  import { store, setSelectedInstance, handleShowDetails, handleLaunch, handleKillInstance } from "../../../lib/launcherStore.svelte"
-  import { instanceIconSrc } from "../../../lib/icons"
+  import { store, setSelectedInstance, handleShowDetails } from "../../../lib/launcherStore.svelte"
   import { getMinecraftVersion } from "../../../lib/version"
   import { formatPlaytime } from "../../../lib/format"
   import type { Instance } from "../../../types"
-  import { getLoaderMeta, getLoaderVersion } from "./loader-meta"
+  import { getLoaderMeta, getLoaderVersion } from "../shared/loader-meta"
+  import InstanceIcon from "../shared/instance-icon.svelte"
+  import LaunchButton from "../shared/launch-button.svelte"
+  import SelectBadge from "../shared/select-badge.svelte"
 
   let { instance, onContextMenu, selecting, selected, onSelect }: {
     instance: Instance
@@ -20,16 +21,10 @@
   let isBusy = $derived(isRunning || isLaunching)
   let loader = $derived(getLoaderMeta(instance.loader))
   let loaderVersion = $derived(getLoaderVersion(instance))
-  let iconSrc = $derived(instanceIconSrc(instance.icon_path, instance.name))
 
   function openInstance() {
     setSelectedInstance(instance)
     handleShowDetails(instance)
-  }
-
-  function quickLaunch() {
-    setSelectedInstance(instance)
-    handleLaunch(instance)
   }
 
   function activate(e: MouseEvent | KeyboardEvent) {
@@ -53,13 +48,7 @@
     <div class="absolute left-0 top-0 bottom-0 w-[3px] {loader.accent}"></div>
 
     <div class="relative flex-shrink-0">
-      {#if iconSrc}
-        <img src={iconSrc} alt={instance.name} class="w-[76px] h-[76px] object-cover rounded my-2 mr-2 ml-4" />
-      {:else}
-        <div class="w-[76px] h-[76px] bg-[var(--bg-secondary)] rounded my-2 mr-2 ml-4 flex items-center justify-center">
-          <Package size={36} class="text-[var(--text-muted)]" />
-        </div>
-      {/if}
+      <InstanceIcon {instance} className="w-[76px] h-[76px] object-cover rounded my-2 mr-2 ml-4" iconSize={36} />
     </div>
 
     <div class="py-2 pl-3 flex-1 min-w-0 {isBusy ? 'pr-12' : 'pr-2 group-hover:pr-12'}">
@@ -80,28 +69,11 @@
     </div>
 
     {#if store.isAuthenticated && !selecting}
-      <button
-        title={isRunning ? "Stop instance" : "Launch instance"}
-        onclick={(e) => {
-          e.stopPropagation()
-          if (isRunning) handleKillInstance(instance)
-          else quickLaunch()
-        }}
-        disabled={store.launchingInstanceName !== null && !isRunning}
-        class="flex-shrink-0 w-[54px] h-[54px] mr-4 flex items-center justify-center rounded cursor-pointer {isBusy ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'opacity-0 group-hover:opacity-100 bg-[#16a34a] hover:bg-[#15803d] text-[#181a1f]'} disabled:opacity-50"
-      >
-        {#if isBusy}
-          <div class="w-5 h-5 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
-        {:else}
-          <Play size={28} fill="currentColor" strokeWidth={0} />
-        {/if}
-      </button>
+      <LaunchButton {instance} className="flex-shrink-0 w-[54px] h-[54px] mr-4" iconSize={28} />
     {/if}
   </div>
 
   {#if selected}
-    <div class="check-pop absolute top-2 right-2 z-10 w-6 h-6 rounded-md border-2 flex items-center justify-center bg-[#16a34a] border-[#16a34a]">
-      <Check size={16} strokeWidth={4} color="#0f1115" />
-    </div>
+    <SelectBadge />
   {/if}
 </div>

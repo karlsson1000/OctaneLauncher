@@ -1,14 +1,14 @@
 <script lang="ts">
   import { X, Trash2 } from "lucide-svelte"
-  import ConfirmModal from "../../../components/ui/confirm-modal.svelte"
-  import AlertModal from "../../../components/ui/alert-modal.svelte"
-  import type { Instance } from "../../../types"
-  import { store, deleteInstanceOptimistically } from "../../../lib/launcherStore.svelte"
-  import InstanceIconField from "./instance-settings/instance-icon-field.svelte"
-  import InstanceNameField from "./instance-settings/instance-name-field.svelte"
-  import MinecraftVersionField from "./instance-settings/minecraft-version-field.svelte"
-  import LoaderVersionField from "./instance-settings/loader-version-field.svelte"
-  import RamAllocationField from "./instance-settings/ram-allocation-field.svelte"
+  import ConfirmModal from "../../../../components/ui/confirm-modal.svelte"
+  import AlertModal from "../../../../components/ui/alert-modal.svelte"
+  import type { Instance } from "../../../../types"
+  import { store, deleteInstanceOptimistically } from "../../../../lib/launcherStore.svelte"
+  import InstanceIconField from "./instance-icon-field.svelte"
+  import InstanceNameField from "./instance-name-field.svelte"
+  import MinecraftVersionField from "./minecraft-version-field.svelte"
+  import LoaderVersionField from "./loader-version-field.svelte"
+  import RamAllocationField from "./ram-allocation-field.svelte"
 
   let { isOpen, instance, instanceIcon, onClose, onInstanceUpdated, onInstanceDeleted }: {
     isOpen: boolean

@@ -1,11 +1,10 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core"
-  import InstanceSettingsModal from "./instance-settings-modal.svelte"
+  import InstanceSettingsModal from "./settings/instance-settings-modal.svelte"
   import InstanceHeader from "./instance-header.svelte"
-  import ModsSection from "./mods-section.svelte"
-  import WorldsSection from "./worlds-section.svelte"
-  import ResourcePacksSection from "./resource-packs-section.svelte"
-  import ShaderPacksSection from "./shader-packs-section.svelte"
+  import ModsSection from "./sections/mods.svelte"
+  import WorldsSection from "./sections/worlds.svelte"
+  import PacksSection from "./sections/packs.svelte"
   import type { Instance } from "../../../types"
   import { instanceIconSrc } from "../../../lib/icons"
   import { handleCloseDetails, loadInstances } from "../../../lib/launcherStore.svelte"
@@ -72,9 +71,9 @@
       {:else if detailSection === "worlds"}
         <WorldsSection {instance} />
       {:else if detailSection === "resourcepacks"}
-        <ResourcePacksSection {instance} />
+        <PacksSection {instance} kind="resource" />
       {:else}
-        <ShaderPacksSection {instance} />
+        <PacksSection {instance} kind="shader" />
       {/if}
 
     </div>

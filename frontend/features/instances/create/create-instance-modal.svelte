@@ -7,9 +7,9 @@
   import AlertModal from "../../../components/ui/alert-modal.svelte"
   import type { FabricVersion, NeoForgeVersion, ForgeVersion, Instance } from "../../../types"
   import { STEPS, STEP_ORDER, LOADERS, type CreateStep, type LoaderType, type MinecraftVersion } from "./constants"
-  import NameStep from "./name-step.svelte"
-  import VersionStep from "./version-step.svelte"
-  import LoaderStep from "./loader-step.svelte"
+  import NameStep from "./steps/name-step.svelte"
+  import VersionStep from "./steps/version-step.svelte"
+  import LoaderStep from "./steps/loader-step.svelte"
 
   const pageClass = "px-5 pt-5 flex flex-col"
 

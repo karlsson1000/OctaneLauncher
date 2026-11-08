@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { MinecraftVersion } from "./constants"
-  import CreateDropdown from "./create-dropdown.svelte"
-  import StatusBox from "./status-box.svelte"
+  import type { MinecraftVersion } from "../constants"
+  import CreateDropdown from "../create-dropdown.svelte"
+  import StatusBox from "../status-box.svelte"
 
   let { filteredVersions, selectedVersion, versionFilter, isLoadingVersions, isCreating, onFilterChange, onSelect }: {
     filteredVersions: MinecraftVersion[]

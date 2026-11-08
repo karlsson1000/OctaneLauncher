@@ -1,11 +1,11 @@
 <script lang="ts">
   import { Loader2, Search, X, Globe, ExternalLink, Play, FolderOpen, Trash2 } from "lucide-svelte"
   import { invoke, convertFileSrc } from "@tauri-apps/api/core"
-  import AlertModal from "../../../components/ui/alert-modal.svelte"
-  import ConfirmModal from "../../../components/ui/confirm-modal.svelte"
-  import type { Instance } from "../../../types"
-  import { formatFileSize, formatDate } from "../../../lib/format"
-  import { store, handleWorldLaunch } from "../../../lib/launcherStore.svelte"
+  import AlertModal from "../../../../components/ui/alert-modal.svelte"
+  import ConfirmModal from "../../../../components/ui/confirm-modal.svelte"
+  import type { Instance } from "../../../../types"
+  import { formatFileSize, formatDate } from "../../../../lib/format"
+  import { store, handleWorldLaunch } from "../../../../lib/launcherStore.svelte"
 
   interface World {
     name: string

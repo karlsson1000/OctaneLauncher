@@ -1,26 +1,25 @@
 <script lang="ts">
   import { onMount } from "svelte"
-  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Search, Plus, FolderPlus, ChevronDown, Save, ClipboardCheck, LayoutGrid, List, Check, Play, MoreVertical, X, ListChecks } from "lucide-svelte"
+  import { Package, FolderOpen, Copy, FileArchive, FolderSymlink, FolderX, Trash2, Search, Plus, FolderPlus, Save, ClipboardCheck } from "lucide-svelte"
   import { invoke } from "@tauri-apps/api/core"
   import type { Instance } from "../../types"
-  import { getMinecraftVersion } from "../../lib/version"
-  import { instanceIconSrc } from "../../lib/icons"
   import ContextMenu from "../../components/ui/context-menu.svelte"
-  import GroupHeader from "./components/group-header.svelte"
-  import InstanceLayout from "./components/instance-layout.svelte"
+  import Hero from "./library/hero.svelte"
+  import Toolbar from "./library/toolbar.svelte"
+  import InstanceGroups from "./library/instance-groups.svelte"
+  import GroupModal from "./library/group-modal.svelte"
+  import { sortInstances, type SortOption } from "./library/sort"
+  import { buildInstanceToGroup, withoutInstance, DEFAULT_GROUP, type Groups } from "./library/groups"
 
   import {
     store, handleCreateNew,
     handleOpenInstanceFolderByInstance,
     handleDuplicateInstance, handleDeleteInstance, handleDeleteInstances,
     setExportModal, setSelectedInstance, handleShowDetails,
-    handleLaunch, handleKillInstance,
   } from "../../lib/launcherStore.svelte"
   import { storeGet, storeSet } from "../../lib/store"
   import { showToast } from "../../lib/toastStore.svelte"
 
-  type SortOption = "recently-played" | "version" | "name-asc" | "name-desc"
-  type Groups = Record<string, string[]>
   type MenuItem = {
     label?: string
     icon?: any
@@ -29,15 +28,6 @@
     separator?: boolean
   }
 
-  const SORT_LABELS: Record<SortOption, string> = {
-    "recently-played": "Recently played",
-    "version": "Minecraft version",
-    "name-asc": "Name (A–Z)",
-    "name-desc": "Name (Z–A)",
-  }
-  const SORT_OPTIONS = Object.keys(SORT_LABELS) as SortOption[]
-
-  const DEFAULT_GROUP = "__ungrouped__"
   const TOAST_MS = 5000
 
   let contextMenu = $state<{ x: number; y: number; instance: Instance } | null>(null)
@@ -53,10 +43,6 @@
   let lastSelectedName = $state<string | null>(null)
 
   let groupModalInstance = $state<Instance | null>(null)
-  let groupModalValue = $state("")
-  let groupModalInputEl: HTMLInputElement | undefined = $state()
-  let groupModalClosing = $state(false)
-  let groupModalTimer: ReturnType<typeof setTimeout> | undefined
 
   onMount(async () => {
     const [savedGroups, savedCollapsed, savedLayout] = await Promise.all([
@@ -74,13 +60,6 @@
     layout = next
     await storeSet("instances_layout", next)
   }
-
-  $effect(() => {
-    if (groupModalInstance && groupModalInputEl) {
-      const t = setTimeout(() => groupModalInputEl?.focus(), 50)
-      return () => clearTimeout(t)
-    }
-  })
 
   $effect(() => {
     if (!groupsLoaded || store.instances.length === 0) return
@@ -121,14 +100,6 @@
   const handleApplySavedOptions = (name: string) =>
     runOptionsCommand("apply_saved_options", name, "Saved options applied", "Failed to apply options")
 
-  function withoutInstance(source: Groups, instanceName: string): Groups {
-    const next: Groups = {}
-    for (const [group, names] of Object.entries(source)) {
-      next[group] = names.filter(n => n !== instanceName)
-    }
-    return next
-  }
-
   async function assignToGroup(instance: Instance, group: string) {
     const name = group.trim()
     if (!name || name === DEFAULT_GROUP) return
@@ -149,34 +120,6 @@
   const toggleCollapsed = (group: string) =>
     persistCollapsed({ ...collapsed, [group]: !collapsed[group] })
 
-  function openGroupModal(instance: Instance) {
-    if (groupModalTimer) clearTimeout(groupModalTimer)
-    groupModalClosing = false
-    groupModalInstance = instance
-    groupModalValue = ""
-  }
-
-  function closeGroupModal() {
-    if (groupModalClosing) return
-    groupModalClosing = true
-    groupModalTimer = setTimeout(() => {
-      groupModalInstance = null
-      groupModalClosing = false
-    }, 150)
-  }
-
-  function submitGroupModal() {
-    if (!groupModalInstance || !groupModalValue.trim()) return
-    assignToGroup(groupModalInstance, groupModalValue)
-    closeGroupModal()
-  }
-
-  function pickExistingGroup(group: string) {
-    if (!groupModalInstance) return
-    assignToGroup(groupModalInstance, group)
-    closeGroupModal()
-  }
-
   function handleContextMenu(e: MouseEvent, instance: Instance) {
     e.preventDefault()
     contextMenu = { x: e.clientX, y: e.clientY, instance }
@@ -185,36 +128,6 @@
   function handleGroupHeaderContextMenu(e: MouseEvent, group: string) {
     e.preventDefault()
     groupContextMenu = { x: e.clientX, y: e.clientY, group }
-  }
-
-  let isSortDropdownOpen = $state(false)
-  let sortDropdownRef = $state<HTMLDivElement | undefined>(undefined)
-
-  $effect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (sortDropdownRef && !sortDropdownRef.contains(event.target as Node)) isSortDropdownOpen = false
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  })
-
-  function sortInstances(list: Instance[]) {
-    return [...list].sort((a, b) => {
-      switch (sortBy) {
-        case "name-asc": return a.name.localeCompare(b.name)
-        case "name-desc": return b.name.localeCompare(a.name)
-        case "version": {
-          const byVersion = getMinecraftVersion(b).localeCompare(getMinecraftVersion(a), undefined, { numeric: true })
-          return byVersion !== 0 ? byVersion : a.name.localeCompare(b.name)
-        }
-        case "recently-played":
-        default: {
-          const aTime = a.last_played ? new Date(a.last_played).getTime() : 0
-          const bTime = b.last_played ? new Date(b.last_played).getTime() : 0
-          return bTime - aTime
-        }
-      }
-    })
   }
 
   let filteredInstances = $derived(
@@ -227,49 +140,19 @@
       .sort((a, b) => new Date(b.last_played!).getTime() - new Date(a.last_played!).getTime())[0] ?? null
   )
 
-  let isLastPlayedRunning = $derived(lastPlayedInstance ? store.runningInstances.has(lastPlayedInstance.name) : false)
-  let isLastPlayedLaunching = $derived(lastPlayedInstance ? store.launchingInstanceName === lastPlayedInstance.name : false)
-  let lastPlayedDisabled = $derived(
-    !isLastPlayedRunning && (!store.isAuthenticated || (store.launchingInstanceName !== null && !isLastPlayedLaunching))
-  )
-
-  const CONTINUE_MESSAGES = [
-    "Continue where you left off..",
-    "Pick up where you left off..",
-    "Jump back in..",
-  ]
-
-  let continueMessage = $state(CONTINUE_MESSAGES[0])
-  let continueTarget = $state<string | null>(null)
-
-  $effect(() => {
-    const target = lastPlayedInstance?.name ?? null
-    if (target && target !== continueTarget) {
-      continueTarget = target
-      continueMessage = CONTINUE_MESSAGES[Math.floor(Math.random() * CONTINUE_MESSAGES.length)]
-    }
-  })
-
-  let instanceToGroup = $derived.by(() => {
-    const map = new Map<string, string>()
-    for (const [group, names] of Object.entries(groups)) {
-      for (const name of names) map.set(name, group)
-    }
-    return map
-  })
-
+  let instanceToGroup = $derived(buildInstanceToGroup(groups))
   let namedGroups = $derived(Object.keys(groups))
   let hasAnyGroups = $derived(namedGroups.length > 0)
 
   let visibleNamedGroups = $derived(
     namedGroups.map(group => ({
       name: group,
-      instances: sortInstances(filteredInstances.filter(i => instanceToGroup.get(i.name) === group)),
+      instances: sortInstances(filteredInstances.filter(i => instanceToGroup.get(i.name) === group), sortBy),
     }))
   )
 
   let ungrouped = $derived(
-    sortInstances(filteredInstances.filter(i => !instanceToGroup.has(i.name)))
+    sortInstances(filteredInstances.filter(i => !instanceToGroup.has(i.name)), sortBy)
   )
 
   let visibleNames = $derived([
@@ -351,7 +234,7 @@
       { label: "Save Instance Options", icon: Save, onClick: () => { handleSaveOptionsAsDefault(instance.name); closeMenu() } },
       { label: "Apply Saved Options", icon: ClipboardCheck, onClick: () => { handleApplySavedOptions(instance.name); closeMenu() } },
       { separator: true },
-      { label: "Add to group", icon: FolderPlus, onClick: () => { openGroupModal(instance); closeMenu() } },
+      { label: "Add to group", icon: FolderPlus, onClick: () => { groupModalInstance = instance; closeMenu() } },
     ]
 
     if (currentGroup) {
@@ -379,148 +262,23 @@
 <div class="p-8 space-y-4">
   <div class="max-w-7xl mx-auto">
     {#if lastPlayedInstance}
-      {@const heroIcon = instanceIconSrc(lastPlayedInstance.icon_path, lastPlayedInstance.name)}
-      <div class="w-full rounded-md bg-[var(--bg-tertiary)] flex items-center gap-4 px-4 py-3 mb-8">
-        <div class="w-12 h-12 rounded-md flex items-center justify-center overflow-hidden flex-shrink-0">
-          {#if heroIcon}
-            <img src={heroIcon} alt={lastPlayedInstance.name} class="w-12 h-12 object-cover rounded-md" />
-          {:else}
-            <Package size={32} class="text-[var(--text-muted)]" strokeWidth={1.5} />
-          {/if}
-        </div>
-
-        <div class="flex-1 min-w-0">
-          <div class="text-lg font-semibold text-[var(--text-primary)] truncate leading-tight">{continueMessage}</div>
-          <div class="text-sm text-[var(--text-secondary)] truncate mt-0.5">{lastPlayedInstance.name}</div>
-        </div>
-
-        <button
-          onclick={() => isLastPlayedRunning ? handleKillInstance(lastPlayedInstance) : handleLaunch(lastPlayedInstance)}
-          disabled={lastPlayedDisabled}
-          class="h-10 px-5 rounded-md flex items-center justify-center gap-2.5 text-lg cursor-pointer disabled:opacity-40 shrink-0 {isLastPlayedRunning || isLastPlayedLaunching ? 'bg-red-500/15 text-red-400 hover:bg-red-500/25 font-medium' : 'bg-[#16a34a] text-[#181a1f] hover:bg-[#15803d] font-semibold'}"
-          title={isLastPlayedRunning ? "Stop" : `Play ${lastPlayedInstance.name}`}
-        >
-          {#if isLastPlayedLaunching || isLastPlayedRunning}
-            <div class="w-4 h-4 border-2 border-red-400/30 border-t-red-400 rounded-full animate-spin"></div>
-          {:else}
-            <Play size={20} fill="currentColor" strokeWidth={0} />
-          {/if}
-          <span>{isLastPlayedRunning ? "Stop" : isLastPlayedLaunching ? "Launching..." : "Play"}</span>
-        </button>
-
-        <button
-          onclick={(e) => handleContextMenu(e, lastPlayedInstance)}
-          class="w-9 h-9 rounded-md flex items-center justify-center cursor-pointer text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] shrink-0"
-          aria-label="Instance options"
-        >
-          <MoreVertical size={20} strokeWidth={2} />
-        </button>
-      </div>
+      <Hero instance={lastPlayedInstance} onContextMenu={handleContextMenu} />
     {/if}
 
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-2">
-        {#if store.instances.length > 0}
-          <div class="relative rounded-md bg-[var(--bg-tertiary)]">
-            <Search size={16} class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] z-20 pointer-events-none" strokeWidth={2} />
-            <input
-              type="text"
-              placeholder="Search instances..."
-              bind:value={searchQuery}
-              class="w-72 bg-transparent rounded-md pl-9 pr-3 py-1.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none transition-all relative z-10"
-            />
-          </div>
-        {/if}
-      </div>
-      <div class="flex items-center gap-2">
-        {#if selectMode}
-          <span class="text-sm text-[var(--text-muted)] font-medium whitespace-nowrap">{selected.size} selected</span>
-          <button
-            onclick={toggleSelectAll}
-            class="h-8 px-3 rounded-md bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] text-sm text-[var(--text-primary)] cursor-pointer"
-          >
-            {allVisibleSelected ? "Clear" : "Select all"}
-          </button>
-          <button
-            onclick={deleteSelected}
-            disabled={selected.size === 0}
-            class="h-8 px-3 rounded-md bg-red-500/15 text-red-400 hover:bg-red-500/25 text-sm font-medium flex items-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Trash2 size={16} strokeWidth={2.5} />
-            Delete
-          </button>
-          <button
-            onclick={exitSelectMode}
-            title="Cancel selection"
-            class="h-8 w-8 rounded-md flex items-center justify-center cursor-pointer text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-          >
-            <X size={18} strokeWidth={2.5} />
-          </button>
-        {:else}
-          {#if store.instances.length > 0}
-            <div class="relative" bind:this={sortDropdownRef}>
-              <button
-                onclick={() => isSortDropdownOpen = !isSortDropdownOpen}
-                class="relative h-8 pl-3 pr-8 bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md flex items-center gap-1.5 cursor-pointer"
-              >
-                <span class="text-sm text-[var(--text-muted)] font-medium whitespace-nowrap">Sort by:</span>
-                <span class="text-sm text-[var(--text-primary)] font-semibold whitespace-nowrap">{SORT_LABELS[sortBy]}</span>
-                <span class="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-secondary)]">
-                  <ChevronDown size={16} strokeWidth={3} class="transition-transform {isSortDropdownOpen ? 'rotate-180' : ''}" />
-                </span>
-              </button>
-              {#if isSortDropdownOpen}
-                <div role="menu" class="dropdown-menu drop-right absolute right-0 z-[60] w-full min-w-[180px] bg-[var(--bg-tertiary)] border border-[var(--border-subtle)] shadow-md rounded-md overflow-hidden p-1.5 flex flex-col mt-1.5">
-                  {#each SORT_OPTIONS as option (option)}
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onclick={() => { sortBy = option; isSortDropdownOpen = false }}
-                      class="w-full flex items-center justify-between gap-2.5 px-2 py-2 text-sm text-left rounded-sm cursor-pointer select-none text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
-                    >
-                      <span class="truncate min-w-0">{SORT_LABELS[option]}</span>
-                      {#if sortBy === option}
-                        <Check size={15} strokeWidth={3} class="text-[var(--accent-primary)] shrink-0 ml-2" />
-                      {/if}
-                    </button>
-                  {/each}
-                </div>
-              {/if}
-            </div>
-            <div class="grid grid-cols-2 gap-1 p-0.5 rounded-md bg-[var(--bg-tertiary)]">
-              <button
-                onclick={() => persistLayout("list")}
-                title="List view"
-                class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'list' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
-              >
-                <List size={18} strokeWidth={2.5} />
-              </button>
-              <button
-                onclick={() => persistLayout("grid")}
-                title="Grid view"
-                class="h-7 w-8 rounded-sm flex items-center justify-center cursor-pointer {layout === 'grid' ? 'bg-[var(--bg-hover)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'}"
-              >
-                <LayoutGrid size={18} strokeWidth={2.5} />
-              </button>
-            </div>
-            <button
-              onclick={() => selectMode = true}
-              title="Select instances"
-              class="h-8 w-8 rounded-md flex items-center justify-center cursor-pointer text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
-            >
-              <ListChecks size={18} strokeWidth={2.5} />
-            </button>
-          {/if}
-          <button
-            onclick={handleCreateNew}
-            class="px-4 h-8 bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md text-sm font-medium flex items-center gap-2 cursor-pointer"
-          >
-            <Plus size={16} />
-            New
-          </button>
-        {/if}
-      </div>
-    </div>
+    <Toolbar
+      bind:searchQuery
+      bind:sortBy
+      {layout}
+      hasInstances={store.instances.length > 0}
+      {selectMode}
+      selectedCount={selected.size}
+      {allVisibleSelected}
+      onToggleSelectAll={toggleSelectAll}
+      onDeleteSelected={deleteSelected}
+      onExitSelect={exitSelectMode}
+      onSelectMode={() => selectMode = true}
+      onLayoutChange={persistLayout}
+    />
 
     {#if store.instances.length === 0}
       <div class="flex flex-col items-center justify-center py-14">
@@ -542,27 +300,19 @@
         <p class="text-sm text-[var(--text-muted)]">Try adjusting your search query</p>
       </div>
     {:else}
-      <div class="space-y-5">
-        {#each visibleNamedGroups as group (group.name)}
-          <div>
-            <GroupHeader groupKey={group.name} label={group.name} named={true} collapsed={collapsed[group.name]} onToggle={toggleCollapsed} onHeaderContextMenu={handleGroupHeaderContextMenu} />
-            {#if !collapsed[group.name]}
-              <InstanceLayout instances={group.instances} {layout} onContextMenu={handleContextMenu} selecting={selectMode} {selected} onSelect={handleSelect} />
-            {/if}
-          </div>
-        {/each}
-
-        {#if ungrouped.length > 0}
-          <div>
-            {#if hasAnyGroups}
-              <GroupHeader groupKey={DEFAULT_GROUP} label="Ungrouped" named={false} collapsed={collapsed[DEFAULT_GROUP]} onToggle={toggleCollapsed} onHeaderContextMenu={handleGroupHeaderContextMenu} />
-            {/if}
-            {#if !collapsed[DEFAULT_GROUP]}
-              <InstanceLayout instances={ungrouped} {layout} onContextMenu={handleContextMenu} selecting={selectMode} {selected} onSelect={handleSelect} />
-            {/if}
-          </div>
-        {/if}
-      </div>
+      <InstanceGroups
+        groups={visibleNamedGroups}
+        {ungrouped}
+        {hasAnyGroups}
+        {collapsed}
+        {layout}
+        selecting={selectMode}
+        {selected}
+        onContextMenu={handleContextMenu}
+        onSelect={handleSelect}
+        onToggle={toggleCollapsed}
+        onGroupContextMenu={handleGroupHeaderContextMenu}
+      />
     {/if}
   </div>
 </div>
@@ -590,60 +340,10 @@
 
 {#if groupModalInstance}
   {@const gmi = groupModalInstance}
-  {@const otherGroups = namedGroups.filter(g => g !== instanceToGroup.get(gmi.name))}
-  <div
-    role="presentation"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm modal-backdrop"
-    class:closing={groupModalClosing}
-    onclick={closeGroupModal}
-    onkeydown={(e) => { if (e.key === 'Escape') closeGroupModal() }}
-  >
-    <div
-      role="presentation"
-      class="bg-[var(--content-bg)] rounded-md border border-[var(--border-subtle)] shadow-md w-80 modal-content p-5 space-y-4"
-      class:closing={groupModalClosing}
-      onclick={(e) => e.stopPropagation()}
-    >
-      <div>
-        <h3 class="text-lg font-semibold text-[var(--text-primary)] tracking-tight">Add to group</h3>
-        <p class="text-[13px] text-[var(--text-muted)] mt-0.5 truncate">Move "{gmi.name}" into a group</p>
-      </div>
-
-      {#if otherGroups.length > 0}
-        <div class="flex flex-col max-h-48 overflow-y-auto custom-scrollbar">
-          {#each otherGroups as g (g)}
-            <button
-              onclick={() => pickExistingGroup(g)}
-              class="flex items-center gap-2.5 px-2 py-1.5 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-sm cursor-pointer text-left"
-            >
-              <FolderOpen size={16} strokeWidth={2} class="text-[var(--text-muted)] flex-shrink-0" />
-              <span class="truncate">{g}</span>
-            </button>
-          {/each}
-          <div class="h-px bg-[var(--border-default)] my-1"></div>
-        </div>
-      {/if}
-
-      <div class="flex gap-2">
-        <input
-          bind:this={groupModalInputEl}
-          type="text"
-          placeholder="New group name"
-          bind:value={groupModalValue}
-          onkeydown={(e) => {
-            if (e.key === "Enter") submitGroupModal()
-            if (e.key === "Escape") closeGroupModal()
-          }}
-          class="flex-1 min-w-0 h-9 bg-[var(--bg-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-muted)] rounded-sm px-3 text-sm outline-none border border-transparent"
-        />
-        <button
-          onclick={submitGroupModal}
-          disabled={!groupModalValue.trim()}
-          class="h-9 px-4 text-sm bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white rounded-md font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-        >
-          Create
-        </button>
-      </div>
-    </div>
-  </div>
+  <GroupModal
+    instance={gmi}
+    groups={namedGroups.filter(g => g !== instanceToGroup.get(gmi.name))}
+    onAssign={(group) => assignToGroup(gmi, group)}
+    onClose={() => groupModalInstance = null}
+  />
 {/if}
