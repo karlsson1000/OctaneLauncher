@@ -139,7 +139,7 @@
   onpointercancel={handlePointerCancel}
 >
   <div class="absolute inset-0 z-0 pointer-events-none rounded-[inherit] overflow-hidden">
-    <div class="relative w-full h-full overflow-hidden rounded-[inherit] bg-[url('/skinstab/background.webp')] bg-cover bg-center bg-no-repeat">
+    <div class="relative w-full h-full overflow-hidden rounded-[inherit] bg-[url('/images/skinstab.webp')] bg-cover bg-center bg-no-repeat">
       <div
         class="absolute inset-0 z-[1] bg-linear-to-b from-(--bg-primary)/90 to-(--bg-primary)/98"
       ></div>

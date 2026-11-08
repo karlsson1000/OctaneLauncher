@@ -52,7 +52,7 @@
         <Loader2 size={15} class="animate-spin" />
         Waiting for browser...
       {:else}
-        <img src="/microsoft.svg" alt="" aria-hidden="true" class="w-[18px] h-[18px]" />
+        <img src="/integrations/microsoft.svg" alt="" aria-hidden="true" class="w-[18px] h-[18px]" />
         Sign in with Microsoft
       {/if}
     </button>

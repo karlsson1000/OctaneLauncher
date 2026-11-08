@@ -25,7 +25,7 @@
     class="w-10 h-10 flex items-center justify-center bg-[var(--bg-tertiary)] hover:bg-[var(--bg-hover)] rounded-md cursor-pointer"
   >
     <img
-      src={source === "modrinth" ? "/modrinth.svg" : "/curseforge.svg"}
+      src={source === "modrinth" ? "/integrations/modrinth.svg" : "/integrations/curseforge.svg"}
       alt={source}
       class="w-6 h-6"
     />
@@ -36,14 +36,14 @@
         onclick={() => { onSelect("modrinth"); isOpen = false }}
         class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer {source === 'modrinth' ? 'bg-[#16a34a]/10 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
       >
-        <img src="/modrinth.svg" alt="Modrinth" class="w-6 h-6" />
+        <img src="/integrations/modrinth.svg" alt="Modrinth" class="w-6 h-6" />
         Modrinth
       </button>
       <button
         onclick={() => { onSelect("curseforge"); isOpen = false }}
         class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-sm cursor-pointer {source === 'curseforge' ? 'bg-[#f97316]/20 text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)]'}"
       >
-        <img src="/curseforge.svg" alt="CurseForge" class="w-6 h-6" />
+        <img src="/integrations/curseforge.svg" alt="CurseForge" class="w-6 h-6" />
         CurseForge
       </button>
     </div>

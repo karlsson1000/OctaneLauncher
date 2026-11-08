@@ -12,9 +12,9 @@
   }
 
   const sourceIcons: Record<string, string> = {
-    prism: "/prism.svg",
-    modrinth: "/modrinth.svg",
-    curseforge: "/curseforge.svg",
+    prism: "/integrations/prism.svg",
+    modrinth: "/integrations/modrinth.svg",
+    curseforge: "/integrations/curseforge.svg",
   }
 
   let {
