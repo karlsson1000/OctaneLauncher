@@ -1,20 +1,14 @@
 const fs = require('fs');
 
-if (!(process.env.CI && process.env.GITHUB_REF_NAME)) {
+const version = process.env.GITHUB_REF_NAME;
+
+if (!(process.env.CI && version)) {
   console.log('Not a CI release build; skipping version pinning.');
   process.exit(0);
 }
 
-const version = process.env.GITHUB_REF_NAME;
-
-const cargoPath = './backend/Cargo.toml';
-let cargo = fs.readFileSync(cargoPath, 'utf-8');
-cargo = cargo.replace(/^version = ".*"$/m, `version = "${version}"`);
-fs.writeFileSync(cargoPath, cargo);
-
-const tauriConfPath = './backend/tauri.conf.json';
-let tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, 'utf-8'));
-tauriConf.version = version;
-fs.writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2));
+const path = './backend/Cargo.toml';
+const cargo = fs.readFileSync(path, 'utf-8');
+fs.writeFileSync(path, cargo.replace(/^version = ".*"$/m, `version = "${version}"`));
 
 console.log(`Build version (from tag): ${version}`);

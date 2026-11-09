@@ -133,7 +133,7 @@
 
           {#if appVersion}
             <div class="mt-auto">
-              <span class="h-[26px] px-2.5 inline-flex items-center rounded-sm text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-hover)]">{appVersion.split('-')[1] || appVersion}</span>
+              <span class="h-[26px] px-2.5 inline-flex items-center rounded-sm text-xs font-mono text-[var(--text-muted)] bg-[var(--bg-hover)]">{appVersion.split('-').at(-1)}</span>
             </div>
           {/if}
         </aside>
