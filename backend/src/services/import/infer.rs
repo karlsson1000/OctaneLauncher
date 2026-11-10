@@ -43,7 +43,8 @@ impl InstanceImporter {
 
         for i in 0..archive.len() {
             let Ok(file) = archive.by_index(i) else { continue };
-            if let Some(loader) = marker_for(file.name()) {
+            let Ok(name) = file.name() else { continue };
+            if let Some(loader) = marker_for(&name) {
                 return Some(loader.to_string());
             }
         }

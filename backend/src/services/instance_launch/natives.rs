@@ -8,7 +8,8 @@ impl InstanceManager {
         let mut extracted = 0;
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
-            if file.name().ends_with('/') || file.name().starts_with("META-INF") {
+            let Ok(name) = file.name() else { continue };
+            if name.ends_with('/') || name.starts_with("META-INF") {
                 continue;
             }
             let Some(safe_name) = file.enclosed_name() else {

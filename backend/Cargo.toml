@@ -33,7 +33,7 @@ tiny_http = "0.12"
 sha1 = "0.10"
 tauri-plugin-shell = "2"
 tauri-plugin-single-instance = "2"
-zip = "2.2"
+zip = "9.5"
 sysinfo = "0.30"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
 base64 = "0.22"

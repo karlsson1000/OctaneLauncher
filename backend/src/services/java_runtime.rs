@@ -137,7 +137,8 @@ fn extract_zip(archive_path: &Path, destination: &Path) -> Result<(), String> {
     for index in 0..archive.len() {
         let mut entry = archive.by_index(index).map_err(|e| e.to_string())?;
 
-        let Some(relative) = sanitized_relative_path(entry.name()) else {
+        let Ok(name) = entry.name() else { continue };
+        let Some(relative) = sanitized_relative_path(&name) else {
             continue;
         };
         let out_path = destination.join(relative);

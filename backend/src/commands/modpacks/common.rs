@@ -76,7 +76,7 @@ pub(super) fn extract_modpack(
             continue;
         }
 
-        if file.name().ends_with('/') {
+        if file.is_dir() {
             std::fs::create_dir_all(&outpath)
                 .map_err(|e| e.to_string())?;
         } else {
