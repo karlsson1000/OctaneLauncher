@@ -1,6 +1,20 @@
 use super::*;
 
+// CVE-2026-114938
+pub(super) const DISABLE_BASE64_INTRINSICS: &str = "-XX:-UseBASE64Intrinsics";
+const MIN_JAVA_FOR_BASE64_INTRINSICS_FLAG: u32 = 17;
+
 impl InstanceManager {
+    pub(super) fn should_disable_base64_intrinsics(
+        java_major: Option<u32>,
+        custom_args: &[String],
+    ) -> bool {
+        java_major.is_some_and(|major| major >= MIN_JAVA_FOR_BASE64_INTRINSICS_FLAG)
+            && !custom_args
+                .iter()
+                .any(|arg| arg == DISABLE_BASE64_INTRINSICS)
+    }
+
     pub(super) fn get_java_version(java_path: &str) -> Result<u32, Box<dyn std::error::Error>> {
         let mut cmd = Command::new(java_path);
         cmd.arg("-version");

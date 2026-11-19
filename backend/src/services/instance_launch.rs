@@ -140,7 +140,7 @@ impl InstanceManager {
         let required_java = Self::get_required_java_version(&version);
         let (java_path, effective_settings) =
             Self::step_resolve_java(instance_name, &instance, required_java, app_handle)?;
-        Self::step_check_java(instance_name, &version, &java_path, required_java, app_handle)?;
+        let java_major = Self::step_check_java(instance_name, &version, &java_path, required_java, app_handle)?;
         let resolved = Self::step_resolve_profile(instance_name, &version, &meta_dir, app_handle)?;
         Self::step_extract_natives(instance_name, &resolved, &meta_dir, app_handle)?;
         let classpath = Self::step_build_classpath(instance_name, &resolved.libraries, &meta_dir, app_handle)?;
@@ -148,7 +148,7 @@ impl InstanceManager {
             instance_name, username, uuid, access_token, server_address, world_name,
             &instance, &version, &java_path, &resolved,
             &classpath, &instance_dir, &meta_dir, app_handle,
-            &effective_settings,
+            &effective_settings, java_major,
         )?;
         Ok(())
     }

@@ -1,4 +1,5 @@
 use super::args::{split_java_args, substitute_arg};
+use super::java::DISABLE_BASE64_INTRINSICS;
 use super::*;
 
 impl InstanceManager {
@@ -92,7 +93,7 @@ impl InstanceManager {
         java_path: &str,
         required_java: u32,
         app_handle: &tauri::AppHandle,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<Option<u32>, Box<dyn std::error::Error>> {
         match Self::get_java_version(java_path) {
             Ok(java_version) => {
                 if java_version < required_java {
@@ -112,6 +113,8 @@ impl InstanceManager {
                     Self::emit_error_log(app_handle, instance_name, &err_msg);
                     return Err(err_msg.into());
                 }
+
+                Ok(Some(java_version))
             }
             Err(e) => {
                 if required_java >= 17 {
@@ -124,10 +127,10 @@ impl InstanceManager {
                 } else {
                     let warning = format!("Could not detect Java version ({}). Proceeding with caution...", e);
                     Self::emit_error_log(app_handle, instance_name, &format!("WARNING: {}", warning));
+                    Ok(None)
                 }
             }
         }
-        Ok(())
     }
 
     pub(super) fn step_extract_natives(
@@ -365,6 +368,7 @@ impl InstanceManager {
         meta_dir: &PathBuf,
         app_handle: &tauri::AppHandle,
         effective_settings: &LauncherSettings,
+        java_major: Option<u32>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let client_jar = meta_dir
             .join("versions")
@@ -543,7 +547,13 @@ impl InstanceManager {
             cmd.arg(format!("-Djava.library.path={}", natives_dir.display()));
         }
 
-        for arg in split_java_args(effective_settings.java_args.as_deref().unwrap_or("")) {
+        let custom_java_args = split_java_args(effective_settings.java_args.as_deref().unwrap_or(""));
+
+        if Self::should_disable_base64_intrinsics(java_major, &custom_java_args) {
+            cmd.arg(DISABLE_BASE64_INTRINSICS);
+        }
+
+        for arg in custom_java_args {
             cmd.arg(arg);
         }
 
